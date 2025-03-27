@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="upload_itest" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="exam_id"
+                type="exam"
+                required="true"
+                default=""
+                label="Môn thi"
+                class="select2-basic"
+        >
+            <option value="">- Chọn môn thi -</option>
+        </field>
+        <field  name="multiple"
+                type="radio"
+                required="true"
+                default="0"
+                label="Nhập đồng thời kết quả nhiều ca thi"
+                description="iTest có khả năng xuất đồng thời kết quả của nhiều ca thi. Trong trường hợp này,
+                    sheet chứa kết quả có tên là &quot;Tất cả&quot;. Còn nếu chỉ xuất kết quả của 1 ca thi thì
+                    sheet kết quả có tên là &quot;Bảng điểm&quot;."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="file"
+                type="file"
+                required="true"
+                label="File kết quả"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

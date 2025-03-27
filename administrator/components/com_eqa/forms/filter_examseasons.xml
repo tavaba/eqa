@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field
+                name="academicyear_id"
+                type="academicyear"
+                label="COM_EQA_FORM_EXAMSEASONS_FILTER_SCHOOLYEAR_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_EXAMSEASONS_FILTER_SCHOOLYEAR_MSG</option>
+        </field>
+        <field
+                name="term"
+                type="term"
+                label="COM_EQA_TERM"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_TERM_REQUEST</option>
+        </field>
+        <field
+                name="type"
+                type="examtype"
+                label="COM_EQA_FORM_EXAMSEASONS_FILTER_TYPE_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_EXAMSEASONS_FILTER_TYPE_MSG</option>
+        </field>
+        <field
+                name="completed"
+                type="list"
+                label="COM_EQA_FORM_EXAMSEASONS_FILTER_COMPLETED_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_STATUS_REQUEST</option>
+            <option value="0">COM_EQA_STATUS_UNCOMPLETED</option>
+            <option value="1">COM_EQA_STATUS_COMPLETED</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>

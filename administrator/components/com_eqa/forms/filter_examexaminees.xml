@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field
+                name="attempt"
+                type="examattempt"
+                label="COM_EQA_EXAM_ATTEMPT"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_EXAM_ATTEMPT_REQUEST</option>
+        </field>
+        <field
+                name="allowed"
+                type="list"
+                label="COM_EQA_ALLOWED_TO_TAKE_EXAM"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_ALLOWED_TO_TAKE_EXAM_REQUEST</option>
+            <option value="1">COM_EQA_ALLOWED_TO_TAKE_EXAM_YES</option>
+            <option value="0">COM_EQA_ALLOWED_TO_TAKE_EXAM_NO</option>
+        </field>
+        <field
+                name="debtor"
+                type="list"
+                label="COM_EQA_DEBT"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_DEBT_REQUEST</option>
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field
+                name="stimulation_type"
+                type="stimulation"
+                label="COM_EQA_STIMULATION"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_STIMULATION_REQUEST</option>
+            <option value="-1">COM_EQA_HAS_ANY_STIMULATION</option>
+        </field>
+        <field  name="anomaly"
+                type="anomaly"
+                label="COM_EQA_ANOMALY"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Bất thường -</option>
+        </field>
+        <field  name="conclusion"
+                type="conclusion"
+                label="Kết luận"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Kết luận -</option>
+        </field>
+        <field  name="concluded"
+                type="list"
+                default=""
+                onchange="this.form.submit();"
+                label="Kết quả"
+        >
+            <option value="">- Kết quả -</option>
+            <option value="0">Chưa có kết quả</option>
+            <option value="1">Đã có kết quả</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>

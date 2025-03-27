@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+   Trong form này có sử dụng custom form field, cụ thể là "DegreeField" cho trường 'degree'
+   Vì thế, trong thẻ FIELDSET cần có thuộc tính 'addfieldprefix' tương ứng
+   Tham khảo từ:  https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+-->
+<form>
+    <fieldset name="course" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="prog_id"
+                type="program"
+                required="true"
+                label="COM_EQA_FORM_COURSE_PROGRAM_LABEL"
+        >
+            <option value="">COM_EQA_FORM_COURSE_PROGRAM_MSG</option>
+        </field>
+        <field
+                name="code"
+                type="text"
+                label="COM_EQA_FORM_COURSE_CODE_LABEL"
+                required="true"
+                pattern="[A-Z0-9\-\.]{2,10}"
+                hint="AT20"
+        />
+        <field
+                name="admissionyear"
+                type="passyear"
+                label="COM_EQA_FORM_COURSE_ADMISSIONYEAR_LABEL"
+        />
+        <field
+                name="description"
+                type="text"
+                label="COM_EQA_FORM_COURSE_NAME_LABEL"
+                hint="Niên khóa 9/2023-01/2028"
+        />
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

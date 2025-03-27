@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field
+                name="subject_id"
+                type="subject"
+                default=""
+                class="select2-basic"
+                label="COM_EQA_FORM_CLASSES_FILTER_SUBJECT_LABEL"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_CLASSES_FILTER_SUBJECT_MSG</option>
+        </field>
+        <field  name="pam"
+                type="list"
+                label="COM_EQA_PAM"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_PAM_REQUEST</option>
+            <option value="none">COM_EQA_PAM_NONE</option>
+            <option value="full">COM_EQA_PAM_FULL</option>
+            <option value="partial">COM_EQA_PAM_PARTIAL</option>
+        </field>
+        <field
+                name="academicyear_id"
+                type="academicyear"
+                label="COM_EQA_FORM_CLASSES_FILTER_ACADEMICYEAR_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_CLASSES_FILTER_ACADEMICYEAR_MSG</option>
+        </field>
+        <field
+                name="term"
+                type="term"
+                label="COM_EQA_FORM_CLASSES_FILTER_TERM_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_CLASSES_FILTER_TERM_MSG</option>
+        </field>
+        <field
+                name="lecture_id"
+                type="employee"
+                label="COM_EQA_FORM_CLASSES_FILTER_LECTURER_MSG"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_CLASSES_FILTER_LECTURER_MSG</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>

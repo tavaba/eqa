@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Subform -->
+<form >
+    <field  name="start"
+            type="calendar"
+            showtime="true"
+            format="%Y-%m-%d %H:%M"
+            required="true"
+            label="COM_EQA_START_DATETIME"
+            onchange="{
+                function getName(startTime)
+                {
+                    regex = /^([0-9\-]{10}) ([0-9:]{5})$/;
+                    matches = startTime.match(regex);
+                    if(matches)
+                        return 'Ca ' + matches[2];
+                    return null;
+                }
+                let row=this.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
+                let columnName = row.children[1];
+                let inputName = columnName.children[0].children[1].children[0];
+                inputName.value = getName(this.value);
+            }"
+            />
+    <field  name="name"
+            type="text"
+            size="10"
+            required="true"
+            label="COM_EQA_EXAMSESSION_NAME"
+            description="COM_EQA_EXAMSESSION_NAME_DESC"
+            />
+    <field  name="flexible"
+            type="radio"
+            required="true"
+            default="0"
+            label="COM_EQA_EXAMSESSION_FLEXIBLE"
+            description="COM_EQA_FLEXIBLE_EXAMSESSION_DESC"
+            class="btn-group btn-group-yesno"
+    >
+        <option value="0">JNO</option>
+        <option value="1">JYES</option>
+    </field>
+</form>

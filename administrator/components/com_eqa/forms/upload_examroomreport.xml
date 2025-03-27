@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="upload">
+        <field  name="import_anomaly"
+                type="radio"
+                required="true"
+                default="1"
+                label="Nhập thông tin bất thường từ cột 'Ghi chú'"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field
+                name="file_report"
+                type="file"
+                required="true"
+                label="COM_EQA_FILE_NAME"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

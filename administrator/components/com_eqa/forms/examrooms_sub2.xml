@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Subform -->
+<form >
+    <field  name="room_id"
+            type="room"
+            label="COM_EQA_ROOM"
+            required="true"
+    >
+        <option value="">COM_EQA_ROOM_REQUEST</option>
+    </field>
+    <field  name="nexaminee"
+            type="number"
+            min="1"
+            max="2000"
+            label="COM_EQA_NUMBER_OF_EXAMINEES"
+            onchange="updateSum('nexaminee$','jform_count_distributed')"
+            />
+</form>

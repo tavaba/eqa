@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field
+                name="course"
+                type="course"
+                default=""
+                class="select2-basic"
+                label="COM_EQA_FORM_GROUPS_FILTER_COURSE_LABEL"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_GROUPS_FILTER_COURSE_MSG</option>
+        </field>
+        <field
+                name="homeroom"
+                type="employee"
+                default=""
+                class="select2-basic"
+                label="COM_EQA_FORM_GROUPS_FILTER_HOMEROOM_LABEL"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_GROUPS_FILTER_HOMEROOM_MSG</option>
+        </field>
+        <field
+                name="adviser"
+                type="employee"
+                default=""
+                class="select2-basic"
+                label="COM_EQA_FORM_GROUPS_FILTER_ADVISER_LABEL"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_GROUPS_FILTER_ADVISER_MSG</option>
+        </field>
+        <field
+                name="published"
+                type="list"
+                label="COM_EQA_FILTER_STATE_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FILTER_STATE_MSG</option>
+            <option value="1">COM_EQA_FILTER_STATE_OPTION_PUBLISHED</option>
+            <option value="0">COM_EQA_FILTER_STATE_OPTION_UNPUBLISHED</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "com_eqa",
+  "version": "4.0.0",
+  "description": "KMA Examination and Quality  Assuarance",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "select2.script",
+      "type": "script",
+      "dependencies": ["jquery"],
+      "uri": "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js",
+      "version": "4.0.13"
+    },
+    {
+      "name": "com_eqa.script",
+      "type": "script",
+      "uri": "com_eqa/script.js",
+      "dependencies": ["select2.script"],
+      "version": "1.0.2"
+    },
+	{
+      "name": "com_eqa.style",
+      "type": "style",
+      "uri": "com_eqa/style.css"
+	},
+    {
+      "name": "select2.style",
+      "type": "style",
+      "uri":"https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"
+    }
+  ]
+}

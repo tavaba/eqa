@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Danh sách yêu cầu phúc khảo của thí sinh" option="Optionxxxx">
+        <message>
+            <![CDATA[Hiển thị danh sách các yêu cầu phúc khảo của thí sinh hiện thời]]>
+        </message>
+    </layout>
+
+    <!-- Add fields to the parameters object for the layout. -->
+    <fields name="params">
+        <fieldset name="request" label="COM_MENUS_BASIC_FIELDSET_LABEL">
+
+        </fieldset>
+
+        <!-- Add fields to the parameters object for the layout. -->
+
+        <!-- Scroll. -->
+        <fieldset name="basic">
+
+        </fieldset>
+
+        <!-- Advanced options. -->
+        <fieldset name="advanced">
+
+        </fieldset>
+    </fields>
+</metadata>

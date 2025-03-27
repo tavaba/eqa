@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+   Trong form này có sử dụng custom form field
+   Vì thế, trong thẻ FIELDSET cần có thuộc tính 'addfieldprefix' tương ứng
+   Tham khảo từ:  https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+-->
+<form>
+    <fieldset name="group" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="course_id"
+                type="course"
+                default=""
+                class="select2-basic"
+                required="true"
+                label="COM_EQA_FORM_GROUP_COURSE_LABEL"
+        >
+            <option value="">COM_EQA_FORM_GROUP_COURSE_MSG</option>
+        </field>
+        <field
+                name="code"
+                type="text"
+                label="COM_EQA_FORM_GROUP_CODE_LABEL"
+                description="COM_EQA_FORM_GROUP_CODE_DESC"
+                required="true"
+                hint="AT20C"
+        />
+        <field
+                name="size"
+                type="text"
+                required="true"
+                default="0"
+                readonly="true"
+                label="COM_EQA_FORM_GROUP_SIZE_LABEL"
+        />
+        <field
+                name="homeroom_id"
+                type="employee"
+                default=""
+                class="select2-basic"
+                label="COM_EQA_FORM_GROUP_HOMEROOM_LABEL"
+        >
+            <option value="">COM_EQA_FORM_GROUP_HOMEROOM_MSG</option>
+        </field>
+        <field
+                name="adviser_id"
+                type="employee"
+                default=""
+                class="select2-basic"
+                label="COM_EQA_FORM_GROUP_ADVISER_LABEL"
+        >
+            <option value="">COM_EQA_FORM_GROUP_ADVISER_MSG</option>
+        </field>
+
+        <field
+                name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+        />
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

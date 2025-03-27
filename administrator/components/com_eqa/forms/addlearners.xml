@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="addlearners" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="learners"
+                type="textarea"
+                rows="7"
+                label="COM_EQA_FORM_CLASS_ADD_LEARNERS_LEARNERS_LABEL"
+                description="COM_EQA_FORM_CLASS_ADD_LEARNERS_LEARNERS_DESC"
+                required="true"
+        />
+    </fieldset>
+</form>

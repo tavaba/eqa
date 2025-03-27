@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension type="component" method="upgrade">
+    <name>COM_EQA</name>
+	<version>1.1.8</version>
+    <author>Nguyễn Tuấn Anh</author>
+    <creationDate>October 2024</creationDate>
+    <description>COM_EQA_DESC</description>
+	
+	<namespace path="src/">Kma\Component\Eqa</namespace>
+	<scriptfile>script.php</scriptfile>
+
+	<install>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>	
+	<uninstall>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>	
+	<update>
+		<schemas>
+			<schemapath type="mysql">sql/updates/mysql</schemapath>
+		</schemas>
+	</update>	
+	
+    <!-- Front end -->
+    <files folder="site">
+		<folder>forms</folder>
+		<folder>language</folder>
+		<folder>src</folder>
+		<folder>tmpl</folder>
+    </files>
+
+    <!-- Back end -->
+    <administration>
+		<menu link="option=com_eqa">COM_EQA</menu>
+		<submenu>
+			<menu view="dashboard">COM_EQA_MENU_DASHBOARD_TITLE</menu>
+		</submenu>
+        <files folder="admin">
+			<folder>forms</folder>
+			<folder>language</folder>
+			<folder>services</folder>
+			<folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+			<filename>access.xml</filename>
+			<filename>config.xml</filename>
+        </files>
+    </administration>
+
+	<!-- Media -->
+	<media folder="media" destination="com_eqa">
+		<filename>joomla.asset.json</filename>
+		<folder>xlsx</folder>
+		<folder>js</folder>
+		<folder>css</folder>
+	</media>
+</extension>

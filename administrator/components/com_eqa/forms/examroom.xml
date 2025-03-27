@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="exam" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="room_id"
+                type="room"
+                required="true"
+                label="COM_EQA_ROOM"
+        >
+            <option value="">COM_EQA_ROOM_REQUEST</option>
+        </field>
+        <field  name="description"
+                type="textarea"
+                label="COM_EQA_DESCRIPTION"
+                />
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

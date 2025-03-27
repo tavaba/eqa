@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Danh sách yêu cầu phúc khảo (dành cho cán bộ quản lý)" option="Optionxxxx">
+        <message>
+            <![CDATA[Hiển thị danh sách các yêu cầu phúc khảo của thí sinh]]>
+        </message>
+    </layout>
+</metadata>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="examrooms" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="distribute_allowed_only"
+                type="radio"
+                required="true"
+                default="1"
+                label="COM_EQA_DISTRIBUTE_ALLOWED_ONLY"
+                description="COM_EQA_DISTRIBUTE_ALLOWED_ONLY_DESC"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="create_new_examrooms"
+                type="radio"
+                required="true"
+                default="1"
+                label="COM_EQA_CREATE_NEW_EXAMROOMS"
+                description="COM_EQA_CREATE_NEW_EXAMROOMS_DESC"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="examinee_code_start"
+                type="number"
+                default="100"
+                min="1"
+                required="true"
+                label="COM_EQA_EXAMINEE_CODE_START"
+                />
+        <field
+                name="examsessions"
+                type="subform"
+                required="true"
+                validate="Subform"
+                formsource="administrator/components/com_eqa/forms/distribution2_sub1.xml"
+                multiple="true"
+                layout="joomla.form.field.subform.repeatable"
+                label="COM_EQA_EXAMSESSION"
+        />
+    </fieldset>
+</form>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field
+                name="spec_id"
+                type="speciality"
+                label="COM_EQA_FORM_COURSES_FILTER_SPECIALITY_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_COURSES_FILTER_SPECIALITY_MSG</option>
+        </field>
+        <field
+                name="prog_id"
+                type="program"
+                label="COM_EQA_FORM_COURSES_FILTER_PROGRAM_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_COURSES_FILTER_PROGRAM_MSG</option>
+        </field>
+        <field
+                name="degree"
+                type="degree"
+                label="COM_EQA_FORM_COURSES_FILTER_DEGREE_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_COURSES_FILTER_DEGREE_MSG</option>
+        </field>
+        <field
+                name="admissionyear"
+                type="passyear"
+                label="COM_EQA_FORM_COURSES_FILTER_ADMISSIONYEAR_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_COURSES_FILTER_ADMISSIONYEAR_MSG</option>
+        </field>
+        <field
+                name="published"
+                type="list"
+                label="COM_EQA_FILTER_STATE_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FILTER_STATE_MSG</option>
+            <option value="1">COM_EQA_FILTER_STATE_OPTION_PUBLISHED</option>
+            <option value="0">COM_EQA_FILTER_STATE_OPTION_UNPUBLISHED</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>

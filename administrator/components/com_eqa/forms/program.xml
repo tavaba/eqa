@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<form>
+    <fieldset name="program" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="spec_id"
+                type="speciality"
+                required="true"
+                label="COM_EQA_FORM_PROGRAM_SPECIALITY_LABEL"
+        >
+            <option value="">COM_EQA_FORM_PROGRAM_SPECIALITY_REQUEST</option>
+        </field>
+        <field
+                name="degree"
+                type="degree"
+                required="true"
+                label="COM_EQA_FORM_PROGRAM_DEGREE_LABEL"
+        >
+            <option value="">COM_EQA_FORM_PROGRAM_DEGREE_REQUEST</option>
+        </field>
+        <field
+                name="name"
+                type="text"
+                required="true"
+                label="COM_EQA_FORM_PROGRAM_NAME_LABEL"
+                description="COM_EQA_FORM_PROGRAM_NAME_DESC"
+        />
+        <field
+                name="format"
+                type="programformat"
+                required="true"
+                label="COM_EQA_FORM_PROGRAM_FORMAT_LABEL"
+        >
+            <option value="">COM_EQA_FORM_PROGRAM_FORMAT_REQUEST</option>
+        </field>
+        <field
+                name="approach"
+                type="programapproach"
+                required="true"
+                label="COM_EQA_FORM_PROGRAM_APPROACH_LABEL"
+        >
+            <option value="">COM_EQA_FORM_PROGRAM_APPROACH_REQUEST</option>
+        </field>
+        <field
+                name="firstrelease"
+                type="text"
+                pattern="[12][0-9]{3}"
+                label="COM_EQA_FORM_PROGRAM_FIRST_RELEASE_LABEL"
+                description="COM_EQA_FORM_PROGRAM_FIRST_RELEASE_DESC"
+        />
+        <field
+                name="lastupdate"
+                type="text"
+                pattern="[12][0-9]{3}"
+                label="COM_EQA_FORM_PROGRAM_LAST_UPDATE_LABEL"
+                description="COM_EQA_FORM_PROGRAM_LAST_UPDATE_DESC"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+        />
+        <field name="published" type="list" readonly="true"  required="true" label="JSTATUS" default="1">
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+        </field>
+
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

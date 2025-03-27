@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Subform -->
+<form >
+    <field
+            name="examsession_id"
+            type="examsession"
+            label="COM_EQA_EXAMSESSION"
+            default=""
+            required="true"
+    >
+        <option value="">COM_EQA_EXAMSESSION_REQUEST</option>
+    </field>
+    <field
+            name="rooms"
+            type="subform"
+            validate="Subform"
+            formsource="administrator/components/com_eqa/forms/distribution2_sub2.xml"
+            multiple="true"
+            layout="joomla.form.field.subform.repeatable-table"
+            label="COM_EQA_EXAMROOM"
+    />
+</form>

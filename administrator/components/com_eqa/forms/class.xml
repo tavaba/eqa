@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="class" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="id"
+                type="hidden"
+        />
+        <field  name="coursegroup"
+                type="text"
+                label="COM_EQA_COURSEGROUP"
+                description="COM_EQA_COURSEGROUP_DESC"
+                pattern="[A-Z0-9]+"
+        />
+        <field  name="code"
+                type="text"
+                label="COM_EQA_FORM_CLASS_CODE_LABEL"
+                description="COM_EQA_FORM_CLASS_CODE_DESC"
+                required="true"
+        />
+        <field  name="name"
+                type="text"
+                label="COM_EQA_FORM_CLASS_NAME_LABEL"
+                description="COM_EQA_FORM_CLASS_NAME_DESC"
+                required="true"
+        />
+        <field  name="subject_id"
+                type="subject"
+                required="true"
+                class="select2-basic"
+                label="COM_EQA_FORM_CLASS_SUBJECT_LABEL"
+        >
+            <option value="">COM_EQA_FORM_CLASS_SUBJECT_MSG</option>
+        </field>
+        <field  name="lecturer_id"
+                type="employee"
+                required="false"
+                class="select2-basic"
+                label="COM_EQA_FORM_CLASS_LECTURER_LABEL"
+                description="COM_EQA_FORM_CLASS_LECTURER_DESC"
+        >
+            <option value="">COM_EQA_FORM_CLASS_LECTURER_MSG</option>
+        </field>
+        <field  name="lecturers"
+                type="text"
+                required="false"
+                default="Cần được thay thế bằng một SubForm"
+                label="COM_EQA_FORM_CLASS_LECTURERS_LABEL"
+        />
+        <field  name="academicyear_id"
+                type="academicyear"
+                required="true"
+                label="COM_EQA_FORM_CLASS_ACADEMICYEAR_LABEL"
+        >
+            <option value="">COM_EQA_FORM_CLASS_ACADEMICYEAR_MSG</option>
+        </field>
+        <field  name="term"
+                type="term"
+                required="true"
+                label="COM_EQA_FORM_CLASS_TERM_LABEL"
+        >
+            <option value="">COM_EQA_FORM_CLASS_TERM_MSG</option>
+        </field>
+        <field  name="start"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_CLASS_START_LABEL"
+                description="COM_EQA_FORM_CLASS_START_DESC"
+                required="false"
+                singleheader="true"
+        />
+        <field  name="finish"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_CLASS_FINISH_LABEL"
+                description="COM_EQA_FORM_CLASS_FINISH_DESC"
+                required="false"
+                singleheader="true"
+        />
+        <field  name="size"
+                type="text"
+                required="true"
+                default="0"
+                readonly="true"
+                label="COM_EQA_FORM_CLASS_SIZE_LABEL"
+        />
+        <field  name="topicdeadline"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_CLASS_TOPICDEADLINE_LABEL"
+                description="COM_EQA_FORM_CLASS_TOPICDEADLINE_DESC"
+                required="false"
+                singleheader="true"
+        />
+        <field  name="topicdate"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_CLASS_TOPICDATE_LABEL"
+                description="COM_EQA_FORM_CLASS_TOPICDATE_DESC"
+                required="false"
+                singleheader="true"
+        />
+        <field  name="thesisdate"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_CLASS_THESISDATE_LABEL"
+                description="COM_EQA_FORM_CLASS_THESISDATE_DESC"
+                required="false"
+                singleheader="true"
+        />
+        <field  name="pamdeadline"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_CLASS_PAMDEADLINE_LABEL"
+                required="false"
+                singleheader="true"
+        />
+        <field  name="pamdate"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_CLASS_PAMDATE_LABEL"
+                description="COM_EQA_FORM_CLASS_PAMDATE_DESC"
+                required="false"
+                singleheader="true"
+        />
+        <field  name="statistic"
+                type="text"
+                readonly="true"
+                required="false"
+                default="Cần được thay thế bằng một SubForm"
+                label="COM_EQA_FORM_CLASS_STATISTIC_LABEL"
+        />
+
+        <field  name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+        />
+        <field  name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field  name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field  name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field  name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

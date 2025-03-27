@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<form>
+    <fieldset name="room" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="code"
+                type="text"
+                label="COM_EQA_FORM_ROOM_CODE_LABEL"
+                required="true"
+                pattern="[A-Z0-9\.\-]{2,10}"
+        />
+        <field
+                name="building_id"
+                type="building"
+                required="true"
+                label="COM_EQA_FORM_ROOM_BUILDING_LABEL"
+        >
+            <option value="">COM_EQA_FORM_ROOM_BUILDING_REQUEST</option>
+        </field>
+        <field
+                name="maxcapacity"
+                type="integer"
+                first="20"
+                last="2000"
+                step="1"
+                required="true"
+                label="COM_EQA_FORM_ROOM_MAXCAPACITY_LABEL"
+        />
+        <field
+                name="capacity"
+                type="integer"
+                first="20"
+                last="2000"
+                step="1"
+                required="true"
+                label="COM_EQA_FORM_ROOM_CAPACITY_LABEL"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+        />
+        <field name="type" type="roomtype" required="true" label="COM_EQA_FORM_ROOM_TYPE_LABEL" default="">
+            <option value="">COM_EQA_FORM_ROOM_TYPE_REQUEST</option>
+        </field>
+        <field name="published" type="list" readonly="true"  required="true" label="JSTATUS" default="1">
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+        </field>
+
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+   Trong form này có sử dụng custom form field, cụ thể là "DegreeField" cho trường 'degree'
+   Vì thế, trong thẻ FIELDSET cần có thuộc tính 'addfieldprefix' tương ứng
+   Tham khảo từ:  https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+-->
+<form>
+    <fieldset name="examseason" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="academicyear_id"
+                type="academicyear"
+                label="COM_EQA_ACADEMICYEAR"
+                required="true"
+        >
+            <option value="">COM_EQA_ACADEMICYEAR_REQUEST</option>
+        </field>
+        <field
+                name="term"
+                type="term"
+                label="COM_EQA_TERM"
+                required="true"
+        >
+            <option value="">COM_EQA_TERM_REQUEST</option>
+        </field>
+        <field
+                name="type"
+                type="examtype"
+                required="true"
+                label="COM_EQA_FORM_EXAMSEASON_TYPE_LABEL"
+        >
+            <option value="">COM_EQA_FORM_EXAMSEASON_TYPE_MSG</option>
+        </field>
+        <field
+                name="attempt"
+                type="integer"
+                first="1"
+                last="2"
+                step="1"
+                label="COM_EQA_FORM_EXAMSEASON_ATTEMPT_LABEL"
+                description="COM_EQA_EXAMSEASON_ATTEMPT_DESC"
+                required="true"
+        />
+        <field
+                name="name"
+                type="text"
+                label="COM_EQA_FORM_EXAMSEASON_NAME_LABEL"
+                description="COM_EQA_FORM_EXAMSEASON_NAME_DESC"
+                required="true"
+                hint="Thi KTHP. Hệ ĐHP. Học kỳ 2. Lần 1. Đợt 2"
+        />
+        <field
+                name="start"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_EXAMSEASON_DATEBEGIN_LABEL"
+                description="COM_EQA_FORM_EXAMSEASON_DATEBEGIN_DESC"
+                required="true"
+                singleheader="true"
+        />
+        <field
+                name="finish"
+                type="calendar"
+                showtime="false"
+                label="COM_EQA_FORM_EXAMSEASON_DATEEND_LABEL"
+                description="COM_EQA_FORM_EXAMSEASON_DATEEND_DESC"
+                required="true"
+                singleheader="true"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+        />
+        <field name="ppaa_req_enabled" type="list" required="true" label="Mở quyền phúc khảo" default="0">
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+        </field>
+        <field
+                name="ppaa_req_deadline"
+                type="calendar"
+                showtime="true"
+                label="Thời hạn phúc khảo"
+                format="%Y-%m-%d %H:%M:%S"
+                required="false"
+                singleheader="false"
+        />
+
+        <field
+                name="statistic"
+                type="subform"
+                formsource="administrator/components/com_eqa/forms/examseason_statistic.xml"
+                label="COM_EQA_FORM_EXAMSEASON_STATISTIC_LABEL"
+                description="COM_EQA_FORM_EXAMSEASON_STATISTIC_DESC"
+        />
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

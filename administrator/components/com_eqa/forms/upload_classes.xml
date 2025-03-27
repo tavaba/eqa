@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="upload" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="auto_year_and_term"
+                type="radio"
+                required="true"
+                default="1"
+                label="COM_EQA_AUTO_YEAR_AND_TERM"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field  name="academicyear_id"
+                type="academicyear"
+                required="true"
+                label="COM_EQA_ACADEMICYEAR"
+                showon="auto_year_and_term:0"
+                />
+
+        <field  name="term"
+                type="term"
+                required="true"
+                label="COM_EQA_TERM"
+                showon="auto_year_and_term:0"
+                />
+
+        <field  name="file_classes"
+                type="file"
+                multiple="true"
+                required="true"
+                label="COM_EQA_FORM_CLASSES_UPLOAD_FILE_LABEL"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

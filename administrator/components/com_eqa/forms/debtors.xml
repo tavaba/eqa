@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="debtors" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="ignore_absentees"
+                type="radio"
+                required="true"
+                default="1"
+                label="Bỏ qua HVSV không có tên trong hệ thống"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="learners"
+                type="textarea"
+                rows="7"
+                label="COM_EQA_CODES_OF_DEBTORS"
+                required="true"
+        />
+    </fieldset>
+</form>

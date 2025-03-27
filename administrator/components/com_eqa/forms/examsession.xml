@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="examsession" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="id"
+                type="hidden"
+                />
+        <field  name="examseason_id"
+                type="examseason"
+                class="select2-basic"
+                label="COM_EQA_EXAMSEASON"
+                required="true"
+            >
+            <option value="">COM_EQA_EXAMSEASON_REQUEST</option>
+        </field>
+        <field  name="start"
+                type="calendar"
+                showtime="true"
+                format="%Y-%m-%d %H:%M"
+                required="true"
+                label="COM_EQA_EXAMSESSION_START_DATETIME"
+        />
+        <field  name="name"
+                type="text"
+                required="true"
+                label="COM_EQA_EXAMSESSION_NAME"
+                description="COM_EQA_EXAMSESSION_NAME_DESC"
+                />
+        <field  name="flexible"
+                type="radio"
+                required="true"
+                default="0"
+                label="COM_EQA_EXAMSESSION_FLEXIBLE"
+                description="COM_EQA_FLEXIBLE_EXAMSESSION_DESC"
+                class="btn-group btn-group-yesno"
+            >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="monitor_ids"
+                type="employee"
+                multiple="true"
+                class="select2-basic"
+                label="COM_EQA_EXAMSESSION_MONITORS"
+        >
+            <option value="" disable="true">COM_EQA_EXAMSESSION_MONITORS_REQUEST</option>
+        </field>
+        <field  name="examiner_ids"
+                type="employee"
+                multiple="true"
+                class="select2-basic"
+                label="COM_EQA_EXAMSESSION_EXAMINERS"
+        >
+            <option value="" disable="true">COM_EQA_EXAMSESSION_EXAMINERS_REQUEST</option>
+        </field>
+        <field  name="description"
+                type="textarea"
+                label="COM_EQA_DESCRIPTION"
+                />
+    </fieldset>
+</form>

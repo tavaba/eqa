@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+   Trong form này có sử dụng custom form field, cụ thể là "DegreeField" cho trường 'degree'
+   Vì thế, trong thẻ FIELDSET cần có thuộc tính 'addfieldprefix' tương ứng
+   Tham khảo từ:  https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+-->
+<form>
+    <fieldset name="examquestion" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="exam_id"
+                type="exam"
+                required="true"
+                default=""
+                label="Môn thi"
+                class="select2-basic"
+        >
+            <option value="">- Môn thi -</option>
+        </field>
+        <field  name="questionauthor_id"
+                type="employee"
+                required="true"
+                default=""
+                label="Người ra đề"
+                class="select2-basic"
+        >
+            <option value="">- Người ra đề -</option>
+        </field>
+        <field  name="questionsender_id"
+                type="employee"
+                required="true"
+                default=""
+                label="Người bàn giao đề"
+                class="select2-basic"
+        >
+            <option value="">- Người giao đề -</option>
+        </field>
+        <field  name="nquestion"
+                type="integer"
+                first="1"
+                last="5"
+                step="1"
+                default=""
+                required="true"
+                label="Số lượng đề"
+                description="Là số lượng bộ đề để tính sản lượng ra đề cho GV"
+        >
+            <option value="">- Số lượng đề -</option>
+        </field>
+        <field  name="questiondate"
+                type="calendar"
+                showtime="false"
+                required="true"
+                label="Ngày giao đề"
+        >
+            <option value="">- Ngày giao đề -</option>
+        </field>
+    </fieldset>
+</form>

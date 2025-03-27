@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="exam" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="examseason_id"
+                type="examseason"
+                required="true"
+                label="COM_EQA_EXAMSEASON"
+        >
+            <option value="">COM_EQA_EXAMSEASON_REQUEST</option>
+        </field>
+        <field
+                name="subject_id"
+                type="subject"
+                class="select2-basic"
+                label="COM_EQA_SUBJECT"
+                description="COM_EQA_SUBJECT_DESC"
+                required="true"
+        >
+            <option value="">COM_EQA_SUBJECT_REQUEST</option>
+        </field>
+        <field
+                name="name"
+                type="text"
+                label="COM_EQA_EXAM_NAME"
+                description="COM_EQA_EXAM_NAME_DESC"
+                required="true"
+        />
+        <field
+                name="testtype"
+                type="testtype"
+                label="COM_EQA_TESTTYPE"
+                required="true"
+        >
+            <option value="">COM_EQA_TESTTYPE_REQUEST</option>
+        </field>
+        <field
+                name="duration"
+                type="number"
+                label="COM_EQA_TEST_DURATION"
+                description="COM_EQA_TEST_DURATION_DESC"
+                default="0"
+                min="0"
+                step="5"
+        />
+        <field
+                name="kmonitor"
+                type="number"
+                label="COM_EQA_EXAM_KMONITOR"
+                description="COM_EQA_EXAM_KMONITOR_DESC"
+                required="true"
+                default="1.0"
+                min="1.0"
+                step="0.1"
+        />
+        <field
+                name="kassess"
+                type="number"
+                label="COM_EQA_EXAM_KASSESS"
+                description="COM_EQA_EXAM_KASSESS_DESC"
+                required="true"
+                default="1.0"
+                min="0.5"
+                max="1.0"
+                step="0.1"
+        />
+        <field
+                name="status"
+                type="examstatus"
+                label="COM_EQA_PROGRESS"
+                required="true"
+        >
+            <option value="">COM_EQA_PROGRESS_REQUEST</option>
+        </field>
+        <field
+                name="usetestbank"
+                type="radio"
+                label="COM_EQA_USETESTBANK"
+                default="0"
+                required="true"
+                class="btn-group btn-group-yesno">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field
+                name="questiondeadline"
+                type="calendar"
+                showtime="false"
+                singleheader="true"
+                label="COM_EQA_QUESTIONDEADLINE"
+                description="COM_EQA_QUESTIONDEADLINE_DESC"
+        />
+        <field
+                name="questiondate"
+                type="calendar"
+                showtime="false"
+                singleheader="true"
+                label="COM_EQA_QUESTIONDATE"
+                description="COM_EQA_QUESTIONDATE_DESC"
+        />
+        <field  name="questionsender_id"
+                type="employee"
+                label="COM_EQA_QUESTIONSENDER"
+        >
+            <option value="">COM_EQA_QUESTIONSENDER_REQUEST</option>
+        </field>
+        <field  name="questionauthor_id"
+                type="employee"
+                label="COM_EQA_QUESTIONAUTHOR"
+        >
+            <option value="">COM_EQA_QUESTIONAUTHOR_REQUEST</option>
+        </field>
+        <field  name="nquestion"
+                type="number"
+                default=""
+                min="1"
+                step="1"
+                label="COM_EQA_QUESTIONCOUNT"
+                description="COM_EQA_QUESTIONCOUNT_DESC"
+        />
+        <field  name="statistic"
+                type="text"
+                readonly="true"
+                default="To be replaced by a subform"
+                label="COM_EQA_STATISTIC"
+                description="COM_EQA_EXAM_STATISTIC_DESC"
+        />
+        <field  name="anomaly"
+                type="textarea"
+                label="COM_EQA_ANOMALY"
+                description="COM_EQA_EXAM_ANOMALY_DESC"
+                />
+        <field  name="description"
+                type="textarea"
+                label="COM_EQA_DESCRIPTION"
+                />
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

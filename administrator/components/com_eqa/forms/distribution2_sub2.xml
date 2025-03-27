@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Subform -->
+<form >
+    <field  name="room_id"
+            type="room"
+            label="COM_EQA_ROOM"
+            required="true"
+    >
+        <option value="">COM_EQA_ROOM_REQUEST</option>
+    </field>
+    <field  name="class_id"
+            type="examclass"
+            default=""
+            label="COM_EQA_EDUCLASS"
+    >
+        <option value="">COM_EQA_EDUCLASS_REQUEST</option>
+    </field>
+</form>

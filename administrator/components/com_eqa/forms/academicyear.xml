@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="academicyear">
+        <field
+                name="id"
+                type="hidden"
+            />
+
+        <field
+                name="code"
+                type="text"
+                required="true"
+                pattern="[0-9]{4}-[0-9]{4}"
+                label="COM_EQA_FORM_ACADEMICYEAR_CODE_LABEL"
+                description="COM_EQA_FORM_ACADEMICYEAR_CODE_DESC"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+        />
+        <field name="default" type="list" readonly="true"  required="true" label="COM_EQA_GENERAL_DEFAULT" default="0">
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+        </field>
+        <field name="published" type="list" readonly="true"  required="true" label="JSTATUS" default="1">
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+        </field>
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

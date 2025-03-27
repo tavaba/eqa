@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="stimulate" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="subject_id"
+                type="subject"
+                required="true"
+                class="select2-basic"
+                label="COM_EQA_SUBJECT"
+        >
+            <option value="">COM_EQA_SUBJECT_REQUEST</option>
+        </field>
+        <field  name="type"
+                type="stimulation"
+                required="true"
+                label="COM_EQA_STIMULATION_TYPE"
+        >
+            <option value="">COM_EQA_STIMULATION_TYPE_REQUEST</option>
+        </field>
+        <field  name="value"
+                type="number"
+                required="true"
+                label="COM_EQA_STIMULATION_VALUE"
+        />
+        <field  name="reason"
+                type="text"
+                required="true"
+                label="COM_EQA_STIMULATION_REASON"
+                />
+        <field
+                name="learnercodelist"
+                type="textarea"
+                required="true"
+                label="COM_EQA_LEARNER_CODE"
+        />
+    </fieldset>
+</form>

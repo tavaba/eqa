@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="upload" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="exam_id"
+                type="exam"
+                required="true"
+                label="COM_EQA_EXAM"
+        >
+            <option value="">COM_EQA_EXAM_REQUEST</option>
+        </field>
+        <field
+                name="excelfile"
+                type="file"
+                required="true"
+                label="COM_EQA_FILE_NAME"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

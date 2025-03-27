@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field  name="examseason_id"
+                type="examseason"
+                label="Kỳ thi"
+                default="default"
+                onchange="this.form.submit();"
+        >
+            <option value="all">-Kỳ thi-</option>
+            <option value="default">Kỳ thi mặc định</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>

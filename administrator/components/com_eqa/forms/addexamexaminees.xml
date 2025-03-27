@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="addexamexaminees" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="classcode"
+                type="text"
+                required="true"
+                label="COM_EQA_CLASS_CODE"
+                description="COM_EQA_CLASS_CODE_DESC"
+        />
+        <field
+                name="learnercodelist"
+                type="textarea"
+                required="true"
+                label="COM_EQA_LEARNER_CODE"
+        />
+        <field
+                name="attempt"
+                type="examattempt"
+                label="COM_EQA_EXAM_ATTEMPT"
+                default=""
+                required="true"
+        >
+            <option value="">COM_EQA_EXAM_ATTEMPT_REQUEST</option>
+        </field>
+    </fieldset>
+</form>

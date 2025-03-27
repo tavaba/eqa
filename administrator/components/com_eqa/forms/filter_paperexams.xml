@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field
+                name="academicyear_id"
+                type="academicyear"
+                label="COM_EQA_ACADEMICYEAR"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_ACADEMICYEAR_REQUEST</option>
+        </field>
+        <field
+                name="term"
+                type="term"
+                label="COM_EQA_TERM"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_TERM_REQUEST</option>
+        </field>
+        <field  name="examseason_id"
+                type="examseason"
+                class="select2-basic"
+                label="COM_EQA_EXAMSEASON"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_EXAMSEASON_REQUEST</option>
+        </field>
+        <field  name="exam_id"
+                type="exam"
+                class="select2-basic"
+                label="COM_EQA_EXAM"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_EXAM_REQUEST</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>

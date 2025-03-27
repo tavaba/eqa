@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="masking" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="exam_id"
+                type="exam"
+                required="true"
+                class="select2-basic"
+                label="COM_EQA_EXAM"
+        >
+            <option value="">COM_EQA_EXAM_REQUEST</option>
+        </field>
+        <field  name="mask_start"
+                type="number"
+                default="100"
+                required="true"
+                label="Số phách đầu tiên"
+        />
+        <field  name="mask_interval"
+                type="number"
+                default="10"
+                required="true"
+                label="Độ dài đoạn phách"
+                description="Trong đoạn này, số phách sẽ được đánh liên tiếp theo thứ tự SBD"
+        />
+        <field  name="package_default_size"
+                type="number"
+                default="50"
+                required="true"
+                label="Kích thước túi"
+        />
+        <field  name="package_min_size"
+                type="number"
+                default="10"
+                required="true"
+                label="Kích thước túi tối thiểu"
+                description="Nếu không đủ số tối thiểu thì toàn bộ bài thi sẽ được dồn cùng vào túi áp chót"
+        />
+
+    </fieldset>
+</form>

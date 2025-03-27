@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<form>
+    <fieldset name="unit" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="code"
+                type="text"
+                label="COM_EQA_FORM_UNIT_CODE_LABEL"
+                required="true"
+                pattern="[A-Z0-9\.\-]{2,10}"
+                hint="K.CNTT"
+        />
+        <field
+                name="name"
+                type="text"
+                label="COM_EQA_FORM_UNIT_NAME_LABEL"
+                required="true"
+                hint="Khoa Công nghệ thông tin"
+        />
+        <field
+                name="parent_id"
+                type="sql"
+                label="COM_EQA_FORM_UNIT_PARENT_LABEL"
+                query="SELECT id, name FROM #__eqa_units WHERE parent_id=0 ORDER BY name"
+                key_field="id"
+                value_field="name"
+                class="select2-basic"
+        >
+            <option value="0">COM_EQA_FORM_UNIT_ROOT_LABEL</option>
+        </field>
+        <field
+                name="type"
+                type="unittype"
+                required="true"
+                label="COM_EQA_FORM_UNIT_TYPE_LABEL"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+        />
+        <field name="published" type="list" readonly="true"  required="true" label="JSTATUS" default="1">
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+        </field>
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

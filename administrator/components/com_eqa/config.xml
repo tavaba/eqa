@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<fields name="params" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+		<fieldset
+				name="general"
+				label="COM_EQA_CONFIG_PARAMS_GENERAL_LABEL"
+				description="COM_EQA_CONFIG_PARAMS_GENERAL_DESC"
+		>
+			<field
+					name="parent_organization"
+					type="text"
+					default="Ban Cơ yếu Chính phủ"
+					label="Cơ quan cấp trên"
+			/>
+			<field
+					name="organization"
+					type="text"
+					default="Học viện Kỹ thuật mật mã"
+					label="Cơ quan"
+			/>
+		</fieldset>
+		<fieldset
+				name="exam"
+				label="COM_EQA_CONFIG_PARAMS_EXAM_LABEL"
+				description="COM_EQA_CONFIG_PARAMS_EXAM_DESC"
+		>
+			<field
+					name="examination_unit"
+					type="text"
+					default="Phòng KT&amp;ĐBCLĐT"
+					label="Đơn vị khảo thí"
+			/>
+			<field
+					name="second_attempt_limit"
+					type="secondattemptlimit"
+					default="1"
+					label="Giới hạn điểm thi lần 2"
+			/>
+			<field
+					name="examinee_code_start"
+					type="number"
+					default="100"
+					label="Giá trị bắt đầu đánh SBD"
+			/>
+			<field	name="debtorpenalty"
+					type="debtorpenalty"
+					default="0"
+					required="true"
+					label="Xử lý HVSV nợ học phí"
+			>
+				<option value=""></option>
+			</field>
+			<field
+					name="examinee_mask_start"
+					type="number"
+					default="100"
+					label="Giá trị bắt đầu đánh phách"
+			/>
+			<field
+					name="examinee_mask_interval"
+					type="number"
+					default="10"
+					label="Kích thước đoạn phách"
+					description="Để việc đánh phách không quá khó khăn, hạn chế sai sót,
+						phách không được đánh ngẫu nhiên hoàn toàn
+						mà có những đoạn 5, 10... giá trị liên tiếp"
+			/>
+			<field
+					name="precision_progress"
+					type="number"
+					default="1"
+					label="Số chữ số thập phân để làm tròn điểm quá trình"
+			/>
+			<field
+					name="precision_exam"
+					type="number"
+					default="1"
+					label="Số chữ số thập phân để làm tròn điểm thi"
+			/>
+			<field
+					name="precision_module"
+					type="number"
+					default="1"
+					label="Số chữ số thập phân để làm tròn điểm học phần"
+			/>
+			<field	name="price_monitor"
+					type="number"
+					default="100"
+					label="Định mức kinh phí coi thi (nghìn đồng/ca)"
+			/>
+			<field	name="price_examiner"
+					type="number"
+					default="10"
+					label="Định mức kinh phí chấm thi (nghìn đồng/bài)"
+					description="Định mức tính cho cả 2 người, mỗi người một nửa"
+			/>
+			<field	name="kweekend_monitoring"
+					type="number"
+					default="1.5"
+					label="Hệ số coi thi cuối tuần"
+			/>
+		</fieldset>
+		<fieldset
+				name="threshold"
+				label="Ngưỡng"
+				description="Cấu hình ngưỡng điểm đạt"
+		>
+			<field	name="threshold_pam1"
+					type="number"
+					default="4.0"
+					label="Ngưỡng điểm đạt TP1"
+			/>
+			<field	name="threshold_pam2"
+					type="number"
+					default="4.0"
+					label="Ngưỡng điểm đạt TP2"
+			/>
+			<field	name="threshold_pam"
+					type="number"
+					default="4.0"
+					label="Ngưỡng điểm đạt quá trình"
+			/>
+			<field	name="threshold_final_exam_mark"
+					type="number"
+					default="4.0"
+					label="Ngưỡng điểm đạt thi KTHP"
+			/>
+		</fieldset>
+		<fieldset
+			name="ppaa"
+			label="Phúc khảo"
+			description="Cấu hình các tham số liên quan đến phúc khảo, đính chính, chấm kiểm tra"
+		>
+			<field
+					name="regrading_fee_mode"
+					type="regradingfeemode"
+					label="Cách tính phí phúc khảo"
+					required="true"
+			>
+				<option value=""></option>
+			</field>
+			<field
+					name="regrading_fee_rate"
+					type="number"
+					label="Mức phí (VNĐ)"
+					required="true"
+			/>
+		</fieldset>
+
+
+	</fields>
+	<fieldset
+		name="permissions"
+		label="JCONFIG_PERMISSIONS_LABEL"
+		description="JCONFIG_PERMISSIONS_DESC"
+	>
+		<field
+			name="rules"
+			type="rules"
+			label="JCONFIG_PERMISSIONS_LABEL"
+			validate="rules"
+			filter="rules"
+			component="com_eqa"
+			section="component"
+		/>
+	</fieldset>
+</config>

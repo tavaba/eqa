@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="uploadpam" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="ignore_blank_classes"
+                type="radio"
+                required="true"
+                default="1"
+                label="COM_EQA_IGNORE_BLANK_CLASSES"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="complete_pam_calculation"
+                type="radio"
+                required="true"
+                default="1"
+                label="COM_EQA_COMPLETE_PAM_CALCULATION"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="pam_date_today"
+                type="radio"
+                required="true"
+                default="1"
+                label="COM_EQA_PAM_DATE_TODAY"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="files"
+                type="file"
+                multiple="true"
+                required="true"
+                label="COM_EQA_PAM_FILE"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

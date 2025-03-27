@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+Subform để thể hiện số liệu thống kê cho Exam Season
+-->
+<form>
+    <field name="nleaner"   type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NLEANER_LABEL" />
+    <field name="ntake"     type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NTAKE_LABEL" />
+    <field name="nabsent"   type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NABSENT_LABEL" />
+    <field name="npunish "  type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NPUNISH_LABEL" />
+    <field name="npass"     type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NPASS_LABEL" />
+    <field name="npaper"    type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NPAPER_LABEL" />
+
+    <field name="nmachine"  type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NMACHINE_LABEL" />
+    <field name="npractice" type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NPRACTICE_LABEL" />
+    <field name="nproject"  type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NPROJECT_LABEL" />
+    <field name="ndialog"   type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NDIALOG_LABEL" />
+    <field name="hhybrid"   type="text"  size="10"  readonly="true" label="COM_EQA_FORM_EXAMSEASON_STATISTIC_NHYBRID_LABEL" />
+</form>
