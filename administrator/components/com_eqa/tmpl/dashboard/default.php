@@ -1,5 +1,7 @@
 <?php
 
+use Joomla\CMS\Language\Text;
+
 defined('_JEXEC') or die;
 
 // Add Bootstrap CSS and JS (if not already included in your Joomla template)
@@ -49,72 +51,72 @@ JHtml::_('bootstrap.framework');
                 <div class="tab-pane fade show active" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
                     <div class="d-grid gap-2 mt-3">
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=units'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_UNITS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_UNITS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=employees'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_EMPLOYEES'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_EMPLOYEES'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=buildings'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_BUILDINGS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_BUILDINGS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=rooms'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_ROOMS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_ROOMS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=specialities'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_SPECIALITIES'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_SPECIALITIES'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=programs'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_PROGRAMS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_PROGRAMS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=subjects'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_SUBJECTS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_SUBJECTS'); ?>
                         </a>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
                     <div class="d-grid gap-2 mt-3">
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=academicyears'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_ACADEMICYEARS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_ACADEMICYEARS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=courses'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_COURSES'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_COURSES'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=groups'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_GROUPS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_GROUPS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=learners'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_LEARNERS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_LEARNERS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=classes'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_CLASSES'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_CLASSES'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=classes&layout=uploadpam'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_IMPORT_PAM'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_IMPORT_PAM'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=learners&layout=adddebtors'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_DEBTORS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_DEBTORS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=stimulations'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_STIMULATION'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_STIMULATION'); ?>
                         </a>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
                     <div class="d-grid gap-2 mt-3">
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=examseasons'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_EXAMSEASONS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_EXAMSEASONS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=exams'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_EXAMS'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_EXAMS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=exam&layout=question'); ?>" class="btn btn-primary btn-lg">
                             <?php echo "Tiếp nhận đề thi"; ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=examsessions'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_EXAMSESSION'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_EXAMSESSION'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=examrooms'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo JText::_('COM_EQA_BUTTON_EXAMROOM'); ?>
+                            <?php echo Text::_('COM_EQA_BUTTON_EXAMROOM'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=examrooms&layout=import'); ?>" class="btn btn-primary btn-lg">
                             <?php echo "Nhập biên bản coi thi, coi thi-chấm thi"; ?>

@@ -42,8 +42,6 @@ abstract class EqaItemsHtmlView extends BaseHtmlView{
         $upperControllerNameItems = strtoupper($this->toolbarOption->taskPrefixItems);
         $this->toolbarOption->title = Text::_('COM_EQA_MANAGER_'.$upperControllerNameItems.'_TITLE');
 
-        //Layout option
-        $this->configureItemFieldsForLayoutDefault();
 
         //Layout data
         $this->layoutData->formActionParams = ['view'=>$this->getName()];

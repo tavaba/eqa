@@ -974,8 +974,4 @@ abstract class DatabaseHelper
 		$db->setQuery('UPDATE #__eqa_examrooms SET exam_ids=' . $examIds . ' WHERE id='.$examroomId);
 		return $db->execute();
 	}
-	static public function updateExamStatus(int $examId, int $status):bool
-	{
-
-	}
 }

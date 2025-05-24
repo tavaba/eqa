@@ -27,7 +27,7 @@ class ExamseasonController extends EqaFormController
 					false
 				)
 			);
-			return false;
+			return;
 		}
 
 		//Xác định pha của nhiệm vụ
