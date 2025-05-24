@@ -501,7 +501,7 @@ class PaperexamModel extends EqaAdminModel{
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
 				$finalMark = ExamHelper::calculateFinalMark($mark, $anomaly, $attempt, $addValue);
 				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt);
-				$conclusion = ExamHelper::conclude($moduleMark, $mark, $anomaly, $attempt);
+				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				$query = $db->getQuery(true)
 					->update('#__eqa_exam_learner')

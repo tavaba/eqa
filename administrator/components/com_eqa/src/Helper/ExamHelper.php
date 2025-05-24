@@ -525,7 +525,12 @@ abstract class ExamHelper{
 		if($anomaly == self::EXAM_ANOMALY_DELAY || $anomaly == self::EXAM_ANOMALY_REDO)
 			return self::CONCLUSION_RESERVED;
 
-		if ($finalExamMark < 4.0 || $moduleMark < 4.0)
+		//TODO: Tính toán ngưỡng khác nhau cho Đại học và Cao học
+		//      Đưa ngưỡng điểm tổng vào cấu hình
+
+		$minFinalExamMark = ConfigHelper::getThresholdForFinalExamMark();
+
+		if ($finalExamMark < $minFinalExamMark || $moduleMark < 4.0)
 		{
 			$maxAttempts = ConfigHelper::getMaxExamAttempts();
 			if($attempt>=$maxAttempts)

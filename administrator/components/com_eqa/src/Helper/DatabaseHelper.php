@@ -215,8 +215,8 @@ abstract class DatabaseHelper
     {
         $db = self::getDatabaseDriver();
 	    $columns = $db->quoteName(
-		    array('a.learner_id','a.code','b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed', 'a.debtor','d.name',  'e.name',     'e.start',  'a.mark_final', 'a.module_mark', 'a.module_grade', 'a.conclusion'),
-		    array('id',         'code',   'learner_code', 'lastname',    'firstname',   'attempt',  'pam1',   'pam2', 'pam',   'allowed',   'debtor',  'examroom','examsession','examstart','mark_final',   'module_mark',   'module_grade',   'conclusion')
+		    array('a.learner_id','a.code','b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed', 'a.debtor', 'd.id',        'd.name',  'e.name',     'e.start',  'a.mark_final', 'a.module_mark', 'a.module_grade', 'a.conclusion'),
+		    array('id',         'code',   'learner_code', 'lastname',    'firstname',   'attempt',  'pam1',   'pam2', 'pam',   'allowed',   'debtor',   'examroom_id', 'examroom','examsession','examstart','mark_final',   'module_mark',   'module_grade',   'conclusion')
 	    );
 	    $query = $db->getQuery(true)
 		    ->select($columns)

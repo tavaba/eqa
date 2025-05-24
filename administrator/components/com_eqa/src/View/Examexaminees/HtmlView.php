@@ -130,7 +130,8 @@ class HtmlView extends EqaItemsHtmlView {
 	    ToolbarHelper::appenddButton('core.create','calendar','Chia phòng ngẫu nhiên','exam.distribute',false);
 		$urlDistribute2 = JRoute::_('index.php?option=com_eqa&view=exam&layout=distribute2&exam_id='.$this->exam->id, false);
 	    ToolbarHelper::appendLink('core.create', $urlDistribute2,'Chia phòng theo lớp', 'calendar');
-	    ToolbarHelper::appenddButton(null,'download','COM_EQA_EXPORT','exam.export');
-	    ToolbarHelper::appenddButton(null,'download','COM_EQA_EXPORT_ITEST','exam.exportitest');
+	    ToolbarHelper::appenddButton(null,'download','Xuất môn thi','exam.export');
+	    ToolbarHelper::appenddButton(null,'download','Xuất phòng thi','exam.exportRooms');
+	    ToolbarHelper::appenddButton(null,'download','Xuất ca iTest','exam.exportitest');
     }
 }

@@ -56,6 +56,17 @@ abstract class IOHelper
 	}
 	static public function sendHttpXlsx(Spreadsheet $spreadsheet, string $fileName, bool $includeCharts=false)
 	{
+		// Clean output buffer to prevent corruption
+		if (ob_get_length()) {
+			ob_clean();
+		}
+		flush();
+
+		//Sanitze the file name
+		$fileName = preg_replace('/[\\\\\/:*?"<>|]/u', '_', $fileName);
+		$fileName = trim($fileName);
+		$fileName = mb_substr($fileName, 0, 255); // Most OS allow 255-char filenames
+
 		// Force download of the Excel file
 		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 		header('Content-Disposition: attachment; filename="' . basename($fileName) . '"; filename*=UTF-8\'\'' . rawurlencode($fileName));
