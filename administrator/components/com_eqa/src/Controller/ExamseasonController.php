@@ -86,9 +86,6 @@ class ExamseasonController extends EqaFormController
 				false
 			)
 		);
-
-		//TODO: Phải có một cách nào đó để limit năm học và học kỳ cho kỳ thi mới tạo ra
-		//     đồng thời cho tùy chọn Chỉ tạo môn thi mà không thêm thí sinh
 		$this->setMessage("Chức năng này chưa hoàn thiện. Cần phải giới hạn năm học, học kỳ để không bị loạn", 'error');
 		return;
 

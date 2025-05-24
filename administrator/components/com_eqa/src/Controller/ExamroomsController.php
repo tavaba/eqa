@@ -64,7 +64,7 @@ class ExamroomsController extends EqaAdminController {
 	    // Force download of the Excel file
 	    $fileName = 'Danh sách thí sinh phòng thi.xlsx';
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-		exit();
+	    exit();
     }
 	public function import(): void
 	{

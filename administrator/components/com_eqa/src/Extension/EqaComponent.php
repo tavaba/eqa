@@ -13,30 +13,27 @@ defined('JPATH_PLATFORM') or die;
 
 use Joomla\CMS\Categories\CategoryServiceInterface;
 use Joomla\CMS\Categories\CategoryServiceTrait;
-use Joomla\CMS\Dispatcher\ComponentDispatcherFactoryInterface;
+use Joomla\CMS\Component\Router\RouterServiceTrait;
 use Joomla\CMS\Extension\BootableExtensionInterface;
 use Joomla\CMS\Extension\MVCComponent;
 use Joomla\CMS\HTML\HTMLRegistryAwareTrait;
 use Kma\Component\Eqa\Administrator\Service\HTML\AdministratorService;
 use Psr\Container\ContainerInterface;
+use Joomla\CMS\Component\Router\RouterServiceInterface;
 
 /**
  * Component class for com_eqa
  *
  * @since  __BUMP_VERSION__
  */
-class EqaComponent extends MVCComponent implements BootableExtensionInterface, CategoryServiceInterface
+class EqaComponent extends MVCComponent implements BootableExtensionInterface, CategoryServiceInterface, RouterServiceInterface
 {
 	use CategoryServiceTrait;
 	use HTMLRegistryAwareTrait;
-	protected $routerFactory;
+	use RouterServiceTrait;
 
 	public function boot(ContainerInterface $container)
 	{
 		$this->getRegistry()->register('eqaadministrator', new AdministratorService);
-	}
-
-	public function setRouterFactory($routerFactory) {
-		$this->routerFactory = $routerFactory;
 	}
 }

@@ -381,102 +381,6 @@ class ExamController extends  EqaFormController {
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();
 	}
-	public function exportRooms()
-	{
-		$app = $this->app;
-		$this->checkToken();
-		if(!$app->getIdentity()->authorise('core.manage',$this->option))
-		{
-			echo Text::_('COM_EQA_MSG_UNAUTHORISED');
-			exit();
-		}
-
-		//Prepare data
-		$examId = $this->input->getInt('exam_id');
-		if(empty($examId))
-		{
-			$this->setMessage(Text::_('COM_EQA_MSG_ERORR_OCCURRED'));
-			return;
-		}
-		$exam = DatabaseHelper::getExamInfo($examId);
-		$examinees = DatabaseHelper::getExamExaminees($examId, false);
-
-		//Chia thí sinh theo các phòng thi và sắp xếp từng phòng theo SBD
-		$examrooms = [];
-		foreach ($examinees as $examinee)
-		{
-			$examroomId = $examinee->examroom_id;
-			if(empty($examroomId))
-				continue;
-			if(!isset($examrooms[$examroomId]))
-				$examrooms[$examroomId] = [];
-			$examrooms[$examroomId][] = $examinee;
-		}
-		if(empty($examrooms))
-		{
-			$this->setMessage("Không có thông tin phòng thi. Hãy đảm bảo là đã chia phòng", 'error');
-			return;
-		}
-		foreach ($examrooms as &$room)
-		{
-			usort($room,function(\stdClass $a,\stdClass $b){
-				if($a->code > $b->code)
-					return 1;
-				if($a->code < $b->code)
-					return -1;
-				return 0;
-			});
-		}
-
-		// Prepare the spreadsheet
-		$model = $this->getModel('examroom');
-		$spreadsheet = new Spreadsheet();
-		$spreadsheet->removeSheetByIndex(0);
-		foreach ($examrooms as $examroomId => $examinees) {
-			$examroom = DatabaseHelper::getExamroomInfo($examroomId);
-
-			//Kiểm tra xem đã phân công CBCT, CBChT chưa
-			if(!$model->canExport($examroomId))
-			{
-				$msg = "Phòng thi <b>$examroom->name</b>: chưa phân công CBCT, CBCT-ChT";
-				$this->setMessage($msg, 'error');
-				$url = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id='.$examroom->examsessionId;
-				$this->setRedirect(JRoute::_($url, false));
-				return;
-			}
-
-			$examinees = $model->getExaminees($examroomId);
-
-			// Create a new worksheet for each exam room and Set the worksheet title
-			$sheet = $spreadsheet->createSheet($examroomId);
-			$sheetTitle = $examroom->name;
-			if(strlen($sheetTitle)>20)
-				$sheetTitle = substr($sheetTitle,0,20);
-			$sheetTitle .= ' (' . $examroomId . ')';
-			$sheet->setTitle($sheetTitle);
-
-			//Write
-			IOHelper::writeExamroomExaminees($sheet, $examroom, $examinees);
-		}
-
-		// Force download of the Excel file
-		$fileName = 'Danh sách thí sinh phòng thi.xlsx';
-		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-
-		// Prepare the spreadsheet
-		$spreadsheet = new Spreadsheet();
-		$sheet = $spreadsheet->getSheet(0);
-		$sheetName = preg_replace('/[\\/?*:\[\]]/', '', $exam->name);
-		$sheetName = mb_substr($sheetName, 0, 20);
-		$sheetName .= ' (' . $exam->id . ')';
-		$sheet->setTitle($sheetName);
-		IOHelper::writeExamExaminees($sheet, $exam, $examinees);
-
-		//Send file to user
-		$fileName = "Danh sách thí sinh. " . $exam->name . '.xlsx';
-		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-		exit();
-	}
 	public function exportitest()
 	{
 		$app = $this->app;
@@ -571,9 +475,19 @@ class ExamController extends  EqaFormController {
 		}
 
 
+		// Export the spreadsheet to a temporary file
+		$tempFile = tempnam(sys_get_temp_dir(), $exam->name) . '.xlsx';
+		$writer = new Xlsx($spreadsheet);
+		$writer->save($tempFile);
+
 		// Force download of the Excel file
-		$fileName = 'Ca thi iTest. ' . $exam->name.'.xlsx';
-		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		header('Content-Disposition: attachment; filename="Ca iTest - ' . $exam->name . '.xlsx"');
+		header('Cache-Control: max-age=0');
+		readfile($tempFile);
+
+		// Clean up temporary file
+		unlink($tempFile);
 		exit();
 	}
 

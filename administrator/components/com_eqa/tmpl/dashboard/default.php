@@ -142,23 +142,11 @@ JHtml::_('bootstrap.framework');
                 </div>
                 <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
                     <div class="d-grid gap-2 mt-3">
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Nhập danh sách phúc khảo"; ?>
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.paperlist'); ?>" class="btn btn-primary btn-lg">
+                            <?php echo "Tải danh sách phúc khảo bài thi viết"; ?>
                         </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Nhập danh sách khiếu nại điểm thi"; ?>
-                        </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Quản lý phúc khảo"; ?>
-                        </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Quản lý khiếu nại điểm"; ?>
-                        </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Nhập kết quả chấm phúc khảo"; ?>
-                        </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Nhập kết quả khiếu nại điểm"; ?>
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.hybridlist'); ?>" class="btn btn-primary btn-lg">
+                            <?php echo "Tải danh sách phúc khảo bài thi hỗn hợp"; ?>
                         </a>
                     </div>
                 </div>

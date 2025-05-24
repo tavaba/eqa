@@ -83,15 +83,6 @@ class ExamsessionModel extends EqaAdminModel {
             if(!$db->execute())
                 throw new \Exception('COM_EQA_MSG_UPDATE_DATABASE_FAILED');
 
-            //Update examsession count in the #__eqa_examseason
-            $query = $db->getQuery(true)
-                ->update('#__eqa_examseasons')
-                ->set('nexamsession = nexamsession+'.sizeof($examsessions))
-                ->where('id='.$examseasonId);
-            $db->setQuery($query);
-            if(!$db->execute())
-                throw new \Exception('COM_EQA_MSG_UPDATE_DATABASE_FAILED');
-
             //Commit and return
             $db->transactionCommit();
             $msg = Text::sprintf('COM_EQA_MSG_N_ITEMS_INSERTED', sizeof($examsessions));

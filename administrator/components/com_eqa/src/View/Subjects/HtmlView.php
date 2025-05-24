@@ -24,7 +24,8 @@ class HtmlView extends EqaItemsHtmlView
         $field->cssClass = 'text-center';
         $option->customFieldset1[] = $field;
         $option->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'COM_EQA_GENERAL_SUBJECT_NAME');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
+	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
+	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('credits','Số TC',true,false,'text-center');
         $option->customFieldset1[] = new EqaListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);
         $field = new EqaListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
         $field->cssClass = 'text-center';
