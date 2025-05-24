@@ -78,7 +78,8 @@ class HtmlView extends EqaItemsHtmlView
         ToolbarHelper::appenddButton(null,'arrow-up-2','COM_EQA_EXAMSEASON','examseason.cancel',false);
         ToolbarHelper::appendDelete('exams.delete');
         ToolbarHelper::appenddButton('core.create','plus-2','COM_EQA_BUTTON_ADD_MANUALLY','exam.add',false,'btn btn-success');
-        ToolbarHelper::appenddButton('core.create','plus-circle','COM_EQA_BUTTON_IMPORT_EXAMS_FROM_CLASSES','examseason.addExams',false, 'btn btn-success');
+	    ToolbarHelper::appenddButton('core.create','plus-circle','COM_EQA_BUTTON_IMPORT_EXAMS_FROM_CLASSES','examseason.addExams',false, 'btn btn-success');
+	    ToolbarHelper::appenddButton('core.create','plus-circle','Thêm môn thi lại','examseason.addRetakeExams',false, 'btn btn-danger');
 		ToolbarHelper::appenddButton(null,'download','Danh sách thi','exams.export',true);
 		ToolbarHelper::appenddButton('core.edit','loop','Trạng thái', 'exams.recheckStatus',true);
 	    ToolbarHelper::appenddButton('core.manage', 'download','Bảng điểm SV', 'exams.exportResultForLearners', true);

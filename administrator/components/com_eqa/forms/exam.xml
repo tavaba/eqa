@@ -93,6 +93,7 @@
                 singleheader="true"
                 label="COM_EQA_QUESTIONDEADLINE"
                 description="COM_EQA_QUESTIONDEADLINE_DESC"
+                translateformat="true"
         />
         <field
                 name="questiondate"
@@ -101,6 +102,7 @@
                 singleheader="true"
                 label="COM_EQA_QUESTIONDATE"
                 description="COM_EQA_QUESTIONDATE_DESC"
+                translateformat="true"
         />
         <field  name="questionsender_id"
                 type="employee"

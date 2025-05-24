@@ -30,10 +30,6 @@ abstract class GeneralHelper{
 		$leanerEmailPattern = "/^(AT|CT|DT)[0-9]{6}@actvn\.edu\.vn$/";
         $user = Factory::getApplication()->getIdentity();
 
-		//Nếu không có user nào logged in
-		if($user->guest)
-			return null;
-
 		//Nếu là HVSV thì ưu tiên lấy username theo email
 		if(isset($user->email)){
 			$matched = preg_match($leanerEmailPattern, $user->email);

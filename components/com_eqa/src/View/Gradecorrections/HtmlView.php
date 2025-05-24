@@ -36,8 +36,6 @@ class HtmlView extends EqaItemsHtmlView{
 	{
 		//Xác định learner và đưa thông tin (id) vào model
 		$username      = GeneralHelper::getCurrentUsername();
-		if(!$username)
-			return;
 		$this->learner = DatabaseHelper::getLearnerInfo($username);
 		if($this->learner){
 			$model = $this->getModel();

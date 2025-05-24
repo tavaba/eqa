@@ -60,6 +60,7 @@
                 description="COM_EQA_FORM_EXAMSEASON_DATEBEGIN_DESC"
                 required="true"
                 singleheader="true"
+                translateformat="true"
         />
         <field
                 name="finish"
@@ -69,6 +70,7 @@
                 description="COM_EQA_FORM_EXAMSEASON_DATEEND_DESC"
                 required="true"
                 singleheader="true"
+                translateformat="true"
         />
         <field
                 name="description"
@@ -87,6 +89,7 @@
                 format="%Y-%m-%d %H:%M:%S"
                 required="false"
                 singleheader="false"
+                translateformat="true"
         />
 
         <field

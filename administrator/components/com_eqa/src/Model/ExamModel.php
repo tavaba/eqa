@@ -137,6 +137,94 @@ class ExamModel extends EqaAdminModel{
             return false;
         }
     }
+	public function addFailedExaminees(int $examId): bool
+	{
+		if (DatabaseHelper::isCompletedExam($examId))
+			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể thêm thí sinh');
+
+		$app = Factory::getApplication();
+		$db = $this->getDatabase();
+
+		//Các bước tiếp theo cần thực hiện
+		//1. Xác định ID của môn học
+		//2. Lấy danh sách tất cả các lớp học phần của học phần đó
+		//3. Lấy danh sách tất cả các HVSV trong các lớp học phần đã xác định
+		//   mà đã thi tối thiểu một lần ('not_taken'>0) và vẫn còn quyền dự thi ('expired'=0)
+		//4. Thêm các HVSV đã chọn vào môn thi
+
+		$db->transactionStart();
+		try{
+			//1. Xác định ID của môn học
+			$query = $db->getQuery(true)
+				->select('subject_id')
+				->from('#__eqa_exams')
+				->where('id='.$examId);
+			$db->setQuery($query);
+			$subjectId = $db->loadResult();
+			if (empty($subjectId))
+				throw new Exception("Không tìm thấy môn học");
+
+			//2. Lấy danh sách tất cả các lớp học phần của học phần đó
+			$query = $db->getQuery(true)
+				->select('id')
+				->from('#__eqa_classes')
+				->where('subject_id='.$subjectId);
+			$db->setQuery($query);
+			$classIds = $db->loadColumn();
+			if (empty($classIds))
+				throw new Exception("Không tìm thấy lớp học phần nào");
+
+			//3. Lấy danh sách tất cả các HVSV trong các lớp học phần đã xác định
+			//   mà đã thi tối thiểu một lần ('ntaken'>0) và vẫn còn quyền dự thi ('expired'=0)
+			$columns = $db->quoteName(
+				array('a.class_id', 'a.learner_id', 'a.pam1', 'a.pam2', 'a.pam', 'a.ntaken', 'b.debtor'),
+				array('classId',    'learnerId',     'pam1',  'pam2',   'pam',   'ntaken',   'debtor')
+			);
+			$query = $db->getQuery(true)
+				->select($columns)
+				->from('#__eqa_class_learner as a')
+				->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+				->where([
+					'a.class_id IN (' . implode(',', $classIds) . ')',
+					'a.ntaken > 0',
+					'a.expired=0'
+				]);
+			$db->setQuery($query);
+			$examinees = $db->loadObjectList();
+			if (empty($examinees))
+				throw new Exception("Không tìm thấy HVSV nào");
+
+			//4. Thêm các HVSV đã chọn vào môn thi
+			$insertTuples = [];
+			foreach ($examinees as $examinee){
+				$insertTuple = [
+					$examId,                    //exam_id
+					$examinee->classId,         //class_id
+					$examinee->learnerId,       //learner_id
+					$examinee->debtor,          //debtor
+					$examinee->ntaken+1         //attempt
+				];
+				$insertTuples[] = implode(',', $insertTuple);
+			}
+			$query = $db->getQuery(true)
+				->insert('#__eqa_exam_learner')
+				->columns('exam_id, class_id, learner_id, debtor, attempt')
+				->values($insertTuples);
+			$db->setQuery($query);
+			if(!$db->execute()){
+				throw new Exception('Lỗi thêm thí sinh vào môn thi');
+			}
+		}
+		catch(Exception $e){
+			$db->transactionRollback();
+			$app->enqueueMessage($e->getMessage(), 'error');
+			return false;
+		}
+		finally{
+			$db->transactionCommit();
+			return true;
+		}
+	}
 	public function delayExaminees(int $examId, array $examineeIds):bool
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -1508,7 +1596,7 @@ class ExamModel extends EqaAdminModel{
 	 * đánh giá đạt/không đạt; xác định quyền thi tiếp hay hết quyền dự thi.
 	 *
 	 * @param   int    $examId
-	 * @param   array  $examinees
+	 * @param   array  $examinees Mảng các $obj [code, learnerCode, mark, description]
 	 *
 	 * @return bool
 	 *
@@ -1517,13 +1605,54 @@ class ExamModel extends EqaAdminModel{
 	 */
 	public function importitest(int $examId, array $examinees): bool
 	{
+		/* Logic of thí function:
+		 * 1. Đọc từ CSDL thông tin thí sinh của môn thi $examId
+		 * 2. Kiểm tra, đảm bảo rằng tất cả thí sinh có trong $examinees đều có trong CSDL môn thi
+		 *    (trùng khớp cặp thuộc tính 'code' và 'learnerCode'). Nếu không trùng khớp thì báo lỗi
+		 *   và thoát.
+		 * 3. Với mỗi thí sinh trong $examinees, tiến hành cập nhật điểm theo quy tắc sau:
+		 */
+
+
 		//Init
 		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
 
+
 		$db->transactionStart();
 		try
 		{
+			//1. Đọc từ CSDL thông tin thí sinh của môn thi $examId
+			$columns = $db->quoteName(
+				array('a.code', 'b.code'),
+				array('code',   'learner_code')
+			);
+			$query = $db->getQuery(true)
+				->select($columns)
+				->from('#__eqa_exam_learner AS a')
+				->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+				->where('a.exam_id=' . $examId);
+			$db->setQuery($query);
+			$items = $db->loadAssocList('learner_code','code');
+
+			//2. Kiểm tra, đảm bảo rằng tất cả thí sinh có trong $examinees đều có trong CSDL môn thi
+			//   (trùng khớp cặp thuộc tính 'code' và 'learnerCode'). Nếu không trùng khớp thì báo lỗi
+			//   và thoát.
+			foreach ($examinees as $examinee)
+			{
+				if (!isset($items[$examinee->learnerCode]))
+				{
+					$msg = Text::sprintf('Không tìm thấy thông tin thí sinh <b>%s</b> trong CSDL môn thi', $examinee->learnerCode);
+					throw new Exception($msg);
+				}
+				if ($items[$examinee->learnerCode] != $examinee->code)
+				{
+					$msg = Text::sprintf('Thông tin thí sinh <b>%s</b> không khớp với CSDL môn thi', $examinee->learnerCode);
+					throw new Exception($msg);
+				}
+			}
+
+			//3. Với mỗi thí sinh trong $examinees, tiến hành cập nhật điểm
 			foreach ($examinees as $examinee){
 				$learnerCode = $examinee->learnerCode;
 				$mark = $examinee->mark;

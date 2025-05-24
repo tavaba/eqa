@@ -22,8 +22,7 @@ class RegradingsController extends EqaAdminController
 		$this->checkToken();
 
 		//Redirect in any case
-		$url = 'index.php?option=com_eqa&view=regradings' . $this->getRedirectToListAppend();
-		$url = JRoute::_($url, false);
+		$url = JRoute::_('index.php?option=com_eqa&view=regradings' . $this->getRedirectToListAppend(), false);
 		$this->setRedirect($url);
 
 		if(!$this->app->getIdentity()->authorise('eqa.supervise','com_eqa'))

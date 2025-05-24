@@ -20,7 +20,8 @@ class EqaItemAction
 	public string $displayConditionItemField;           //Thuộc tính của $item kiểu boolean cho biết hiển thị action hay không
 	public function getHtml($item):string
 	{
-		if(isset($this->displayConditionItemField) && !$item->$this->displayConditionItemField)
+		$conditionKey = $this->displayConditionItemField;
+		if(empty($item->$conditionKey))
 			return '';
 
 		$itemId = $item->id;

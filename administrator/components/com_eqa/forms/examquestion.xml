@@ -51,6 +51,7 @@
                 showtime="false"
                 required="true"
                 label="Ngày giao đề"
+                translateformat="true"
         >
             <option value="">- Ngày giao đề -</option>
         </field>

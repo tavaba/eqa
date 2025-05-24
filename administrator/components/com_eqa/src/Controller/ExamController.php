@@ -128,6 +128,31 @@ class ExamController extends  EqaFormController {
         return true;
 
     }
+	public function addFailedExaminees()
+	{
+		//Get the id of the exam to add examinees
+		$examId = $this->app->input->getInt('exam_id');
+
+		//Set redirect in any case
+		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+
+		// Access check
+		if (!$this->app->getIdentity()->authorise('core.create',$this->option)) {
+			// Set the internal error and also the redirect error.
+			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
+			return;
+		}
+
+		//Check $examId
+		if(empty($examId))
+		{
+			$this->setMessage(Text::_('Không xác định được môn thi'),'error');
+			return;
+		}
+
+		$model = $this->getModel();
+		$model->addFailedExaminees($examId);
+	}
 
 	//Hoãn thi
 	public function delay()
@@ -584,17 +609,25 @@ class ExamController extends  EqaFormController {
 		//Đọc dữ liệu từ file excel.
 		//Nạp dữ liệu vào mảng nên index các cột, dòng được tính 0-based
 		$data = $sheet->toArray();
+		$highestDataRow = count($data)-1;
 		$examinees = [];
-		$colCode = 1;
-		$colLearnerCode = 2;
+		$colSequence = 0;      //STT
+		$colCode = 1;           //Số báo danh
+		$colLearnerCode = 2;    //Mã HVSV
 		$colMark=8;
 		$colwDescription=10;
-		for($row=1; true; $row++)
+		for($row=1; $row<=$highestDataRow; $row++)
 		{
-			if(empty($data[$row][$colCode]))
+			if(empty($data[$row][$colSequence]))
 				break;
 			$dataRow = $data[$row];
 			$examinee = new \stdClass();
+			if(empty($data[$row][$colCode]) || empty($data[$row][$colLearnerCode]))
+			{
+				$msg = Text::sprintf("Dữ liệu không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $row+1);
+				$this->setMessage($msg, 'error');
+				return;
+			}
 			$examinee->code = (int)$dataRow[$colCode];
 			$examinee->learnerCode = $dataRow[$colLearnerCode];
 			$mark = $dataRow[$colMark];
@@ -610,27 +643,6 @@ class ExamController extends  EqaFormController {
 				$examinee->mark = (float)$mark;
 			$examinee->description = $dataRow[$colwDescription];
 			$examinees[] = $examinee;
-		}
-
-		/**
-		 * KIỂM TRA TÍNH CHÍNH XÁC CỦA DỮ LIỆU
-		 * Đề phòng trường hợp cán bộ chọn nhầm môn thi khiến việc nhập điểm làm sai lệch số liệu,
-		 * ở đây sẽ kiểm tra sự phù hợp giữa Số báo danh với Mã HVSV của 10 thí sinh đầu tiên
-		 */
-		$len = min([10, sizeof($examinees)]);
-		$inputCodes = [];
-		for ($i=0; $i<$len; $i++)
-		{
-			$key = $examinees[$i]->learnerCode;
-			$value = $examinees[$i]->code;
-			$inputCodes[$key] = $value;
-		}
-		$ok = DatabaseHelper::checkExamCorrectness($examId, $inputCodes);
-		if(!$ok)
-		{
-			$msg = Text::sprintf("Số báo danh không trùng khớp với mã HVSV. Hãy kiểm tra lại, đảm bảo chọn đúng môn thi");
-			$this->setMessage($msg, 'error');
-			return;
 		}
 
 		//Nhập dữ liệu

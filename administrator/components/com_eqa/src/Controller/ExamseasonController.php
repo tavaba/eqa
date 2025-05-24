@@ -13,61 +13,98 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ExamseasonController extends EqaFormController
 {
-    public function addExams()
-    {
-        $examseasonId = $this->app->input->getInt('examseason_id');
+	public function addExams()
+	{
+		$examseasonId = $this->app->input->getInt('examseason_id');
 
-        // Access check
-        if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
-            // Set the internal error and also the redirect error.
-            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
-            $this->setRedirect(
-                Route::_(
-                    'index.php?option=com_eqa&view=exams&filter[examseason_id]=' . $examseasonId,
-                    false
-                )
-            );
-            return false;
-        }
+		// Access check
+		if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
+			// Set the internal error and also the redirect error.
+			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
+			$this->setRedirect(
+				Route::_(
+					'index.php?option=com_eqa&view=exams&filter[examseason_id]=' . $examseasonId,
+					false
+				)
+			);
+			return false;
+		}
 
-        //Xác định pha của nhiệm vụ
-        $phase = $this->app->input->getAlnum('phase', '');
-        if ($phase !== 'getdata') {
-            // Redirect to the 'add learners' layout (with a form)
-            $this->setRedirect(
-                Route::_(
-                    'index.php?option=com_eqa&view=examseason&layout=addexams&examseason_id=' . $examseasonId,
-                    false
-                )
-            );
-        } else    //$phase == 'getdata'
-        {
-            //Pha này thì cần check token
-            $this->checkToken();
+		//Xác định pha của nhiệm vụ
+		$phase = $this->app->input->getAlnum('phase', '');
+		if ($phase !== 'getdata') {
+			// Redirect to the 'add learners' layout (with a form)
+			$this->setRedirect(
+				Route::_(
+					'index.php?option=com_eqa&view=examseason&layout=addexams&examseason_id=' . $examseasonId,
+					false
+				)
+			);
+		} else    //$phase == 'getdata'
+		{
+			//Pha này thì cần check token
+			$this->checkToken();
 
-            // Get exams (subjects) to add from the request.
-            $cid = (array)$this->input->get('cid', [], 'int');
+			// Get exams (subjects) to add from the request.
+			$cid = (array)$this->input->get('cid', [], 'int');
 
-            // Remove zero values resulting from input filter
-            $cid = array_filter($cid);
+			// Remove zero values resulting from input filter
+			$cid = array_filter($cid);
 
-            if (empty($cid)) {
-                $this->app->getLogger()->warning(Text::_($this->text_prefix . '_NO_ITEM_SELECTED'), ['category' => 'jerror']);
-            } else {
-                // Get the model and add exams
-                $model = $this->getModel();
-                $model->addExams($examseasonId, $cid);
-            }
+			if (empty($cid)) {
+				$this->app->getLogger()->warning(Text::_($this->text_prefix . '_NO_ITEM_SELECTED'), ['category' => 'jerror']);
+			} else {
+				// Get the model and add exams
+				$model = $this->getModel();
+				$model->addExams($examseasonId, $cid);
+			}
 
-            //Add xong thì redirect về trang xem danh sách môn thi
-            $this->setRedirect(
-                Route::_(
-                    'index.php?option=com_eqa&view=exams&filter[examseason_id]=' . $examseasonId,
-                    false
-                )
-            );
-        }
-    }
+			//Add xong thì redirect về trang xem danh sách môn thi
+			$this->setRedirect(
+				Route::_(
+					'index.php?option=com_eqa&view=exams&filter[examseason_id]=' . $examseasonId,
+					false
+				)
+			);
+		}
+	}
+	public function addRetakeExams()
+	{
+		//Xác định kỳ thi
+		$examseasonId = $this->app->input->getInt('examseason_id');
+		if(!$examseasonId)
+		{
+			$this->setMessage('Không xác định được kỳ thi.', 'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
+			return;
+		}
+
+		//Set redirect in any case
+		$this->setRedirect(
+			Route::_(
+				'index.php?option=com_eqa&view=exams&filter[examseason_id]=' . $examseasonId,
+				false
+			)
+		);
+
+		//TODO: Phải có một cách nào đó để limit năm học và học kỳ cho kỳ thi mới tạo ra
+		//     đồng thời cho tùy chọn Chỉ tạo môn thi mà không thêm thí sinh
+		$this->setMessage("Chức năng này chưa hoàn thiện. Cần phải giới hạn năm học, học kỳ để không bị loạn", 'error');
+		return;
+
+
+		// Access check
+		if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
+			// Set the internal error and also the redirect error.
+			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
+			return;
+		}
+
+		//Thêm môn thi lại vào kỳ thi
+		$model = $this->getModel();
+		$model->addRetakeExams($examseasonId);
+
+	}
 	protected function setPpaaReqStatus(bool $status){
 		//Check token
 		$this->checkToken();

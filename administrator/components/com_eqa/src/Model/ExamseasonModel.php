@@ -122,6 +122,95 @@ class ExamseasonModel extends EqaAdminModel{
         }
     }
 
+	public function addRetakeExams($examseasonId)
+	{
+		$app = Factory::getApplication();
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//Các bước thực hiện
+		//1. Lấy tất cả các HVSV ở tất cả các lớp học phần mà đã dự thi (ntaken>0)
+		//   nhưng chưa đạt và còn quyền dự thi (expired=0)
+		//2. Nhóm kết quả ở Bước 1 theo môn học
+		//3. Với mỗi môn học tạo một môn thi và thêm HVSV tương ứng vào danh sách thi
+
+		//Bước 1. Lấy tất cả các HVSV ở tất cả các lớp học phần mà đã dự thi (ntaken>0)
+		//		  nhưng chưa đạt và còn quyền dự thi (expired=0)
+		$columns = $db->quoteName(
+			array('a.learner_id', 'a.class_id', 'a.ntaken', 'a.expired', 'b.subject_id', 'c.debtor'),
+			array('learner_id',   'class_id',   'ntaken',   'expired',   'subject_id',   'debtor')
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_classes AS b', 'b.id=a.class_id')
+			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
+			->where([
+				'a.ntaken > 0',
+				'a.expired = 0'
+			]);
+		$db->setQuery($query);
+		$learners = $db->loadObjectList();
+
+		//Bước 2. Nhóm kết quả ở Bước 1 theo môn học
+		$subjectLearners = []; //Mảng chứa HVSV từng môn học
+		foreach ($learners as $learner)
+		{ //Với từng HVSV trong danh sách
+			$subjectId = (int) $learner->subject_id; //Lấy mã môn học
+			if (!isset($subjectLearners[$subjectId]))
+				$subjectLearners[$subjectId] = [];
+			$subjectLearners[$subjectId][] = $learner;
+		}
+
+		//Bước 3. Với mỗi môn học tạo một môn thi và thêm HVSV tương ứng vào danh sách thi
+		$db->transactionStart(); //Bắt đầu giao dịch
+		try{
+			foreach ($subjectLearners as $subjectId=>$learners)
+			{
+				//3.1. Create an exam and get the exam id
+				$db->setQuery('SELECT * FROM #__eqa_subjects WHERE id = '.$subjectId);
+				$subject = $db->loadObject();
+				$exam = [
+					'subject_id' => $subjectId,
+					'examseason_id' => $examseasonId,
+					'name' => $subject->name,
+					'testtype' => $subject->finaltesttype,
+					'duration' => $subject->finaltestduration,
+					'kmonitor' => $subject->kmonitor,
+					'kassess' => $subject->kassess,
+					'usetestbank' => empty($subject->testbankyear)?0:1,
+					'status' => ExamHelper::EXAM_STATUS_PAM_BUT_QUESTION
+				];
+				$table = $this->getTable('exam');
+				$table->save($exam);
+				$examId = $db->insertid();
+
+				//3.2. Thêm HVSV vào danh sách thi
+				$columns = $db->quoteName(['exam_id','class_id', 'learner_id', 'debtor', 'attempt']);
+				$values = array();
+				foreach ($learners as $learner){
+					$classId = (int)$learner->class_id;
+					$learnerId = (int)$learner->learner_id;
+					$debtor = (int)$learner->debtor;
+					$attempt = (int)$learner->ntaken+1;
+					$values[] = implode(',',[$examId,$classId,$learnerId, $debtor,$attempt]);
+				}
+				$query = $db->getQuery(true)
+					->insert('#__eqa_exam_learner')
+					->columns($columns)
+					->values($values);
+				$db->setQuery($query);
+				$db->execute();
+			}
+		}
+		catch(Exception $e){
+			$db->transactionRollback();
+			$app->enqueueMessage($e->getMessage(),'error');
+		}
+		finally{
+			$db->transactionCommit();
+			$app->enqueueMessage('Thêm thành công', 'success');
+		}
+	}
 	public function enablePpaaReq(int $examseasonId):void
 	{
 		$app = Factory::getApplication();

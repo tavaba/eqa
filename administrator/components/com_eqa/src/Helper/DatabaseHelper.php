@@ -753,6 +753,7 @@ abstract class DatabaseHelper
         $db->setQuery($query);
         return $db->loadAssocList('code','id');
     }
+
     static public function getClassId(string $classCode){
         $db = self::getDatabaseDriver();
         $query = $db->getQuery(true)
@@ -798,16 +799,6 @@ abstract class DatabaseHelper
 			->where($db->quoteName('default') . '>0');
 		$db->setQuery($query);
 		return $db->loadObject();
-	}
-	static public function getDefaultExamseasonId()
-	{
-		$db = self::getDatabaseDriver();
-		$query = $db->getQuery(true)
-			->select('id')
-			->from('#__eqa_examseasons')
-			->where($db->quoteName('default') . '>0');
-		$db->setQuery($query);
-		return $db->loadResult();
 	}
 	static public function isCompletedExamsession(int $examsessionId) : bool
 	{

@@ -66,6 +66,7 @@
                 description="COM_EQA_FORM_CLASS_START_DESC"
                 required="false"
                 singleheader="true"
+                translateformat="true"
         />
         <field  name="finish"
                 type="calendar"
@@ -74,6 +75,7 @@
                 description="COM_EQA_FORM_CLASS_FINISH_DESC"
                 required="false"
                 singleheader="true"
+                translateformat="true"
         />
         <field  name="size"
                 type="text"
@@ -89,6 +91,7 @@
                 description="COM_EQA_FORM_CLASS_TOPICDEADLINE_DESC"
                 required="false"
                 singleheader="true"
+                translateformat="true"
         />
         <field  name="topicdate"
                 type="calendar"
@@ -97,6 +100,7 @@
                 description="COM_EQA_FORM_CLASS_TOPICDATE_DESC"
                 required="false"
                 singleheader="true"
+                translateformat="true"
         />
         <field  name="thesisdate"
                 type="calendar"
@@ -105,6 +109,7 @@
                 description="COM_EQA_FORM_CLASS_THESISDATE_DESC"
                 required="false"
                 singleheader="true"
+                translateformat="true"
         />
         <field  name="pamdeadline"
                 type="calendar"
@@ -112,6 +117,7 @@
                 label="COM_EQA_FORM_CLASS_PAMDEADLINE_LABEL"
                 required="false"
                 singleheader="true"
+                translateformat="true"
         />
         <field  name="pamdate"
                 type="calendar"
@@ -120,6 +126,7 @@
                 description="COM_EQA_FORM_CLASS_PAMDATE_DESC"
                 required="false"
                 singleheader="true"
+                translateformat="true"
         />
         <field  name="statistic"
                 type="text"

@@ -180,19 +180,12 @@ abstract class EqaItemsHtmlView extends BaseHtmlView{
         $suffix = ucfirst($layout);
 	    if($suffix=='Blog')
 		    $suffix='Default';
-
         $method = 'prepareDataForLayout'.$suffix;
-	    if(method_exists($this, $method))
-		    $this->$method();
-
-	    $method = 'configureItemFieldsForLayout'.$suffix;
-		if(method_exists($this, $method))
-			$this->$method();
+        $this->$method();
 
         //Add layout specific toolbar
         $method = 'addToolbarForLayout'.$suffix;
-	    if(method_exists($this, $method))
-		    $this->$method();
+        $this->$method();
 
         //Display
         parent::display($tpl);

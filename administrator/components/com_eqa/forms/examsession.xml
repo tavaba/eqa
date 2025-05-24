@@ -18,6 +18,7 @@
                 format="%Y-%m-%d %H:%M"
                 required="true"
                 label="COM_EQA_EXAMSESSION_START_DATETIME"
+                translateformat="true"
         />
         <field  name="name"
                 type="text"

@@ -1375,7 +1375,7 @@ abstract class IOHelper
 	static public function writeGradeCorrections(Spreadsheet $spreadsheet, array $items):void
 	{
 		$headers = ['TT', 'Khóa', 'Lớp', 'Mã HVSV', 'Họ đệm', 'Tên', 'Môn phúc khảo', 'Điểm', 'Lý do'];
-		$widths = [6,      15,    15,    20,          20,       15,   40,              20,     40];
+		$widths = [6,      15,    15,    20,          20,       15,   40,             '20',   '40'];
 		$COLS = sizeof($headers);
 		$sheet = $spreadsheet->createSheet();
 		$sheet->setTitle('Phúc khảo');
@@ -1410,83 +1410,6 @@ abstract class IOHelper
 				$item->exam,
 				ExamHelper::decodeMarkConstituent($item->constituent),
 				$item->reason
-			];
-		}
-		$sheet->fromArray($data, null, 'A'.$row);
-	}
-
-	static public function writePaperRegradings(Worksheet $sheet, array $regradings):void
-	{
-		$headers = ['TT', 'Môn phúc khảo', 'Phách', 'Điểm', 'CBChT1', 'CBChT2'];
-		$widths = [6,     40,              10,      20,     30,       30];
-		$COLS = sizeof($headers);
-		$sheet->setTitle('Phúc khảo');
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
-		}
-		$row=1;
-
-		//Dòng tiêu đề
-		$headingRow = $row;
-		$sheet->fromArray($headers, null, 'A'.$headingRow);
-		$style = $sheet->getStyle([1,$row,$COLS,$row]);
-		$style->getFont()->setBold(true);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Dữ liệu
-		$row++;
-		$data = [];
-		$seq=0;
-		foreach ($regradings as $item)
-		{
-			$seq++;
-			$data[] = [
-				$seq,
-				$item->exam,
-				$item->mask,
-				$item->originalMark,
-				$item->examiner1,
-				$item->examiner2
-			];
-		}
-		$sheet->fromArray($data, null, 'A'.$row);
-	}
-	static public function writeHybridRegradings(Worksheet $sheet, array $regradings):void
-	{
-		$headers = ['TT', 'Môn phúc khảo', 'Mã HVSV', 'Họ đệm', 'Tên', 'Điểm'];
-		$widths = [6,     40,              20,        20,       15,     10];
-		$COLS = sizeof($headers);
-		$sheet->setTitle('Phúc khảo');
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
-		}
-		$row=1;
-
-		//Dòng tiêu đề
-		$headingRow = $row;
-		$sheet->fromArray($headers, null, 'A'.$headingRow);
-		$style = $sheet->getStyle([1,$row,$COLS,$row]);
-		$style->getFont()->setBold(true);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Dữ liệu
-		$row++;
-		$data = [];
-		$seq=0;
-		foreach ($regradings as $item)
-		{
-			$seq++;
-			$data[] = [
-				$seq,
-				$item->exam,
-				$item->code,
-				$item->lastname,
-				$item->firstname,
-				$item->originalMark
 			];
 		}
 		$sheet->fromArray($data, null, 'A'.$row);
