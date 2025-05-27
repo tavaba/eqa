@@ -12,6 +12,22 @@ class ClassModel extends EqaAdminModel {
     protected function prepareTable($table)
     {
         $table->size=null;  //Không cho phép người dùng cập nhật trực tiếp sĩ số
+	    if(empty($table->lecturer_id))
+			$table->lecturer_id=null;
+	    if(empty($table->start))
+			$table->start=null;
+		if(empty($table->finish))
+			$table->finish=null;
+		if(empty($table->topicdeadline))
+			$table->topicdeadline=null;
+		if(empty($table->topicdate))
+			$table->topicdate=null;
+		if(empty($table->thesisdate))
+			$table->thesisdate=null;
+		if(empty($table->pamdeadline))
+			$table->pamdeadline=null;
+		if(empty($table->pamdate))
+			$table->pamdate=null;
         parent::prepareTable($table);
     }
     public function addLearners(int $classId, array $learnerCodes): void

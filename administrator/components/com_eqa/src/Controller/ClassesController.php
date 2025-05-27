@@ -134,6 +134,11 @@ class ClassesController extends EqaAdminController {
                     continue;
                 }
                 $class->subject_id = $subjectMap[$subjectCode];
+				if(empty($class->subject_id)){
+					$msg = Text::sprintf('Không tồn tại mã học phần <b>%s</b>', htmlentities($subjectCode));
+					$app->enqueueMessage($msg, 'error');
+					break;
+				}
 
                 //Lấy họ và tên giảng viên tại ô D8 và xác định Id của giảng viên
                 $lecturerFullname = trim($data[7][3]);
