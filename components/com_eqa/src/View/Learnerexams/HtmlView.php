@@ -2,10 +2,7 @@
 namespace Kma\Component\Eqa\Site\View\Learnerexams;   //Must end with the View Name
 defined('_JEXEC') or die();
 
-use DateTime;
-use Joomla\CMS\Date\Date;
 use Joomla\CMS\Toolbar\Toolbar;
-use Kma\Component\Eqa\Administrator\Base\EqaItemAction;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
@@ -41,6 +38,8 @@ class HtmlView extends EqaItemsHtmlView{
 	{
 		//Xác định learner và đưa thông tin (id) vào model
 		$username      = GeneralHelper::getCurrentUsername();
+		if(!$username)
+			return;
 		$this->learner = DatabaseHelper::getLearnerInfo($username);
 		if($this->learner){
 			$model = $this->getModel();
@@ -76,11 +75,4 @@ class HtmlView extends EqaItemsHtmlView{
 		$toolbar = Toolbar::getInstance();
 		echo $toolbar->render();
 	}
-
-	public function display($tpl = null)
-    {
-
-	    //Gọi phương thức lớp cha
-		parent::display();
-    }
 }
