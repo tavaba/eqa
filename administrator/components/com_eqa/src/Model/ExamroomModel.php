@@ -159,7 +159,301 @@ class ExamroomModel extends EqaAdminModel {
 		return true;
 	}
 
-	/**
+	public function import(int $examroomId, string $examroomName,  array $examinees, bool $importAnomaly)
+	{
+		//Init
+		$db  = DatabaseHelper::getDatabaseDriver();
+
+		//Các bước thực hiện
+		//1. Lấy danh sách thí sinh của phòng thi
+		//2. Kiểm tra, đảm bảo rằng tất cả các thí sinh đều nằm trong danh sách này
+		//3. Phân nhóm thí sinh theo môn thi
+		//4. Với mỗi môn thi, tùy theo hình thức thi mà gọi 'importPaperTest' hay 'importNonpaperTest'
+
+		//Bước 1. Lấy danh sách thí sinh của phòng thi
+		$columns = $db->quoteName(
+			array('a.exam_id', 'a.learner_id', 'b.code',       'a.code', 'a.anomaly'),
+			array('exam_id',   'learner_id',   'learner_code', 'code',   'anomaly')
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_learners AS b','b.id=a.learner_id')
+			->where('a.examroom_id='.$examroomId);
+		$db->setQuery($query);
+		$roomExaminees = $db->loadAssocList('learner_code');
+
+		//Bước 2. Kiểm tra, đảm bảo rằng tất cả các thí sinh đều nằm trong danh sách này
+		//Đồng thời, bổ sung thông tin 'learner_id', 'anomaly' vào thông tin thí sinh
+		foreach ($examinees as $examinee)
+		{
+			if(empty($roomExaminees[$examinee->learnerCode])){
+				$msg = Text::sprintf('Thí sinh <b>%s</b> không tồn tại trong danh sách thí sinh của phòng thi', htmlspecialchars($examinee->learnerCode));
+				throw new Exception($msg);
+			}
+			$examinee->learnerId = $roomExaminees[$examinee->learnerCode]['learner_id'];
+			$examinee->currentAanomaly = $roomExaminees[$examinee->learnerCode]['anomaly'];
+		}
+
+		//Bước 3. Phân nhóm thí sinh đầu vào ($examinees) theo môn thi ('exam_id')
+		$examineesByExamId = [];  //Mảng chứa các mảng thí sinh theo môn thi
+		unset($examinee);
+		foreach ($examinees as $examinee)
+		{
+			$examId = $roomExaminees[$examinee->learnerCode]['exam_id'];
+			if(!isset($examineesByExamId[$examId]))
+				$examineesByExamId[$examId] = [];
+			$examineesByExamId[$examId][] = $examinee;
+		}
+
+		//Bước 4. Với mỗi môn thi, tùy theo hình thức thi mà gọi 'importPaperTest' hay 'importNonpaperTest'
+		foreach ($examineesByExamId as $examId=>$examinees)
+		{
+			if(DatabaseHelper::isPaperExam($examId))
+				$this->importPaperTest($examId, $examroomName, $examineesByExamId[$examId], $importAnomaly);
+			else
+				$this->importNonpaperTest($examId, $examroomName, $examineesByExamId[$examId], $importAnomaly);
+		}
+	}
+	private function importPaperTest(int $examId, string $examroomName,  array $examinees, bool $importAnomaly): void
+	{
+		//Init
+		$app = Factory::getApplication();
+		$db = DatabaseHelper::getDatabaseDriver();
+		$countAnomaly=0;
+		$countPaper=0;  //Bài thi
+		$countSheet=0;  //Tờ giấy thi
+		$db->transactionStart();
+		try
+		{
+			foreach ($examinees as $examinee){
+				$learnerCode = $examinee->learnerCode;
+				$learnerId = $examinee->learnerId;
+				$nsheet = $examinee->value;
+				$description = $examinee->description;
+
+				//Kiểm tra tính hợp lệ của cột 'số tờ'
+				if(!is_numeric($nsheet) || intval($nsheet)!=$nsheet)
+				{
+					$msg = Text::sprintf('Phòng thi <b>%s</b>: số tờ giấy thi của <b>%s</b> không hợp lệ', $examroomName, $learnerCode);
+					throw new Exception($msg);
+				}
+				else
+					$nsheet = (int)$nsheet;
+
+				if($importAnomaly)
+					$anomaly = $examinee->anomaly;
+				else
+					$anomaly = $examinee->currentAanomaly;
+				if($anomaly != ExamHelper::EXAM_ANOMALY_NONE)
+					$countAnomaly++;
+
+				//Ghi thông tin thu bài thi viết (upset operation)
+				$query = 'INSERT INTO `#__eqa_papers` (`exam_id`, `learner_id`, `nsheet`)'
+					. "VALUES ($examId, $learnerId, $nsheet)"
+					. 'ON DUPLICATE KEY UPDATE `nsheet` = VALUES(`nsheet`)';
+
+				$db->setQuery($query);
+				if(!$db->execute()){
+					$msg = Text::sprintf('Phòng thi <b>%s</b>: lỗi cập nhật thông tin cho <b>%s</b>', $examroomName, $learnerCode);
+					throw new Exception($msg);
+				}
+
+				//Ngoài ra, còn cần lưu $description, $anomaly vào bảng #__eqa_exam_learner
+				$setClause = [];
+				if(empty($description))
+					$description = 'NULL';
+				else
+					$description = $db->quote($description);
+				$setClause[] = 'description = ' . $description;
+				if($importAnomaly)
+					$setClause[] = 'anomaly = ' . $examinee->anomaly;
+				$query = $db->getQuery(true)
+					->update('#__eqa_exam_learner')
+					->set($setClause)
+					->where('exam_id='.$examId . ' AND learner_id=' . $learnerId);
+				$db->setQuery($query);
+				if(!$db->execute()){
+					$msg = Text::sprintf('Phòng thi <b>%s</b>: lỗi cập nhật thông tin cho <b>%s</b>', $examroomName, $learnerCode);
+					throw new Exception($msg);
+				}
+
+				//Counting
+				if($nsheet>0){
+					$countPaper++;
+					$countSheet += $nsheet;
+				}
+
+			}
+		}
+		catch (Exception $e)
+		{
+			$db->transactionRollback();
+			throw  new Exception($e->getMessage());
+		}
+
+		//Commit on success
+		$db->transactionCommit();
+		$msg = Text::sprintf('Phòng thi viết <b>%s</b>: %d thí sinh, %d bài thi, %d tờ giấy thi; trong đó %d thí sinh có bất thường',
+			$examroomName,
+			sizeof($examinees),
+			$countPaper,
+			$countSheet,
+			$countAnomaly
+		);
+		$app->enqueueMessage($msg, 'success');
+	}
+	private function importNonpaperTest(int $examId, string $examroomName,  array $examinees, bool $importAnomaly): void
+	{
+		//Init
+		$app = Factory::getApplication();
+		$db = DatabaseHelper::getDatabaseDriver();
+		$countAnomaly = 0;
+
+		$db->transactionStart();
+		try
+		{
+			foreach ($examinees as $examinee){
+				$code = $examinee->code;
+				$learnerCode = $examinee->learnerCode;
+				$mark = GeneralHelper::toFloat($examinee->value);
+				$description = $examinee->description;
+
+				//Kiểm tra tính hợp lệ của cột 'điểm'
+				if($mark === false || $mark<0 || $mark>10)
+				{
+					$msg = Text::sprintf('Phòng thi <b>%s</b>: điểm thi của <b>%s</b> không hợp lệ',
+						htmlspecialchars($examroomName), htmlspecialchars($learnerCode));
+					throw new Exception($msg);
+				}
+
+				/**
+				 * Việc import gồm một số bước
+				 *  - Ghi điểm $mark vào bảng #__eqa_exam_learner (cột 'mark_orig')
+				 *    đồng thời tính toán các giá trị 'mark_final', 'module_grade'
+				 *  - Cập nhật số lượt thi, điều kiện tiếp tục thi vào bảng #__eqa_class_learner
+				 */
+				//a) Tìm id, pam, anomaly của thí sinh
+				$columns = $db->quoteName(
+					array('a.learner_id', 'a.exam_id', 'c.subject_id', 'a.class_id', 'b.pam', 'a.attempt', 'a.anomaly', 'b.ntaken', 'd.id',     'd.type',     'd.value'),
+					array('learner_id',   'exam_id',   'subject_id',   'class_id',   'pam',   'attempt',   'anomaly',   'ntaken',   'stimul_id','stimul_type','stimul_value')
+				);
+				$query = $db->getQuery(true)
+					->select($columns)
+					->from('#__eqa_exam_learner AS a')
+					->leftJoin('#__eqa_class_learner AS b', 'a.class_id=b.class_id AND a.learner_id=b.learner_id')
+					->leftJoin('#__eqa_exams AS c', 'a.exam_id=c.id')
+					->leftJoin('#__eqa_stimulations AS d', 'd.id=a.stimulation_id')
+					->where('a.exam_id=' . $examId . ' AND a.code=' . $code);
+				$db->setQuery($query);
+				$obj = $db->loadObject();
+				$attempt = (int)$obj->attempt;
+				$pam = (float)$obj->pam;
+				$subjectId = (int)$obj->subject_id;
+				$classId = (int)$obj->class_id;
+				$ntaken = (int)$obj->ntaken;
+				$learnerId = (int)$obj->learner_id;
+				$stimulationId = $obj->stimul_id;
+				$stimulationType = $obj->stimul_type;
+				$stimulationValue = $obj->stimul_value;
+				if($importAnomaly)
+					$anomaly = $examinee->anomaly;
+				else
+					$anomaly = (int)$obj->anomaly;
+				if($anomaly != ExamHelper::EXAM_ANOMALY_NONE)
+					$countAnomaly++;
+
+
+				//b) Tính toán và cập nhật điểm
+				//   Với lưu ý rằng điểm trong biên bản là điểm sau khi đã xử lý kỷ luật, nên khi tính $finalMark
+				//   thì luôn đặt $anomaly là NONE
+				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
+				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue);
+				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt);
+				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
+				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+				if(empty($description))
+					$description = 'NULL';
+				else
+					$description = $db->quote($description);
+				$query = $db->getQuery(true)
+					->update('#__eqa_exam_learner')
+					->set([
+						'mark_orig = ' . $mark,
+						'anomaly = ' . $anomaly,
+						'mark_final = ' . $finalMark,
+						'module_mark = ' . $moduleMark,
+						'module_grade = ' . $db->quote($moduleGrade),
+						'conclusion = ' . $conclusion,
+						'description = ' . $description
+					])
+					->where('exam_id=' . $examId . ' AND code=' . $code);
+				$db->setQuery($query);
+				if(!$db->execute())
+				{
+					$msg = Text::sprintf('Phòng thi %s: lỗi cập nhật điểm học phần cho <b>%s</b>', $examroomName, $learnerCode);
+					throw new Exception($msg);
+				}
+
+				//c) Cập nhật số lượt thi, điều kiện tiếp tục dự thi
+				if(!in_array($anomaly, [ExamHelper::EXAM_ANOMALY_DELAY, ExamHelper::EXAM_ANOMALY_REDO]))
+				{
+					$ntaken = $attempt;
+				}
+				$expired = 0;
+				if($conclusion == ExamHelper::CONCLUSION_PASSED || $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED)
+					$expired=1;
+				$query = $db->getQuery(true)
+					->update('#__eqa_class_learner')
+					->set([
+						'ntaken = ' . $ntaken,
+						'expired = ' . $expired
+					])
+					->where([
+						'class_id = ' . $classId,
+						'learner_id = ' . $learnerId
+					]);
+				$db->setQuery($query);
+				if(!$db->execute())
+				{
+					$msg = Text::sprintf('Phòng thi %s, %s: lỗi cập nhật thông tin điểm học phần', $examroomName, $learnerCode);
+					throw new Exception($msg);
+				}
+
+				//d) Ghi nhận chế độ khuyến khích đã được sử dụng
+				//Nếu SV được cộng điểm, kết quả đánh giá học phần là "ĐẠT" thì ghi nhận
+				//chế độ khuyến khích của SV đã được sử dụng
+				if($stimulationType==StimulationHelper::TYPE_ADD && $conclusion == ExamHelper::CONCLUSION_PASSED)
+				{
+					$query = $db->getQuery(true)
+						->update('#__eqa_stimulations')
+						->set('used=1')
+						->where('id=' . $stimulationId);
+					$db->setQuery($query);
+					if(!$db->execute())
+					{
+						$msg = Text::sprintf('Lỗi ghi nhận điểm khuyến khích cho <b>%s</b>', $learnerCode);
+						throw new Exception($msg);
+					}
+				}
+			}
+			//Commit on success
+			$db->transactionCommit();
+		}
+		catch (Exception $e)
+		{
+			$db->transactionRollback();
+			$msg = Text::sprintf('Phòng thi <b>%s</b>: %s', htmlspecialchars($examroomName), htmlspecialchars($e->getMessage()));
+			throw new Exception($msg);
+		}
+
+		$msg = Text::sprintf('Phòng thi <b>%s</b>: nhập điểm thành công %d thí sinh, trong đó %d thí sinh có bất thường',
+			htmlspecialchars($examroomName), sizeof($examinees), $countAnomaly);
+		$app->enqueueMessage($msg, 'success');
+	}
+
+
+		/**
 	 * @param   int     $examroomId
 	 * @param   string  $examroomName
 	 * @param   array   $examinees Mảng các object với các thuộc tính [code, learnerCode, value, description]
@@ -169,7 +463,7 @@ class ExamroomModel extends EqaAdminModel {
 	 * @throws Exception
 	 * @since version
 	 */
-	public function importPaperTest(int $examroomId, string $examroomName,  array $examinees, bool $importAnomaly): bool
+	public function importPaperTest_bak(int $examroomId, string $examroomName,  array $examinees, bool $importAnomaly): bool
 	{
 		//Init
 		$app = Factory::getApplication();
@@ -270,7 +564,7 @@ class ExamroomModel extends EqaAdminModel {
 		$app->enqueueMessage($msg, 'success');
 		return true;
 	}
-	public function importNonpaperTest(int $examroomId, string $examroomName,  array $examinees, bool $importAnomaly): bool
+	public function importNonpaperTest_bak(int $examroomId, string $examroomName,  array $examinees, bool $importAnomaly): bool
 	{
 		//Init
 		$app = Factory::getApplication();
@@ -358,7 +652,7 @@ class ExamroomModel extends EqaAdminModel {
 				if(!$db->execute())
 				{
 					$msg = Text::sprintf('Phòng thi %s: lỗi cập nhật điểm học phần cho <b>%s</b>', $examroomName, $learnerCode);
-					throw new \Exception($msg);
+					throw new Exception($msg);
 				}
 
 				//c) Cập nhật số lượt thi, điều kiện tiếp tục dự thi
@@ -383,7 +677,7 @@ class ExamroomModel extends EqaAdminModel {
 				if(!$db->execute())
 				{
 					$msg = Text::sprintf('Phòng thi %s, %s: lỗi cập nhật thông tin điểm học phần', $examroomName, $learnerCode);
-					throw new \Exception($msg);
+					throw new Exception($msg);
 				}
 
 				//d) Ghi nhận chế độ khuyến khích đã được sử dụng

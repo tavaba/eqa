@@ -181,7 +181,7 @@ class ExamroomsController extends EqaAdminController {
 			//Cột 'C' = $learnerCode: Mã HVSV -> $learnerId
 			//Cột 'H' = $value: Nếu thi viết là "Số tờ", nếu thi khác là "Điểm"
 			//Cột 'J' = $description
-			$data=[];
+			$examinees=[];
 			while(true){
 				$row++;
 				$examineeCode = $sheet->getCell('B'.$row)->getValue();
@@ -203,41 +203,21 @@ class ExamroomsController extends EqaAdminController {
 						return;
 					}
 				}
-				$data[] = $examinee;
+				$examinees[$examinee->learnerCode] = $examinee;
 			}
 
-			/**
-			 * KIỂM TRA TÍNH CHÍNH XÁC CỦA DỮ LIỆU
-			 * Đề phòng trường hợp thông tin mã phòng thi bị sai lệch trong quá trình xử lý,
-			 * sau đây sẽ kiểm tra thí sinh của phòng thi, xem số báo danh có tương ứng
-			 * với mã HVSV hay không
-			 */
-			$size = sizeof($data);
-			$testData = [];
-			for($i=0; $i<$size; $i++)
-			{
-				$key = $data[$i]->learnerCode;
-				$value = $data[$i]->code;
-				$testData[$key] = $value;
-			}
-			$ok = DatabaseHelper::checkExamroomCorrectness($examroomId, $testData);
-			if(!$ok){
-				$msg = Text::sprintf("Số báo danh không trùng khớp với mã HVSV. Hãy kiểm tra lại, đảm bảo mã phòng thi không bị thay đổi");
-				$this->setMessage($msg, 'error');
-				return;
-			}
 
 			//4. Call model
 			$model = $this->getModel();
 			$examroomName = $sheet->getTitle();
-			$testType = DatabaseHelper::getExamroomTesttype($examroomId);
-			switch ($testType){
-				case ExamHelper::TEST_TYPE_PAPER:
-					$model->importPaperTest($examroomId, $examroomName, $data, $importAnomaly);
-					break;
-				default:
-					$model->importNonpaperTest($examroomId, $examroomName, $data, $importAnomaly);
-			} //Hết một sheet
+			try
+			{
+				$model->import($examroomId, $examroomName, $examinees, $importAnomaly);
+			}
+			catch(Exception $e){
+				$this->setMessage($e->getMessage(), 'error');
+				return;
+			}
 		}//Hết tất cả các sheet
 
 		//Cập nhật trạng thái môn thi

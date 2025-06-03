@@ -462,7 +462,7 @@ abstract class ExamHelper{
 
 		//Giới hạn điểm thi lần 2
 		if($attempt>1 && ConfigHelper::getSecondAttemptLimit()==self::SECOND_ATTEMPT_LIMIT_EXAM)
-			$finalMark = max([$finalMark, 6.9]);
+			$finalMark = min([$finalMark, 6.9]);
 
 		return $finalMark;
 	}
@@ -473,7 +473,7 @@ abstract class ExamHelper{
 		$moduleMark = 0.3*$pam + 0.7*$examMark;
 		$moduleMark = round($moduleMark, $precision);
 		if($attempt>1 && $limit==self::SECOND_ATTEMPT_LIMIT_MODULE)
-			$moduleMark = max([$moduleMark, 6.9]);
+			$moduleMark = min([$moduleMark, 6.9]);
 		return $moduleMark;
 	}
 	static public function calculateModuleGrade(float $moduleMark, int $conclusion)
