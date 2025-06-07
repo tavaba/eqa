@@ -18,7 +18,7 @@ class PackageInfo extends ObjectInfo
 	public int $term;
 	public string $academicyearCode;
 
-	static public function cast($obj): GradeCorrectionInfo
+	static public function cast($obj): PackageInfo
 	{
 		return $obj;
 	}

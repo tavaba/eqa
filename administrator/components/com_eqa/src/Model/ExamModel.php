@@ -537,9 +537,12 @@ class ExamModel extends EqaAdminModel{
 					//3.2. Tạo phòng thi (nếu chưa có) và lấy id của phòng thi
 					$roomId = $room['room_id'];
 					$nExaminee = $room['nexaminee'];
+					$existingExamineeIds = [];
 
 					//a) Kiểm tra xem với ca thi $examsessionId đã có tồn tại phòng thi với $roomId hay chưa
-					//Nếu đã tồn tại thì lấy $examroomId
+					//Nếu đã tồn tại thì lấy $examroomId và lấy danh sách thí sinh có trong phòng thi đó
+					//Danh sách này sẽ được sử dụng để kiểm tra nhằm đảm bảo rằng một thí sinh không thể
+					//được phân công nhiều hơn 1 lần vào cùng một phòng thi
 					$query = $db->getQuery(true)
 						->select('*')
 						->from('#__eqa_examrooms')
@@ -556,10 +559,12 @@ class ExamModel extends EqaAdminModel{
 							);
 							throw new Exception($msg);
 						}
+
+						$db->setQuery('SELECT learner_id FROM #__eqa_exam_learner WHERE examroom_id=' . $examroomId);
+						$existingExamineeIds = $db->loadColumn();
 					}
 
 					//b) Nếu chưa có thì tạo phòng thi và xác định id của phòng thi mới ($examroomId)
-					//   Đồng thời tăng số lượng phòng thi của ca thi
 					else {
 						$roomCode = RoomHelper::getRoomCode($roomId);   //Mặc định cho examroom's name
 						$values = array(
@@ -580,10 +585,22 @@ class ExamModel extends EqaAdminModel{
 					$roomExaminees = array_slice($examinees, $startIndex, $nExaminee);
 					$startIndex += $nExaminee;
 
-					//3.4. Sắp xếp theo họ và tên
+					//3.4. Kiểm tra xem có thí sinh nào trùng lặp khi thêm vào phòng thi hay không
+					$found = null;
+					foreach ($roomExaminees as $item) {
+						if (in_array($item->id, $existingExamineeIds, true)) {
+							$found = $item->learner_code;
+							break;
+						}
+					}
+					if ($found) {
+						throw new Exception('Thí sinh ' . htmlspecialchars($found) . ' đã tồn tại trong phòng thi');
+					}
+
+					//3.5. Sắp xếp theo họ và tên
 					usort($roomExaminees, $comparator);
 
-					//3.5. Ghi SBD, phòng thi cho thí
+					//3.6. Ghi SBD, phòng thi cho thí
 					//Tăng tuần tự SBD trong quá trình này
 					for($i=0; $i<$nExaminee; $i++)
 					{

@@ -1,16 +1,13 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
-use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
-use Kma\Component\Eqa\Administrator\Interface\GradeCorrectionInfo;
+use Kma\Component\Eqa\Administrator\Interface\PackageInfo;
 
 defined('_JEXEC') or die();
 
@@ -356,9 +353,9 @@ class PaperexamModel extends EqaAdminModel{
 		//return
 		return $npackage == $count;
 	}
-	public function getPackageInfo($examId, $packageNumber): GradeCorrectionInfo|null
+	public function getPackageInfo($examId, $packageNumber): PackageInfo|null
 	{
-		$info = new GradeCorrectionInfo();
+		$info = new PackageInfo();
 		$info->examId = $examId;
 		$info->number = $packageNumber;
 		$db = DatabaseHelper::getDatabaseDriver();

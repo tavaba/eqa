@@ -5,18 +5,14 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use JComponentHelper;
-use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
-use Kma\Component\Eqa\Administrator\Interface\GradeCorrectionInfo;
+use Kma\Component\Eqa\Administrator\Interface\PackageInfo;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeries;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues;
-use PhpOffice\PhpSpreadsheet\Chart\Layout;
-use PhpOffice\PhpSpreadsheet\Chart\Legend;
 use PhpOffice\PhpSpreadsheet\Chart\PlotArea;
 use PhpOffice\PhpSpreadsheet\Chart\Title;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -30,7 +26,6 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use phpseclib3\Exception\BadConfigurationException;
 
 abstract class IOHelper
 {
@@ -784,7 +779,7 @@ abstract class IOHelper
 		$font->setSize($FONT_SIZE);
 
 	}
-	static public function writeMarkingSheet(Worksheet $sheet, GradeCorrectionInfo $packageInfo):void
+	static public function writeMarkingSheet(Worksheet $sheet, PackageInfo $packageInfo):void
 	{
 		$params = JComponentHelper::getParams('com_eqa');
 		$PARTS = 2;
