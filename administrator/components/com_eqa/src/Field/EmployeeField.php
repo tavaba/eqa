@@ -9,44 +9,63 @@ use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\UnitHelper;
 
-class EmployeeField extends ListField
+class EmployeeField extends GroupedlistField
 {
-    protected $type = 'List';
-	static protected $options;
-	static protected function initOptions()
+    protected $type = 'employee';
+	static protected $groups;
+	static protected function initGroups()
     {
         $db = DatabaseHelper::getDatabaseDriver();
 
+        //Lấy danh sách đơn vị
+        $query = $db->getQuery(true)
+            ->select('id, name')
+            ->from('#__eqa_units')
+            ->where('published=1')
+            ->order('name');
+        $db->setQuery($query);
+        $units = $db->loadAssocList('id','name');
+
+
         //Lấy danh sách giảng viên.
         $query = $db->getQuery(true)
-            ->select('id, lastname, firstname')
+            ->select('id, unit_id, lastname, firstname')
             ->from('#__eqa_employees')
             ->where('published=1');
         $db->setQuery($query);
         $employees = $db->loadObjectList();
 
-        $options = [];
+        //Tạo một mảng [ID Đơn vị]->[Option Các giảng viên thuộc đơn vị]
+        $temp = [];
+        foreach ($units as $id=>$name)
+            $temp[$id] = [];
         foreach ($employees as $person){
             $fullname = $person->lastname . ' ' . $person->firstname;
-            $options[] = HTMLHelper::_('select.option', $person->id, $fullname);
+            $temp[$person->unit_id][] = HTMLHelper::_('select.option', $person->id, $fullname);
+        }
+
+        //Tạo kết quả
+        $groups = [];
+        foreach ($units as $id=>$name){
+            if(!empty($temp[$id]))
+                $groups[$name] = $temp[$id];
         }
 
 		//return
-        self::$options = $options;
+        self::$groups=$groups;
     }
 	protected  function getOptions()
 	{
-		if(empty(self::$options))
-			self::initOptions();
-		$options = parent::getOptions();
-		$options = array_merge($options, self::$options);
-		return $options;
+		if(empty(self::$groups))
+			self::initGroups();
+		$groups = parent::getOptions();
+		return array_merge($groups, self::$groups);
 	}
 	static public function getElementHtml(string $name, int|null $selectedValue=null, string $prompt='', string $class='select2-basic'): string
 	{
 		//Init groups if needed
-		if(empty(self::$options))
-			self::initOptions();
+		if(empty(self::$groups))
+			self::initGroups();
 
 		//Opening tag
 		$html="<select name='$name' class='$class'>";
@@ -55,11 +74,16 @@ class EmployeeField extends ListField
 		$html .= "<option value=''>$prompt</option>";
 
 		//Groups of options
-		foreach (self::$options as $option){
-			$html .= "<option value='$option->value'";
-			if($option->value === $selectedValue)
-				$html .= " selected";
-			$html .= ">$option->text</option>";
+		foreach (self::$groups as $groupName => $groupOptions){
+			$html .= "<optgroup label='$groupName'>";
+			foreach ($groupOptions as $option)
+			{
+				$html .= "<option value='$option->value'";
+				if($option->value === $selectedValue)
+					$html .= " selected";
+				$html .= ">$option->text</option>";
+			}
+			$html .= "</optgroup>";
 		}
 
 		//Closing tag

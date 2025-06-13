@@ -86,7 +86,7 @@ class RegradingsController extends EqaAdminController
 		$spreadsheet = new Spreadsheet();
 		$spreadsheet->removeSheetByIndex(0);
 
-		IOHelper::writeRegradings($spreadsheet, $items);
+		IOHelper::writeRegradingRequests($spreadsheet, $items);
 
 		// Force download of the Excel file
 		$fileName = 'Danh sách phúc khảo.xlsx';

@@ -6,6 +6,7 @@ use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseDriver;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
+use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Interface\GradeCorrectionInfo;
 use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
 
@@ -193,24 +194,6 @@ abstract class DatabaseHelper
 		//return
 		return $exam;
 	}
-    static public function getExamseasonInfo($id)
-    {
-        if(empty($id))
-            return  null;
-
-        $db = self::getDatabaseDriver();
-        $columns = $db->quoteName(
-            array('a.id', 'a.name',    'b.code',   'a.term'),
-            array(' id',   'name',  'academicyear', 'term')
-        );
-        $query = $db->getQuery(true)
-            ->select($columns)
-            ->from('#__eqa_examseasons AS a')
-            ->leftJoin('#__eqa_academicyears AS b', 'a.academicyear_id=b.id')
-            ->where('a.id='.(int)$id);
-        $db->setQuery($query);
-        return $db->loadObject();
-    }
     static public function getExamExaminees(int $examId, bool $allowedOnly = false)
     {
         $db = self::getDatabaseDriver();
@@ -429,6 +412,36 @@ abstract class DatabaseHelper
 			return false;
 		return $res;
 	}
+	static public function getExamseasonInfo(int|null $id=null): ExamseasonInfo|null
+	{
+		$db = self::getDatabaseDriver();
+		$columns = $db->quoteName(
+			array('a.id', 'a.name',    'b.code',   'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'),
+			array(' id',   'name',  'academicyear', 'term',  'completed',   'ppaa_req_enabled',   'ppaa_req_deadline')
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_examseasons AS a')
+			->leftJoin('#__eqa_academicyears AS b', 'a.academicyear_id=b.id');
+		if(is_null($id))
+			$query->where($db->quoteName('a.default'). '= 1');
+		else
+			$query->where('a.id='.$id);
+		$db->setQuery($query);
+		$obj = $db->loadObject();
+		if(!$obj)
+			return null;
+
+		$examseason = new ExamseasonInfo();
+		$examseason->id = $obj->id;
+		$examseason->name = $obj->name;
+		$examseason->academicyear = $obj->academicyear;
+		$examseason->term = $obj->term;
+		$examseason->completed = $obj->completed;
+		$examseason->ppaaRequestEnabled = $obj->ppaa_req_enabled;
+		$examseason->ppaaRequestDeadline = $obj->ppaa_req_deadline;
+		return $examseason;
+	}
 	static public function getExamseasonIdByExamroom(int $examroomId){
 		$db = self::getDatabaseDriver();
 		$query = $db->getQuery(true)
@@ -619,7 +632,7 @@ abstract class DatabaseHelper
 	 *
 	 * @since version
 	 */
-	static public function getEmployeeInfos(array $employeeIds, string $resultType='assoc')
+	static public function getEmployeeInfos(array $employeeIds, bool $returnAssoc=true)
 	{
 		$employeeIdSet = '(' . implode(',', $employeeIds) . ')';
 		$db = self::getDatabaseDriver();
@@ -634,7 +647,7 @@ abstract class DatabaseHelper
 			->where('a.id IN ' . $employeeIdSet);
 		$db->setQuery($query);
 
-		if($resultType === 'assoc')
+		if($returnAssoc)
 			return $db->loadAssocList('id');
 		return $db->loadObjectList('id');
 
@@ -789,25 +802,9 @@ abstract class DatabaseHelper
 		$db->setQuery('SELECT code FROM #__eqa_rooms WHERE id='.$roomId);
 		return $db->loadResult();
 	}
-	static public function getDefaultExamseason()
+	static public function getDefaultExamseason(): ExamseasonInfo|null
 	{
-		$db = self::getDatabaseDriver();
-		$query = $db->getQuery(true)
-			->select('*')
-			->from('#__eqa_examseasons')
-			->where($db->quoteName('default') . '>0');
-		$db->setQuery($query);
-		return $db->loadObject();
-	}
-	static public function getDefaultExamseasonId()
-	{
-		$db = self::getDatabaseDriver();
-		$query = $db->getQuery(true)
-			->select('id')
-			->from('#__eqa_examseasons')
-			->where($db->quoteName('default') . '>0');
-		$db->setQuery($query);
-		return $db->loadResult();
+		return self::getExamseasonInfo();
 	}
 	static public function isCompletedExamsession(int $examsessionId) : bool
 	{

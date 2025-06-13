@@ -27,7 +27,7 @@ abstract class GeneralHelper{
      */
     static public function getCurrentUsername(): string|null
     {
-		$leanerEmailPattern = "/^(AT|CT|DT)[0-9]{6}@actvn\.edu\.vn$/";
+		$leanerEmailPattern = "/^((AT|CT|DT|H|CH|CHAT)[0-9]{4,6}N?)@actvn\.edu\.vn$/";
         $user = Factory::getApplication()->getIdentity();
 
 		//Nếu không có user nào logged in
@@ -35,10 +35,9 @@ abstract class GeneralHelper{
 			return null;
 
 		//Nếu là HVSV thì ưu tiên lấy username theo email
-		if(isset($user->email)){
-			$matched = preg_match($leanerEmailPattern, $user->email);
-			if($matched)
-				return strstr($user->email, "@", true);
+		if($user->email && preg_match($leanerEmailPattern, $user->email, $matches)){
+			$username = $matches[1];
+			return $username;
 		}
 
         if($user->username)

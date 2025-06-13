@@ -13,5 +13,6 @@
 		<action name="core.execute.transition" title="JACTION_EXECUTETRANSITION" />
 
 		<action name="eqa.supervise" title="Quản lý HVSV"/>
+		<action name="eqa.mask" title="Quản lý phách bài thi"/>
 	</section>
 </access>

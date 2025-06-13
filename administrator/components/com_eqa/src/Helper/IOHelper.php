@@ -5,7 +5,9 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use JComponentHelper;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\Http\Response;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Interface\PackageInfo;
@@ -26,6 +28,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpClient\Response\ResponseStream;
 
 abstract class IOHelper
 {
@@ -49,29 +52,40 @@ abstract class IOHelper
 		}
 		return $spreadsheet;
 	}
-	static public function sendHttpXlsx(Spreadsheet $spreadsheet, string $fileName, bool $includeCharts=false)
+	static public function sendHttpXlsx(Spreadsheet $spreadsheet, string $fileName, bool $includeCharts=false): void
 	{
-		// Clean output buffer to prevent corruption
-		if (ob_get_length()) {
-			ob_clean();
-		}
-		flush();
-
-		//Sanitze the file name
+		// Sanitize the file name
 		$fileName = preg_replace('/[\\\\\/:*?"<>|]/u', '_', $fileName);
-		$fileName = trim($fileName);
-		$fileName = mb_substr($fileName, 0, 255); // Most OS allow 255-char filenames
+		$fileName = mb_substr(trim($fileName), 0, 255);
 
-		// Force download of the Excel file
+		// Create a temporary file
+		$tmpDir = JPATH_SITE . '/tmp';  // or use \Joomla\CMS\Factory::getApplication()->get('tmp_path')
+		$tmpFile = tempnam($tmpDir, 'xlsx_');
+
+		// Save the spreadsheet to temp file
+		$writer = new Xlsx($spreadsheet);
+		if ($includeCharts) {
+			$writer->setIncludeCharts(true);
+		}
+		$writer->save($tmpFile);
+
+		// Clear any previous output
+		while (ob_get_level()) {
+			ob_end_clean();
+		}
+
+		// Send headers
 		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 		header('Content-Disposition: attachment; filename="' . basename($fileName) . '"; filename*=UTF-8\'\'' . rawurlencode($fileName));
 		header('Cache-Control: max-age=0');
 		header('Expires: 0');
+		header('Content-Length: ' . filesize($tmpFile));
 
-		$writer = new Xlsx($spreadsheet);
-		if($includeCharts)
-			$writer->setIncludeCharts(true);
-		$writer->save('php://output');
+		// Output the file content
+		readfile($tmpFile);
+
+		// Delete the temp file
+		unlink($tmpFile);
 	}
 	static public function writeExamroomExaminees(Worksheet $sheet, ExamroomInfo $examroom, $examinees ): void
 	{
@@ -1338,7 +1352,7 @@ abstract class IOHelper
 		}
 	}
 
-	static public function writeRegradings(Spreadsheet $spreadsheet, array $items):void
+	static public function writeRegradingRequests(Spreadsheet $spreadsheet, array $items):void
 	{
 		$headers = ['TT', 'Khóa', 'Lớp', 'Mã HVSV', 'Họ đệm', 'Tên', 'Môn phúc khảo'];
 		$widths = [6,      15,    15,    20,          20,    15, 40];
@@ -1378,10 +1392,10 @@ abstract class IOHelper
 		}
 		$sheet->fromArray($data, null, 'A'.$row);
 	}
-	static public function writeGradeCorrections(Spreadsheet $spreadsheet, array $items):void
+	static public function writeGradeCorrectionRequests(Spreadsheet $spreadsheet, array $items):void
 	{
 		$headers = ['TT', 'Khóa', 'Lớp', 'Mã HVSV', 'Họ đệm', 'Tên', 'Môn phúc khảo', 'Điểm', 'Lý do'];
-		$widths = [6,      15,    15,    20,          20,       15,   40,             '20',   '40'];
+		$widths = [6,      15,    15,    20,          20,       15,   40,             20,   40];
 		$COLS = sizeof($headers);
 		$sheet = $spreadsheet->createSheet();
 		$sheet->setTitle('Phúc khảo');
@@ -1416,6 +1430,66 @@ abstract class IOHelper
 				$item->exam,
 				ExamHelper::decodeMarkConstituent($item->constituent),
 				$item->reason
+			];
+		}
+		$sheet->fromArray($data, null, 'A'.$row);
+	}
+	static public function writePaperExamRegradingFullInfo(Worksheet $sheet, string $examseasonName, int $examId, string $examName, array $papers, array $examiners)
+	{
+		$headers = ['TT', 'Mã HVSV', 'Họ đệm', 'Tên', 'SBD', 'Phách', 'Túi', 'Điểm', 'CBChT 1', 'CBChT 2'];
+		$widths = [6,      20,          20,       15,   10,    10,      10,    10,     35,        35];
+		$COLS = sizeof($headers);
+		for($i=1; $i<=$COLS; $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		}
+		$row=1;
+
+		//Thông tin chung
+		$sheet->setCellValue([1,$row],'Thông tin rút bài thi viết để phúc khảo');
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$row++;
+		$sheet->setCellValue([1,$row],$examName . ' (' . $examId .')');
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$row++;
+		$sheet->setCellValue([1,$row],'Kỳ thi: ' . $examseasonName);
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$row++;
+		$style = $sheet->getStyle([1,1, $COLS, $row]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+
+		//Dòng tiêu đề
+		$row++;
+		$headingRow = $row;
+		$sheet->fromArray($headers, null, 'A'.$headingRow);
+		$style = $sheet->getStyle([1,$row,$COLS,$row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$row++;
+
+		//Dữ liệu
+		$data = [];
+		$seq=0;
+		foreach ($papers as $item)
+		{
+			$seq++;
+			$examiner1 = $examiners[$item->oldExaminer1Id];
+			$examiner1Fullname = implode(' ', [$examiner1->lastname, $examiner1->firstname]);
+			$examiner2 = $examiners[$item->oldExaminer2Id];
+			$examiner2Fullname = implode(' ', [$examiner2->lastname, $examiner2->firstname]);
+			$data[] = [
+				$seq,
+				$item->learnerCode,
+				$item->learnerLastname,
+				$item->learnerFirstname,
+				$item->code,
+				$item->mask,
+				$item->packageNumber,
+				$item->originalMark,
+				$examiner1Fullname,
+				$examiner2Fullname
 			];
 		}
 		$sheet->fromArray($data, null, 'A'.$row);

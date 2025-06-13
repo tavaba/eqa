@@ -1,5 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
+use Exception;
 use JComponentHelper;
 use Joomla\CMS\Language\Text;
 use JRoute;
@@ -24,7 +25,7 @@ class PaperexamController extends  EqaFormController {
 		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=paperexams',false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option)){
+		if(!$this->app->getIdentity()->authorise('eqa.mask',$this->option)){
 			$this->setMessage('Bạn không có quyền thực hiện chức năng này', 'error');
 			return;
 		}
@@ -54,7 +55,7 @@ class PaperexamController extends  EqaFormController {
 		$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
 
 		//Check permission
-		if (!$this->app->getIdentity()->authorise('core.manage',$this->option))
+		if (!$this->app->getIdentity()->authorise('eqa.mask',$this->option))
 		{
 			$this->setMessage('Không có quyền thực hiện tác vụ', 'error');
 			return;
@@ -85,7 +86,7 @@ class PaperexamController extends  EqaFormController {
 		$examName = DatabaseHelper::getExamName($examId);
 		$fileName = 'Sơ đồ phách. ' . $examName . '.xlsx';
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-		exit();
+		$this->app->close();
 	}
 	public function editExaminers()
 	{

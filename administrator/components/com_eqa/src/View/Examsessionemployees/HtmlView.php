@@ -3,17 +3,12 @@ namespace Kma\Component\Eqa\Administrator\View\Examsessionemployees; //The names
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
 use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutData;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Field\EmployeeField;
 use Kma\Component\Eqa\Administrator\Field\ExamsessionemployeeField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends EqaItemsHtmlView {

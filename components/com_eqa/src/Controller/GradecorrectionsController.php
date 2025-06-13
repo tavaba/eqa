@@ -113,7 +113,7 @@ class GradecorrectionsController extends EqaAdminController
 		$spreadsheet = new Spreadsheet();
 		$spreadsheet->removeSheetByIndex(0);
 
-		IOHelper::writeGradeCorrections($spreadsheet, $items);
+		IOHelper::writeGradeCorrectionRequests($spreadsheet, $items);
 
 		// Force download of the Excel file
 		$fileName = 'Danh sách đính chính.xlsx';

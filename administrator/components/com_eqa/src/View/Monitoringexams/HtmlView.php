@@ -48,7 +48,7 @@ class HtmlView extends EqaItemsHtmlView
 		$model = $this->getModel();
 		$examseasonId = $model->getState('filter.examseason_id');
 		if(empty($examseasonId))
-			$examseasonId = DatabaseHelper::getDefaultExamseason()->id;
+			$examseasonId = DatabaseHelper::getExamseasonInfo()->id;
 		$this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);    //Maybe null
 
 		//Layout data preprocessing

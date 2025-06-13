@@ -20,7 +20,7 @@ use RuntimeException;
 class EqaAdminModel extends AdminModel
 {
     protected array $canDo;
-    public function __construct($config = [], MVCFactoryInterface $factory = null, FormFactoryInterface $formFactory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?FormFactoryInterface $formFactory = null)
     {
         parent::__construct($config, $factory, $formFactory);
         $this->canDo = GeneralHelper::getActions();

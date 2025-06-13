@@ -7,7 +7,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 class PaperexamsModel extends EqaListModel{
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('name', 'nexaminee', 'nexamroom', 'npaper', 'nnopaper', 'npackage');
         parent::__construct($config, $factory);

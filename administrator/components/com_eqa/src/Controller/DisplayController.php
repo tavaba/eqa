@@ -13,7 +13,7 @@ use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 
 class DisplayController extends BaseController{
-    public function __construct($config = [], MVCFactoryInterface $factory = null, ?CMSApplication $app = null, ?Input $input = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSApplication $app = null, ?Input $input = null)
     {
         parent::__construct($config, $factory, $app, $input);
         $this->default_view = 'dashboard';

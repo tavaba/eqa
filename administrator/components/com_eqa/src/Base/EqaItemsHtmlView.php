@@ -48,25 +48,26 @@ abstract class EqaItemsHtmlView extends BaseHtmlView{
         $this->layoutData->taskPrefixItem = StringHelper::convertPluralToSingle($this->getName());
         $this->layoutData->taskPrefixItems = $this->getName();
 
-        $this->layoutData->items = $this->get('Items');
-        $pagination = $this->get('Pagination');
+		$model = $this->getModel();
+        $this->layoutData->items = $model->getItems();
+        $pagination = $model->getPagination();
         if(!empty($pagination)) {
             $this->layoutData->pagination = $pagination;
             $this->layoutData->showPaginationLimitBox = true;
         }
 
-        $state = $this->get('State');
+        $state = $model->getState();
         $this->layoutData->listOrderingField = $this->escape($state->get('list.ordering'));
         $this->layoutData->listOrderingDirection = $this->escape($state->get('list.direction'));
         $this->layoutData->sortByOrder = $this->layoutData->listOrderingField == 'ordering';
 
-        $filterForm = $this->get('FilterForm');
+        $filterForm = $model->getFilterForm();
         if(!empty($filterForm)) {
             $this->layoutData->filterForm = $filterForm;
             $this->layoutData->showPaginationLimitBox = false;
         }
 
-        $activeFilters = $this->get('ActiveFilters');
+        $activeFilters = $model->getActiveFilters();
         if(!empty($activeFilters))
             $this->layoutData->activeFilters = $activeFilters;
     }

@@ -748,7 +748,8 @@ class ExamseasonModel extends EqaAdminModel{
 					'B' => 0,
 					'B+' => 0,
 					'A' => 0,
-					'A+' => 0
+					'A+' => 0,
+					'I' => 0
 				];
 
 			//Đếm phân loại thí sinh và tính tổng điểm
