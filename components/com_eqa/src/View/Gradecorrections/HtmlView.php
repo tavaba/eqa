@@ -26,7 +26,7 @@ class HtmlView extends EqaItemsHtmlView{
 		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
 		$option->check = EqaListLayoutItemFields::defaultFieldCheck();
 		$option->customFieldset1 = array();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('exam', 'Môn thi');
+		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examName', 'Môn thi');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('constituentText', 'Điểm cần đính chính');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('reason', 'Mô tả yêu cầu');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('statusText', 'Trạng thái xử lý');
@@ -56,8 +56,8 @@ class HtmlView extends EqaItemsHtmlView{
 		if(!empty($this->layoutData)){
 			foreach ($this->layoutData->items as &$item)
 			{
-				$item->constituentText = ExamHelper::decodeMarkConstituent($item->constituent);
-				$item->statusText = ExamHelper::decodePpaaStatus($item->status);
+				$item->constituentText = ExamHelper::decodeMarkConstituent($item->constituentCode);
+				$item->statusText = ExamHelper::decodePpaaStatus($item->statusCode);
 			}
 		}
 	}
@@ -83,10 +83,10 @@ class HtmlView extends EqaItemsHtmlView{
 		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
 		$option->check = EqaListLayoutItemFields::defaultFieldCheck();
 		$option->customFieldset1 = array();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('code', 'Mã HVSV');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('lastname', 'Họ đệm');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('firstname', 'Tên');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('exam', 'Môn thi');
+		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerCode', 'Mã HVSV');
+		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerLastname', 'Họ đệm');
+		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerFirstname', 'Tên');
+		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examName', 'Môn thi');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('constituentText', 'Thành phần');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('reason', 'Mô tả');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('statusText', 'Trạng thái');
@@ -110,8 +110,8 @@ class HtmlView extends EqaItemsHtmlView{
 		if(!empty($this->layoutData)){
 			foreach ($this->layoutData->items as &$item)
 			{
-				$item->statusText = ExamHelper::decodePpaaStatus($item->status);
-				switch ($item->status){
+				$item->statusText = ExamHelper::decodePpaaStatus($item->statusCode);
+				switch ($item->statusCode){
 					case ExamHelper::EXAM_PPAA_STATUS_ACCEPTED:
 						$item->optionRowCssClass='table-success';
 						break;
@@ -119,7 +119,7 @@ class HtmlView extends EqaItemsHtmlView{
 						$item->optionRowCssClass='table-danger';
 						break;
 				}
-				$item->constituentText = ExamHelper::decodeMarkConstituent($item->constituent);
+				$item->constituentText = ExamHelper::decodeMarkConstituent($item->constituentCode);
 			}
 		}
 	}

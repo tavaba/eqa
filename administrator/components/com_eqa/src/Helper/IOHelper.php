@@ -1550,11 +1550,11 @@ abstract class IOHelper
 	}
 	static public function writeGradeCorrectionRequests(Spreadsheet $spreadsheet, array $items):void
 	{
-		$headers = ['TT', 'Khóa', 'Lớp', 'Mã HVSV', 'Họ đệm', 'Tên', 'Môn phúc khảo', 'Điểm', 'Lý do'];
-		$widths = [6,      15,    15,    20,          20,       15,   40,             20,   40];
+		$headers = ['TT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Môn thi', 'Thành phần', 'Điểm', 'Lý do'];
+		$widths = [6,     12,          15,       8,   40,              15,       6,     40];
 		$COLS = sizeof($headers);
 		$sheet = $spreadsheet->createSheet();
-		$sheet->setTitle('Phúc khảo');
+		$sheet->setTitle('Đính chính điểm');
 		for($i=1; $i<=$COLS; $i++)
 		{
 			$columnLetter = Coordinate::stringFromColumnIndex($i);
@@ -1576,15 +1576,20 @@ abstract class IOHelper
 		foreach ($items as $item)
 		{
 			$seq++;
+			$mark = match ($item->constituentCode)
+			{
+				ExamHelper::MARK_CONSTITUENT_PAM1 => $item->pam1,
+				ExamHelper::MARK_CONSTITUENT_PAM2 => $item->pam2,
+				ExamHelper::MARK_CONSTITUENT_FINAL_EXAM => $item->finalExamMark
+			};
 			$data[] = [
 				$seq,
-				$item->course,
-				$item->group,
-				$item->code,
-				$item->lastname,
-				$item->firstname,
-				$item->exam,
-				ExamHelper::decodeMarkConstituent($item->constituent),
+				$item->learnerCode,
+				$item->learnerLastname,
+				$item->learnerFirstname,
+				$item->examName,
+				ExamHelper::decodeMarkConstituent($item->constituentCode),
+				$mark,
 				$item->reason
 			];
 		}
@@ -1861,186 +1866,6 @@ abstract class IOHelper
 		$sheet->getCell('A'.$row)->setValue($examiner1Fullname);
 		$sheet->mergeCells([1,$row, 3, $row]);
 		$sheet->getCell('E'.$row)->setValue($examiner2Fullname);
-		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
-		$cellStyle->getFont()->setBold(true);
-		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Set font for all the sheet
-		$font = $sheet->getStyle($sheet->calculateWorksheetDimension())->getFont();
-		$font->setName('Times New Roman');
-		$font->setSize($FONT_SIZE);
-	}
-	static public function writeRegradingMarkingSheet_bak(Worksheet $sheet, ExamseasonInfo $examseasonInfo, int $examId, string $examName, array $papers, array $employees):void
-	{
-		$PARTS = 2;
-		$PART_WIDTH = 3;  //Mỗi part gồm 3 cột: Số phách, Điểm bằng số, Điểm bằng chữ
-		$FONT_SIZE = 14;
-		$COLS = $PARTS * ($PART_WIDTH+1) - 1;      // Giữa 2 part có một cột trống
-
-		// Set page margins (values are in inches)
-		$sheet->getPageMargins()->setTop(0.5);
-		$sheet->getPageMargins()->setBottom(0.75);
-		$sheet->getPageMargins()->setLeft(0.45);
-		$sheet->getPageMargins()->setRight(0.45);
-		$sheet->getPageMargins()->setHeader(0.3);
-		$sheet->getPageMargins()->setFooter(0.3);
-
-		$remainWidth = self::PAGE_WIDTH_A4 - 0.45 - 0.45 - 0.5;
-		$averageColumnWidth = $remainWidth/$COLS;
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($averageColumnWidth,'in');
-		}
-
-		//Init
-		$row=0;
-		$paperCount = count($papers);
-		$examiner1 = $employees[$papers[0]->examiner1Id];
-		$examiner2 = $employees[$papers[0]->examiner2Id];
-		$examiner1Fullname = implode(' ', [$examiner1['lastname'], $examiner1['firstname']]);
-		$examiner2Fullname = implode(' ', [$examiner2['lastname'], $examiner2['firstname']]);
-
-		//Thông tin cơ quan
-		$row++;
-		$midCol = intdiv($COLS,2) + $COLS % 2;
-		$organizationName = ConfigHelper::getOrganization();
-		$organizationName = mb_strtoupper($organizationName);
-		$sheet->getCell('A'.$row)->setValue($organizationName);
-		$sheet->mergeCells([1,$row, $midCol, $row]);
-		$cellStyle = $sheet->getStyle([1,$row, $midCol, $row]);
-		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		$row++;
-		$unitName = ConfigHelper::getExaminationUnit();
-		$unitName = mb_strtoupper($unitName);
-		$sheet->getCell('A'.$row)->setValue($unitName);
-		$sheet->mergeCells([1,$row, $midCol, $row]);
-		$cellStyle = $sheet->getStyle([1,$row, $midCol, $row]);
-		$cellStyle->getFont()->setBold(true);
-		$cellStyle->getFont()->setUnderline(true);
-		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Dòng tiêu đề
-		$row  += 2;
-		$cell = $sheet->getCell([1,$row]);
-		$cell->setValue("PHIẾU CHẤM PHÚC KHẢO");
-		$cell->getStyle()->getFont()->setBold(true);
-		$cell->getStyle()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		//Thông tin môn thi
-		$row += 2;
-		$value = new RichText();
-		$part = $value->createTextRun('Môn thi: ');
-		$part->getFont()->setSize($FONT_SIZE)->setName('Times New Roman');
-
-		$part = $value->createTextRun($examName);
-		$part->getFont()->setBold(true)->setSize($FONT_SIZE)->setName('Times New Roman');
-
-		$part = $value->createTextRun('    (Mã môn thi: ' . $examId . ')');
-		$part->getFont()->setSize($FONT_SIZE)->setName('Times New Roman');
-
-		$sheet->setCellValue('A'.$row, $value);
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		//Kỳ thi
-		$row++;
-		$value = 'Kỳ thi: ' . $examseasonInfo->name;
-		$sheet->getCell('A'.$row)->setValue($value);
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		//Năm học và học kỳ
-		$row++;
-		$value = 'Năm học: ' . $examseasonInfo->academicyear . '       Học kỳ: ' . $examseasonInfo->term;
-		$sheet->getCell('A'.$row)->setValue($value);
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		//Thông tin túi bài thi
-		$row++;
-		$value = 'Tổng số bài thi: ' . $paperCount;
-		$sheet->getCell('A'.$row)->setValue($value);
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		//Tính toán số phách cho mỗi cột
-		//  1. Chia đều số bài cho số cột
-		//  2. Nếu dư R bài thì rải vào R cột bên trái
-		$colSizes = [];
-		$m = intdiv($paperCount, $PARTS);
-		$r = $paperCount % $PARTS;
-		for($i=0; $i<$PARTS; $i++)
-		{
-			if($i < $r)
-				$colSizes[] = $m+1;
-			else
-				$colSizes[] = $m;
-		}
-
-		//Ghi các PART vào sheet
-		$row += 2;
-		$headingRow = $row;         //Lưu lại vị trí này để còn trở lại và lưu các PART sau
-		$lastRow=0;
-		$paperIndex=0;
-		for($p=0; $p<$PARTS; $p++)
-		{
-			//Ghi Heading của mỗi cột (part)
-			$leftCol = $p * ($PART_WIDTH+1) + 1; //Đánh số 1-based
-			$sheet->getCell([$leftCol,$row])->setValue('Số phách');
-			$sheet->mergeCells([$leftCol, $row, $leftCol, $row+1]);
-			$sheet->getStyle([$leftCol, $row, $leftCol, $row+1])->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-
-			$sheet->getCell([$leftCol+1,$row])->setValue('Điểm');
-			$sheet->mergeCells([$leftCol+1, $row, $leftCol+2, $row]);
-
-			$sheet->getCell([$leftCol+1, $row+1])->setValue('Bằng số');
-			$sheet->getCell([$leftCol+2, $row+1])->setValue('Bằng chữ');
-
-			$sheet->getStyle([$leftCol,$row,$leftCol+2,$row+1])->getFont()->setBold(true);
-
-			//Ghi số phách (Lùi để tiến)
-			$row = $row + 2 -1;
-			for($i=0; $i<$colSizes[$p]; $i++)
-			{
-				$row++;
-				$mask = $papers[$paperIndex]->mask;
-				$sheet->getCell([$leftCol,$row])->setValue($mask);
-				$paperIndex++;
-			}
-
-			//Ghi xong mỗi cột (part) thì trở lại dòng tiêu đề
-			$rangeStyle = $sheet->getStyle([$leftCol, $headingRow, $leftCol+2, $row]);
-			$rangeStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-			$rangeStyle->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-			if($COLS < $row)
-				$lastRow = $row;
-			$row = $headingRow;
-		}
-
-		//Ngày tháng
-		$row = $lastRow+2;
-		$value = 'Ngày .... tháng ..... năm 20.....';
-		$cell = $sheet->getCell('A'.$row);
-		$cell->setValue($value);
-		$cell->getStyle()->getFont()->setItalic(true);
-		$cell->getStyle()->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		//Ký tên
-		$midCol = intdiv($COLS, 2);
-		$row++;
-		$sheet->getCell('A'.$row)->setValue('CÁN BỘ CHẤM THI 1');
-		$sheet->mergeCells([1,$row, $midCol, $row]);
-		$sheet->getCell([$midCol+2, $row])->setValue('CÁN BỘ CHẤM THI 2');
-		$sheet->mergeCells([$midCol+2, $row, $COLS, $row]);
-		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
-		$cellStyle->getFont()->setBold(true);
-		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		$row += 4;
-		$sheet->getCell('A'.$row)->setValue($examiner1Fullname);
-		$sheet->mergeCells([1,$row, $midCol, $row]);
-		$sheet->getCell([$midCol+2, $row])->setValue($examiner2Fullname);
-		$sheet->mergeCells([$midCol+2, $row, $COLS, $row]);
 		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
 		$cellStyle->getFont()->setBold(true);
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);

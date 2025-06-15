@@ -147,6 +147,9 @@ JHtml::_('bootstrap.framework');
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadRegradingFee'); ?>" class="btn btn-primary btn-lg">
 		                    <?php echo "Tải danh sách thu phí phúc khảo"; ?>
                         </a>
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=gradecorrections.downloadGradeCorrectionRequests'); ?>" class="btn btn-primary btn-lg">
+		                    <?php echo "Tải danh sách yêu cầu đính chính"; ?>
+                        </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadHybridRegradings'); ?>" class="btn btn-primary btn-lg">
 		                    <?php echo "Tải thông tin bài thi iTest cần phúc khảo"; ?>
                         </a>
