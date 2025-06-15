@@ -11,4 +11,8 @@ $examseason = $this->examseason;
 </div>
 <div>&nbsp;</div>
 <?php
+if(empty($this->layoutData->items)) {
+	echo '<p>Không có bài thi nào để phân công chấm. Hãy kiểm tra và đảm bảo 
+          rằng yêu cầu phúc khảo của thí sinh đã được chấp nhận.</p>';
+}
 ViewHelper::printItemsDefaultLayout($this->layoutData, $this->itemFields);

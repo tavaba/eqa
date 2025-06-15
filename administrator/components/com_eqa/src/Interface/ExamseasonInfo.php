@@ -1,5 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Interface;
+use DateTime;
+use DateTimeZone;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 defined('_JEXEC') or die();
@@ -18,9 +20,10 @@ class ExamseasonInfo
 		if($this->completed) return false;
 		if(!$this->ppaaRequestEnabled) return false;
 		if(!is_null($this->ppaaRequestDeadline)) {
-			$deadlineTime = strtotime($this->ppaaRequestDeadline);
-			$currentTime = time();
-			if($currentTime > $deadlineTime) return false;
+			$timezone = new DateTimeZone('Asia/Ho_Chi_Minh');
+			$now = new DateTime('now', $timezone);
+			$deadlineTime = new DateTime($this->ppaaRequestDeadline, $timezone);
+			if($now > $deadlineTime) return false;
 		}
 		return true;
 	}

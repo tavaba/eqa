@@ -84,9 +84,10 @@ class RegradingsController extends EqaAdminController
 		$model = $this->getModel('regradings');
 		$items = $model->getItemsWithoutPagination();
 		$spreadsheet = new Spreadsheet();
-		$spreadsheet->removeSheetByIndex(0);
+		$sheet = $spreadsheet->getSheet(0);
+		$sheet->setTitle('Phúc khảo');
 
-		IOHelper::writeRegradingRequests($spreadsheet, $items);
+		IOHelper::writeRegradingRequests($sheet, $items);
 
 		// Force download of the Excel file
 		$fileName = 'Danh sách phúc khảo.xlsx';
