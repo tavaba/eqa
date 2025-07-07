@@ -32,11 +32,6 @@ $exam = ExamInfo::cast($this->exam);
                         <li>"<b>Chia phòng theo lớp</b>": Mỗi lớp học phần được chia về một phòng thi. Thường áp dụng
                             cho thi thực hành, vấn đáp, đồ án</li>
                         <li>"<b>Xuất môn thi</b>": Xuất danh sách thí sinh để công bố cho thí sinh</li>
-                        <li>"<b>Xuất phòng thi</b>": Xuất danh sách thí sinh theo phòng thi. Lưu ý chỉ sử dụng
-                            chức năng này trong trường hợp phòng thi riêng biệt, không dùng chung cho nhiều môn thi
-                            (thường thì thi lần 1 là như thế). Trong trường hợp một phòng thi được sử dụng cho nhiều
-                            môn thi (tường gặp khi thi lần 2) thì hãy sử dụng chức năng "Xuất" trong giao diện
-                            quản lý phòng thi.</li>
                         <li>"<b>Xuất ca iTest</b>": Xuất file dữ liệu để tạo ca thi iTest</li>
                     </ol>
                 </div>

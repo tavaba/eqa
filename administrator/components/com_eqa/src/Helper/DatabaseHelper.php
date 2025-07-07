@@ -412,7 +412,7 @@ abstract class DatabaseHelper
 			return false;
 		return $res;
 	}
-	static public function getExamseasonInfo(int|null $id=null): ExamseasonInfo|null
+	static public function getExamseasonInfo($id=null): ExamseasonInfo|null
 	{
 		$db = self::getDatabaseDriver();
 		$columns = $db->quoteName(
@@ -423,10 +423,10 @@ abstract class DatabaseHelper
 			->select($columns)
 			->from('#__eqa_examseasons AS a')
 			->leftJoin('#__eqa_academicyears AS b', 'a.academicyear_id=b.id');
-		if(is_null($id))
+		if(empty($id))
 			$query->where($db->quoteName('a.default'). '= 1');
 		else
-			$query->where('a.id='.$id);
+			$query->where('a.id='.(int)$id);
 		$db->setQuery($query);
 		$obj = $db->loadObject();
 		if(!$obj)

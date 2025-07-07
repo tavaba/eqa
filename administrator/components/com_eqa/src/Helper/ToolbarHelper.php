@@ -85,12 +85,13 @@ abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
         $button->listCheck(true);
         $button->message($msg);
     }
-    public static function appendUpload($task, $text='COM_EQA_BUTTON_UPLOAD', $icon='upload', $requiredActions='core.create'):void
+    public static function appendUpload($task, $text='COM_EQA_BUTTON_UPLOAD', $icon='upload', $requiredActions='core.create', $formValidate=true):void
     {
         if(!GeneralHelper::checkPermissions($requiredActions))
             return;
         $toolbar = self::getToolbarInstance();
-        $toolbar->standardButton($icon, $text, $task);
+        $button = $toolbar->standardButton($icon, $text, $task);
+	    $button->formValidation($formValidate);
     }
 	public static function appendCancelLink($url)
 	{

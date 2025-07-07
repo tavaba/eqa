@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="gradecorrection" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="constituent"
+                type="hidden"
+        />
+        <field
+                name="id"
+                type="text"
+                label="Số hiệu của yêu cầu"
+                readonly="true"
+        />
+        <field
+                name="examseason"
+                type="text"
+                label="Kỳ thi"
+                readonly="true"
+        />
+        <field
+                name="exam"
+                type="text"
+                readonly="true"
+                label="Môn thi"
+        />
+        <field
+                name="learner"
+                type="text"
+                label="Thí sinh"
+                readonly="true"
+        />
+        <field
+                name="reason"
+                type="textarea"
+                label="Yêu cầu đính chính"
+                readonly="true"
+        />
+        <field
+                name="reviewer_id"
+                type="employee"
+                label="Người xử lý"
+                description="Người đã xem xét và xử lý yêu cầu đính chính của thí sinh (và ký vào Phiếu xử lý yêu cầu đính chính điểm)"
+                class="select2-basic"
+                required="true"
+                default=""
+        >
+            <option value="">-Người xử lý-</option>
+        </field>
+        <field name="changed" type="list" required="true"
+               label="Điều chỉnh điểm"
+               description="Có điều chỉnh điểm sau khi xem xét yêu cầu của thí sinh hay không?"
+               default="">
+            <option value="">-Có điều chỉnh điểm?-</option>
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+        </field>
+        <field
+                name="pam1"
+                type="text"
+                label="Điểm TP1 (mới)"
+                required="true"
+                showon="changed:1"
+        />
+        <field
+                name="pam2"
+                type="text"
+                label="Điểm TP2 (mới)"
+                required="true"
+                showon="changed:1"
+        />
+        <field
+                name="final_exam"
+                type="text"
+                label="Điểm thi KTHP (mới)"
+                required="true"
+                showon="changed:1"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="Lý do"
+                description="Mô tả lý do điều chỉnh hoặc từ chối điều chỉnh điểm"
+                required="true"
+        />
+    </fieldset>
+</form>

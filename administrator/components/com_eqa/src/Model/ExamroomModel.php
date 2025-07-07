@@ -45,26 +45,24 @@ class ExamroomModel extends EqaAdminModel {
             ->select('a.learner_id')
             ->from('#__eqa_exam_learner AS a')
             ->leftJoin('#__eqa_exams AS b', 'a.exam_id=b.id')
-            ->where('b.status >= ' . $prohibitStatus . ' AND a.learner_id IN ' . $learnerIdSet)
+            ->where('a.examroom_id=' . $examroomId . ' AND b.status >= ' . $prohibitStatus . ' AND a.learner_id IN ' . $learnerIdSet)
             ->setLimit(1,0);
         $db->setQuery($query);
         if($db->loadResult() > 0)
         {
-            $msg = Text::_('COM_EQA_MSG_DELETION_IS_PROHIBITED');
-            $app->enqueueMessage($msg,'error');
+            $app->enqueueMessage('Không thể xóa do môn thi đã diễn ra','error');
             return false;
         }
         //b) Nếu có một thí sinh nào đó đã có điểm thi, không cho xóa
         $query = $db->getQuery(true)
             ->select('learner_id')
             ->from('#__eqa_exam_learner')
-            ->where('mark_orig IS NOT NULL AND learner_id IN ' . $learnerIdSet)
+            ->where('examroom_id=' . $examroomId . ' AND mark_orig IS NOT NULL AND learner_id IN ' . $learnerIdSet)
             ->setLimit(1,0);
         $db->setQuery($query);
         if($db->loadResult() > 0)
         {
-            $msg = Text::_('COM_EQA_MSG_DELETION_IS_PROHIBITED');
-            $app->enqueueMessage($msg,'error');
+            $app->enqueueMessage('Không thể xóa do thí sinh đã có điểm thi','error');
             return false;
         }
 

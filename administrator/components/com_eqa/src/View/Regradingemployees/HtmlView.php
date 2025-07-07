@@ -42,12 +42,12 @@ class HtmlView extends EqaItemsHtmlView {
 			return;
 		}
 
-		//Khởi tạo model 'regrading'
+		//Khởi tạo model 'regradings'
 		$factory = GeneralHelper::getMVCFactory();
-		$model = $factory->createModel('regrading');
+		$model = $factory->createModel('regradings');
 
 		//Setup layout data
-		$this->layoutData->items = $model->getExams($examseasonId);
+		$this->layoutData->items = $model->getRegradingExams($examseasonId);
 		$this->layoutData->filterForm = null;
 		$this->layoutData->activeFilters = null;
 		$this->layoutData->pagination = null;
@@ -75,8 +75,8 @@ class HtmlView extends EqaItemsHtmlView {
 	protected function addToolbarForLayoutDefault(): void
 	{
 		ToolbarHelper::title('Phân công cán bộ chấm phúc khảo');
-		ToolbarHelper::apply('regradings.applyExaminers');
-		ToolbarHelper::save('regradings.saveExaminers');
+		ToolbarHelper::apply('regradings.applyRegradingExaminers');
+		ToolbarHelper::save('regradings.saveRegradingExaminers');
 		ToolbarHelper::cancel('');
 	}
 }

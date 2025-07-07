@@ -5,12 +5,14 @@ use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
+use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\Interface\Regradingrequest;
 use stdClass;
 
 defined('_JEXEC') or die();
 
-class RegradingModel extends EqaAdminModel
+class RegradingsModel extends EqaAdminModel
 {
 	/**
 	 * Lấy thông tin về tất cả các yêu cầu phúc khảo trong kỳ thi $examseasonId
@@ -81,7 +83,7 @@ class RegradingModel extends EqaAdminModel
 		}
 		return $stdClassItems;
 	}
-	public function getPaperExams(int $examseasonId, bool $onlyAccepted = true): array
+	public function getPaperRegradings(int $examseasonId, bool $onlyAccepted = true): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
@@ -113,7 +115,6 @@ class RegradingModel extends EqaAdminModel
 			->where('b.testtype='.ExamHelper::TEST_TYPE_PAPER);
 		if($onlyAccepted)
 			$query->where('a.status=' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED);
-	//	$query->where($db->quoteName('a.status') . '=' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED);
 		$db->setQuery($query);
 		$items = $db->loadObjectList();
 		if(empty($items)) return []; //Không có gì để trả
@@ -187,7 +188,7 @@ class RegradingModel extends EqaAdminModel
 	 *                  - examiner2Completed: True nếu đã hoàn tất việc phân công CBChT 2
 	 * @since version 1.1.9
 	 */
-	public function getExams(int $examseasonId): array
+	public function getRegradingExams(int $examseasonId): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -331,5 +332,209 @@ class RegradingModel extends EqaAdminModel
 		if($result === null)
 			return true;
 		return false;
+	}
+
+	/**
+	 * @param   int          $examId
+	 * @param   int          $learnerId
+	 * @param   int          $classId
+	 * @param   float        $pam
+	 * @param   int          $attempt
+	 * @param   float        $addValue
+	 * @param   int          $anomaly
+	 * @param   float        $oldMark
+	 * @param   int          $oldConclusion
+	 * @param   float        $newMark
+	 * @param   string|null  $changeDescription
+	 *
+	 *
+	 * @throws Exception
+	 * @since 1.1.10
+	 */
+	protected function applyRegradingResult(int $examId, int $learnerId, int $classId, float $pam, int $attempt, float $addValue, int $anomaly, float $oldMark, int $oldConclusion, float $newMark, ?string $changeDescription)
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//2. Ghi điểm phúc khảo vào bảng #__eqa_regradings
+		$query = $db->getQuery(true)
+			->update('#__eqa_regradings')
+			->set($db->quoteName('result') . '=' . $newMark)
+			->set($db->quoteName('status') . '=' . ExamHelper::EXAM_PPAA_STATUS_DONE)
+			->where('exam_id=' . $examId)
+			->where('learner_id=' . $learnerId);
+		if(!empty($changeDescription))
+			$query->set($db->quoteName('description') . '=' . $db->quote($changeDescription));
+		$db->setQuery($query);
+		if(!$db->execute())
+			throw new Exception('Lỗi khi lưu điểm phúc khảo');
+
+		//3. Nếu sau phúc khảo mà điểm không đổi thì chỉ ghi điểm phúc khảo vào bảng #__eqa_exam_learner
+		if($oldMark == $newMark)
+		{
+			$db->getQuery(true)
+				->update('#__eqa_exam_learner')
+				->set($db->quoteName('ppaa') . '=' . ExamHelper::EXAM_PPAA_REVIEW)
+				->set($db->quoteName('mark_ppaa') . '=' . $newMark)
+				->where('exam_id=' . $examId)
+				->where('learner_id=' . $learnerId);
+			$db->setQuery($query)->execute();
+			return;
+		}
+
+		//4. Nếu điểm sau phúc khảo có thay đổi thì cần tính toán lại các điểm có liên quan
+		//4.1. Tính toán lại điểm thi, điểm học phần và kết luận
+		$finalMark = ExamHelper::calculateFinalMark($newMark, $anomaly, $attempt, $addValue);
+		$moduleMark = ExamHelper::calculateModuleMark($learnerId, $pam, $finalMark, $attempt);
+		$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
+		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+
+		//4.2. Cập nhật điểm phúc khảo vào bảng #__eqa_exam_learner
+		$query = $db->getQuery(true)
+			->update('#__eqa_exam_learner')
+			->set($db->quoteName('ppaa') . '=' . ExamHelper::EXAM_PPAA_REVIEW)
+			->set($db->quoteName('mark_ppaa') . '=' . $newMark)
+			->set($db->quoteName('mark_final') . '=' . $finalMark)
+			->set($db->quoteName('module_mark') . '=' . $moduleMark)
+			->set($db->quoteName('module_grade') . '=' . $db->quote($moduleGrade))
+			->set($db->quoteName('conclusion') . '=' . $conclusion)
+			->where('exam_id=' . $examId)
+			->where('learner_id=' . $learnerId);
+		$db->setQuery($query);
+		if(!$db->execute())
+			throw new Exception('Lỗi khi cập nhật điểm môn thi');
+
+		//5. Nếu sau phúc khảo 'conclusion' có thay đổi thì cần cập nhận thông tin vào bảng #__eqa_class_learner
+		//   Mà cụ thể là thông tin về quyền thi tiếp. Các thông tin khác không thể thay đổi vì phúc khảo.
+		if($oldConclusion == $conclusion)
+			return;
+
+		if($conclusion == ExamHelper::CONCLUSION_PASSED || $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED)
+			$expired=1;
+		else
+			$expired=0;
+		$query = $db->getQuery(true)
+			->update('#__eqa_class_learner')
+			->set($db->quoteName('expired') . '=' . $expired)
+			->where('class_id=' . $classId)
+			->where('learner_id=' . $learnerId);
+		$db->setQuery($query);
+		if(!$db->execute())
+			throw new Exception('Lỗi khi cập nhật thông tin vào lớp học phần');
+	}
+
+	/**
+	 * Ghi kết quả chấm phúc khảo theo số phách
+	 *
+	 * @param int $examseasonId
+	 * @param array $data Là một array, mỗi phần tử có kiểu PpaaEntry
+	 *
+	 * @throws Exception
+	 * @since 1.1.10
+	 */
+	public function savePaperRegradingResult(int $examId, array $regradingData)
+	{
+		/**
+		 * Cách thực hiện:
+		 * 1. Lấy thông tin cần thiết về từng thí sinh
+		 * 2. Cập nhật điểm phúc khảo, lý do thay đổi điểm (nếu có) vào bảng #__eqa_regradings
+		 * 3. Nếu điểm không thay đổi thì chỉ cập nhật điểm phúc khảo vào bảng #__eqa_exam_learner
+		 * 4. Nếu điểm thay đổi thì cần tính toán lại các điểm có liên quan như điểm thi, điểm học phần và kết luận
+		 * 5. Nếu sau phúc khảo 'conclusion' có thay đổi thì cần cập nhận thông tin vào bảng #__eqa_class_learner
+		 */
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1. Xác định learner_id dựa trên mask
+		$masks = [];
+		foreach ($regradingData as $entry)
+		{
+			$entry = PpaaEntryInfo::cast($entry);
+			$masks[] = $entry->mask;
+		}
+		$columns = $db->quoteName(
+			array('a.learner_id', 'a.mask','b.class_id', 'd.subject_id', 'e.pam', 'b.attempt','c.type',     'c.value',     'b.anomaly', 'b.conclusion'),
+			array('id',           'mask',  'classId',    'subjectId',    'pam',   'attempt',  'stimulType', 'stimulValue', 'anomaly',   'conclusion')
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_papers AS a')
+			->leftJoin('#__eqa_exam_learner AS b', 'b.exam_id=a.exam_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_stimulations AS c', 'c.id=b.stimulation_id')
+			->leftJoin('#__eqa_classes AS d', 'd.id=b.class_id')
+			->leftJoin('#__eqa_class_learner AS e', 'e.class_id=d.id AND e.learner_id=a.learner_id')
+			->where('a.exam_id=' . $examId. ' AND a.mask IN (' . implode(',', $masks) . ')');
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList('mask'); //Mảng kết hợp, key là mask
+		if(empty($examinees))
+			throw new Exception('Không tìm thấy thông tin của thí sinh trong danh sách thí sinh của môn thi');
+
+		//Xử lý từng entry
+		foreach ($regradingData as $entry)
+		{
+			$entry = PpaaEntryInfo::cast($entry);
+			$examinee = $examinees[$entry->mask]; //Lấy thông tin của thí sinh dựa trên mask
+			$addValue = $examinee->stimulType==StimulationHelper::TYPE_ADD ? $examinee->stimulValue : 0;
+			$this->applyRegradingResult($examId, $examinee->id, $examinee->classId, $examinee->pam, $examinee->attempt, $addValue, $examinee->anomaly, $entry->oldMark, $examinee->conclusion, $entry->newMark, $entry->changeDescription);
+		}
+	}
+
+	/**
+	 * @param   int    $examId
+	 * @param   array  $examResults An associative array with learner code as key and mark as value
+	 * @return  int    Số lượng yêu cầu phúc khảo đã được xử lý
+	 *
+	 * @throws Exception
+	 * @since version
+	 */
+	public function saveHybridRegradingResult(int $examId, array $examResults): int
+	{
+		/**
+		 * Cách thực hiện:
+		 * 1. Lấy thông tin cần thiết về từng thí sinh có yêu cầu phúc khảo môn thi $examId. Điều kiện
+		 *    là yêu cầu phải được chấp thuận trước đó, hoặc đã được xử lý thành công trước đó. Nếu
+		 *    đã xử lý thành công thì xử lý lại như bình thường.
+		 * 2. Cập nhật kết quả phúc khảo vào CSDL cho từng thí sinh.
+		 */
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1. Lấy thông tin cần thiết về từng thí sinh có yêu cầu phúc khảo môn thi $examId
+		$columns = $db->quoteName(
+			array('a.learner_id', 'f.code',      'b.class_id', 'd.subject_id', 'e.pam', 'b.attempt','c.type',     'c.value',     'b.mark_orig',  'b.anomaly', 'b.conclusion'),
+			array('learnerId',    'learnerCode', 'classId',    'subjectId',    'pam',   'attempt',  'stimulType', 'stimulValue', 'origMark',     'anomaly',   'conclusion')
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_regradings AS a')
+			->leftJoin('#__eqa_exam_learner AS b', 'b.exam_id=a.exam_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_stimulations AS c', 'c.id=b.stimulation_id')
+			->leftJoin('#__eqa_classes AS d', 'd.id=b.class_id')
+			->leftJoin('#__eqa_class_learner AS e', 'e.class_id=d.id AND e.learner_id=a.learner_id')
+			->leftJoin('#__eqa_learners AS f', 'f.id=a.learner_id')
+			->where('a.exam_id=' . $examId. ' AND a.status IN (' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED . ',' . ExamHelper::EXAM_PPAA_STATUS_DONE . ')');
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList('learnerCode'); //Mảng kết hợp, key là learnerCode
+		if(empty($examinees))
+			throw new Exception('Môn thi không có yêu cầu phúc khảo nào đã được chấp nhận');
+
+		//2. Cập nhật kết quả phúc khảo vào CSDL cho từng thí sinh
+		foreach ($examinees as $examinee)
+		{
+			if(!isset($examResults[$examinee->learnerCode]))
+				throw new Exception('Không tìm thấy điểm phúc khảo cho thí sinh '. htmlspecialchars($examinee->learnerCode));
+
+			$learnerId = $examinee->learnerId;
+			$classId = $examinee->classId;
+			$pam = $examinee->pam;
+			$attempt = $examinee->attempt;
+			$addValue = $examinee->stimulType==StimulationHelper::TYPE_ADD ? $examinee->stimulValue : 0;
+			$anomaly = $examinee->anomaly;
+			$oldMark = $examinee->origMark;
+			$oldConclusion = $examinee->conclusion;
+			$newMark = $examResults[$examinee->learnerCode];
+			$changeDescription = null;
+			$this->applyRegradingResult($examId, $learnerId, $classId, $pam, $attempt, $addValue, $anomaly, $oldMark, $oldConclusion, $newMark, $changeDescription);
+		}
+
+		//3. Trả về số lượng yêu cầu phúc khảo đã được xử lý
+		return count($examinees);
 	}
 }

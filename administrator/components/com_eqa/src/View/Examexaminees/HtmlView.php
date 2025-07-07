@@ -131,7 +131,6 @@ class HtmlView extends EqaItemsHtmlView {
 		$urlDistribute2 = JRoute::_('index.php?option=com_eqa&view=exam&layout=distribute2&exam_id='.$this->exam->id, false);
 	    ToolbarHelper::appendLink('core.create', $urlDistribute2,'Chia phòng theo lớp', 'calendar');
 	    ToolbarHelper::appenddButton(null,'download','Xuất môn thi','exam.export');
-	    ToolbarHelper::appenddButton(null,'download','Xuất phòng thi','exam.exportRooms');
 	    ToolbarHelper::appenddButton(null,'download','Xuất ca iTest','exam.exportitest');
     }
 }

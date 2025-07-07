@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="gradecorrectionreject" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="exam"
+                type="text"
+                readonly="true"
+                label="Môn thi"
+        />
+        <field
+                name="learner"
+                type="text"
+                label="Thí sinh"
+                readonly="true"
+        />
+        <field
+                name="reason"
+                type="texterea"
+                label="Yêu cầu đính chính"
+                readonly="true"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="Lý do từ chối"
+                required="true"
+        />
+    </fieldset>
+</form>

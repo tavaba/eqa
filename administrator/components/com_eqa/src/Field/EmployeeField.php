@@ -54,11 +54,11 @@ class EmployeeField extends GroupedlistField
 		//return
         self::$groups=$groups;
     }
-	protected  function getOptions()
+	protected  function getGroups()
 	{
 		if(empty(self::$groups))
 			self::initGroups();
-		$groups = parent::getOptions();
+		$groups = parent::getGroups();
 		return array_merge($groups, self::$groups);
 	}
 	static public function getElementHtml(string $name, int|null $selectedValue=null, string $prompt='', string $class='select2-basic'): string

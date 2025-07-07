@@ -550,7 +550,7 @@ class ClassnameParser{
      * -Group5: số hiệu lớp
      * -Group6: phân môn
      */
-    protected const PATTERN4 = '/^([\s\S]+)-([1-3])-([0-9]{2})\s*\(([A-Z0-9]+)([0-9]{2})-([\p{L}\s]*)\)$/u';
+    protected const PATTERN4 = '/^([\s\S]+)-([1-3])-([0-9]{2})\s*\(([A-Z0-9]+)\.?([0-9]{2})-([\p{L}\s0-9]*)\)$/u';
 
 	/*
 	 * Và có PARTTERN5 dành cho các lớp học lại

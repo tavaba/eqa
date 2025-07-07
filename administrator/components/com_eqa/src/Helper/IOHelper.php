@@ -20,7 +20,7 @@ use PhpOffice\PhpSpreadsheet\Chart\DataSeries;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues;
 use PhpOffice\PhpSpreadsheet\Chart\PlotArea;
 use PhpOffice\PhpSpreadsheet\Chart\Title;
-use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\IOFactory as ExcelIOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -31,6 +31,12 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpWord\Element\Section;
+use PhpOffice\PhpWord\IOFactory as WordIOFactory;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Shared\Converter;
+use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\Tab;
 use Symfony\Component\HttpClient\Response\ResponseStream;
 
 abstract class IOHelper
@@ -44,7 +50,7 @@ abstract class IOHelper
 			$maxLenth = 31;
 
 		// Remove invalid characters
-		$title = preg_replace('/[:\\\\\/\?\*\[\]]/', '_', $title);
+		$title = preg_replace('/[:\\\\\/?*\[\]]/', '_', $title);
 
 		// Trim leading/trailing whitespace or quotes
 		$title = trim($title, " \t\n\r\0\x0B'");
@@ -62,7 +68,7 @@ abstract class IOHelper
 				$reader = new Xls();
 			} else {
 				// Assume it's an Excel 2007 or later (.xlsx)
-				$reader = IOFactory::createReader('Xlsx');
+				$reader = ExcelIOFactory::createReader('Xlsx');
 			}
 			$spreadsheet = $reader->load($fileName);
 		}
@@ -100,6 +106,40 @@ abstract class IOHelper
 		header('Content-Disposition: attachment; filename="' . basename($fileName) . '"; filename*=UTF-8\'\'' . rawurlencode($fileName));
 		header('Cache-Control: max-age=0');
 		header('Expires: 0');
+		header('Content-Length: ' . filesize($tmpFile));
+
+		// Output the file content
+		readfile($tmpFile);
+
+		// Delete the temp file
+		unlink($tmpFile);
+	}
+	static public function sendHttpDocx(PhpWord $phpWord, string $fileName): void
+	{
+		// Sanitize the file name
+		$fileName = preg_replace('/[\\\\\/:*?"<>|]/u', '_', $fileName);
+		$fileName = mb_substr(trim($fileName), 0, 255);
+
+		// Create a temporary file
+		$tmpDir = JPATH_SITE . '/tmp';  // or use \Joomla\CMS\Factory::getApplication()->get('tmp_path')
+		$tmpFile = tempnam($tmpDir, 'docx_');
+
+		// Save the spreadsheet to temp file
+		$writer = WordIOFactory::createWriter($phpWord, 'Word2007');
+		$writer->save($tmpFile);
+
+		// Clear any previous output
+		while (ob_get_level()) {
+			ob_end_clean();
+		}
+
+		// Send headers
+		header('Content-Description: File Transfer');
+		header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+		header('Content-Disposition: attachment; filename="' . $fileName . '"');
+		header('Expires: 0');
+		header('Cache-Control: must-revalidate');
+		header('Pragma: public');
 		header('Content-Length: ' . filesize($tmpFile));
 
 		// Output the file content
@@ -1818,6 +1858,9 @@ abstract class IOHelper
 		$style->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
 		//Chuẩn bị dữ liệu
+		usort($papers, function ($a, $b) {
+			return $a->mask <=> $b->mask; // PHP 7+ spaceship operator
+		});
 		$data=[];
 		foreach ($papers as $paper)
 		{
@@ -1875,5 +1918,136 @@ abstract class IOHelper
 		$font->setName('Times New Roman');
 		$font->setSize($FONT_SIZE);
 	}
+
+	static private function phpWordDefineCommonStyles(PhpWord $phpWord): void
+	{
+		//1. Font styles
+		$phpWord->setDefaultFontSize(14);
+		$phpWord->setDefaultFontName('Times New Roman');
+		$phpWord->addFontStyle('Bold', ['bold' => true]);
+		$phpWord->addFontStyle('Italic', ['italic' => true]);
+		$phpWord->addFontStyle('ItalicBold', ['italic' => true, 'bold' => true]);
+		$phpWord->addFontStyle('BoldUnderlined', ['bold' => true, 'underline'=>'single']);
+		$phpWord->addFontStyle('ItalicUnderlined', ['italic' => true, 'underline'=>'single']);
+		$phpWord->addFontStyle('ItalicBoldUnderlined', ['italic' => true, 'bold' => true, 'underline'=>'single']);
+
+		//2. Paragraph styles
+		$phpWord->addParagraphStyle('Normal', [
+			'alignment'=> Jc::BOTH,
+			'firstLine'=>709,  //1.25 cm
+			'lineHeight' => 1.15,
+			'spaceBefore' => 0,
+			'spaceAfter'  => 0,
+		]);
+		$phpWord->addParagraphStyle('Center', [
+			'alignment'=> Jc::CENTER,
+			'firstLine' => 0,
+			'baseOn'=>'Normal'
+		]);
+		$phpWord->addParagraphStyle('Left', [
+			'alignment'=> Jc::START,
+			'baseOn'=>'Normal'
+		]);
+		$phpWord->addParagraphStyle('Right', [
+			'alignment'=> Jc::END,
+			'baseOn'=>'Normal'
+		]);
+		$phpWord->addParagraphStyle('Title', [
+			'alignment'=> Jc::CENTER,
+			'firstLine' => 0,
+			'spaceBefore' => 240,
+			'spaceAfter'  => 120,
+		]);
+		$phpWord->addParagraphStyle('TitleWithoutSpaceAfter', [
+			'alignment'=> Jc::CENTER,
+			'firstLine' => 0,
+			'spaceBefore' => 240,
+			'spaceAfter'  => 0,
+		]);
+		$phpWord->addParagraphStyle('Subtitle', [
+			'alignment'=> Jc::CENTER,
+			'firstLine' => 0,
+			'spaceAfter' => Converter::pointToTwip(6),
+			'baseOn'=>'Normal'
+		]);
+		$phpWord->addParagraphStyle('Blockquote', [
+				'alignment'   => Jc::BOTH,
+				'indentation' => array(
+					'left'  => Converter::cmToTwip(1.0), // 1.0 cm left indent
+					'right' => Converter::cmToTwip(1.0)  // 1.0 cm right indent
+				),
+				'spaceBefore' => Converter::pointToTwip(12),
+				'spaceAfter'  => Converter::pointToTwip(12)
+			]);
+		$phpWord->addParagraphStyle('DotLine', [
+			'lineHeight' => 2.0,
+			'tabs' => [
+				new Tab(
+					Tab::TAB_STOP_RIGHT,
+					9072,               //16 cm
+					Tab::TAB_LEADER_DOT
+				)
+			],
+			'baseOn'=>'Normal'
+		]);
+	}
+	static private function phpWordAddCommonSection(PhpWord $phpWord): Section
+	{
+		$sectionStyle = [
+			'marginTop'    => 1134,  // 2 cm
+			'marginRight'  => 1134,  // 2 cm
+			'marginBottom' => 1134,  // 2 cm
+			'marginLeft'   => 1701,  // 3 cm
+		];
+		return $phpWord->addSection($sectionStyle);
+	}
+	static public function writeGradeCorrectionForm(PhpWord $phpWord, $request)
+	{
+
+		//Create a section and define common styles
+		self::phpWordDefineCommonStyles($phpWord);
+		$section = self::phpWordAddCommonSection($phpWord);
+
+		// --- DÒNG ĐẦU ---
+		$table = $section->addTable();
+		$table->addRow();
+		$cell = $table->addCell(3500);
+		$cell->addText('BAN CƠ YẾU CHÍNH PHỦ', null, 'Center');
+		$cell->addText('Học viện Kỹ thuật mật mã', 'BoldUnderlined', 'Center');
+
+		// --- TIÊU ĐỀ ---
+		$section->addText('PHIẾU XỬ LÝ YÊU CẦU ĐÍNH CHÍNH ĐIỂM','Bold', 'TitleWithoutSpaceAfter');
+		$section->addText('(Sử dụng trong thời gian phúc khảo)','Italic', 'Subtitle');
+
+		// --- THÔNG TIN ---
+		$section->addText('Kỳ thi: '. $request->examseasonName);
+		$learner = $request->learnerCode . ' - ' . implode(' ', [$request->learnerLastname, $request->learnerFirstname]);
+		$textRun = $section->addTextRun();
+		$textRun->addText('Môn thi: ');
+		$textRun->addText($request->examName, 'Bold');
+
+		$textRun = $section->addTextRun();
+		$textRun->addText('Thí sinh: ');
+		$textRun->addText($learner, 'Bold');
+
+		$section->addText('Điểm cần đính chính: '. ExamHelper::decodeMarkConstituent($request->constituent));
+		$section->addText('Mô tả yêu cầu đính chính:');
+		$section->addText($request->reason, 'Italic', 'Blockquote');
+
+		// --- Ý KIẾN NGƯỜI XỬ LÝ ---
+		$section->addText('Ý kiến của người xử lý:', null, ['spaceBefore'=>240, 'spaceAfter'=>240]);
+		for ($i = 0; $i < 10; $i++) {
+			$section->addText("\t", null, 'DotLine');
+		}
+
+		// --- NGÀY VÀ CHỮ KÝ ---
+		$section->addText('Hà Nội, ngày .... tháng .... năm 20....', 'Italic', 'Right');
+
+		$table = $section->addTable();
+		$table->addRow();
+		$table->addCell(5500)->addText('XÁC NHẬN CỦA' . PHP_EOL . 'LÃNH ĐẠO KHOA', 'Bold','Center');
+		$table->addCell(3500)->addText('NGƯỜI XỬ LÝ', 'Bold','Center');
+	}
+
 }
 

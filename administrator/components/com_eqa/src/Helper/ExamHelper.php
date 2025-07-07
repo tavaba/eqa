@@ -69,7 +69,9 @@ abstract class ExamHelper{
 
 	public const MARK_CONSTITUENT_PAM1=10;
 	public const MARK_CONSTITUENT_PAM2=20;
+	public const MARK_CONSTITUENT_PAM=30;
 	public const MARK_CONSTITUENT_FINAL_EXAM=100;
+	public const MARK_CONSTITUENT_ALL=200;
 
 	public const REGRADING_FEE_MODE_BY_WORK=10;
 	public const REGRADING_FEE_MODE_BY_CREDIT=20;
@@ -88,17 +90,6 @@ abstract class ExamHelper{
 			self::REGRADING_FEE_MODE_BY_WORK => self::decodeRegradingFeeMode(self::REGRADING_FEE_MODE_BY_WORK),
 			self::REGRADING_FEE_MODE_BY_CREDIT => self::decodeRegradingFeeMode(self::REGRADING_FEE_MODE_BY_CREDIT)
 		];
-	}
-
-	static public function decodePpaaStatus(int $code):string|null
-	{
-		return match ($code){
-			self::EXAM_PPAA_STATUS_INIT => 'Đã gửi yêu cầu',
-			self::EXAM_PPAA_STATUS_REJECTED => 'Yêu cầu bị từ chối',
-			self::EXAM_PPAA_STATUS_ACCEPTED => 'Yêu cầu đã được chấp nhận',
-			self::EXAM_PPAA_STATUS_DONE => 'Đã xử lý xong',
-			default => null
-		};
 	}
 
 	static public function markToText($mark):string
@@ -353,7 +344,9 @@ abstract class ExamHelper{
 		return match ($constituent){
 			self::MARK_CONSTITUENT_PAM1 => 'Điểm TP1',
 			self::MARK_CONSTITUENT_PAM2 => 'Điểm TP2',
+			self::MARK_CONSTITUENT_PAM => 'Điểm QT (TP1, TP2)',
 			self::MARK_CONSTITUENT_FINAL_EXAM => 'Điểm thi KTHP',
+			self::MARK_CONSTITUENT_ALL => 'Tất cả thành phần',
 			default => null
 		};
 	}
@@ -361,7 +354,27 @@ abstract class ExamHelper{
 		return [
 			self::MARK_CONSTITUENT_PAM1 => self::decodeMarkConstituent(self::MARK_CONSTITUENT_PAM1),
 			self::MARK_CONSTITUENT_PAM2 => self::decodeMarkConstituent(self::MARK_CONSTITUENT_PAM2),
-			self::MARK_CONSTITUENT_FINAL_EXAM => self::decodeMarkConstituent(self::MARK_CONSTITUENT_FINAL_EXAM)
+			self::MARK_CONSTITUENT_PAM => self::decodeMarkConstituent(self::MARK_CONSTITUENT_PAM),
+			self::MARK_CONSTITUENT_FINAL_EXAM => self::decodeMarkConstituent(self::MARK_CONSTITUENT_FINAL_EXAM),
+			self::MARK_CONSTITUENT_ALL => self::decodeMarkConstituent(self::MARK_CONSTITUENT_ALL)
+		];
+	}
+	static public function decodePpaaStatus(int $status):string|null
+	{
+		return match ($status){
+			self::EXAM_PPAA_STATUS_INIT => 'Chưa xử lý',
+			self::EXAM_PPAA_STATUS_ACCEPTED => 'Đã chấp nhận và đang xử lý',
+			self::EXAM_PPAA_STATUS_REJECTED => 'Bị từ chối',
+			self::EXAM_PPAA_STATUS_DONE => 'Đã xử lý xong',
+			default => null
+		};
+	}
+	static public function getPpaaStatuses(){
+		return [
+			self::EXAM_PPAA_STATUS_INIT => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_INIT),
+			self::EXAM_PPAA_STATUS_ACCEPTED => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_ACCEPTED),
+			self::EXAM_PPAA_STATUS_REJECTED => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_REJECTED),
+			self::EXAM_PPAA_STATUS_DONE => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_DONE)
 		];
 	}
 
@@ -441,6 +454,13 @@ abstract class ExamHelper{
         $pam = 0.7*$pam1 + 0.3*$pam2;
         return $pam;
     }
+	static public function calculatePam(int $subjectId, float $pam1, float $pam2)
+	{
+		//Nothing to do with $subjectId for now
+		//TODO: Xử lý trường hợp môn thi có các hệ số khác nhau
+		$pam = 0.7*$pam1 + 0.3*$pam2;
+		return $pam;
+	}
 	static public function calculateFinalMark(float $originalMark, int $anomaly, int $attempt, float $addValue)
 	{
 		$precision = ConfigHelper::getExamMarkPrecision();
@@ -539,6 +559,20 @@ abstract class ExamHelper{
 		}
 
 		return self::CONCLUSION_PASSED;
+	}
+
+	static public function isValidMark($value):bool
+	{
+		// Check if the value is numeric
+		if (!is_numeric($value)) {
+			return false;
+		}
+
+		// Convert to float
+		$floatValue = (float) $value;
+
+		// Check range
+		return $floatValue >= 0 && $floatValue <= 10;
 	}
 }
 

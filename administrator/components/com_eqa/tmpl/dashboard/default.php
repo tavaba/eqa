@@ -144,28 +144,28 @@ JHtml::_('bootstrap.framework');
                 </div>
                 <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
                     <div class="d-grid gap-2 mt-3">
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=gradecorrections'); ?>" class="btn btn-primary btn-lg">
+		                    <?php echo "Quản lý yêu cầu đính chính điểm"; ?>
+                        </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadRegradingFee'); ?>" class="btn btn-primary btn-lg">
-		                    <?php echo "Tải danh sách thu phí phúc khảo"; ?>
+		                    <?php echo "Tải danh sách thu phí phúc khảo (kỳ thi mặc định)"; ?>
                         </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=gradecorrections.downloadGradeCorrectionRequests'); ?>" class="btn btn-primary btn-lg">
-		                    <?php echo "Tải danh sách yêu cầu đính chính"; ?>
+                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadHybridRegradings'); ?>" class="btn btn-primary btn-lg">
+		                    <?php echo "Tải thông tin bài thi iTest cần phúc khảo (kỳ thi mặc định)"; ?>
                         </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadHybridRegradings'); ?>" class="btn btn-primary btn-lg">
-		                    <?php echo "Tải thông tin bài thi iTest cần phúc khảo"; ?>
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadPaperRegradings'); ?>" class="btn btn-primary btn-lg">
+		                    <?php echo "Tải thông tin để rút bài thi viết cần phúc khảo (kỳ thi mặc định)"; ?>
                         </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadPaperInfo'); ?>" class="btn btn-primary btn-lg">
-		                    <?php echo "Tải thông tin để rút bài thi viết cần phúc khảo"; ?>
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.assignRegradingExaminers'); ?>" class="btn btn-primary btn-lg">
+		                    <?php echo "Phân công chấm phúc khảo (kỳ thi mặc định)"; ?>
                         </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.assignExaminers'); ?>" class="btn btn-primary btn-lg">
-		                    <?php echo "Phân công chấm phúc khảo"; ?>
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadPaperRegradingSheets'); ?>" class="btn btn-primary btn-lg">
+		                    <?php echo "Tải phiếu chấm phúc khảo bài thi viết (kỳ thi mặc định)"; ?>
                         </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.downloadMarkingSheets'); ?>" class="btn btn-primary btn-lg">
-		                    <?php echo "Tải phiếu chấm (theo số phách) cho các bài thi viết cần phúc khảo"; ?>
-                        </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.xxx'); ?>" class="btn btn-primary btn-lg">
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=regradingresult&layout=uploadpaper'); ?>" class="btn btn-primary btn-lg">
 		                    <?php echo "Nhập kết quả phúc khảo bài thi viết"; ?>
                         </a>
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=regradings.yyy'); ?>" class="btn btn-primary btn-lg">
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=regradingresult&layout=uploaditest'); ?>" class="btn btn-primary btn-lg">
 		                    <?php echo "Nhập kết quả phúc khảo bài thi iTest"; ?>
                         </a>
                     </div>

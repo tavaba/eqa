@@ -1,5 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
+use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
@@ -402,7 +403,7 @@ class ExamController extends  EqaFormController {
 		$exam = DatabaseHelper::getExamInfo($examId);
 
 		//Nếu không phải thi trắc nghiệm thì bỏ
-		if($exam->testtype != ExamHelper::TEST_TYPE_MACHINE_OBJECTIVE && $exam->testtype!=ExamHelper::TEST_TYPE_MACHINE_HYBRID)
+		if($exam->testtype != ExamHelper::TEST_TYPE_MACHINE_OBJECTIVE && $exam->testtype!=ExamHelper::TEST_TYPE_MACHINE_HYBRID && $exam->testtype!=ExamHelper::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE)
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_NOT_MACHINE_TEST'), 'error');
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false));
@@ -643,10 +644,15 @@ class ExamController extends  EqaFormController {
 
 		//Cập nhật trạng thái môn thi
 		$exam = DatabaseHelper::getExamInfo($examId);
-		if($exam->countConcluded>0 && $exam->countConcluded < $exam->countTotal)
-			$model->setExamStatus($examId,ExamHelper::EXAM_STATUS_MARK_PARTIAL);
-		elseif($exam->countConcluded == $exam->countToTake + $exam->countExempted)
-			$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
+		if($exam->countConcluded>0)
+		{
+			if($exam->countConcluded == $exam->countToTake + $exam->countExempted)
+				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
+			else
+				$model->setExamStatus($examId,ExamHelper::EXAM_STATUS_MARK_PARTIAL);
+		}
+
+		//Thông báo kết quả
 		$msg = Text::sprintf("Môn thi <b>%s</b>: %d/%d đã có kết quả",
 			$exam->name,
 			$exam->countConcluded,

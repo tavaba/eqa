@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="upload">
+        <field
+                name="excelfiles"
+                type="file"
+                multiple="true"
+                required="true"
+                label="COM_EQA_FILE_NAME"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

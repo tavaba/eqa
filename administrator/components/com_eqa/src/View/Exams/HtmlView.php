@@ -29,7 +29,7 @@ class HtmlView extends EqaItemsHtmlView
         $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('testtype', 'COM_EQA_TESTTYPE');
         $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('usetestbank','COM_EQA_EXAM_USE_TESTBANK_OR_NOT',false, false,'text-center');
         $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('questiondeadline','COM_EQA_EXAM_QUESTION_DEADLINE',false,false,'text-center');
-        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('status','COM_EQA_PROGRESS');
+        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('status','COM_EQA_PROGRESS',true);
 
         //Set the option
         $this->itemFields = $fields;
@@ -43,7 +43,10 @@ class HtmlView extends EqaItemsHtmlView
         //Load additional data
         $model = $this->getModel();
         $examseasonId = $model->getState('filter.examseason_id');
-        $this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);    //Maybe null
+		if(is_numeric($examseasonId))
+            $this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);    //Maybe null
+	    else
+			$this->examseason = DatabaseHelper::getDefaultExamseason();
         if(!empty($this->examseason)) {
             $this->layoutData->formHiddenFields['examseason_id'] = $this->examseason->id;  //Được sử dụng trong trường hợp người dùng chọn 'Thêm môn thi từ lớp học phần'
         }

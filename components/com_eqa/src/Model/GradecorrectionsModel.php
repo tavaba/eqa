@@ -38,9 +38,9 @@ class GradecorrectionsModel extends EqaListModel{
 			$db->quoteName('f.pam2')         . ' AS ' . $db->quotename('pam2'),
 			$db->quoteName('c.mark_orig')    . ' AS ' . $db->quotename('finalExamMark'),
 			$db->quoteName('a.reason')       . ' AS ' . $db->quotename('reason'),
-			$db->quoteName('a.examiner1_id') . ' AS ' . $db->quotename('examiner1Id'),
-			$db->quoteName('a.examiner2_id') . ' AS ' . $db->quotename('examiner2Id'),
-			$db->quoteName('a.result')       . ' AS ' . $db->quotename('resut'),
+			$db->quoteName('a.handled_by')   . ' AS ' . $db->quotename('handlerId'),
+			$db->quoteName('a.reviewed_by')  . ' AS ' . $db->quotename('reviewerId'),
+			$db->quoteName('a.result')       . ' AS ' . $db->quotename('result'),
 			$db->quoteName('a.description')  . ' AS ' . $db->quotename('description')
 		];
 		$query = $db->getQuery(true)
