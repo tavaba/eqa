@@ -1777,17 +1777,17 @@ abstract class IOHelper
 
 		//Thông tin cơ quan
 		$row++;
-		$organizationName = ConfigHelper::getOrganization();
-		$organizationName = mb_strtoupper($organizationName);
-		$sheet->getCell('A'.$row)->setValue($organizationName);
+		$parentOrganization = ConfigHelper::getParentOrganization();
+		$parentOrganization = mb_strtoupper($parentOrganization);
+		$sheet->getCell('A'.$row)->setValue($parentOrganization);
 		$sheet->mergeCells([1,$row, 4, $row]);
 		$cellStyle = $sheet->getStyle([1,$row, 4, $row]);
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 		$row++;
-		$unitName = ConfigHelper::getExaminationUnit();
-		$unitName = mb_strtoupper($unitName);
-		$sheet->getCell('A'.$row)->setValue($unitName);
+		$organization = ConfigHelper::getOrganization();
+		$organization = mb_strtoupper($organization);
+		$sheet->getCell('A'.$row)->setValue($organization);
 		$sheet->mergeCells([1,$row, 4, $row]);
 		$cellStyle = $sheet->getStyle([1,$row, 4, $row]);
 		$cellStyle->getFont()->setBold(true);
@@ -1913,6 +1913,20 @@ abstract class IOHelper
 		$cellStyle->getFont()->setBold(true);
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+		$row+=2;
+		$sheet->getCell('A'.$row)->setValue('XÁC NHẬN CỦA LÃNH ĐẠO KHOA');
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
+		$cellStyle->getFont()->setBold(true);
+		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		$row+=1;
+		$sheet->getCell('A'.$row)->setValue('(Chỉ cần xác nhận khi có trường hợp chênh lệch từ 1,0 điểm trở lên)');
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
+		$cellStyle->getFont()->setItalic(true);
+		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
 		//Set font for all the sheet
 		$font = $sheet->getStyle($sheet->calculateWorksheetDimension())->getFont();
 		$font->setName('Times New Roman');
@@ -2026,6 +2040,8 @@ abstract class IOHelper
 		$textRun->addText('Môn thi: ');
 		$textRun->addText($request->examName, 'Bold');
 
+		$section->addText('Mã yêu cầu đính chính: '.$request->id);
+
 		$textRun = $section->addTextRun();
 		$textRun->addText('Thí sinh: ');
 		$textRun->addText($learner, 'Bold');
@@ -2036,6 +2052,7 @@ abstract class IOHelper
 
 		// --- Ý KIẾN NGƯỜI XỬ LÝ ---
 		$section->addText('Ý kiến của người xử lý:', null, ['spaceBefore'=>240, 'spaceAfter'=>240]);
+		$section->addText('(Ghi rõ điểm sau đính chính):', null, ['spaceBefore'=>240, 'spaceAfter'=>240]);
 		for ($i = 0; $i < 10; $i++) {
 			$section->addText("\t", null, 'DotLine');
 		}
@@ -2045,8 +2062,11 @@ abstract class IOHelper
 
 		$table = $section->addTable();
 		$table->addRow();
-		$table->addCell(5500)->addText('XÁC NHẬN CỦA' . PHP_EOL . 'LÃNH ĐẠO KHOA', 'Bold','Center');
-		$table->addCell(3500)->addText('NGƯỜI XỬ LÝ', 'Bold','Center');
+		$cell = $table->addCell(3000);
+		$cell->addText('XÁC NHẬN CỦA' . PHP_EOL . 'LÃNH ĐẠO KHOA', 'Bold','Center');
+		$cell->addText('(Khi có thay đổi điểm)', 'Italic', 'Center');
+		$table->addCell(3000)->addText('NGƯỜI XỬ LÝ', 'Bold','Center');
+		$table->addCell(3500)->addText('NGƯỜI LẬP PHIẾU', 'Bold','Center');
 	}
 
 }

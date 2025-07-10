@@ -8,6 +8,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends EqaItemsHtmlView {
@@ -64,6 +65,7 @@ class HtmlView extends EqaItemsHtmlView {
         {
             foreach ($this->layoutData->items as $item)
             {
+				ExamHelper::normalizeMarks($item);
                 $item->expired = $item->expired ? Text::_('JYES') : Text::_('JNO');
                 if($item->allowed)
                     $item->allowed = Text::_('JYES');

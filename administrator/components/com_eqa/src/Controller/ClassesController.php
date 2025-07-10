@@ -370,10 +370,11 @@ class ClassesController extends EqaAdminController {
                 try{
                     for($i=14;;$i++)  //Duyệt danh sách HVSV
                     {
+						if(empty($data[$i]))
+							break;          //End of data
                         $learnerCode = trim($data[$i][1]);
-                        if(empty($learnerCode))                 //Kết thúc danh sách HVSV
-                            break;
-
+						if(empty($learnerCode))
+							break;          //End of data
                         $countTotal++;
                         if(!isset($learnerMap[$learnerCode])){
                             $msg = Text::sprintf('COM_EQA_MSG_LEARNER_CODE_S_DOES_NOT_EXIST',$learnerCode);
@@ -480,9 +481,13 @@ class ClassesController extends EqaAdminController {
 
                     //4. Commit
                     $db->transactionCommit();
+					$classSize = sizeof($classLearners);
                     $msg = Text::sprintf('COM_EQA_MSG_IMPORT_PAM_CLASS_S_SIZE_N_TOTAL_N_SET_N_IGNORED_N',
-                        $classCode, sizeof($classLearners), $countTotal, $countSet, $countIgnored);
-                    $app->enqueueMessage($msg);
+                        $classCode, $classSize, $countTotal, $countSet, $countIgnored);
+					if($countTotal!=$classSize)
+						$app->enqueueMessage($msg, 'warning');
+					else
+                        $app->enqueueMessage($msg);
                 }
                 catch (Exception $e){
                     $db->transactionRollback();

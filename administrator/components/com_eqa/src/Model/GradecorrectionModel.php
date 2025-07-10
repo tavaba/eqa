@@ -18,8 +18,8 @@ class GradecorrectionModel extends EqaAdminModel {
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('b.code',      'b.lastname',      'b.firstname',      'd.name',         'c.name',   'a.constituent', 'a.reason', 'a.status'),
-			array('learnerCode', 'learnerLastname', 'learnerFirstname', 'examseasonName', 'examName', 'constituent',   'reason',   'status')
+			array('a.id', 'b.code',      'b.lastname',      'b.firstname',      'd.name',         'c.name',   'a.constituent', 'a.reason', 'a.status'),
+			array('id',   'learnerCode', 'learnerLastname', 'learnerFirstname', 'examseasonName', 'examName', 'constituent',   'reason',   'status')
 		);
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -345,9 +345,10 @@ class GradecorrectionModel extends EqaAdminModel {
 
 		//7.3. Always update the table #__eqa_exam_learner because some marks have been changed
 		//7.3.1. Tính toán lại điểm thi, điểm học phần và kết luận
+		$admissionYear = $examinee->attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($examinee->learnerId) : 0;
 		$addValue = $examinee->stimulType==StimulationHelper::TYPE_ADD ? $examinee->stimulValue : 0;
-		$finalMark = ExamHelper::calculateFinalMark($newFinalExam, $examinee->anomaly, $examinee->attempt, $addValue);
-		$moduleMark = ExamHelper::calculateModuleMark($examinee->learnerId, $newPam, $finalMark, $examinee->attempt);
+		$finalMark = ExamHelper::calculateFinalMark($newFinalExam, $examinee->anomaly, $examinee->attempt, $addValue, $admissionYear);
+		$moduleMark = ExamHelper::calculateModuleMark($examinee->learnerId, $newPam, $finalMark, $examinee->attempt, $admissionYear);
 		$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $examinee->anomaly, $examinee->attempt);
 		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 

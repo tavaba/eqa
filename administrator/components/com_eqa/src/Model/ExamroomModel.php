@@ -382,14 +382,16 @@ class ExamroomModel extends EqaAdminModel {
 					$anomaly = (int)$obj->anomaly;
 				if($anomaly != ExamHelper::EXAM_ANOMALY_NONE)
 					$countAnomaly++;
+				$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
+
 
 
 				//b) Tính toán và cập nhật điểm
 				//   Với lưu ý rằng điểm trong biên bản là điểm sau khi đã xử lý kỷ luật, nên khi tính $finalMark
 				//   thì luôn đặt $anomaly là NONE
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
-				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue);
-				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt);
+				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue, $admissionYear);
+				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt, $admissionYear);
 				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				if(empty($description))

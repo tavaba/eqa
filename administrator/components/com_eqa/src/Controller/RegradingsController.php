@@ -4,20 +4,14 @@ defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use JRoute;
-use JSession;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use stdClass;
 
 class RegradingsController extends EqaAdminController {
 
@@ -29,36 +23,32 @@ class RegradingsController extends EqaAdminController {
 	 */
 	public function assignRegradingExaminers()
 	{
-		/**
-		 * Các bước thực hiện
-		 * 1. Lấy thông tin về kỳ thi (mặc định)
-		 * 2. Kiểm tra, đảm bảo rằng kỳ thi chưa kết thúc, thời hạn phúc khảo đã qua. Nếu vi phạm thì báo lỗi
-		 *    và kết thúc
-		 * 3. Redirect sang form
-		 */
 
-		//Bước 1. Lấy thông tin về kỳ thi (mặc định)
-		$examseason = DatabaseHelper::getExamseasonInfo(); //Mặc định lấy kỳ thi đang diễn ra
-
-		//Bước 2. Kiểm tra, đảm bảo rằng kỳ thi chưa kết thúc, thời hạn phúc khảo đã qua. Nếu vi phạm thì báo lỗi
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
-		if(empty($examseason))
+		try
 		{
-			$this->setMessage('Không tìm thấy kỳ thi','error');
-			return;
-		}
-		if($examseason->completed)
-		{
-			$this->setMessage('Kỳ thi đã kết thúc','error');
-			return;
-		}
-		if($examseason->canSendPpaaRequest()) {
-			$this->setMessage('Vẫn chưa hết hạn gửi yêu cầu phúc khảo','error');
-			return;
-		}
+			//Bước 1. Lấy thông tin về kỳ thi hiện thời trong model
+			$model = $this->getModel('regradings');
+			$examseasonId = $model->getFilteredExamseasonId();
 
-		//Bước 3. Chuyển hướng sang form
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseason->id, false));
+			if(empty($examseasonId))
+				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
+
+			//Bước 2. Kiểm tra, đảm bảo rằng kỳ thi chưa kết thúc, thời hạn phúc khảo đã qua. Nếu vi phạm thì báo lỗi
+			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
+			if($examseason->completed)
+				throw new Exception('Kỳ thi đã kết thúc','error');
+			if($examseason->canSendPpaaRequest())
+				throw new Exception('Vẫn chưa hết hạn gửi yêu cầu phúc khảo','error');
+
+			//Bước 3. Chuyển hướng sang form
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseason->id, false));
+			return;
+		}
+		catch (Exception $e) {
+			$this->setMessage($e->getMessage(),'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			return;
+		}
 
 	}
 
@@ -92,12 +82,12 @@ class RegradingsController extends EqaAdminController {
 				$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseasonId.'&layout=default', false));
 			}
 			else{
-				$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
+				$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
 			}
 		}
 		catch (Exception $e) {
 			$this->setMessage($e->getMessage(),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
 			return;
 		}
 
@@ -125,12 +115,14 @@ class RegradingsController extends EqaAdminController {
 			if(!$this->app->getIdentity()->authorise('core.manage','com_eqa'))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
-			//Bước 2. Lấy thông tin kỳ thi
-			$examseason = DatabaseHelper::getDefaultExamseason();
-			if(!$examseason)
-				throw new Exception('Không tìm thấy kỳ thi mặc định');
+			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
+			$model = $this->getModel('regradings');
+			$examseasonId = $model->getFilteredExamseasonId();
+			if(empty($examseasonId))
+				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
 
 			//Bước 3. Kiểm tra thời hạn phúc khảo. Nếu chưa kết thúc thì báo lỗi
+			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
 			if($examseason->canSendPpaaRequest())
 				throw new Exception('Chưa hết hạn gửi yêu cầu phúc khảo');
 
@@ -152,7 +144,7 @@ class RegradingsController extends EqaAdminController {
 			$this->app->close();
 		}
 		catch (Exception $e) {
-			$url = JRoute::_('index.php?option=com_eqa', false);
+			$url = JRoute::_('index.php?option=com_eqa&view=regradings', false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(),'error');
 		}
@@ -172,14 +164,15 @@ class RegradingsController extends EqaAdminController {
 			if(!$this->app->getIdentity()->authorise('eqa.mask','com_eqa'))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
-			//Lấy thông tin kỳ thi
-			$examseason = DatabaseHelper::getDefaultExamseason();
-			if(!$examseason)
-				throw new Exception('Không tìm thấy kỳ thi mặc định');
+			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
+			$model = $this->getModel('regradings');
+			$examseasonId = $model->getFilteredExamseasonId();
+			if(empty($examseasonId))
+				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
 
 			//Lấy danh sách bài thi viết cần phúc khảo của kỳ thi
-			$model = $this->getModel('regradings');
-			$paperExams = $model->getPaperRegradings($examseason->id);
+			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
+			$paperExams = $model->getPaperRegradings($examseasonId);
 			if(empty($paperExams))
 				throw new Exception('Không có yêu cầu phúc khảo. Hãy đảm bảo rằng các yêu cầu phúc khảo đã được chấp nhận');
 
@@ -215,7 +208,7 @@ class RegradingsController extends EqaAdminController {
 			$this->app->close();
 		}
 		catch (Exception $e) {
-			$url = JRoute::_('index.php?option=com_eqa', false);
+			$url = JRoute::_('index.php?option=com_eqa&view=regradings', false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(),'error');
 		}
@@ -229,13 +222,14 @@ class RegradingsController extends EqaAdminController {
 			if(!$this->app->getIdentity()->authorise('core.manage','com_eqa'))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
-			//Lấy thông tin kỳ thi
-			$examseason = DatabaseHelper::getDefaultExamseason();
-			if(!$examseason)
-				throw new Exception('Không tìm thấy kỳ thi mặc định');
+			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
+			$model = $this->getModel('regradings');
+			$examseasonId = $model->getFilteredExamseasonId();
+			if(empty($examseasonId))
+				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
 
 			//Lấy danh sách bài thi hỗn hợp cần phúc khảo của kỳ thi
-			$model = $this->getModel('regradings');
+			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
 			$itestExams = $model->getHybridRegradings($examseason->id, true);
 			if(empty($itestExams))
 				throw new Exception('Không có yêu cầu phúc khảo. Hãy đảm bảo rằng các yêu cầu phúc khảo đã được chấp nhận');
@@ -260,7 +254,7 @@ class RegradingsController extends EqaAdminController {
 			$this->app->close();
 		}
 		catch (Exception $e) {
-			$url = JRoute::_('index.php?option=com_eqa', false);
+			$url = JRoute::_('index.php?option=com_eqa&view=regradings', false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(),'error');
 		}
@@ -274,15 +268,14 @@ class RegradingsController extends EqaAdminController {
 			if(!$this->app->getIdentity()->authorise('core.manage','com_eqa'))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
-			//Lấy thông tin kỳ thi
-			$examseason = DatabaseHelper::getDefaultExamseason();
-			if(!$examseason)
-				throw new Exception('Không tìm thấy kỳ thi mặc định');
-
-			//Lấy model
+			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
 			$model = $this->getModel('regradings');
+			$examseasonId = $model->getFilteredExamseasonId();
+			if(empty($examseasonId))
+				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
 
 			//Kiểm tra xem đã phân công xong cán bộ chấm phúc khảo chưa
+			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
 			if(!$model->examinersAssigned($examseason->id))
 				throw new Exception('Chưa hoàn tất phân công cán bộ chấm phúc khảo');
 
@@ -321,7 +314,7 @@ class RegradingsController extends EqaAdminController {
 			$this->app->close();
 		}
 		catch(Exception $e){
-			$url = JRoute::_('index.php?option=com_eqa',false);
+			$url = JRoute::_('index.php?option=com_eqa&view=regradings',false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(), 'error');
 		}

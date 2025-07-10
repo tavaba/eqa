@@ -21,7 +21,19 @@ abstract class DatabaseHelper
         return Factory::getContainer()->get('DatabaseDriver');
     }
 
-	public static function getAcademicyearCode(int $academicyear_id)
+	static public function getLearnerAdmissionYear(int $learnerId): int|null
+	{
+		$db = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('c.admissionyear')
+			->from('#__eqa_learners AS a')
+			->leftJoin('#__eqa_groups AS b', 'b.id=a.group_id')
+			->leftJoin('#__eqa_courses AS c', 'c.id=b.course_id')
+			->where('a.id=' . $learnerId);
+		$db->setQuery($query);
+		return $db->loadResult();
+	}
+	static public function getAcademicyearCode(int $academicyear_id)
 	{
 		static $academicyears;
 		if(empty($academicyears))

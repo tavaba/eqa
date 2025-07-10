@@ -1,5 +1,5 @@
 /*
- * COM_EQA version 1.03
+ * COM_EQA version 1.1.9
  */
 CREATE TABLE `#__eqa_buildings`(
     `id` INT AUTO_INCREMENT,
@@ -579,24 +579,22 @@ CREATE TABLE `#__eqa_gradecorrections`(
 	`learner_id` INT NOT NULL COMMENT 'FK: thí sinh',
 	`constituent` TINYINT NOT NULL COMMENT 'Điểm thành phần cần đính chính. Định nghĩa bằng const',
 	`reason` TEXT COMMENT 'Mô tả yêu cầu đính chính',
-	`examiner1_id` INT COMMENT 'FK: CBChT1',
-	`examiner2_id` INT COMMENT 'FK: CBChT2',
-	`result` REAL COMMENT 'Điểm SAU đính chính',
 	`description` TEXT COMMENT 'Mô tả sai sót (nếu có)',
 	`status` TINYINT NOT NULL COMMENT 'Tiến độ xử lý',
 	`created_at` DATETIME,
 	`handled_at` DATETIME,
 	`handled_by` VARCHAR(255),
+	`reviewer_id` INT DEFAULT NULL COMMENT 'Người xử lý',
+	`changed`	BOOLEAN COMMENT 'Có thay đổi điểm sau xử lý yêu cầu hay không',
+	`updated_at` DATETIME,
+	`updated_by` VARCHAR(255),
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
 	PRIMARY KEY (`id`),
 	CONSTRAINT fk_eqa_gradecorrections_exam FOREIGN KEY (`exam_id`)
 		REFERENCES `#__eqa_exams`(`id`)
 		ON DELETE RESTRICT,
-	CONSTRAINT fk_eqa_gradecorrections_examiner1 FOREIGN KEY (`examiner1_id`)
-		REFERENCES `#__eqa_employees`(`id`)
-		ON DELETE RESTRICT,
-	CONSTRAINT fk_eqa_gradecorrections_examiner2 FOREIGN KEY (`examiner2_id`)
+	CONSTRAINT fk_eqa_gradecorrections_reviewer FOREIGN KEY (`reviewer_id`)
 		REFERENCES `#__eqa_employees`(`id`)
 		ON DELETE RESTRICT,
 	CONSTRAINT fk_eqa_gradecorrections_learner FOREIGN KEY (`learner_id`)

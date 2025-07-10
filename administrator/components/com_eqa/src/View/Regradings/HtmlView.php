@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\View\Gradecorrections; //The namespace must end with the VIEW NAME.
+namespace Kma\Component\Eqa\Administrator\View\Regradings; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
@@ -8,12 +8,12 @@ use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Field\ExamsessionemployeeField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends EqaItemsHtmlView {
+	protected $examseason;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new EqaListLayoutItemFields();
 
@@ -25,8 +25,8 @@ class HtmlView extends EqaItemsHtmlView {
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerLastname', 'Họ đệm');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerFirstname', 'Tên');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examName', 'Môn thi');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('constituentText', 'Thành phần');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('reason', 'Mô tả');
+		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('origMark', 'Điểm gốc');
+		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('ppaaMark', 'Điểm PK');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('statusText', 'Trạng thái');
 		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('description', 'Nội dung xử lý');
 		$this->itemFields = $option;
@@ -64,21 +64,23 @@ class HtmlView extends EqaItemsHtmlView {
 						$item->optionRowCssClass='table-success';
 						break;
 				}
-				$item->constituentText = ExamHelper::decodeMarkConstituent($item->constituentCode);
 			}
 		}
 	}
 	protected function addToolbarForLayoutDefault():void
 	{
 		//Title
-		ToolbarHelper::title('Danh sách yêu cầu đính chính');
+		ToolbarHelper::title('Danh sách yêu cầu phúc khảo');
 
 		// Add buttons to the toolbar
 		ToolbarHelper::appendGoHome();
-		ToolbarHelper::appenddButton('core.manage', 'checkmark-circle', 'Chấp nhận','gradecorrection.accept',true,'btn btn-success');
-		ToolbarHelper::appenddButton('core.manage', 'cancel-circle', 'Từ chối','gradecorrection.reject',true,'btn btn-danger');
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Phiếu xử lý','gradecorrection.downloadReviewForm',true);
-		ToolbarHelper::appenddButton('core.manage', 'edit', 'Đính chính','gradecorrection.correct',true);
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Tổng hợp','gradecorrections.download');
+		ToolbarHelper::appenddButton('core.manage', 'credit', 'Bảng lệ phí','regradings.downloadRegradingFee');
+		ToolbarHelper::appenddButton('core.manage', 'checkmark-circle', 'Chấp nhận','regradings.accept',true,'btn btn-success');
+		ToolbarHelper::appenddButton('core.manage', 'cancel-circle', 'Từ chối','regradings.reject',true,'btn btn-danger');
+		ToolbarHelper::appenddButton('core.manage', 'list', 'Phân công chấm','regradings.assignRegradingExaminers');
+		ToolbarHelper::appenddButton('core.manage', 'download', 'Bài thi iTest','regradings.downloadHybridRegradings');
+		ToolbarHelper::appenddButton('core.manage', 'download', 'Bài thi viết','regradings.downloadPaperRegradings');
+		ToolbarHelper::appenddButton('core.manage', 'download', 'Phiếu chấm thi viết','regradings.downloadPaperRegradingSheets');
+		ToolbarHelper::appenddButton('core.manage', 'download', 'Tổng hợp','regradings.download');
 	}
 }

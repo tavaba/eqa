@@ -77,6 +77,6 @@ class HtmlView extends EqaItemsHtmlView {
 		ToolbarHelper::title('Phân công cán bộ chấm phúc khảo');
 		ToolbarHelper::apply('regradings.applyRegradingExaminers');
 		ToolbarHelper::save('regradings.saveRegradingExaminers');
-		ToolbarHelper::cancel('');
+		ToolbarHelper::appendCancelLink(\JRoute::_('index.php?option=com_eqa&view=regradings',false));
 	}
 }

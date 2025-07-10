@@ -2,7 +2,6 @@
 defined('_JEXEC') or die();
 use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
-
 $examseasonName='';
 $examseasonPpaaRequestDeadline='';
 if(isset($this->examseason))

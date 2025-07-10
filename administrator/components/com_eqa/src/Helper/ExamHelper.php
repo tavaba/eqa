@@ -461,7 +461,7 @@ abstract class ExamHelper{
 		$pam = 0.7*$pam1 + 0.3*$pam2;
 		return $pam;
 	}
-	static public function calculateFinalMark(float $originalMark, int $anomaly, int $attempt, float $addValue)
+	static public function calculateFinalMark(float $originalMark, int $anomaly, int $attempt, float $addValue, int $admissionYear)
 	{
 		$precision = ConfigHelper::getExamMarkPrecision();
 
@@ -481,18 +481,18 @@ abstract class ExamHelper{
 			$finalMark = min([10, $finalMark+$addValue]);
 
 		//Giới hạn điểm thi lần 2
-		if($attempt>1 && ConfigHelper::getSecondAttemptLimit()==self::SECOND_ATTEMPT_LIMIT_EXAM)
+		if($attempt>1 && $admissionYear>=2021 && ConfigHelper::getSecondAttemptLimit()==self::SECOND_ATTEMPT_LIMIT_EXAM)
 			$finalMark = min([$finalMark, 6.9]);
 
 		return $finalMark;
 	}
-	static public function calculateModuleMark(int $subjectId, float $pam, float $examMark, int $attempt)
+	static public function calculateModuleMark(int $subjectId, float $pam, float $examMark, int $attempt, int $admissionYear)
 	{
 		$precision = ConfigHelper::getModuleMarkPrecision();
 		$limit = ConfigHelper::getSecondAttemptLimit();
 		$moduleMark = 0.3*$pam + 0.7*$examMark;
 		$moduleMark = round($moduleMark, $precision);
-		if($attempt>1 && $limit==self::SECOND_ATTEMPT_LIMIT_MODULE)
+		if($attempt>1 && $admissionYear>=2021 && $limit==self::SECOND_ATTEMPT_LIMIT_MODULE)
 			$moduleMark = min([$moduleMark, 6.9]);
 		return $moduleMark;
 	}

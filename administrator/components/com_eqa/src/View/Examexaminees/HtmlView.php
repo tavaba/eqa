@@ -118,6 +118,7 @@ class HtmlView extends EqaItemsHtmlView {
         $option = $this->toolbarOption;
         ToolbarHelper::title($option->title);
         $url = JRoute::_('index.php?option=com_eqa&view=exams',false);
+		ToolbarHelper::appendGoHome();
         ToolbarHelper::appendLink(null,$url,'COM_EQA_EXAM', 'arrow-up-2');
 	    ToolbarHelper::appenddButton('core.create','plus-2','COM_EQA_BUTTON_ADD_EXAMINEES','exam.addExaminees',false,'btn btn-success');
 	    ToolbarHelper::appenddButton('core.create','plus-2','Thêm HVSV chưa đạt','exam.addFailedExaminees',false,'btn btn-success');

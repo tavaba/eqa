@@ -493,11 +493,12 @@ class PaperexamModel extends EqaAdminModel{
 				$stimulationId = $obj->stimul_id;
 				$stimulationType = $obj->stimul_type;
 				$stimulationValue = $obj->stimul_value;
+				$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
 
 				//b) Tính toán và cập nhật điểm
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
-				$finalMark = ExamHelper::calculateFinalMark($mark, $anomaly, $attempt, $addValue);
-				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt);
+				$finalMark = ExamHelper::calculateFinalMark($mark, $anomaly, $attempt, $addValue, $admissionYear);
+				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt, $admissionYear);
 				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				$query = $db->getQuery(true)
@@ -551,10 +552,7 @@ class PaperexamModel extends EqaAdminModel{
 						->where('id=' . $stimulationId);
 					$db->setQuery($query);
 					if (!$db->execute())
-					{
-						$msg = Text::sprintf('Lỗi ghi nhận điểm khuyến khích cho <b>%s</b>', $learnerCode);
-						throw new Exception($msg);
-					}
+						throw new Exception('Lỗi ghi nhận điểm khuyến khích');
 				}
 			}
 			//Commit

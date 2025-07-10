@@ -27,4 +27,9 @@ class ExamseasonInfo
 		}
 		return true;
 	}
+	static public function cast($obj): ExamseasonInfo
+	{
+		return $obj;
+	}
+
 }

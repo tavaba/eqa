@@ -881,8 +881,9 @@ class ExamModel extends EqaAdminModel{
 			$attempt = $examinee['attempt'];
 			$stimulationId = $examinee['stimulation_id'];
 			$stimulationValue = $examinee['stimulation_value'];
+			$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
 			$conclusion = ExamHelper::CONCLUSION_PASSED;
-			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $stimulationValue, $stimulationValue, $attempt);
+			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $stimulationValue, $stimulationValue, $attempt, $admissionYear);
 			$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 			$query = $db->getQuery(true)
 				->update('#__eqa_exam_learner')
@@ -962,8 +963,9 @@ class ExamModel extends EqaAdminModel{
 			$attempt = $examinee['attempt'];
 			$stimulationId = $examinee['stimulation_id'];
 			$stimulationValue = $examinee['stimulation_value'];
+			$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
 			$conclusion = ExamHelper::CONCLUSION_PASSED;
-			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $stimulationValue, $attempt);
+			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $stimulationValue, $attempt, $admissionYear);
 			$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 			$query = $db->getQuery(true)
 				->update('#__eqa_exam_learner')
@@ -1712,13 +1714,15 @@ class ExamModel extends EqaAdminModel{
 				$stimulationId = $obj->stimul_id;
 				$stimulationType = $obj->stimul_type;
 				$stimulationValue = $obj->stimul_value;
+				$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
+
 
 				//b) Tính toán và cập nhật điểm
 				//Vì là môn thi iTest nên việc trừ điểm kỷ (nếu có) đã được thực hiện từ trước
 				//Do đó, $finalMark ở đây sẽ luôn đợc tính với EXAM_ANOMALY_NONE
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
-				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue);
-				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt);
+				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue, $admissionYear);
+				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt,$admissionYear);
 				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				if(empty($description))

@@ -86,11 +86,19 @@ class GradecorrectionsModel extends EqaListModel
 	}
 
 	public function getStoreId($id = '') {
-		$id .= ':'.$this->getState('filter.examseason_id');
-		$id .= ':'.$this->getState('filter.status');
+		$id .= ':' . $this->getState('filter.search');
+		$id .= ':' . $this->getState('filter.examseason_id');
+		$id .= ':' . $this->getState('filter.status');
 		return parent::getStoreId($id);
 	}
 
+	public function getFilteredExamseasonId(): ?int
+	{
+		$filter = $this->getState('filter.examseason_id');
+		if(is_numeric($filter))
+			return $filter;
+		return null;
+	}
 	public function getAllItems(bool $onlyAccepted=false) : array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
