@@ -9,7 +9,8 @@ if(isset($this->examseason))
 {
 	$examseason = ExamseasonInfo::cast($this->examseason);
 	$examseasonName=htmlspecialchars($examseason->name);
-	$examseasonPpaaRequestDeadline=htmlspecialchars($examseason->ppaaRequestDeadline);
+	if(!empty($examseason->ppaaRequestDeadline))
+		$examseasonPpaaRequestDeadline=htmlspecialchars($examseason->ppaaRequestDeadline);
 }
 echo "<div>Kỳ thi: <b>$examseasonName</b></div>";
 echo "<div>Thời hạn phúc khảo: <b>$examseasonPpaaRequestDeadline</b></div>";

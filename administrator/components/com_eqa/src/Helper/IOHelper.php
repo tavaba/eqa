@@ -136,7 +136,7 @@ abstract class IOHelper
 		// Send headers
 		header('Content-Description: File Transfer');
 		header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-		header('Content-Disposition: attachment; filename="' . $fileName . '"');
+		header('Content-Disposition: attachment; filename="' . basename($fileName) . '"; filename*=UTF-8\'\'' . rawurlencode($fileName));
 		header('Expires: 0');
 		header('Cache-Control: must-revalidate');
 		header('Pragma: public');
@@ -1056,6 +1056,162 @@ abstract class IOHelper
 				$sheet->setCellValue([$col,$row],$value);
 			}
 		}
+	}
+	static public function writeExamseasonIneligibleEntries(Worksheet $sheet, ExamseasonInfo $examseasonInfo, array $ineligibleEntries):void
+	{
+		$headers = ['STT', 'Khóa', 'Lớp', 'Môn thi', 'Mã HVSV', 'Họ đệm', 'Tên', 'ĐQT', 'Nợ phí'];
+		$widths =  [6,      7,       9,     40,         11,         20,     10,    6,      8];
+		$COLS = sizeof($headers);
+		$FONT_SIZE = 12;
+		for($i=1; $i<=$COLS; $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		}
+
+		$row=1;
+		$sheet->setCellValue([1,$row], 'DANH SÁCH CẤM THI');
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$style->getFont()->setBold(true);
+
+		//Kỳ thi
+		$row++;
+		$value = 'Kỳ thi: ' . $examseasonInfo->name;
+		$sheet->getCell('A'.$row)->setValue($value);
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		$row += 2;
+		$headingRow = $row;
+		foreach ($headers as $index => $header)
+			$sheet->setCellValue([$index+1, $row], $header);
+		$style = $sheet->getStyle([1,$row,$COLS,$row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+
+		//Chuẩn bị dữ liệu
+		usort($ineligibleEntries, function ($a, $b) {
+			return $a->examId <=> $b->examId; // PHP 7+ spaceship operator
+		});
+		$data=[];
+		$seq=0;
+		foreach ($ineligibleEntries as $entry)
+		{
+			$data[] = [
+				++$seq,
+				$entry->course,
+				$entry->group,
+				$entry->examName,
+				$entry->code,
+				$entry->lastname,
+				$entry->firstname,
+				($entry->pam>=0) ? $entry->pam : ExamHelper::markToText($entry->pam),
+				$entry->isDebtor ? 'Yes' : ''
+			];
+		}
+
+		//Ghi dữ liệu
+		$row ++;
+		$sheet->fromArray($data, null, 'A'.$row);
+
+		//Draw borders
+		$entryCount = count($ineligibleEntries);
+		$lastRow = $row+$entryCount-1;
+		$borderStyle = Border::BORDER_THIN;
+		$rangeStyle = $sheet->getStyle([1, $headingRow, $COLS, $lastRow]);
+		$rangeStyle->getBorders()->getAllBorders()->setBorderStyle($borderStyle);
+
+		//Centralize data
+		$rangeStyle = $sheet->getStyle([1, $row, 3, $lastRow]);
+		$rangeStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		$rangeStyle = $sheet->getStyle([8, $row, 9, $lastRow]);
+		$rangeStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Set font for all the sheet
+		$font = $sheet->getStyle($sheet->calculateWorksheetDimension())->getFont();
+		$font->setName('Times New Roman');
+		$font->setSize($FONT_SIZE);
+	}
+	static public function writeExamseasonSanctions(Worksheet $sheet, ExamseasonInfo $examseasonInfo, array $sanctions):void
+	{
+		$headers = ['STT', 'Khóa', 'Lớp', 'Môn thi', 'Mã HVSV', 'Họ đệm', 'Tên', 'Kỷ luật' ];
+		$widths =  [6,      7,       9,     40,         11,         20,     10,    20];
+		$COLS = sizeof($headers);
+		$FONT_SIZE = 12;
+		for($i=1; $i<=$COLS; $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		}
+
+		$row=1;
+		$sheet->setCellValue([1,$row], 'DANH SÁCH THÍ SINH BỊ XỬ LÝ KỶ LUẬT');
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$style->getFont()->setBold(true);
+
+		//Kỳ thi
+		$row++;
+		$value = 'Kỳ thi: ' . $examseasonInfo->name;
+		$sheet->getCell('A'.$row)->setValue($value);
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		$row += 2;
+		$headingRow = $row;
+		foreach ($headers as $index => $header)
+			$sheet->setCellValue([$index+1, $row], $header);
+		$style = $sheet->getStyle([1,$row,$COLS,$row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+
+		//Chuẩn bị dữ liệu
+		usort($sanctions, function ($a, $b) {
+			return $a->examId <=> $b->examId; // PHP 7+ spaceship operator
+		});
+		$data=[];
+		$seq=0;
+		foreach ($sanctions as $entry)
+		{
+			$data[] = [
+				++$seq,
+				$entry->course,
+				$entry->group,
+				$entry->examName,
+				$entry->code,
+				$entry->lastname,
+				$entry->firstname,
+				ExamHelper::getAnomaly($entry->anomaly)
+			];
+		}
+
+		//Ghi dữ liệu
+		$row ++;
+		$sheet->fromArray($data, null, 'A'.$row);
+
+		//Draw borders
+		$entryCount = count($sanctions);
+		$lastRow = $row+$entryCount-1;
+		$borderStyle = Border::BORDER_THIN;
+		$rangeStyle = $sheet->getStyle([1, $headingRow, $COLS, $lastRow]);
+		$rangeStyle->getBorders()->getAllBorders()->setBorderStyle($borderStyle);
+
+		//Centralize data
+		$rangeStyle = $sheet->getStyle([1, $row, 3, $lastRow]);
+		$rangeStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Set font for all the sheet
+		$font = $sheet->getStyle($sheet->calculateWorksheetDimension())->getFont();
+		$font->setName('Times New Roman');
+		$font->setSize($FONT_SIZE);
 	}
 
 	/**

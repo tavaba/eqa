@@ -58,7 +58,7 @@ class EqaListLayoutItemFields
         return $field;
     }
     static public function defaultFieldDefault(): EqaListLayoutItemFieldOption{
-        $field = new EqaListLayoutItemFieldOption('default', 'COM_EQA_GENERAL_DEFAULT',true,false);
+        $field = new EqaListLayoutItemFieldOption('default', 'COM_EQA_GENERAL_DEFAULT',false,false);
         $field->cssClass = 'text-center';
         return $field;
     }

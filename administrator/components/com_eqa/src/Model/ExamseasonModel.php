@@ -360,6 +360,163 @@ class ExamseasonModel extends EqaAdminModel{
 		$db->setQuery($query);
 		return $db->loadAssocList();
 	}
+	public function getIneligibleEntries(int $examseasonId)
+	{
+		/*
+		 * Do số lượng bản ghi cần tìm kiếm có thể rất lớn nên cần hạn chế việc JOIN nhiều bảng.
+		 * Vì thế, cần chia thành nhiều công đoạn
+		 * Bước 1. Lấy thông tin về tất cả các môn thi (exam) của kỳ thi này
+		 * Bước 2. Trích xuất các lượt thí sinh bị cấm thi hoặc có nợ phí (chỉ lấy 'id')
+		 * Bước 3. Lấy thông tin bổ sung (name, group, course) cho các lượt bị cấm thi và/hoặc nợ phí
+		 *
+		 */
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//Bước 1. Lấy thông tin về tất cả các môn thi (exam) của kỳ thi này
+		$query = $db->getQuery(true)
+			->select('id, name')
+			->from('#__eqa_exams')
+			->where('examseason_id='.$examseasonId);
+		$db->setQuery($query);
+		$exams = $db->loadAssocList('id','name');
+		if(empty($exams)) return null;
+
+		//Bước 2. Trích xuất các lượt thí sinh bị cấm thi hoặc có nợ phí (chỉ lấy 'id')
+		$examIds = array_keys($exams); //Lấy ra danh sách các mã môn thi
+		$examIdSet = '(' . implode(',',$examIds).')'; //Chuyển sang chuỗi để sử dụng trong câu lệnh SQL
+		$columns = [
+			$db->quoteName('a.exam_id') .         ' AS ' . $db->quoteName('examId'),
+			$db->quoteName('a.learner_id') .      ' AS ' . $db->quoteName('learnerId'),
+			$db->quoteName('b.pam') .             ' AS ' . $db->quoteName('pam'),
+			$db->quoteName('a.debtor') .          ' AS ' . $db->quoteName('isDebtor'),
+			$db->quoteName('b.allowed') .         ' AS ' . $db->quoteName('isAllowed')
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->where('a.exam_id IN '. $examIdSet)
+			->where('(b.allowed=0 OR a.debtor=1)');
+		$db->setQuery($query);
+		$entries = $db->loadObjectList();
+		if(empty($entries)) return null;
+
+		//Bước 3. Lấy thông tin bổ sung (name, group, course) cho các lượt bị cấm thi và/hoặc nợ phí
+		//a) Lấy thông tin
+		$learnerIds = array_map(function($entry){return $entry->learnerId;}, $entries); //Lấy ra danh sách các mã lượt thi
+		$learnerIdSet = '(' . implode(',',$learnerIds).')'; //Chuyển sang chuỗi để sử dụng trong câu lệnh SQL
+		$columns = [
+			$db->quoteName('a.id') .              ' AS ' . $db->quoteName('id'),
+			$db->quoteName('a.code') .            ' AS ' . $db->quoteName('code'),
+			$db->quoteName('a.lastname') .        ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('a.firstname') .       ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('b.code') .            ' AS ' . $db->quoteName('group'),
+			$db->quoteName('c.code') .            ' AS ' . $db->quoteName('course'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_learners AS a')
+			->leftJoin('#__eqa_groups AS b', 'b.id=a.group_id')
+			->leftJoin('#__eqa_courses AS c', 'c.id=b.course_id')
+			->where('a.id IN '. $learnerIdSet);
+		$db->setQuery($query);
+		$learners = $db->loadAssocList('id');
+
+		//b) Ghi thông tin vào kết quả ban đầu
+		foreach ($entries as &$entry)
+		{
+			$learner = $learners[$entry->learnerId];
+			$entry->code = $learner['code'];           //Mã SV
+			$entry->lastname = $learner['lastname'];   //Họ tên
+			$entry->firstname = $learner['firstname']; //Họ tên
+			$entry->group = $learner['group'];         //Lớp
+			$entry->course = $learner['course'];       //Khóa học
+			$entry->examName = $exams[$entry->examId]; //Tên môn thi
+		}
+
+		//Return
+		return $entries;
+	}
+	public function getSanctions(int $examseasonId)
+	{
+		/*
+		 * Do số lượng bản ghi cần tìm kiếm có thể rất lớn nên cần hạn chế việc JOIN nhiều bảng.
+		 * Vì thế, cần chia thành nhiều công đoạn
+		 * Bước 1. Lấy thông tin về tất cả các môn thi (exam) của kỳ thi này
+		 * Bước 2. Trích xuất các lượt thí sinh bị cấm thi hoặc có nợ phí (chỉ lấy 'id')
+		 * Bước 3. Lấy thông tin bổ sung (name, group, course) cho các lượt bị cấm thi và/hoặc nợ phí
+		 *
+		 */
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//Bước 1. Lấy thông tin về tất cả các môn thi (exam) của kỳ thi này
+		$query = $db->getQuery(true)
+			->select('id, name')
+			->from('#__eqa_exams')
+			->where('examseason_id='.$examseasonId);
+		$db->setQuery($query);
+		$exams = $db->loadAssocList('id','name');
+		if(empty($exams)) return null;
+
+		//Bước 2. Trích xuất các lượt thí sinh có xử lý kỷ luật (chỉ lấy 'id')
+		$penalties = [
+			ExamHelper::EXAM_ANOMALY_SUB25,
+			ExamHelper::EXAM_ANOMALY_SUB50,
+			ExamHelper::EXAM_ANOMALY_BAN
+		];
+		$penaltySet = '(' . implode(',', $penalties) . ')';
+		$examIds = array_keys($exams); //Lấy ra danh sách các mã môn thi
+		$examIdSet = '(' . implode(',',$examIds).')'; //Chuyển sang chuỗi để sử dụng trong câu lệnh SQL
+		$columns = [
+			$db->quoteName('a.exam_id') .         ' AS ' . $db->quoteName('examId'),
+			$db->quoteName('a.learner_id') .      ' AS ' . $db->quoteName('learnerId'),
+			$db->quoteName('a.anomaly') .         ' AS ' . $db->quoteName('anomaly')
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->where('a.exam_id IN ' . $examIdSet)
+			->where('a.anomaly IN ' . $penaltySet);
+		$db->setQuery($query);
+		$entries = $db->loadObjectList();
+		if(empty($entries)) return null;
+
+		//Bước 3. Lấy thông tin bổ sung (name, group, course) cho các thí sinh
+		//a) Lấy thông tin
+		$learnerIds = array_map(function($entry){return $entry->learnerId;}, $entries); //Lấy ra danh sách các mã lượt thi
+		$learnerIdSet = '(' . implode(',',$learnerIds).')'; //Chuyển sang chuỗi để sử dụng trong câu lệnh SQL
+		$columns = [
+			$db->quoteName('a.id') .              ' AS ' . $db->quoteName('id'),
+			$db->quoteName('a.code') .            ' AS ' . $db->quoteName('code'),
+			$db->quoteName('a.lastname') .        ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('a.firstname') .       ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('b.code') .            ' AS ' . $db->quoteName('group'),
+			$db->quoteName('c.code') .            ' AS ' . $db->quoteName('course'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_learners AS a')
+			->leftJoin('#__eqa_groups AS b', 'b.id=a.group_id')
+			->leftJoin('#__eqa_courses AS c', 'c.id=b.course_id')
+			->where('a.id IN '. $learnerIdSet);
+		$db->setQuery($query);
+		$learners = $db->loadAssocList('id');
+
+		//b) Ghi thông tin vào kết quả ban đầu
+		foreach ($entries as &$entry)
+		{
+			$learner = $learners[$entry->learnerId];
+			$entry->code = $learner['code'];           //Mã SV
+			$entry->lastname = $learner['lastname'];   //Họ tên
+			$entry->firstname = $learner['firstname']; //Họ tên
+			$entry->group = $learner['group'];         //Lớp
+			$entry->course = $learner['course'];       //Khóa học
+			$entry->examName = $exams[$entry->examId]; //Tên môn thi
+		}
+
+		//Return
+		return $entries;
+	}
 	public function getQuestionProductions(array $examseasonIds): array|null
 	{
 		$db = DatabaseHelper::getDatabaseDriver();

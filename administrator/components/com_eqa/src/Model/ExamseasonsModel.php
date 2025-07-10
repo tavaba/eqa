@@ -8,10 +8,10 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 class ExamseasonsModel extends EqaListModel{
     public function __construct($config = [], MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('academicyear','term','type','attermpt','nexam','default','completed');
+        $config['filter_fields']=array('id', 'academicyear','term','type','attermpt','nexam','default','completed');
         parent::__construct($config, $factory);
     }
-    public function populateState($ordering = 'academicyear', $direction = 'desc')
+    public function populateState($ordering = 'id', $direction = 'DESC')
     {
         parent::populateState($ordering, $direction);
     }
@@ -19,14 +19,19 @@ class ExamseasonsModel extends EqaListModel{
     public function getListQuery()
     {
         $db = $this->getDatabase();
-		$subQueryNumberOfExamsessions = $db->getQuery(true)
-			->select('COUNT(1)')
-			->from('#__eqa_examsessions AS z')
-			->where('z.examseason_id = a.id');
+	    $subQueryNumberOfExamsessions = $db->getQuery(true)
+		    ->select('COUNT(1)')
+		    ->from('#__eqa_examsessions AS z')
+		    ->where('z.examseason_id = a.id');
 	    $subQueryNumberOfExams = $db->getQuery(true)
 		    ->select('COUNT(1)')
 		    ->from('#__eqa_exams AS y')
 		    ->where('y.examseason_id = a.id');
+	    $subQueryNumberOfEntries = $db->getQuery(true)
+		    ->select('COUNT(1)')
+		    ->from('#__eqa_exam_learner AS x')
+		    ->leftJoin('#__eqa_exams AS w','w.id=x.exam_id')
+		    ->where('w.examseason_id = a.id');
         $columns = $db->quoteName(
             array('a.id','b.code', 'a.term', 'a.type', 'a.name', 'a.attempt', 'a.default', 'a.start', 'a.finish', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline', 'a.statistic', 'a.description', 'a.completed'),
             array('id', 'academicyear','term', 'type',  'name',  'attempt',   'default',   'start',   'finish',   'ppaa_req_enabled',   'ppaa_req_deadline',   'statistic', 'description','completed')
@@ -37,7 +42,8 @@ class ExamseasonsModel extends EqaListModel{
             ->leftJoin('#__eqa_academicyears AS b','a.academicyear_id = b.id')
             ->select($columns)
 	        ->select('(' . $subQueryNumberOfExamsessions . ') AS nexamsession')
-	        ->select('(' . $subQueryNumberOfExams . ') AS nexam');
+	        ->select('(' . $subQueryNumberOfExams . ') AS nexam')
+	        ->select('(' . $subQueryNumberOfEntries . ') AS nentry');
 
         //Filtering
         $search = $this->getState('filter.search');
@@ -67,7 +73,7 @@ class ExamseasonsModel extends EqaListModel{
         }
 
         //Ordering
-        $orderingCol = $query->db->escape($this->getState('list.ordering','academicyear'));
+        $orderingCol = $query->db->escape($this->getState('list.ordering','id'));
         $orderingDir = $query->db->escape($this->getState('list.direction','desc'));
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 

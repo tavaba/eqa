@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
+use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
@@ -171,5 +172,89 @@ class ExamseasonController extends EqaFormController
 		//Send file
 		IOHelper::sendHttpXlsx($spreadsheet,'Danh sách thí sinh kỳ thi.xlsx');
 		exit();
+	}
+
+	/**
+	 * Export danh sách các trường hợp thí sinh không đủ điều kiện thi
+	 * @return void
+	 *
+	 * @throws \Exception
+	 * @since version
+	 */
+	public function exportIneligibleEntries()
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			//3. Get data from post
+			$cid = $this->input->post->get('cid',[],'int');
+			if(empty($cid))
+				throw new Exception(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'));
+			$examseasonId = $cid[0];
+
+			//4. Get model and retrieve examinees
+			$model = $this->getModel();
+			$ineligibleEntries = $model->getIneligibleEntries($examseasonId);
+
+			//5. Write to excel
+			$spreadsheet = new Spreadsheet();
+			$sheet = $spreadsheet->getSheet(0);
+			$examseasonInfo = DatabaseHelper::getExamseasonInfo($examseasonId);
+			IOHelper::writeExamseasonIneligibleEntries($sheet, $examseasonInfo, $ineligibleEntries);
+
+			//6. Send file
+			IOHelper::sendHttpXlsx($spreadsheet,'Danh sách cấm thi.xlsx');
+			exit();
+		}
+		catch (Exception $exception)
+		{
+			$this->setMessage($exception->getMessage(),'error');
+			$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
+			return;
+		}
+	}
+	public function exportSanctions()
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			//3. Get data from post
+			$cid = $this->input->post->get('cid',[],'int');
+			if(empty($cid))
+				throw new Exception(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'));
+			$examseasonId = $cid[0];
+
+			//4. Get model and retrieve sanctions
+			$model = $this->getModel();
+			$sanctions = $model->getSanctions($examseasonId);
+
+			//5. Write to excel
+			$spreadsheet = new Spreadsheet();
+			$sheet = $spreadsheet->getSheet(0);
+			$examseasonInfo = DatabaseHelper::getExamseasonInfo($examseasonId);
+			IOHelper::writeExamseasonSanctions($sheet, $examseasonInfo, $sanctions);
+
+			//6. Send file
+			IOHelper::sendHttpXlsx($spreadsheet,'Danh sách xử lý kỷ luật.xlsx');
+			exit();
+		}
+		catch (Exception $exception)
+		{
+			$this->setMessage($exception->getMessage(),'error');
+			$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
+			return;
+		}
 	}
 }
