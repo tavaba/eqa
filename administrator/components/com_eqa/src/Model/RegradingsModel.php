@@ -8,6 +8,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\Interface\Regradingrequest;
@@ -17,7 +18,7 @@ defined('_JEXEC') or die();
 
 class RegradingsModel extends EqaListModel
 {
-	public function __construct($config = [], MVCFactoryInterface $factory = null)
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		$config['filter_fields']=array('a.id');
 		parent::__construct($config, $factory);
@@ -26,6 +27,33 @@ class RegradingsModel extends EqaListModel
 	protected function populateState($ordering = 'a.id', $direction = 'DESC')
 	{
 		parent::populateState($ordering, $direction);
+	}
+
+	public function canViewList(): bool
+	{
+		//1. Check if the user has manage permission on this component
+		$acceptedPermissions = ['core.manage', 'eqa.supervise'];
+		if(GeneralHelper::checkPermissions($acceptedPermissions))
+			return true;
+
+		//2. Or if he/she is the selected learner that views his/her own information
+		//a. There must be a learner ID
+		$selectedLearnerId = $this->getState('filter.learner_id');
+		if(empty($selectedLearnerId))
+			return false;
+
+		//b. And the corresponding learner code must exist...
+		$db = DatabaseHelper::getDatabaseDriver();
+		$db->setQuery('SELECT `code` FROM #__eqa_learners WHERE id='.$selectedLearnerId);
+		$learnerCode = $db->loadResult();
+		if(empty($learnerCode))
+			return false;
+
+		//c. ... and match with signed-in user's learner code
+		$signedInLearnerCode = GeneralHelper::getSignedInLearnerCode();
+		if (empty($signedInLearnerCode) || ($learnerCode != $signedInLearnerCode))
+			return false;
+		return true;
 	}
 	protected function initListQuery(): DatabaseQuery
 	{
@@ -60,6 +88,13 @@ class RegradingsModel extends EqaListModel
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$query = $this->initListQuery();
+
+		//Trong trường hợp model được gọi bởi View mà cần giới hạn kết quả cho một thí sinh cụ thể
+		//(ở frontend có view như thế dành riêng cho từng thí sinh),
+		//Thì View sẽ set giá trị cấu hình này để giới hạn việc truy vấn các bản ghi của một thí sinh cụ thể.
+		$learnerId = $this->getState('filter.learner_id');
+		if(is_int($learnerId))
+			$query->where('a.learner_id=' . $learnerId);
 
 		//Filtering
 		$examseasonId = $this->getState('filter.examseason_id');
@@ -109,6 +144,13 @@ class RegradingsModel extends EqaListModel
 		return $db->loadObjectList();
 	}
 
+	public function getSelectedExamseasonId(): int|null
+	{
+		$filter = $this->getState('filter.examseason_id');
+		if(is_numeric($filter))
+			return $filter;
+		return null;
+	}
 	public function getFilteredExamseasonId(): ?int
 	{
 		$filter = $this->getState('filter.examseason_id');
@@ -120,6 +162,7 @@ class RegradingsModel extends EqaListModel
 	{
 		$id .= ':' . $this->getState('filter.search');
 		$id .= ':' . $this->getState('filter.examseason_id');
+		$id .= ':' . $this->getState('filter.learner_id');
 		$id .= ':' . $this->getState('filter.status');
 		return parent::getStoreId($id);
 	}

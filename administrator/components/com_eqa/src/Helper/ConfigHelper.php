@@ -39,6 +39,12 @@ abstract class ConfigHelper{
 			self::init();
 		return self::$params->get('params.examination_unit', 'Phòng KT&ĐBCLĐT');
 	}
+	public static function getCity():string
+	{
+		if(self::$uninitialized)
+			self::init();
+		return self::$params->get('params.city', 'Hà Nội');
+	}
 	public static function getMaxExamAttempts():int
 	{
 		if(self::$uninitialized)

@@ -33,11 +33,6 @@ class HtmlView extends EqaItemsHtmlView {
 	}
 	protected function prepareDataForLayoutDefault(): void
 	{
-		if(!Factory::getApplication()->getIdentity()->authorise('core.manage','com_eqa'))
-		{
-			$this->accessDenied=true;
-			return;
-		}
 
 		//Gọi phương thức lớp cha
 		parent::prepareDataForLayoutDefault();
@@ -74,7 +69,7 @@ class HtmlView extends EqaItemsHtmlView {
 
 		// Add buttons to the toolbar
 		ToolbarHelper::appendGoHome();
-		ToolbarHelper::appenddButton('core.manage', 'credit', 'Bảng lệ phí','regradings.downloadRegradingFee');
+		ToolbarHelper::appenddButton('core.manage', 'download', 'Bảng thu phí','regradings.downloadRegradingFee');
 		ToolbarHelper::appenddButton('core.manage', 'checkmark-circle', 'Chấp nhận','regradings.accept',true,'btn btn-success');
 		ToolbarHelper::appenddButton('core.manage', 'cancel-circle', 'Từ chối','regradings.reject',true,'btn btn-danger');
 		ToolbarHelper::appenddButton('core.manage', 'list', 'Phân công chấm','regradings.assignRegradingExaminers');

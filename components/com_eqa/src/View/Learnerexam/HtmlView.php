@@ -3,10 +3,10 @@ namespace Kma\Component\Eqa\Site\View\Learnerexam;   //Must end with the View Na
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
+use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
-use Kma\Component\Eqa\Site\Base\EqaItemHtmlView;
 
 class HtmlView extends EqaItemHtmlView
 {

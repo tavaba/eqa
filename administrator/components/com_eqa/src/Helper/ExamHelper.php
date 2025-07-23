@@ -54,6 +54,7 @@ abstract class ExamHelper{
 	public const EXAM_PPAA_STATUS_REJECTED=30;
 	public const EXAM_PPAA_STATUS_DONE=40;
 
+	public const CONCLUSION_NOT_ALLOWED = 5;        //Không được thi, phải học lại
 	public const CONCLUSION_PASSED = 10;            //Qua môn, hết lượt thi
 	public const CONCLUSION_FAILED = 20;            //Không qua môn, thi lại
 	public const CONCLUSION_FAILED_EXPIRED = 21;    //Không qua môn, hết lượt thi
@@ -323,6 +324,7 @@ abstract class ExamHelper{
 	{
 		return match ($conclusionCode)
 		{
+			self::CONCLUSION_NOT_ALLOWED => 'Không được thi, học lại',
 			self::CONCLUSION_PASSED => 'Đạt',
 			self::CONCLUSION_FAILED => 'Không đạt',
 			self::CONCLUSION_FAILED_EXPIRED => 'Học lại',
@@ -332,6 +334,7 @@ abstract class ExamHelper{
 	static public function getConclusions()
 	{
 		$conclusions = array();
+		$conclusions[self::CONCLUSION_NOT_ALLOWED] = self::getConclusion(self::CONCLUSION_NOT_ALLOWED);
 		$conclusions[self::CONCLUSION_PASSED] = self::getConclusion(self::CONCLUSION_PASSED);
 		$conclusions[self::CONCLUSION_FAILED] = self::getConclusion(self::CONCLUSION_FAILED);
 		$conclusions[self::CONCLUSION_FAILED_EXPIRED] = self::getConclusion(self::CONCLUSION_FAILED_EXPIRED);

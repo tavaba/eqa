@@ -82,7 +82,7 @@ class GradecorrectionController extends  EqaFormController {
 
 			//Phase 2. Reject the grade correction request
 			$itemId = $post->get('id', '');
-			$description = $post->get('description', '');
+			$description = $post->getString('description');
 			if(empty($itemId) || empty($description))
 				throw new Exception('Dữ liệu không hợp lệ');
 			$currentUsername = $this->app->getIdentity()->username;
@@ -173,7 +173,7 @@ class GradecorrectionController extends  EqaFormController {
 
 			//Phase 2. Correct the grade correction request
 			//Get jform data
-			$formData = $post->get('jform', [], null);
+			$formData = $post->get('jform', [], 'array');
 			$currentUsername = $this->app->getIdentity()->username;
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');

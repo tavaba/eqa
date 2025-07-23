@@ -14,6 +14,72 @@ use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class RegradingsController extends EqaAdminController {
+	public function accept()
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+
+			//3. Get form data
+			$cid = $this->input->post->get('cid',[],'array');
+			$cid = array_filter($cid, 'intval');
+			if(empty($cid))
+				throw new Exception('Không có phần tử nào được chọn');
+
+			//4. Call model and apply change
+			$currentUsername = $this->app->getIdentity()->username;
+			$currentTime = date('Y-m-d H:i:s');
+			$model = $this->getModel('regrading');
+			foreach ($cid  as $itemId)
+				$model->accept($itemId, $currentUsername, $currentTime);
+
+			//5. Redirect
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+		}
+	}
+	public function reject()
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+
+			//3. Get form data
+			$cid = $this->input->post->get('cid',[],'array');
+			$cid = array_filter($cid, 'intval');
+			if(empty($cid))
+				throw new Exception('Không có phần tử nào được chọn');
+
+			//4. Call model and apply change
+			$currentUsername = $this->app->getIdentity()->username;
+			$currentTime = date('Y-m-d H:i:s');
+			$model = $this->getModel('regrading');
+			foreach ($cid  as $itemId)
+				$model->reject($itemId, $currentUsername, $currentTime);
+
+			//5. Redirect
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+		}
+	}
 
 	/**
 	 * Phân công chấm phúc khảo. Đối với chấm phúc khảo sẽ không thực hiện dồn túi mà sẽ phân công
@@ -126,7 +192,7 @@ class RegradingsController extends EqaAdminController {
 			if($examseason->canSendPpaaRequest())
 				throw new Exception('Chưa hết hạn gửi yêu cầu phúc khảo');
 
-			//Bước 4. Lấy danh sách bài thi viết cần phúc khảo của kỳ thi
+			//Bước 4. Lấy danh sách yêu cầu phúc khảo của kỳ thi
 			$model = $this->getModel('regradings');
 			$regradingRequests = $model->getRegradingRequests($examseason->id, true);
 			if(empty($regradingRequests))

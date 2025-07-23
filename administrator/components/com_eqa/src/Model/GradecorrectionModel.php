@@ -34,7 +34,7 @@ class GradecorrectionModel extends EqaAdminModel {
 
 	/**
 	 * Ghi nhận yêu cầu đính chính được chấp nhận
-	 * @param   array   $itemIds
+	 * @param   int     $itemId
 	 * @param   string  $currentUsername
 	 * @param   string  $currentTime
 	 *
@@ -276,8 +276,8 @@ class GradecorrectionModel extends EqaAdminModel {
 			'changed = ' . (int)$changed,
 			'description = ' . $db->quote($description),
 			'status = ' . ExamHelper::EXAM_PPAA_STATUS_DONE,
-			'handled_by = ' . $db->quote($currentUsername),
-			'handled_at = ' . $db->quote($currentTime)
+			'updated_by = ' . $db->quote($currentUsername),
+			'updated_at = ' . $db->quote($currentTime)
 		];
 		$query = $db->getQuery(true)
 			->update('#__eqa_gradecorrections')

@@ -6,7 +6,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 
 class SubjectsModel extends EqaListModel{
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('department_code','code','credits','finaltesttype','testbankyear','published', 'ordering');
         parent::__construct($config, $factory);

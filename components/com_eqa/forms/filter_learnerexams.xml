@@ -11,11 +11,50 @@
         <field  name="examseason_id"
                 type="examseason"
                 label="Kỳ thi"
-                default="default"
+                default=""
                 onchange="this.form.submit();"
         >
-            <option value="all">-Kỳ thi-</option>
-            <option value="default">Kỳ thi mặc định</option>
+            <option value="">-Kỳ thi-</option>
+            <option value="0">(Kỳ thi mặc định)</option>
+        </field>
+        <field
+                name="academicyear_id"
+                type="academicyear"
+                label="Năm học"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-Năm học-</option>
+        </field>
+        <field
+                name="term"
+                type="term"
+                label="Học kỳ"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-Học kỳ-</option>
+        </field>
+        <field
+                name="subject_id"
+                type="subject"
+                label="Môn học"
+                default=""
+                class="select2-basic"
+                onchange="this.form.submit();"
+        >
+            <option value="">Môn học</option>
+        </field>
+        <field
+                name="attempt"
+                type="list"
+                label="Lần thi"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-Lần thi-</option>
+            <option value="1">Thi lần 1</option>
+            <option value="2">Thi lần 2</option>
         </field>
     </fields>
     <fields name="list">

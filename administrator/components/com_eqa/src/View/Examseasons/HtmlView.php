@@ -90,7 +90,8 @@ class HtmlView extends EqaItemsHtmlView
 	    ToolbarHelper::appenddButton('core.manage', 'download','DS thí sinh','examseason.exportExaminees',true);
 	    ToolbarHelper::appenddButton('core.manage', 'download','DS cấm thi','examseason.exportIneligibleEntries',true);
 	    ToolbarHelper::appenddButton('core.manage', 'download','DS kỷ luật','examseason.exportSanctions',true);
-		ToolbarHelper::appenddButton('core.manage','download','Sản lượng', 'examseasons.exportProduction',true);
+	    ToolbarHelper::appenddButton('core.manage','download','Bảng điểm tổng hợp', 'examseason.exportLearnerMarks',true);
+	    ToolbarHelper::appenddButton('core.manage','download','Sản lượng', 'examseasons.exportProduction',true);
 	    ToolbarHelper::appenddButton('core.manage','download','Phổ điểm','examseasons.exportMarkStatistic',true);
 	    ToolbarHelper::appenddButton('core.manage','download','Báo cáo','examseasons.exportStatistic',true);
     }

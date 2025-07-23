@@ -36,6 +36,8 @@ use PhpOffice\PhpWord\IOFactory as WordIOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Shared\Converter;
 use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\Image;
+use PhpOffice\PhpWord\Style\Paragraph;
 use PhpOffice\PhpWord\Style\Tab;
 use Symfony\Component\HttpClient\Response\ResponseStream;
 
@@ -137,9 +139,10 @@ abstract class IOHelper
 		header('Content-Description: File Transfer');
 		header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 		header('Content-Disposition: attachment; filename="' . basename($fileName) . '"; filename*=UTF-8\'\'' . rawurlencode($fileName));
+		header('Cache-Control: max-age=0');
 		header('Expires: 0');
-		header('Cache-Control: must-revalidate');
-		header('Pragma: public');
+//		header('Cache-Control: must-revalidate');
+//		header('Pragma: public');
 		header('Content-Length: ' . filesize($tmpFile));
 
 		// Output the file content
@@ -1569,44 +1572,6 @@ abstract class IOHelper
 		}
 	}
 
-	static public function writeRegradingRequests(Worksheet $sheet, array $items):void
-	{
-		$headers = ['TT', 'Khóa', 'Lớp', 'Mã HVSV', 'Họ đệm', 'Tên', 'Môn phúc khảo'];
-		$widths = [6,      15,    15,    20,          20,    15, 40];
-		$COLS = sizeof($headers);
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
-		}
-		$row=1;
-
-		//Dòng tiêu đề
-		$headingRow = $row;
-		$sheet->fromArray($headers, null, 'A'.$headingRow);
-		$style = $sheet->getStyle([1,$row,$COLS,$row]);
-		$style->getFont()->setBold(true);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Dữ liệu
-		$row++;
-		$data = [];
-		$seq=0;
-		foreach ($items as $item)
-		{
-			$seq++;
-			$data[] = [
-				$seq,
-				$item->course,
-				$item->group,
-				$item->code,
-				$item->lastname,
-				$item->firstname,
-				$item->exam
-			];
-		}
-		$sheet->fromArray($data, null, 'A'.$row);
-	}
 	static public function writeRegradingFee(Spreadsheet $spreadsheet, array $regradingRequets): void
 	{
 
@@ -2042,7 +2007,6 @@ abstract class IOHelper
 		$rangeStyle = $sheet->getStyle([1, $row, 4, $lastRow]);
 		$rangeStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-
 		//Ngày tháng
 		$row = $lastRow + 2;
 		$value = 'Ngày .... tháng ..... năm 20.....';
@@ -2091,6 +2055,7 @@ abstract class IOHelper
 
 	static private function phpWordDefineCommonStyles(PhpWord $phpWord): void
 	{
+
 		//1. Font styles
 		$phpWord->setDefaultFontSize(14);
 		$phpWord->setDefaultFontName('Times New Roman');
@@ -2100,6 +2065,21 @@ abstract class IOHelper
 		$phpWord->addFontStyle('BoldUnderlined', ['bold' => true, 'underline'=>'single']);
 		$phpWord->addFontStyle('ItalicUnderlined', ['italic' => true, 'underline'=>'single']);
 		$phpWord->addFontStyle('ItalicBoldUnderlined', ['italic' => true, 'bold' => true, 'underline'=>'single']);
+
+		//Title styles
+		$phpWord->addTitleStyle(1,
+			[
+				'bold' => true,
+				'size'=>14
+			],
+			[
+				'alignment'=> Jc::START,
+				'pageBreakBefore' => true,
+				'keepNext'=>true,
+				'keepLines'=>true
+			]
+		);
+
 
 		//2. Paragraph styles
 		$phpWord->addParagraphStyle('Normal', [
@@ -2132,7 +2112,7 @@ abstract class IOHelper
 			'alignment'=> Jc::CENTER,
 			'firstLine' => 0,
 			'spaceBefore' => 240,
-			'spaceAfter'  => 0,
+			'spaceAfter'  => 0
 		]);
 		$phpWord->addParagraphStyle('Subtitle', [
 			'alignment'=> Jc::CENTER,
@@ -2140,6 +2120,29 @@ abstract class IOHelper
 			'spaceAfter' => Converter::pointToTwip(6),
 			'baseOn'=>'Normal'
 		]);
+
+		//3. Headings
+		$phpWord->addParagraphStyle('HeadingLevel1', [
+			'outlineLevel'     => 1,
+			'alignment'=> Jc::START,
+			'pageBreakBefore' => true,
+			'baseOn' => 'Heading1'
+		]);
+		$phpWord->addParagraphStyle('HeadingLevel1WithoutPageBreak', [
+			'baseOn' => 'HeadingLevel1',
+			'pageBreakBefore' => false
+		]);
+		$phpWord->addParagraphStyle('HeadingLevel2', [
+			'outlineLevel'     => 2,
+			'alignment'=> Jc::BOTH,
+			'keepNext'         => true,
+			'keepLines'        => true,
+			'spaceBefore' => Converter::pointToTwip(6),
+			'spaceAfter'  => Converter::pointToTwip(3),
+		]);
+
+
+		//4. Other paragraph styles
 		$phpWord->addParagraphStyle('Blockquote', [
 				'alignment'   => Jc::BOTH,
 				'indentation' => array(
@@ -2190,11 +2193,11 @@ abstract class IOHelper
 		$section->addText('(Sử dụng trong thời gian phúc khảo)','Italic', 'Subtitle');
 
 		// --- THÔNG TIN ---
-		$section->addText('Kỳ thi: '. $request->examseasonName);
+		$section->addText('Kỳ thi: '. htmlspecialchars($request->examseasonName));
 		$learner = $request->learnerCode . ' - ' . implode(' ', [$request->learnerLastname, $request->learnerFirstname]);
 		$textRun = $section->addTextRun();
 		$textRun->addText('Môn thi: ');
-		$textRun->addText($request->examName, 'Bold');
+		$textRun->addText(htmlspecialchars($request->examName), 'Bold');
 
 		$section->addText('Mã yêu cầu đính chính: '.$request->id);
 
@@ -2204,12 +2207,12 @@ abstract class IOHelper
 
 		$section->addText('Điểm cần đính chính: '. ExamHelper::decodeMarkConstituent($request->constituent));
 		$section->addText('Mô tả yêu cầu đính chính:');
-		$section->addText($request->reason, 'Italic', 'Blockquote');
+		$section->addText(htmlspecialchars($request->reason), 'Italic', 'Blockquote');
 
 		// --- Ý KIẾN NGƯỜI XỬ LÝ ---
-		$section->addText('Ý kiến của người xử lý:', null, ['spaceBefore'=>240, 'spaceAfter'=>240]);
-		$section->addText('(Ghi rõ điểm sau đính chính):', null, ['spaceBefore'=>240, 'spaceAfter'=>240]);
-		for ($i = 0; $i < 10; $i++) {
+		$section->addText('Ý kiến của người xử lý:','Bold', ['spaceBefore'=>Converter::pointToTwip(12)]);
+		$section->addText('(Ghi rõ lý do quyết định điều chỉnh/không điều chỉnh điểm; điểm sau khi điều chỉnh, nếu có):', 'Italic', ['spaceAfter'=>Converter::pointToTwip(6)]);
+		for ($i = 0; $i < 8; $i++) {
 			$section->addText("\t", null, 'DotLine');
 		}
 
@@ -2225,5 +2228,460 @@ abstract class IOHelper
 		$table->addCell(3500)->addText('NGƯỜI LẬP PHIẾU', 'Bold','Center');
 	}
 
+	static public function writeExamseasonLearnerMarks(PhpWord $phpWord, int $examseasonId, array $learnerMarks)
+	{
+		//1. Get information about exams of the given examseason
+		$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = $db->quoteName(
+			array('a.id', 'a.name', 'b.code', 'b.credits'),
+			array('id',   'name',   'code',   'credits')
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_subjects AS b', 'b.id = a.subject_id')
+			->where('a.examseason_id=' . $examseasonId)
+			->order('a.name ASC');
+		$db->setQuery($query);
+		$exams = $db->loadAssocList('id');
+
+		//2. Init the document styles
+		self::phpWordDefineCommonStyles($phpWord);
+		$phpWord->setDefaultFontSize(10);
+		$logoPath = JPATH_ROOT . '/media/com_eqa/images/logo.jpg';
+
+		//3. Create a cover page
+		$section = $phpWord->addSection(
+			[
+				'marginTop'    => Converter::cmToTwip(2),
+				'marginRight'  => Converter::cmToTwip(2),
+				'marginBottom' => Converter::cmToTwip(2),
+				'marginLeft'   => Converter::cmToTwip(3),
+				'borderTopSize'    => 12,           // in eighths of a point (12 = 1.5pt)
+				'borderTopColor'   => '000000',
+				'borderBottomSize' => 12,
+				'borderBottomColor'=> '000000',
+				'borderLeftSize'   => 12,
+				'borderLeftColor'  => '000000',
+				'borderRightSize'  => 12,
+				'borderRightColor' => '000000',
+				'borderStyle' => Border::BORDER_DOUBLE,
+			]
+		);
+		$section->addText('BAN CƠ YẾU CHÍNH PHỦ', [
+			'size'=>14
+			], 'Center');
+		$textrun = $section->addTextRun(['alignment'=>'center', 'spaceAfter'=>Converter::cmToTwip(1)]);
+		$textrun->addText('HỌC VIỆN', ['bold'=>true,'size'=>14]);
+		$textrun->addText(' KỸ THUẬT ', ['bold'=>true,'size'=>14,'underline'=>'single']);
+		$textrun->addText('MẬT MÃ', ['bold'=>true,'size'=>14]);
+
+		$section->addImage($logoPath, [
+			'alignment' => 'center',
+			'width'=>150,
+			'height'=>150,
+		]);
+
+		$section->addText('TỔNG HỢP KẾT QUẢ ĐÁNH GIÁ HỌC PHẦN',
+			[
+				'bold'=>true,
+				'size'=>20,
+			],
+			[
+				'alignment'=>Jc::CENTER,
+				'spaceBefore'=>Converter::cmToTwip(2),
+			]);
+		$text = Text::sprintf('Kỳ thi: %s', htmlspecialchars($examseason->name));
+		$text = mb_strtoupper($text);
+		$section->addText($text, [
+				'bold'=>true,
+				'size'=>14,
+			],'Center');
+		$text = Text::sprintf('(Học kỳ %d. Năm học %s)', $examseason->term, htmlspecialchars($examseason->academicyear));
+		$section->addText($text, [
+				'size'=>14,
+			],'Center');
+
+
+		$textrun = $section->addTextRun(['spaceBefore'=>Converter::cmToTwip(3)]);
+		$textrun->addText('Cán bộ tổng hợp điểm: ',['size'=>14]);
+		$textrun->addText('Nguyễn Thị Mai Chinh', ['bold'=>true, 'size'=>14]);
+
+		$textrun = $section->addTextRun(['spaceBefore'=>Converter::cmToTwip(4)]);
+		$textrun->addText('Trưởng phòng KT&amp;ĐBCLĐT: ',['size'=>14]);
+		$textrun->addText('Nguyễn Tuấn Anh', ['bold'=>true, 'size'=>14]);
+
+		$year = date('Y');
+		$city = ConfigHelper::getCity();
+		$text = Text::sprintf('%s, %d', htmlspecialchars($city), $year);
+		$section->addText($text,
+			[
+				'bold'=>true,
+				'size'=>14
+			],[
+				'alignment'=>'center',
+				'spaceBefore'=>Converter::cmToTwip(4.5)
+			]);
+
+		//4. Add a table of content
+		$section = self::phpWordAddCommonSection($phpWord);
+		$header = $section->addHeader();
+		$header->addWatermark(
+			$logoPath, // The absolute path to your image
+			array(
+				'width' => 400,
+				'height' => 400,
+				'marginTop'        => 2000,
+				'marginLeft'       => 200,
+			)
+		);
+
+		$sectionFooter = $section->addFooter();
+		$sectionFooter->addPreserveText('Page {PAGE} of {NUMPAGES}',
+			null,
+			[
+				'alignment' => 'center'
+			]);
+		$section->addTitle('Mục lục', 1);
+		$section->addTOC();
+
+		//5. Write data
+		//5.1. Define comparator function
+		$collator = new Collator('vi_VN');
+		$comparator = function($a, $b) use ($collator) {
+			return $collator->compare($a['firstname'], $b['firstname']);
+		};
+
+		//5.2 Write
+		$examCount=0;
+		foreach ($exams as $exam)
+		{
+			if(!isset($learnerMarks[$exam['id']]))
+				continue;
+			$examinees = $learnerMarks[$exam['id']];
+			if(empty($examinees))
+				continue;
+			usort($examinees, $comparator);
+			$examCount++;
+
+			//4.1. Init a section with header and footer
+			$section = self::phpWordAddCommonSection($phpWord);
+
+			$sectionHeader = $section->addHeader();
+			$headerText = Text::sprintf('Môn thi: "%s".   Mã HP: %s.  Số TC: %d',
+				htmlspecialchars($exam['name']),
+				htmlspecialchars($exam['code']),
+				$exam['credits']
+			);
+			$sectionHeader->addText($headerText,
+				[
+					'italic'=>true,
+				],
+				'Right');
+
+			$sectionFooter = $section->addFooter();
+			$sectionFooter->addPreserveText('Page {PAGE} of {NUMPAGES}',
+				null,
+				[
+					'alignment' => 'center'
+				]);
+
+			//4.2. Write title (the exam)
+			$titleText = Text::sprintf('%d. %s', $examCount, htmlspecialchars($exam['name']));
+			$section->addTitle($titleText,1);
+
+			//4.3. Write table heading row
+			$tableColumnHeaders = ['STT', 'Mã HVSV', 'Họ đệm', 'Tên', 'TP1', 'TP2', 'Thi', 'Điểm HP', 'Chữ', 'Ghi chú'];
+			$tableColumnWidths  = [0.90,   1.88,     3.82,     1.73,   0.99,  0.99,  0.99,  1.60,      0.99,   2.30];
+			$table = $section->addTable([
+				'borderColor'=>'000000',
+				'borderSize'=>1,
+				'cellMargin'=>Converter::cmToTwip(0.1),
+			]);
+			$table->addRow(null,
+			[
+				'tblHeader'=>true
+			]);
+			for($i=0;$i<count($tableColumnHeaders);$i++)
+			{
+				$columnWith = Converter::cmToTwip($tableColumnWidths[$i]);
+				$table->addCell($columnWith)->addText($tableColumnHeaders[$i],'Bold','Center');
+			}
+
+			//4.4. Sort $examinees by firstname then lastname
+			$collator = new Collator("vi_VN");
+
+
+			//4.4. Write learner marks
+			$seq=0;
+			foreach ($examinees as $examinee)
+			{
+				$table->addRow();
+				$seq++;
+				$pam1 = $examinee['pam1']>=0 ? $examinee['pam1'] : ExamHelper::markToText($examinee['pam1']);
+				$pam2 = $examinee['pam2']>=0 ? $examinee['pam2'] : ExamHelper::markToText($examinee['pam2']);
+				$finalMark = is_null($examinee['mark_final']) ? '' : $examinee['mark_final'];
+				$moduleMark = is_null($examinee['module_mark']) ? '' : $examinee['module_mark'];
+				$moduleGrade = is_null($examinee['module_grade']) ? '' : $examinee['module_grade'];
+				$description = is_null($examinee['description']) ? '' : $examinee['description'];
+				if($examinee['stimul_type'])
+					$description = StimulationHelper::getStimulationType($examinee['stimul_type']);
+				if($examinee['debtor'])
+					$description = 'Nợ học phí';
+
+				$table->addCell()->addText($seq,null,'Center');
+				$table->addCell()->addText($examinee['code']);
+				$table->addCell()->addText($examinee['lastname']);
+				$table->addCell()->addText($examinee['firstname']);
+				$table->addCell()->addText($pam1,null,'Center');
+				$table->addCell()->addText($pam2,null,'Center');
+				$table->addCell()->addText($finalMark,'Bold','Center');
+				$table->addCell()->addText($moduleMark,null,'Center');
+				$table->addCell()->addText($moduleGrade,null,'Center');
+				$table->addCell()->addText($description);
+			}
+		}
+	}
+	static public function testPhpWord(PhpWord $phpWord)
+	{
+	}
+	static public function fixerFixNextAttemptLimitation(Worksheet $sheet, ExamInfo $examInfo, array $examResult)
+	{
+		// Set page margins (values are in inches)
+		$sheet->getPageMargins()->setTop(0.5);
+		$sheet->getPageMargins()->setBottom(0.5);
+		$sheet->getPageMargins()->setLeft(0.25);
+		$sheet->getPageMargins()->setRight(0.25);
+		$sheet->getPageMargins()->setHeader(0.3);
+		$sheet->getPageMargins()->setFooter(0.3);
+
+		$headers = ['STT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Lớp', 'TP1', 'TP2', 'ORIG', 'FINAL', 'HP', 'Chữ', 'Bất thường', 'Lần'];
+		$widths =  [6,      11,         18,       8,     8,     6,     6,    6,      6,       6,     6,   20,             6];
+		$COLS = sizeof($headers);
+
+		for($i=1; $i<=$COLS; $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		}
+
+		//Init
+		$row=0;
+
+		//Thông tin cơ quan
+		$row++;
+		$midCol = 3;
+		$organizationName = mb_strtoupper(ConfigHelper::getOrganization());
+		$sheet->setCellValue([1,$row], $organizationName);
+		$sheet->mergeCells([1,$row, $midCol, $row]);
+		$sheet->setCellValue([$midCol+1, $row], 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM');
+		$sheet->mergeCells([$midCol+1, $row, $COLS, $row]);
+
+		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
+		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		$row++;
+		$unitName = mb_strtoupper(ConfigHelper::getExaminationUnit());
+		$sheet->setCellValue([1, $row], $unitName);
+		$sheet->mergeCells([1,$row, $midCol, $row]);
+		$sheet->setCellValue([$midCol+1, $row], 'Độc lập - Tự do - Hạnh phúc');
+		$sheet->mergeCells([$midCol+1,$row, $COLS, $row]);
+
+		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
+		$cellStyle->getFont()->setBold(true);
+		$cellStyle->getFont()->setUnderline(true);
+		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Title và Subtitle
+		$row  = 4;  //Theo đúng mẫu
+		$subTitle = Text::sprintf('HỌC KỲ %d - NĂM HỌC %s', $examInfo->term, $examInfo->academicyear);
+		$sheet->setCellValue([1, $row], "KẾT QUẢ ĐÁNH GIÁ HỌC PHẦN");
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$sheet->setCellValue([1, $row+1], $subTitle);
+		$sheet->mergeCells([1,$row+1, $COLS, $row+1]);
+		$style = $sheet->getStyle([1, $row, $COLS, $row+1]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Thông tin môn thi
+		$row = 6; //Theo đúng mẫu
+		$sheet->setCellValue([1, $row], 'Học phần:');
+		$sheet->setCellValue([3, $row], $examInfo->name);
+		$sheet->getStyle([2,$row])->getFont()->setBold(true);
+		$sheet->setCellValue([7, $row], 'Số TC:');
+		$sheet->setCellValue([8, $row], $examInfo->credits);
+		$sheet->setCellValue([9, $row], 'Mã học phần: ' . $examInfo->code);
+
+		//Dòng heading
+		$row=12;    //Theo đúng mẫu
+		$headingRow = $row;
+		foreach ($headers as $index=>$header)
+		{
+			$sheet->setCellValue([$index+1, $headingRow], $header);
+		}
+		$style = $sheet->getStyle([1,$headingRow, $COLS, $headingRow]);
+		$style->getFont()->setBold(true);
+
+		//Các dòng dữ liệu
+		$seq=0;
+		foreach ($examResult as $item)
+		{
+			$seq++;
+			$row++;
+			$data = [
+				$seq,
+				$item->learner_code,
+				$item->lastname,
+				$item->firstname,
+				$item->group,
+				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam1),
+				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam2),
+				($item->anomaly==ExamHelper::EXAM_ANOMALY_DELAY || $item->anomaly==ExamHelper::EXAM_ANOMALY_ABSENT) ? 'K' : $item->mark_orig,
+				($item->anomaly==ExamHelper::EXAM_ANOMALY_DELAY || $item->anomaly==ExamHelper::EXAM_ANOMALY_ABSENT) ? 'K' : $item->mark_final,
+				$item->module_mark,
+				$item->module_grade,
+				ExamHelper::getAnomaly($item->anomaly),
+				$item->attempt
+			];
+			foreach ($data as $index=>$value)
+			{
+				$sheet->setCellValue([$index+1, $row], $value);
+			}
+		}
+
+		//Kẻ bảng và căn lề
+		$style = $sheet->getStyle([1, $headingRow, $COLS, $row]);
+		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+		$style = $sheet->getStyle([1, $headingRow, 2, $row]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$style = $sheet->getStyle([5, $headingRow, $COLS, $row]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Phông chữ
+		$style = $sheet->getStyle($sheet->calculateWorksheetDimension());
+		$style->getFont()->setName('Times New Roman');
+		$style = $sheet->getStyle([9, $headingRow+1, 9, $row]);
+		$style->getFont()->setBold(true);
+
+	}
+	static public function fixerExportAbsentOrBanButHasMark(Worksheet $sheet, ExamInfo $examInfo, array $items)
+	{
+		$headers = ['STT', 'Mã HVSV', 'Họ đệm', 'Tên', 'KK',  'ORIG', 'FINAL', 'Bất thường'];
+		$widths =  [6,      11,         18,       8,    20,     6,    6,        20,];
+		$COLS = sizeof($headers);
+
+		for($i=1; $i<=$COLS; $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		}
+
+		//Dòng heading
+		$row=1;    //Theo đúng mẫu
+		$sheet->setCellValue([1, $row], 'Môn thi: ' . htmlspecialchars($examInfo->name));
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+
+		$row++;
+		$headingRow = $row;
+		foreach ($headers as $index=>$header)
+		{
+			$sheet->setCellValue([$index+1, $headingRow], $header);
+		}
+		$style = $sheet->getStyle([1,$headingRow, $COLS, $headingRow]);
+		$style->getFont()->setBold(true);
+
+		//Các dòng dữ liệu
+		$seq=0;
+		foreach ($items as $item)
+		{
+			$seq++;
+			$row++;
+			$data = [
+				$seq,
+				$item->code,
+				$item->lastname,
+				$item->firstname,
+				$item->stimulType ? StimulationHelper::getStimulationType($item->stimulType) : '',
+				$item->origMark,
+				$item->finalMark,
+				ExamHelper::getAnomaly($item->anomaly),
+			];
+			foreach ($data as $index=>$value)
+			{
+				$sheet->setCellValue([$index+1, $row], $value);
+			}
+		}
+
+		//Kẻ bảng
+		$style = $sheet->getStyle([1, $headingRow, $COLS, $row]);
+		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+		//Phông chữ
+		$style = $sheet->getStyle($sheet->calculateWorksheetDimension());
+		$style->getFont()->setName('Times New Roman');
+		$style = $sheet->getStyle([9, $headingRow+1, 9, $row]);
+		$style->getFont()->setBold(true);
+	}
+	static public function fixerExportDebtorButHasMark(Worksheet $sheet, ExamInfo $examInfo, array $items)
+	{
+		$headers = ['STT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Lần', 'KK', 'Debtor',  'ORIG', 'FINAL', 'Bất thường'];
+		$widths =  [6,      11,         18,       8,    6,     20,     8,        6,    6,        20,];
+		$COLS = sizeof($headers);
+
+		for($i=1; $i<=$COLS; $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		}
+
+		//Dòng heading
+		$row=1;    //Theo đúng mẫu
+		$sheet->setCellValue([1, $row], 'Môn thi: ' . htmlspecialchars($examInfo->name));
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+
+		$row++;
+		$headingRow = $row;
+		foreach ($headers as $index=>$header)
+		{
+			$sheet->setCellValue([$index+1, $headingRow], $header);
+		}
+		$style = $sheet->getStyle([1,$headingRow, $COLS, $headingRow]);
+		$style->getFont()->setBold(true);
+
+		//Các dòng dữ liệu
+		$seq=0;
+		foreach ($items as $item)
+		{
+			$seq++;
+			$row++;
+			$data = [
+				$seq,
+				$item->code,
+				$item->lastname,
+				$item->firstname,
+				$item->attempt,
+				$item->stimulType ? StimulationHelper::getStimulationType($item->stimulType) : '',
+				$item->debtor ? 'Nợ' : '',
+				$item->origMark,
+				$item->finalMark,
+				ExamHelper::getAnomaly($item->anomaly),
+			];
+			foreach ($data as $index=>$value)
+			{
+				$sheet->setCellValue([$index+1, $row], $value);
+			}
+		}
+
+		//Kẻ bảng
+		$style = $sheet->getStyle([1, $headingRow, $COLS, $row]);
+		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+		//Phông chữ
+		$style = $sheet->getStyle($sheet->calculateWorksheetDimension());
+		$style->getFont()->setName('Times New Roman');
+		$style = $sheet->getStyle([9, $headingRow+1, 9, $row]);
+		$style->getFont()->setBold(true);
+	}
 }
 

@@ -6,7 +6,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 
 class EmployeesModel extends EqaListModel{
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('code','unit_code','firstname','published', 'ordering');
         parent::__construct($config, $factory);

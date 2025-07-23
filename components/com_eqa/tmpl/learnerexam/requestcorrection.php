@@ -1,9 +1,9 @@
 <?php
 
 use Joomla\CMS\Toolbar\ToolbarHelper;
+use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
-use Kma\Component\Eqa\Site\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 ToolbarHelper::title('Yêu cầu đính chính điểm');

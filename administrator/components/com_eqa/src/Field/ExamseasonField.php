@@ -26,7 +26,6 @@ class ExamseasonField extends ListField
         $query = $db->getQuery(true)
             ->select('id, name')
             ->from('#__eqa_examseasons')
-            ->where('completed = 0 AND published>0')
             ->order('id DESC');
         $db->setQuery($query);
         $items = $db->loadObjectList();

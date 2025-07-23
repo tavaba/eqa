@@ -6,7 +6,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 
 class ExamseasonsModel extends EqaListModel{
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('id', 'academicyear','term','type','attermpt','nexam','default','completed');
         parent::__construct($config, $factory);

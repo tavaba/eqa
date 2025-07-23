@@ -1,14 +1,14 @@
 <?php
 
-use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
-use Kma\Component\Eqa\Site\Helper\ViewHelper;
+
+use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 
-if(empty($this->learner))
+if($this->errorMessage)
 {
-	echo 'Cần đăng nhập bằng tài khoản HVSV để xem nội dung trang này';
-	return;
+	echo '<div class="alert alert-danger">' . $this->errorMessage . '</div>';
+    return;
 }
 ?>
 <div class="accordion">

@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Site\Controller;
 defined('_JEXEC') or die();
 
+use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use JRoute;
@@ -53,20 +54,25 @@ class LearnerexamController extends BaseController
 	}
 	public function ShowCorrectionRequestForm(): void
 	{
-		$app = Factory::getApplication();
-		$examId = $app->input->getInt('exam_id');
-
-		if(!is_integer($examId))
+		try
 		{
-			$this->setMessage('Yêu cầu không hợp lệ', 'error');
+			$cid = $this->app->input->get('cid',null,'array');
+			$cid = array_filter($cid, 'intval');
+			if (empty($cid))
+				throw new Exception('Không có môn thi nào được chỉ định');
+			$examId = $cid[0];
+
+			//Redirect in any case
+			$url = JRoute::_('index.php?option=com_eqa&view=learnerexam&layout=requestcorrection&exam_id='. $examId, false);
+			$this->setRedirect($url);
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
 			$url = JRoute::_('index.php?option=com_eqa&view=learnerexams', false);
 			$this->setRedirect($url);
-			return;
 		}
-
-		//Redirect in any case
-		$url = JRoute::_('index.php?option=com_eqa&view=learnerexam&layout=requestcorrection&exam_id='. $examId, false);
-		$this->setRedirect($url);
 	}
+
 }
 

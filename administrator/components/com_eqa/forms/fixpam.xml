@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+   Trong form này có sử dụng custom form field
+   Vì thế, trong thẻ FIELDSET cần có thuộc tính 'addfieldprefix' tương ứng
+   Tham khảo từ:  https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+-->
+<form>
+    <fieldset name="fixpam" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="class_id"
+                type="recentclass"
+                default=""
+                class="select2-basic"
+                required="true"
+                label="Lớp học phần"
+        >
+            <option value="">-Lớp học phần-</option>
+        </field>
+        <field
+                name="learner_id"
+                type="list"
+                label="Học viên/sinh viên"
+                default=""
+                required="true"
+        >
+            <option value="">-Chọn sinh viên-</option>
+        </field>
+        <field
+                name="pam1"
+                type="text"
+                required="true"
+                default=""
+                label="Điểm TP1"
+        />
+        <field
+                name="pam2"
+                type="text"
+                required="true"
+                default=""
+                label="Điểm TP2"
+        />
+    </fieldset>
+</form>

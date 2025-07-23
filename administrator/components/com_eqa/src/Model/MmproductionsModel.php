@@ -7,7 +7,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class MmproductionsModel extends EqaListModel{
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('id', 'firstname','quantity');
         parent::__construct($config, $factory);

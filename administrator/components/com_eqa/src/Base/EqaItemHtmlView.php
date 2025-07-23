@@ -54,11 +54,13 @@ class EqaItemHtmlView extends BaseHtmlView{
         $layout = $this->getLayout();
         $suffix = ucfirst($layout);
         $method = 'prepareDataForLayout'.$suffix;
-        $this->$method();
+		if(method_exists($this, $method))
+            $this->$method();
 
         //Add layout specific toolbar
         $method = 'addToolbarForLayout'.$suffix;
-        $this->$method();
+	    if(method_exists($this, $method))
+		    $this->$method();
 
         //Display
         parent::display($tpl);

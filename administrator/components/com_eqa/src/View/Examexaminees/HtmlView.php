@@ -44,7 +44,8 @@ class HtmlView extends EqaItemsHtmlView {
 		$f =new EqaListLayoutItemFieldOption('stimulation', 'KK', true, false, 'text-center');
 		$f->titleDesc = 'Chế độ khuyến khích (nếu có)';
 	    $fields->customFieldset1[] = $f;
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('anomaly', 'Bất thường');
+	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('anomaly', 'Bất thường');
+	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('mark_orig', 'Thi', false, false, 'text-center');
 	    $f = new EqaListLayoutItemFieldOption('mark_final', 'COM_EQA_MARK_FINALEXAM_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MARK_FINALEXAM');
         $fields->customFieldset1[] = $f;
@@ -84,7 +85,10 @@ class HtmlView extends EqaItemsHtmlView {
                     $item->allowed = Text::_('JYES');
                 else {
                     $item->allowed = Text::_('JNO');
-                    $item->optionRowCssClass='table-danger';
+					if($item->stimulation == StimulationHelper::TYPE_TRANS || $item->stimulation==StimulationHelper::TYPE_EXEMPT)
+						$item->optionRowCssClass='table-success';
+					else
+						$item->optionRowCssClass='table-danger';
                 }
 
 	            if($item->debtor){

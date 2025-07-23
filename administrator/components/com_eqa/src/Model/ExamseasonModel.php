@@ -517,6 +517,88 @@ class ExamseasonModel extends EqaAdminModel{
 		//Return
 		return $entries;
 	}
+
+	/**
+	 * Tổng hợp điểm của thí sinh ở tất cả các môn thi.
+	 * Kết quả là một mảng với index là 'exam_id'. Mỗi phần tử của mảng kết quả là một mảng
+	 * thông tin của các thí sinh. Mỗi thí sinh có các thông tin như sau:
+	 * - learner_id: Mã thí sinh
+	 * - code: Mã SV
+	 * - lastname: Họ tên
+	 * - firstname: Họ tên
+	 * - group: Lớp
+	 * - course: Khóa học
+	 * - pam1: Điểm PAM1
+	 * - pam2: Điểm PAM2
+	 * - pam: Điểm tổng kết giữa kì (PAM)
+	 * - debtor: Nợ phí hay không? (true/false)
+	 * - anomaly: Loại vi phạm (null nếu không có)
+	 * - stimulation_id: ID của chương trình khuyến khích (null nếu không có)
+	 * - final_mark: Điểm thi KTHP sau khi xử lý vi phạm, khuyến khích (nếu có))
+	 * - module_mark: Điểm học phần
+	 * - module_grade: Điểm chữ
+	 * - description: Mô tả về lý do bị cấm thi hoặc nợ phí (null nếu không có)
+	 *
+	 * @param int $examseasonId Mã kỳ thi
+	 *
+	 * @return array|null Kết quả được sắp xếp theo thứ tự tăng dần của 'learner_id'.
+	 *
+	 * @since version
+	 */
+	public function getLearnerMarks(int $examseasonId)
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1. Lấy thông tin về tất cả các môn thi (exam) của kỳ thi này
+		$query = $db->getQuery(true)
+			->select('id')
+			->from('#__eqa_exams')
+			->where('examseason_id='.$examseasonId);
+		$db->setQuery($query);
+		$examIds = $db->loadColumn();
+		if(empty($examIds)) return null;
+
+		//2. Lấy thông tin về các thí sinh của kỳ thi
+		$examIdSet = '(' . implode(',',$examIds).')'; //Chuyển sang chuỗi để sử dụng trong câu lệnh SQL
+		$columns = [
+			$db->quoteName('a.exam_id') .         ' AS ' . $db->quoteName('exam_id'),
+			$db->quoteName('a.learner_id') .      ' AS ' . $db->quoteName('learner_id'),
+			$db->quoteName('c.code') .            ' AS ' . $db->quoteName('code'),
+			$db->quoteName('c.lastname') .        ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('c.firstname') .       ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('b.pam1') .            ' AS ' . $db->quoteName('pam1'),
+			$db->quoteName('b.pam2') .            ' AS ' . $db->quoteName('pam2'),
+			$db->quoteName('b.pam') .             ' AS ' . $db->quoteName('pam'),
+			$db->quoteName('a.debtor') .          ' AS ' . $db->quoteName('debtor'),
+			$db->quoteName('a.anomaly') .         ' AS ' . $db->quoteName('anomaly'),
+			$db->quoteName('d.type') .            ' AS ' . $db->quoteName('stimul_type'),
+			$db->quoteName('a.mark_final') .      ' AS ' . $db->quoteName('mark_final'),
+			$db->quoteName('a.module_mark') .     ' AS ' . $db->quoteName('module_mark'),
+			$db->quoteName('a.module_grade')     .' AS ' . $db->quoteName('module_grade'),
+			$db->quoteName('a.description')      .' AS ' . $db->quoteName('description')
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
+			->leftJoin('#__eqa_stimulations AS d', 'd.id=a.stimulation_id')
+			->where('a.exam_id IN ' . $examIdSet);
+		$db->setQuery($query);
+		$examinees = $db->loadAssocList();
+
+		//3. Gom nhóm theo 'exam_id'
+		$marks = [];
+		foreach ($examIds as $examId)
+			$marks[$examId] = [];
+		foreach ($examinees as $examinee)
+		{
+			$examId = $examinee['exam_id'];
+			unset($examinee['exam_id']);
+			$marks[$examId][] = $examinee;
+		}
+		return $marks;
+	}
 	public function getQuestionProductions(array $examseasonIds): array|null
 	{
 		$db = DatabaseHelper::getDatabaseDriver();

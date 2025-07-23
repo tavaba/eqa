@@ -8,7 +8,7 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 
 class ExamroomexamineesModel extends ListModel {
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('examinee_code', 'learner_code','firstname','lastname','attempt','allow', 'conclusion');
         parent::__construct($config, $factory);

@@ -202,7 +202,7 @@ class FixerController extends  EqaFormController
 		}
 	}
 
-	public function fixNextAttemptLimitation()
+	public function recalculateExamResult()
 	{
 		try
 		{
@@ -217,23 +217,36 @@ class FixerController extends  EqaFormController
 
 			//3. Fix
 			$model = $this->getModel('fixer');
-			$data = $model->fixNextAttemptLimitation($examseasonId, true);
+			$model->recalculateExamResult($examseasonId);
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
+		}
+		catch(Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
+		}
+	}
 
-			//4. Write to excel
-			$spreadsheet = new Spreadsheet();
-			$spreadsheet->removeSheetByIndex(0);
-			foreach ($data as $examId=>$items)
-			{
-				$examInfo = DatabaseHelper::getExamInfo($examId);
-				$sheet = $spreadsheet->createSheet();
-				$sheet->setTitle($examInfo->code);
-				IOHelper::writeExamResultForEms($sheet, $examInfo, $items);
-			}
+	public function deleteExam()
+	{
+		try
+		{
+			//1. Check permissions
+			if(!$this->app->getIdentity()->authorise('core.admin',$this->option))
+				throw new Exception('0x01000000');
 
-			//Send result
-			$fileName = 'Đính chính việc giới hạn điểm thi lần 2.xlsx';
-			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-			exit();
+			//2. Get data from request
+			$examId = $this->input->getInt('examId');
+			if (empty($examId))
+				throw new Exception('0x02000000');
+
+			//3. Fix
+			$model = $this->getModel('fixer');
+			$model->deleteExam($examId);
+
+			//4. Redirect with a success message
+			$this->setMessage('Đã xóa');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
 		}
 		catch(Exception $e)
 		{

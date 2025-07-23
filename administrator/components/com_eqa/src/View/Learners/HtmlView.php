@@ -38,6 +38,11 @@ class HtmlView extends EqaItemsHtmlView
 		$actionViewClasses->text = 'Danh sách các lớp học phần';
 		$actionViewClasses->urlFormatStringForItemId = JRoute::_('index.php?option=com_eqa&view=learnerclasses&learner_id=%d');
 		$option->actions[] = $actionViewClasses;
+	    $actionViewClasses = new EqaItemAction();
+	    $actionViewClasses->icon = 'puzzle';
+	    $actionViewClasses->text = 'Danh sách môn thi';
+	    $actionViewClasses->urlFormatStringForItemId = JRoute::_('index.php?option=com_eqa&view=learnerexams&learner_id=%d');
+	    $option->actions[] = $actionViewClasses;
 
         //Set the option
         $this->itemFields = $option;

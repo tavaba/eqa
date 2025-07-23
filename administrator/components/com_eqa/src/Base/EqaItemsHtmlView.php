@@ -57,8 +57,8 @@ abstract class EqaItemsHtmlView extends BaseHtmlView{
         }
 
         $state = $model->getState();
-        $this->layoutData->listOrderingField = $this->escape($state->get('list.ordering'));
-        $this->layoutData->listOrderingDirection = $this->escape($state->get('list.direction'));
+        $this->layoutData->listOrderingField = $this->escape($state->get('list.ordering',''));
+        $this->layoutData->listOrderingDirection = $this->escape($state->get('list.direction',''));
         $this->layoutData->sortByOrder = $this->layoutData->listOrderingField == 'ordering';
 
         $filterForm = $model->getFilterForm();

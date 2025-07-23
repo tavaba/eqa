@@ -316,7 +316,25 @@ abstract class ViewHelper
         echo '</div>';
     }
 
-    public static function printItemsDefaultLayout(EqaListLayoutData $layoutData, EqaListLayoutItemFields $itemFields):void {
+	public static function printForm(JForm $form, string $fieldsetName, string $actionUrl, array $hiddenFields, bool $submit=false):void
+	{
+		HTMLHelper::_('behavior.formvalidator');
+		?>
+        <form action="<?php echo JRoute::_($actionUrl);?>" method="POST" name="adminForm" id="adminForm" class="form-validate" >
+			<?php
+			echo $form->renderFieldset($fieldsetName);
+			echo JHtml::_('form.token');
+			foreach ($hiddenFields as $field=>$value)
+				echo "<input type=\"hidden\" name=\"$field\" value=\"$value\"/>";
+			if(!isset($hiddenFields['task']))
+				echo "<input type=\"hidden\" name=\"task\"/>";
+			if($submit)
+				echo "<input type=\"submit\" value=\"Submit\">"
+			?>
+        </form>
+		<?php
+	}
+	public static function printItemsDefaultLayout(EqaListLayoutData $layoutData, EqaListLayoutItemFields $itemFields):void {
 
         $url = 'index.php?option=com_eqa';
         if(is_array($layoutData->formActionParams))

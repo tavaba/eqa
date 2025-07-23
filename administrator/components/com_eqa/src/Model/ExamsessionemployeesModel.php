@@ -9,7 +9,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class ExamsessionemployeesModel extends EqaListModel{
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('examroom');
         parent::__construct($config, $factory);

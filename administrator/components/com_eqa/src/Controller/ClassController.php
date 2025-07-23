@@ -1,6 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -192,5 +193,37 @@ class ClassController extends  EqaFormController {
         }
 		DatabaseHelper::updateClassNPam($classId);
     }
+
+	/**
+	 * Lấy danh sách sinh viên trong một lớp học phần dưới dạng JSON.
+	 * Mỗi phần tử có 2 thuộc tính: 'id', 'name'
+	 * @since 1.2.0
+	 */
+	public function getJsonClassLearners()
+	{
+		$app = $this->app;
+
+		//Check access
+		if (!$app->getIdentity()->authorise('core.manage',$this->option)) {
+			echo new JsonResponse([], 'Access denied', true);
+			$app->close();
+		}
+
+		//Get the class id from the request
+		$classId = $app->input->getInt('class_id', 0);
+		if (!$classId) {
+			echo new JsonResponse([], 'Invalid class ID', true);
+			$app->close();
+		}
+
+		//Retrieve the list of students
+		$model = $this->getModel();
+		$students = $model->getClassLearners($classId);
+		if (!$students || !count($students))
+			echo new JsonResponse([], 'No student found', true);
+		else
+			echo new JsonResponse($students);
+		$app->close();
+	}
 
 }

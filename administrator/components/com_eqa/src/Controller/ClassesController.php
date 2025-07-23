@@ -13,6 +13,7 @@ use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
+use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 
@@ -294,15 +295,7 @@ class ClassesController extends EqaAdminController {
         foreach ($files as $file)
         {
             try {
-                // Check if the file is Excel 97 (.xls)
-                $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                if ($fileExtension === 'xls') {
-                    $reader = new Xls();
-                } else {
-                    // Assume it's an Excel 2007 or later (.xlsx)
-                    $reader = IOFactory::createReader('Xlsx');
-                }
-                $spreadsheet = $reader->load($file['tmp_name']);
+				$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
             }
             catch (Exception $e){
                 $msg = '<b>' . htmlentities($file['name']) . '</b> : ' . $e->getMessage();
@@ -377,7 +370,7 @@ class ClassesController extends EqaAdminController {
 							break;          //End of data
                         $countTotal++;
                         if(!isset($learnerMap[$learnerCode])){
-                            $msg = Text::sprintf('COM_EQA_MSG_LEARNER_CODE_S_DOES_NOT_EXIST',$learnerCode);
+                            $msg = Text::sprintf('Không tìm thấy HVSV <b>%s</b> trong CSDL',$learnerCode);
                             throw new Exception($msg);
                         }
                         $learnerId = $learnerMap[$learnerCode];
@@ -385,7 +378,8 @@ class ClassesController extends EqaAdminController {
                         //Kiểm tra xem HVSV có tên trong lớp học phần hay không
                         if(!isset($classLearners[$learnerId])){
                             $msg = sprintf('<b>%s</b> không có trong danh sách lớp <b>%s</b>',$learnerCode,$classCode);
-                            throw new Exception($msg);
+							$app->enqueueMessage($msg,'warning');
+                            continue;
                         }
 
                         //Kiểm tra xem HVSV hiện thời đã có điểm quá trình hay chưa
@@ -406,16 +400,18 @@ class ClassesController extends EqaAdminController {
 						$pam1 = ExamHelper::toPam($pam1, $description);
 						if($pam1 === false)
 						{
-							$msg = sprintf('Điểm TP1 không hợp lệ: %s - %s', $classCode, $learnerCode);
-							throw new Exception($msg);
+							$msg = sprintf('Điểm QT không hợp lệ: %s - %s', $classCode, $learnerCode);
+							$app->enqueueMessage($msg,'warning');
+							continue;
 						}
 
                         $pam2 = $data[$i][9];
 						$pam2 = ExamHelper::toPam($pam2, $description);
 	                    if($pam2 === false)
 	                    {
-		                    $msg = sprintf('Điểm TP2 không hợp lệ: %s - %s', $classCode, $learnerCode);
-		                    throw new Exception($msg);
+		                    $msg = sprintf('Điểm QT không hợp lệ: %s - %s', $classCode, $learnerCode);
+		                    $app->enqueueMessage($msg,'warning');
+		                    continue;
 	                    }
 
                         $pam = $data[$i][10];
@@ -430,14 +426,16 @@ class ClassesController extends EqaAdminController {
 		                    }
 		                    else{
 			                    $msg = sprintf('Điểm QT không hợp lệ: %s - %s', $classCode, $learnerCode);
-			                    throw new Exception($msg);
+			                    $app->enqueueMessage($msg,'warning');
+			                    continue;
 		                    }
 	                    }
 						else{
 							$pam = ExamHelper::toPam($pam, $description);
 							if($pam === false){
 								$msg = sprintf('Điểm QT không hợp lệ: %s - %s', $classCode, $learnerCode);
-								throw new Exception($msg);
+								$app->enqueueMessage($msg,'warning');
+								continue;
 							}
 						}
 

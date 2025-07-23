@@ -9,7 +9,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class StimulationsModel extends ListModel {
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('subject_code','learner_code','firstname','type','used');
         parent::__construct($config, $factory);

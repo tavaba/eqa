@@ -8,7 +8,7 @@ use Joomla\CMS\MVC\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class LearnerclassesModel extends ListModel {
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('academicyear', 'term', 'name');
         parent::__construct($config, $factory);
@@ -23,8 +23,8 @@ class LearnerclassesModel extends ListModel {
 
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
-            array('b.id', 'c.code',       'b.term', 'b.name'),
-            array('id',   'academicyear', 'term',   'name')
+            array('b.id', 'c.code',       'b.term', 'b.name', 'a.pam1', 'a.pam2', 'a.pam', 'a.allowed', 'a.ntaken', 'a.expired'),
+            array('id',   'academicyear', 'term',   'name',   'pam1',   'pam2',   'pam',   'allowed',    'ntaken',  'expired')
         );
         $query = $db->getQuery(true)
             ->select($columns)
@@ -42,7 +42,7 @@ class LearnerclassesModel extends ListModel {
         $search = $this->getState('filter.search');
         if(!empty($search)){
             $like = $db->quote('%'.$search.'%');
-            $query->where('(CONCAT(`b`.`lastname`, " ", `b`.`firstname`) LIKE ' . $like .' OR `b`.`code` LIKE ' . $like . ')');
+            $query->where('`b`.`name` LIKE ' . $like );
         }
 
         return $query;

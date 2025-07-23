@@ -11,6 +11,7 @@
         <field  name="examseason_id"
                 type="examseason"
                 label="Kỳ thi"
+                default=""
                 onchange="this.form.submit();"
         >
             <option value="">-Kỳ thi-</option>

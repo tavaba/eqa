@@ -1,10 +1,12 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
+use Collator;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 defined('_JEXEC') or die();
 
@@ -237,4 +239,46 @@ class ClassModel extends EqaAdminModel {
 
         return true;
     }
+
+	public function getClassLearners(int $classId)
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = $db->quoteName(
+			array(),
+			array()
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'a.learner_id=b.id')
+			->where('a.class_id = ' . $classId);
+		$db->setQuery($query);
+		$learners = $db->loadObjectList();
+		if(empty($learners))
+			return null;
+
+		//Sort by firstname, then by lastname
+		$collator = new Collator("vi_VN");
+		$comparator = function($a,$b) use ($collator){
+			$round1 = $collator->compare($a->fistname,$b->firstname);
+			if($round1 != 0)
+				return $round1;
+			return $collator->compare($a->lastname,$b->lastname);
+		};
+		usort($learners, $comparator);
+
+		//Concatenate fullname and code into one field
+		$data = [];
+		foreach($learners as $i=>$learner){
+			$name = trim(htmlspecialchars("$learner->lastname $learner->firstname"));
+			$name = "$learner->code - $name)";
+			$data[$i][] = [
+				'id' => $learner->id,
+				'name' => $name
+			];
+		}
+
+		//Return the data
+		return $data;
+	}
 }

@@ -53,20 +53,5 @@ class LearnerexamsController extends BaseController
 		$model = $this->getModel();
 		$model->RequestCorrection($examId, $learnerCode, $markConstituent, $reason);
 	}
-	public function ShowCorrectionRequestForm(): void
-	{
-		$this->checkToken();
-
-		$examIds = $this->app->input->get('cid',null,'array');
-		if(empty($examIds))
-		{
-			$this->setMessage('Không có môn thi nào được chọn', 'error');
-			return;
-		}
-
-		//Redirect to the form
-		$url = JRoute::_('index.php?option=com_eqa&view=learnerexam&layout=requestcorrection&exam_id='. $examIds[0], false);
-		$this->setRedirect($url);
-	}
 }
 

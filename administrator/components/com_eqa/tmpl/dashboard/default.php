@@ -41,7 +41,12 @@ JHtml::_('bootstrap.framework');
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab6-tab" data-bs-toggle="tab" data-bs-target="#tab6" type="button" role="tab" aria-controls="tab6" aria-selected="false">
-                        <?php echo "Thống kê"; ?>
+			            <?php echo "Sửa sai"; ?>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab7-tab" data-bs-toggle="tab" data-bs-target="#tab7" type="button" role="tab" aria-controls="tab6" aria-selected="false">
+			            <?php echo "Thống kê"; ?>
                     </button>
                 </li>
             </ul>
@@ -160,11 +165,18 @@ JHtml::_('bootstrap.framework');
                 </div>
                 <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
                     <div class="d-grid gap-2 mt-3">
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=fixer&layout=fixpam'); ?>" class="btn btn-primary btn-lg">
+				            <?php echo "Sửa điểm quá trình"; ?>
+                        </a>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
+                    <div class="d-grid gap-2 mt-3">
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=monitoringexams'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Giám sát tiến độ môn thi"; ?>
+				            <?php echo "Giám sát tiến độ môn thi"; ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=examseasons'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo "Xuất số liệu thống kê"; ?>
+				            <?php echo "Xuất số liệu thống kê"; ?>
                         </a>
                     </div>
                 </div>

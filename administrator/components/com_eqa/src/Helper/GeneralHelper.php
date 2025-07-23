@@ -25,10 +25,10 @@ abstract class GeneralHelper{
      * @throws Exception
      * @since 1.0
      */
-    static public function getCurrentUsername(): string|null
-    {
+	static public function getCurrentUsername(): string|null
+	{
 		$leanerEmailPattern = "/^((AT|CT|DT|H|CH|CHAT)[0-9]{4,6}N?)@actvn\.edu\.vn$/";
-        $user = Factory::getApplication()->getIdentity();
+		$user = Factory::getApplication()->getIdentity();
 
 		//Nếu không có user nào logged in
 		if($user->guest)
@@ -40,12 +40,33 @@ abstract class GeneralHelper{
 			return $username;
 		}
 
-        if($user->username)
-            return $user->username;
+		if($user->username)
+			return $user->username;
 
 		//Trích username từ email
-	    return strstr($user->email, "@", true); // Get part before "@"
-    }
+		return strstr($user->email, "@", true); // Get part before "@"
+	}
+	static public function getSignedInLearnerCode(): string|null
+	{
+		$leanerEmailPattern = "/^((AT|CT|DT|H|CH|CHAT)[0-9]{4,6}N?)@actvn\.edu\.vn$/";
+		$user = Factory::getApplication()->getIdentity();
+
+		//Nếu là HVSV thì ưu tiên lấy username theo email
+		if(isset($user->email) && preg_match($leanerEmailPattern, $user->email, $matches))
+			return $matches[1];
+
+		return null;
+	}
+	static public function getSignedInLearnerId(): int|null
+	{
+		$learnerCode = self::getSignedInLearnerCode();
+		if(!$learnerCode)
+			return null;
+
+		$db = DatabaseHelper::getDatabaseDriver();
+		$db->setQuery( 'SELECT id FROM #__eqa_learners WHERE code=' . $db->quote($learnerCode));
+		return $db->loadResult();
+	}
 
     /**
      * Lấy danh sách tât cả các actions và thực hiện kiểm tra quyền

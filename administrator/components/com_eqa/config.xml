@@ -18,6 +18,12 @@
 					default="Học viện Kỹ thuật mật mã"
 					label="Cơ quan"
 			/>
+			<field
+					name="city"
+					type="text"
+					default="Hà Nội"
+					label="Thành phố"
+			/>
 		</fieldset>
 		<fieldset
 				name="exam"

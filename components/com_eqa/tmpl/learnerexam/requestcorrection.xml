@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-    <layout title="Danh sách yêu cầu phúc khảo của thí sinh" option="Optionxxxx">
+    <layout title="Gửi yêu cầu đính chính điểm">
+        <help
+                key="JHELP_MENUS_MENU_ITEM_LEARNEREXAMS"
+        />
         <message>
-            <![CDATA[Hiển thị danh sách các yêu cầu phúc khảo của thí sinh hiện thời]]>
+            <![CDATA[Hiển thị danh sách các môn thi và kết quả thi của HVSV khi đăng nhập vào website]]>
         </message>
     </layout>
 

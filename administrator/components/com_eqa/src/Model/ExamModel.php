@@ -55,23 +55,20 @@ class ExamModel extends EqaAdminModel{
      * @return bool
      * @since 1.0.3
      */
-    public function addExaminees(int $examId, string $classCode, array $learnerCodes, int $attempt): bool
+    public function addExaminees(int $examId, string $classCode, array $learnerCodes, int $attempt, bool $ignoreError, bool $addExpired): bool
     {
 	    if (DatabaseHelper::isCompletedExam($examId))
 		    throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể thêm thí sinh');
 
-        $app = Factory::getApplication();
-        $db = $this->getDatabase();
+        $db = DatabaseHelper::getDatabaseDriver();
 
         //Find the class by its code ($classCode)
         $db->setQuery('SELECT * FROM #__eqa_classes WHERE code='.$db->quote($classCode));
         $class = $db->loadObject();
         if(empty($class))
         {
-            $msg = Text::_('COM_EQA_MSG_CLASS_CODE_DOES_NOT_EXIST');
-            $msg .= ': <b>' . htmlentities($classCode) . '</b>';
-            $app->enqueueMessage($msg,'error');
-            return false;
+            $msg = Text::sprintf('Không tìm thấy lớp học phần <b>%s</b>', htmlentities($classCode));
+			throw new Exception($msg);
         }
 
         //Check to ensure that the class and the exam belong to the same subject
@@ -81,61 +78,87 @@ class ExamModel extends EqaAdminModel{
             $msg = Text::sprintf('Lớp học phần <b>%s</b> không phù hợp với môn thi <b>%s</b>',
                 htmlentities($class->name),
                 htmlentities($exam->name));
-            $app->enqueueMessage($msg,'error');
-            return false;
+            throw new Exception($msg);
         }
 
         //Try to add the learners to the exam
-        $db->transactionStart();
-        try {
-	        foreach ($learnerCodes as $learnerCode){
-                //Get the 'learner'
-				$db->setQuery('SELECT id, debtor FROM #__eqa_learners WHERE code=' . $db->quote($learnerCode));
-				$learner = $db->loadObject();
-				if(empty($learner))
+	    $app = Factory::getApplication();
+	    $countAdded=0;
+	    foreach ($learnerCodes as $learnerCode)
+	    {
+		    //Get learner info
+		    $columns = $db->quoteName(
+				array('b.id', 'a.expired', 'b.debtor'),
+			    array('id',   'expired',   'debtor')
+		    );
+			$query = $db->getQuery(true)
+				->select($columns)
+				->from('#__eqa_class_learner AS a')
+				->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+				->where('a.class_id='.$class->id.' AND b.code=' . $db->quote($learnerCode));
+		    $db->setQuery($query);
+			$classLearner = $db->loadObject();
+
+			//The required learner must exist
+			if(empty($classLearner))
+			{
+				$msg = Text::sprintf('HVSV <b>%s</b> không tồn tại trong lớp học phần <b>%s</b>', $learnerCode, $classCode);
+				if($ignoreError)
 				{
-					$msg = Text::sprintf('Không tìm thấy HVSV có mã <b>%s</b>', $learnerCode);
-					throw new Exception($msg);
+					$app->enqueueMessage($msg,'warning');
+					continue;
 				}
-
-                //Get learner info from the class
-                $db->setQuery('SELECT * FROM #__eqa_class_learner WHERE class_id='.$class->id.' AND learner_id='.$learner->id);
-                $classLearner = $db->loadObject();
-                if(empty($classLearner)) {
-                    $msg = Text::sprintf('<b>%s</b> không tồn tại trong lớp %s',
-                        htmlentities($learnerCode),
-                        htmlentities($class->name)
-                    );
-                    throw new Exception($msg);
-                }
-				if($classLearner->expired){
-					$msg = Text::sprintf('Trong lớp %s, HVSV <b>%s</b> đã hết quyền dự thi', $classCode, $learnerCode);
+				else
 					throw new Exception($msg);
+			}
+
+		    if ($classLearner->expired && !$addExpired)
+		    {
+			    $msg = Text::sprintf('Trong lớp %s, HVSV <b>%s</b> đã hết quyền dự thi', $classCode, $learnerCode);
+				if($ignoreError)
+				{
+					$app->enqueueMessage($msg,'warning');
+					continue;
 				}
+				else
+				    throw new Exception($msg);
+		    }
 
-                //Add learner to the exam
-                $query = $db->getQuery(true)
-                    ->insert('#__eqa_exam_learner')
-                    ->columns('exam_id, class_id, learner_id, debtor, attempt')
-                    ->values(implode(',',[$examId, $class->id, $learner->id, $learner->debtor, $attempt]));
-                $db->setQuery($query);
-                if(!$db->execute()){
-                    $msg = Text::_('COM_EQA_MSG_INSERT_INTO_DATABASE_FAILED');
-                    throw new Exception($msg);
-                }
-            }
+			//Check if the learner is already added to this exam
+		    $db->setQuery("SELECT COUNT(1) FROM #__eqa_exam_learner WHERE exam_id=$examId AND learner_id={$classLearner->id}");
+		    if($db->loadResult())
+		    {
+				$msg = Text::sprintf('HVSV <b>%s</b> đã có trong danh sách môn thi <b>%s</b>', $learnerCode, $exam->name);
+			    if($ignoreError)
+			    {
+				    $app->enqueueMessage($msg,'warning');
+				    continue;
+			    }
+			    else
+				    throw new Exception($msg);
+		    }
 
-            //Commit
-            $db->transactionCommit();
-            $msg = Text::sprintf('COM_EQA_MSG_N_ITEMS_IMPORT_SUCCESS', sizeof($learnerCodes));
-            $app->enqueueMessage($msg,'success');
-            return true;
-        }
-        catch (Exception $e){
-            $db->transactionRollback();
-            $app->enqueueMessage($e->getMessage(),'error');
-            return false;
-        }
+		    //Add learner to the exam
+		    $query = $db->getQuery(true)
+			    ->insert('#__eqa_exam_learner')
+			    ->columns('exam_id, class_id, learner_id, debtor, attempt')
+			    ->values(implode(',', [$examId, $class->id, $classLearner->id, $classLearner->debtor, $attempt]));
+		    $db->setQuery($query);
+		    if (!$db->execute())
+		    {
+			    $msg = Text::sprintf('Thêm HVSV <b>%s</b> vào môn thi <b>%s</b> thất bại', $learnerCode, $exam->name);
+			    if($ignoreError)
+			    {
+				    $app->enqueueMessage($msg,'warning');
+				    continue;
+			    }
+			    else
+				    throw new Exception($msg);
+		    }
+			else
+				$countAdded++;
+	    }
+		return $countAdded;
     }
 	public function addFailedExaminees(int $examId): bool
 	{
@@ -1820,5 +1843,74 @@ class ExamModel extends EqaAdminModel{
 			->order('firstname, lastname');
 		$db->setQuery($query);
 		return $db->loadObjectList();
+	}
+
+	protected function canCompleteResult(array|object $examinees): bool
+	{
+		if(is_object($examinees))
+			$examinees = [$examinees];
+
+		foreach ($examinees as $examinee)
+		{
+
+			//Extract required info
+			if(is_object($examinee))
+			{
+				$pam = $examinee->pam;
+				$stimulType = $examinee->stimulType;
+				$finalMark = $examinee->finalMark;
+			}
+			else //It is an associative array
+			{
+				$pam = $examinee['pam'];
+				$stimulType = $examinee['stimul_type'];
+				$finalMark = $examinee['mark_final'];
+			}
+
+			//Make decision
+			if(is_null($pam) && $stimulType != StimulationHelper::TYPE_TRANS)
+				return false;
+
+			if(is_numeric($finalMark) && $stimulType != StimulationHelper::TYPE_TRANS && $stimulType != StimulationHelper::TYPE_EXEMPT)
+				return false;
+		}
+		return true;
+	}
+	public function completeResult(int $examId, bool $throwIfCannotComplete)
+	{
+		if(DatabaseHelper::isCompletedExam($examId))
+			throw new Exception('Môn thi đã kết thúc');
+
+		$examInfo = DatabaseHelper::getExamInfo($examId);
+		if(empty($examInfo))
+			throw new Exception('Không tìm thấy môn thi');
+
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1.Get examinees
+		$columns = [
+			'a.class_id              AS classId',
+			'a.learner_id            AS learnerId',
+			'a.attempt               AS attempt',
+			'a.debtor                AS isDebtor',
+			'`c`.`type`              AS stimulType',
+			'b.pam                   AS pam',
+			'a.mark_final            AS finalMark',
+			'a.anomaly               AS anomaly'
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_stimulations AS c', 'c.id=a.stimulation_id')
+			->where('a.exam_id=' . $examId);
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList();
+		if(empty($examinees))
+			throw new Exception('Không tìm thấy thông tin thí sinh');
+
+		//
+
+
 	}
 }

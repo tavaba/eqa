@@ -11,20 +11,18 @@
         <field  name="examseason_id"
                 type="examseason"
                 label="Kỳ thi"
-                default="default"
-                onchange="this.form.submit();"
-        >
-            <option value="all">-Kỳ thi-</option>
-            <option value="default">Kỳ thi mặc định</option>
-        </field>
-        <field  name="course_id"
-                type="course"
-                label="Khóa"
-                class="select2-basic"
                 default=""
                 onchange="this.form.submit();"
-                >
-            <option value="">- Khóa -</option>
+        >
+            <option value="">-Kỳ thi-</option>
+            <option value="0">(Kỳ thi mặc định)</option>
+        </field>
+        <field  name="status"
+                type="ppaastatus"
+                label="Trạn thái xử lý"
+                onchange="this.form.submit();"
+        >
+            <option value="">-Trạng thái xử lý-</option>
         </field>
     </fields>
     <fields name="list">

@@ -67,67 +67,58 @@ class ExamController extends  EqaFormController {
     }
     public function addExaminees()
     {
-        //Get the id of the exam to add examinees
-        $examId = $this->app->input->getInt('exam_id');
+	    /**
+	     * Thao tác này sẽ thực hiện một trong hai pha:
+	     * Pha 1: Hiển thị giao diện nhập dữ liệu
+	     * Pha 2: Thực hiện việc thêm thí sinh vào danh sách thi
+	     * Dấu hiệu nhận biết pha 2 là giá trị của $attempt khác rỗng
+	     */
 
-        // Access check
-        if (!$this->app->getIdentity()->authorise('core.create',$this->option)) {
-            // Set the internal error and also the redirect error.
-            $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
-            $this->setRedirect(
-                Route::_(
-                    'index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,
-                    false
-                )
-            );
-            return false;
-        }
+	    try
+	    {
+			//Check permission
+		    if (!$this->app->getIdentity()->authorise('core.create',$this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 
-        //Xác định pha của nhiệm vụ
-        $phase = $this->app->input->getAlnum('phase','');
-        if($phase !== 'getdata')
-        {
-            // Redirect to the 'add examinees' screen.
-            $this->setRedirect(
-                Route::_(
-                    'index.php?option=com_eqa&view=exam&layout=addexaminees&exam_id='.$examId,
-                    false
-                )
-            );
-        }
-        else
-        {
-            //Pha này thì cần check token
-            $this->checkToken();
+			//Get some request data
+		    $examId = $this->app->input->getInt('exam_id');
+		    $attempt = $this->input->getInt('attempt');
+			if(empty($attempt))  //Phase 1
+			{
+				$this->setRedirect(JRoute::_(
+					'index.php?option=com_eqa&view=exam&layout=addexaminees&exam_id='.$examId,
+					false));
+				return;
+			}
 
-            //1. Chuẩn bị dữ liệu
-            //1.1 Mã lớp học phần
-            $classCode = trim($this->input->getString('classcode'));
+			//Check token for phase 2
+		    $this->checkToken();
 
-            //1.2. Mã thí sinh
-            $inputExamineeCodes = $this->input->getString('learnercodelist');
-            $normalizedExamineeCodes = preg_replace('/[\s,;]+/', ' ', $inputExamineeCodes);
-            $normalizedExamineeCodes = trim($normalizedExamineeCodes);
-            $examineeCodes = explode(' ', $normalizedExamineeCodes);
+			//Get further request data
+			$ignoreError = $this->input->getInt('ignore_error');
+			$addExpired = $this->input->getInt('add_expired');
+		    $classCode = trim($this->input->getString('classcode'));
+		    $inputExamineeCodes = $this->input->getString('learnercodelist');
+		    $normalizedExamineeCodes = preg_replace('/[\s,;]+/', ' ', $inputExamineeCodes);
+		    $normalizedExamineeCodes = trim($normalizedExamineeCodes);
+		    $examineeCodes = explode(' ', $normalizedExamineeCodes);
+			if(empty($classCode) || empty($examineeCodes))
+				throw new Exception('Dữ liệu không hợp lệ');
 
-            //1.3. Lần thi
-            $attempt = $this->input->getInt('attempt');
+			//Call model to add examinees
+		    $model = $this->getModel();
+		    $countAdded = $model->addExaminees($examId, $classCode, $examineeCodes, $attempt, $ignoreError, $addExpired);
 
-            //2. Gọi model để thêm thí sinh
-            $model = $this->getModel();
-            $model->addExaminees($examId, $classCode, $examineeCodes, $attempt);
-
-            //Add xong thì redirect về trang xem danh sách lớp học phần
-            $this->setRedirect(
-                Route::_(
-                    'index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,
-                    false
-                )
-            );
-        }
-
-        return true;
-
+		    //Redirect to examinees list page
+		    $msg = Text::sprintf('Có %d/%d thí sinh được thêm vào môn thi', $countAdded, count($examineeCodes));
+		    $this->setMessage($msg, 'info');
+		    $this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+	    }
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
+		}
     }
 	public function addFailedExaminees()
 	{

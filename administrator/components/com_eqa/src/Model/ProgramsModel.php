@@ -7,7 +7,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 
 class ProgramsModel extends EqaListModel
 {
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('degree','format','approach','published','ordering','speciality');
         parent::__construct($config, $factory);

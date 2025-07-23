@@ -22,7 +22,17 @@ abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
 
 	public static function render():void
 	{
-		echo Toolbar::getInstance()->render();
+		?>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-12">
+					<div class="card bg-dark-subtle p-1 mb-1">
+						<?php 		echo Toolbar::getInstance()->render(); ?>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
     public static function appendConfirmButton($requiredActions, string $msg, string $icon, string $text, string $task, bool $listCheck, $btnClass=null):void

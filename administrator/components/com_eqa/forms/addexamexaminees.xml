@@ -23,5 +23,25 @@
         >
             <option value="">COM_EQA_EXAM_ATTEMPT_REQUEST</option>
         </field>
+        <field  name="ignore_error"
+                type="radio"
+                required="true"
+                default="1"
+                label="Bỏ qua các thí sinh đã có trong danh sách thi"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="add_expired"
+                type="radio"
+                required="true"
+                default="0"
+                label="Thêm cả HVSV đã hết quyền thi"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
     </fieldset>
 </form>

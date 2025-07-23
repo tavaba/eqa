@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Site\Model;
 defined('_JEXEC') or die();
 
+use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
@@ -17,8 +18,7 @@ class RegradingModel extends EqaAdminModel{
 			return false;
 
 		//Chỉ thí sinh mới có thể tự xóa yêu cầu của mình
-		$username = GeneralHelper::getCurrentUsername();
-		$learnerId = DatabaseHelper::getLearnerId($username);
+		$learnerId = GeneralHelper::getSignedInLearnerId();
 		if($learnerId != $record->learner_id)
 			return false;
 
@@ -54,7 +54,7 @@ class RegradingModel extends EqaAdminModel{
 
 		return true;
 	}
-	public function handleRequests(array $ids, bool $accepted)
+	public function handleRequests_bak(array $ids, bool $accepted)
 	{
 		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -121,5 +121,36 @@ class RegradingModel extends EqaAdminModel{
 				$msg[] = Text::sprintf('%d trường hợp bị lỗi', $countError);
 			$app->enqueueMessage(implode('; ', $msg), 'error');
 		}
+	}
+	public function handleRequest(int $regradingId, bool $accepted)
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = $db->quoteName(
+			array('a.id', 'c.ppaa_req_enabled', 'c.ppaa_req_deadline', 'a.status'),
+			array('id',   'enabled',            'deadline',            'status')
+		);
+		$query  = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_regradings AS a')
+			->leftJoin('#__eqa_exams AS b', 'b.id=a.exam_id')
+			->leftJoin('#__eqa_examseasons AS c', 'c.id=b.examseason_id')
+			->where('a.id =' . $regradingId);
+		$db->setQuery($query);
+		$request = $db->loadObject();
+		if(empty($request))
+			throw new Exception('Không tìm thấy yêu cầu để xử lý');
+
+		//Handle
+		if(!$this->isTimeToAcceptOrReject($request))
+			throw new Exception('Chưa hết thời hạn thí sinh gửi yêu cầu');
+
+		$newStatus = $accepted ? ExamHelper::EXAM_PPAA_STATUS_ACCEPTED : ExamHelper::EXAM_PPAA_STATUS_REJECTED;
+		$query = $db->getQuery(true)
+			->update('#__eqa_regradings')
+			->set('`status`=' . $newStatus)
+			->where('id=' . (int)$request->id);
+		$db->setQuery($query);
+		if(!$db->execute())
+			throw new Exception('Đã xảy ra lỗi khi xử lý yêu cầu');
 	}
 }

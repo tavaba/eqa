@@ -8,7 +8,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class ExamexamineesModel extends ListModel {
-    public function __construct($config = [], MVCFactoryInterface $factory = null)
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('code','learner_code','firstname','lastname', 'stimulation','attempt','allowed', 'debtor', 'conclusion');
         parent::__construct($config, $factory);
@@ -27,8 +27,8 @@ class ExamexamineesModel extends ListModel {
 
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
-            array('a.learner_id','a.code','b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed', 'e.type',      'a.debtor','d.name',  'a.anomaly',  'a.mark_final', 'a.module_mark', 'a.module_grade', 'a.conclusion'),
-            array('id',          'code',  'learner_code', 'lastname',   'firstname',   'attempt',    'pam1',   'pam2', 'pam',  'allowed',   'stimulation', 'debtor',  'examroom','anomaly'    ,'mark_final',   'module_mark',   'module_grade',   'conclusion')
+            array('a.learner_id','a.code','b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed', 'e.type',      'a.debtor','d.name',  'a.anomaly', 'a.mark_orig',  'a.mark_final', 'a.module_mark', 'a.module_grade', 'a.conclusion'),
+            array('id',          'code',  'learner_code', 'lastname',   'firstname',   'attempt',    'pam1',   'pam2', 'pam',  'allowed',   'stimulation', 'debtor',  'examroom','anomaly',   'mark_orig',    'mark_final',   'module_mark',   'module_grade',   'conclusion')
         );
         $query = $db->getQuery(true)
             ->select($columns)

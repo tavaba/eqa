@@ -11,6 +11,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpWord\PhpWord;
 
 class ExamseasonController extends EqaFormController
 {
@@ -255,6 +256,46 @@ class ExamseasonController extends EqaFormController
 			$this->setMessage($exception->getMessage(),'error');
 			$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
 			return;
+		}
+	}
+
+	public function exportLearnerMarks()
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+
+			//3. Get form data
+			$cid = $this->input->post->get('cid',[],'array');
+			$cid = array_filter($cid,'intval');
+			if(empty($cid))
+				throw new Exception('Không có kỳ thi nào được chọn');
+			$examseasonId= $cid[0];
+
+			//4. Call model and get data
+			$model = $this->getModel();
+			$learnerMarks = $model->getLearnerMarks($examseasonId);
+			if(empty($learnerMarks))
+				throw new Exception('Không có dữ liệu để xuất');
+
+			//5. Write to Word document
+			$phpWord = new PhpWord();
+			IOHelper::writeExamseasonLearnerMarks($phpWord, $examseasonId, $learnerMarks);
+			//IOHelper::testPhpWord($phpWord);
+
+			//6. Send file
+			IOHelper::sendHttpDocx($phpWord,'Bảng điểm tổng hợp.docx');
+			jexit();
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examseasons',false));
 		}
 	}
 }

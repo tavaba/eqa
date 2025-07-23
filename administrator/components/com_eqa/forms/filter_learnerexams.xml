@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field  name="examseason_id"
+                type="examseason"
+                label="Kỳ thi"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-Kỳ thi-</option>
+            <option value="0">(Kỳ thi mặc định)</option>
+        </field>
+        <field
+                name="academicyear_id"
+                type="academicyear"
+                label="COM_EQA_ACADEMICYEAR"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_ACADEMICYEAR_REQUEST</option>
+        </field>
+        <field
+                name="term"
+                type="term"
+                label="COM_EQA_TERM"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_TERM_REQUEST</option>
+        </field>
+        <field
+                name="subject_id"
+                type="subject"
+                label="COM_EQA_SUBJECT"
+                default=""
+                class="select2-basic"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_SUBJECT_REQUEST</option>
+        </field>
+        <field
+                name="attempt"
+                type="list"
+                label="Lần thi"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-Lần thi-</option>
+            <option value="1">Thi lần 1</option>
+            <option value="2">Thi lần 2</option>
+        </field>
+    </fields>
+    <fields name="list">
+
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+
+    </fields>
+
+</form>
