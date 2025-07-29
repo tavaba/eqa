@@ -78,6 +78,9 @@ class HtmlView extends EqaItemsHtmlView
 						case ExamHelper::EXAM_PPAA_STATUS_ACCEPTED:
 							$item->optionRowCssClass='table-primary';
 							break;
+						case ExamHelper::EXAM_PPAA_STATUS_REQUIRE_INFO:
+							$item->optionRowCssClass='table-warning';
+							break;
 						case ExamHelper::EXAM_PPAA_STATUS_REJECTED:
 							$item->optionRowCssClass='table-danger';
 							break;

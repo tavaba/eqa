@@ -8,6 +8,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 class LearnerexamModel extends EqaAdminModel{
@@ -188,11 +189,13 @@ class LearnerexamModel extends EqaAdminModel{
 		}
 
 		//Ghi yêu cầu đính chính
-		$columnValues = [$examId, $learnerId, $consituent, $db->quote($reason), ExamHelper::EXAM_PPAA_STATUS_INIT];
+		//Get current time for the field 'requested_at'
+		$time = DatetimeHelper::getCurrentHanoiDatetime();
+		$columnValues = [$examId, $learnerId, $consituent, $db->quote($reason), ExamHelper::EXAM_PPAA_STATUS_INIT, $db->quote($time)];
 		$tupe = implode(',', $columnValues);
 		$query = $db->getQuery(true)
 			->insert('#__eqa_gradecorrections')
-			->columns(['`exam_id`', '`learner_id`', '`constituent`','`reason`', '`status`'])
+			->columns(['`exam_id`', '`learner_id`', '`constituent`','`reason`', '`status`', '`requested_at`'])
 			->values($tupe);
 		$db->setQuery($query);
 		if(!$db->execute())

@@ -26,7 +26,27 @@
       "dependencies": ["jquery"],
       "version": "auto"
     },
-	{
+    {
+      "name": "com_eqa.fixer.fixpam",
+      "type": "script",
+      "uri": "com_eqa/fixer-fixpam.js",
+      "dependencies": [
+        "jquery"
+      ],
+      "version": "auto"
+    },
+    {
+      "name": "com_eqa.dependent_lists",
+      "type": "script",
+      "uri": "com_eqa/dependent-lists.js",
+      "dependencies": [
+        "jquery"
+      ],
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
       "name": "com_eqa.style",
       "type": "style",
       "uri": "com_eqa/style.css"

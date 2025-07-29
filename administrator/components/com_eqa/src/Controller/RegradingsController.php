@@ -102,9 +102,9 @@ class RegradingsController extends EqaAdminController {
 			//Bước 2. Kiểm tra, đảm bảo rằng kỳ thi chưa kết thúc, thời hạn phúc khảo đã qua. Nếu vi phạm thì báo lỗi
 			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
 			if($examseason->completed)
-				throw new Exception('Kỳ thi đã kết thúc','error');
+				throw new Exception('Kỳ thi đã kết thúc');
 			if($examseason->canSendPpaaRequest())
-				throw new Exception('Vẫn chưa hết hạn gửi yêu cầu phúc khảo','error');
+				throw new Exception('Vẫn chưa hết hạn gửi yêu cầu phúc khảo');
 
 			//Bước 3. Chuyển hướng sang form
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseason->id, false));

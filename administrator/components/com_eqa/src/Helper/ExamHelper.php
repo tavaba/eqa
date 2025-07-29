@@ -51,6 +51,7 @@ abstract class ExamHelper{
     public const EXAM_PPAA_CORRECTION=20;
 	public const EXAM_PPAA_STATUS_INIT=0;
 	public const EXAM_PPAA_STATUS_ACCEPTED=20;
+	public const EXAM_PPAA_STATUS_REQUIRE_INFO=25;
 	public const EXAM_PPAA_STATUS_REJECTED=30;
 	public const EXAM_PPAA_STATUS_DONE=40;
 
@@ -72,7 +73,7 @@ abstract class ExamHelper{
 	public const MARK_CONSTITUENT_PAM2=20;
 	public const MARK_CONSTITUENT_PAM=30;
 	public const MARK_CONSTITUENT_FINAL_EXAM=100;
-	public const MARK_CONSTITUENT_ALL=200;
+	public const MARK_CONSTITUENT_ALL=120;
 
 	public const REGRADING_FEE_MODE_BY_WORK=10;
 	public const REGRADING_FEE_MODE_BY_CREDIT=20;
@@ -367,6 +368,7 @@ abstract class ExamHelper{
 		return match ($status){
 			self::EXAM_PPAA_STATUS_INIT => 'Chưa xử lý',
 			self::EXAM_PPAA_STATUS_ACCEPTED => 'Đã chấp nhận và đang xử lý',
+			self::EXAM_PPAA_STATUS_REQUIRE_INFO => 'Cần bổ sung thông tin',
 			self::EXAM_PPAA_STATUS_REJECTED => 'Bị từ chối',
 			self::EXAM_PPAA_STATUS_DONE => 'Đã xử lý xong',
 			default => null
@@ -376,6 +378,7 @@ abstract class ExamHelper{
 		return [
 			self::EXAM_PPAA_STATUS_INIT => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_INIT),
 			self::EXAM_PPAA_STATUS_ACCEPTED => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_ACCEPTED),
+			self::EXAM_PPAA_STATUS_REQUIRE_INFO => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_REQUIRE_INFO),
 			self::EXAM_PPAA_STATUS_REJECTED => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_REJECTED),
 			self::EXAM_PPAA_STATUS_DONE => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_DONE)
 		];

@@ -60,6 +60,9 @@ class HtmlView extends EqaItemsHtmlView {
 						case ExamHelper::EXAM_PPAA_STATUS_ACCEPTED:
 							$item->optionRowCssClass='table-primary';
 							break;
+						case ExamHelper::EXAM_PPAA_STATUS_REQUIRE_INFO:
+							$item->optionRowCssClass='table-warning';
+							break;
 						case ExamHelper::EXAM_PPAA_STATUS_REJECTED:
 							$item->optionRowCssClass='table-danger';
 							break;
@@ -100,7 +103,7 @@ class HtmlView extends EqaItemsHtmlView {
 		ToolbarHelper::appenddButton('core.manage', 'checkmark-circle', 'Chấp nhận','gradecorrection.accept',true,'btn btn-success');
 		ToolbarHelper::appenddButton('core.manage', 'cancel-circle', 'Từ chối','gradecorrection.reject',true,'btn btn-danger');
 		ToolbarHelper::appenddButton('core.manage', 'download', 'Phiếu xử lý','gradecorrection.downloadReviewForm',true);
-		ToolbarHelper::appenddButton('core.manage', 'edit', 'Đính chính','gradecorrection.correct',true);
+		ToolbarHelper::appenddButton('core.manage', 'edit', 'Xử lý','gradecorrection.correct',true);
 		ToolbarHelper::appenddButton('core.manage', 'download', 'Tổng hợp','gradecorrections.download');
 	}
 }

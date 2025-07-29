@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
@@ -17,6 +18,81 @@ defined('_JEXEC') or die();
 
 class FixerController extends  EqaFormController
 {
+	public function getClassLearners_bak()
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true);
+
+		$classId = $this->input->getInt('class_id');
+		if (empty($classId))
+			throw new Exception('Không xác định được lớp học phần');
+
+		// Build the query - adjust table names and fields according to your database structure
+		$query->select($db->quoteName(['b.id', 'b.code', 'b.lastname', 'b.firstname']))
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+			->where($db->quoteName('a.class_id') . ' = ' . $classId)
+			->order($db->quoteName('b.firstname') . ' ASC')
+			->order($db->quoteName('b.lastname') . ' ASC');
+		$db->setQuery($query);
+		try {
+			$items = $db->loadObjectList();
+			if(empty($items))
+				throw new Exception('Không có sinh viên nào trong lớp này');
+
+			$learners = [];
+			foreach ($items as $item) {
+				$learners[] = [
+					'id'=>$item->id,
+					'name'=>$item->code . ' - ' . $item->lastname.' '.$item->firstname
+				];
+			}
+		} catch (Exception $e) {
+			$learners = null;
+		}
+		$json = new JsonResponse($learners);
+		$this->app->setHeader('Content-Type', 'application/json');
+		//$this->app->sendHeaders();
+		echo $json;
+		$this->app->close();
+	}
+	public function jsonGetClassLearners()
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true);
+
+		$classId = $this->input->getInt('class_id');
+		if (empty($classId))
+			throw new Exception('Không xác định được lớp học phần');
+
+		// Build the query - adjust table names and fields according to your database structure
+		$query->select($db->quoteName(['b.id', 'b.code', 'b.lastname', 'b.firstname']))
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+			->where($db->quoteName('a.class_id') . ' = ' . $classId)
+			->order($db->quoteName('b.firstname') . ' ASC')
+			->order($db->quoteName('b.lastname') . ' ASC');
+		$db->setQuery($query);
+		$this->app->setHeader('Content-Type', 'application/json');
+		try {
+			$learners = $db->loadObjectList();
+			if(empty($learners))
+				throw new Exception('Không có sinh viên nào trong lớp này');
+
+			$data = [];
+			foreach ($learners as $item) {
+				$data[] = [
+					'id'=>$item->id,
+					'name'=>$item->code . ' - ' . $item->lastname.' '.$item->firstname
+				];
+			}
+		} catch (Exception $e) {
+			$data = null;
+		}
+		$json = new JsonResponse($data);
+		echo $json;
+		$this->app->close();
+	}
 	/**
 	 * Sửa điểm thi KTHP. Thực hiện qua phương thức GET. Yêu cầu truyền vào
 	 * 3 tham số: 'examId', 'learnerId', 'newMark', 'confirm'
@@ -253,5 +329,92 @@ class FixerController extends  EqaFormController
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
 		}
+	}
+
+	public function fixPam()
+	{
+		$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
+		try
+		{
+			//1. Check permissions
+			if(!$this->app->getIdentity()->authorise('core.admin',$this->option))
+				throw new Exception('0x01000000');
+
+			//2. Init data
+			$items = [];
+			$items[] =[
+				'learnerCode' => 'DT050131',
+				'classCode' => 'DT1DVDA3-2-24(D5PCL-01)',
+				'pam1'=>9,
+				'pam2'=>9,
+				'pam'=>9,
+				'allowed'=>1,
+				'expired'=>0
+			];
+			$items[] =[
+				'learnerCode' => 'AT200250',
+				'classCode' => 'LTCBNN2-2-24(A20C8D7-02)',
+				'pam1'=>8,
+				'pam2'=>8.5,
+				'pam'=>0.7*8 + 0.3*8.5,
+				'allowed'=>1,
+				'expired'=>0
+			];
+			$items[] =[
+				'learnerCode' => 'DT080309',
+				'classCode' => 'CBTT2.1-2-24(A21C9D8-10)',
+				'pam1'=>5.5,
+				'pam2'=>10,
+				'pam'=>0.7*5.5 + 0.3*10,
+				'allowed'=>1,
+				'expired'=>0
+			];
+
+			//3. Process
+			$db = DatabaseHelper::getDatabaseDriver();
+			$columns = $db->quoteName(
+				array('a.learner_id', 'a.class_id'),
+				array('learnerId', 'classId')
+			);
+			$query = $db->getQuery(true)
+				->select($columns)
+				->from('#__eqa_class_learner AS a')
+				->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+				->leftJoin('#__eqa_classes AS c', 'c.id=a.class_id')
+				->where('b.code=:learnerCode')
+				->where('c.code=:classCode');
+			foreach ($items as $item) {
+				$query->bind(':learnerCode', $item['learnerCode']);
+				$query->bind(':classCode', $item['classCode']);
+				$db->setQuery($query);
+				$learner = $db->loadObject();
+				if(!isset($learner))
+					throw new Exception("Không tìm thấy mã sinh viên {$item['learnerCode']} trong lớp {$item['classCode']}");
+
+				$updateQuery = $db->getQuery(true)
+					->update('#__eqa_class_learner')
+					->set($db->quoteName('pam1') . '=' . $item['pam1'])
+					->set($db->quoteName('pam2') . '=' . $item['pam2'])
+					->set($db->quoteName('pam') . '=' . $item['pam'])
+					->set($db->quoteName('allowed') . '=' . $item['allowed'])
+					->set($db->quoteName('expired') . '=' . $item['expired'])
+					->where('learner_id=' . $learner->learnerId)
+					->where('class_id=' . $learner->classId);
+				$db->setQuery($updateQuery);
+				if(!$db->execute())
+					throw new Exception("Lỗi khi cập nhật ĐQT cho sinh viên {$item['learnerCode']} trong lớp {$item['classCode']}");
+			}
+
+			//4. Redirect with a success message
+			$this->setMessage('Đã xử lý xong');
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
+	public function undoApplyingStimulation()
+	{
+
 	}
 }

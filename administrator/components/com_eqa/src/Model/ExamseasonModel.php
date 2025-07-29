@@ -13,7 +13,14 @@ use ZipStream\Exception;
 defined('_JEXEC') or die();
 
 class ExamseasonModel extends EqaAdminModel{
-    public function getSubjectIdsByExamseasonId(int $examseason_id)
+	protected function prepareTable($table)
+	{
+		if(empty($table->ppaa_req_deadline))
+			$table->ppaa_req_deadline = null;
+		parent::prepareTable($table);
+	}
+
+	public function getSubjectIdsByExamseasonId(int $examseason_id)
     {
         $db = $this->getDatabase();
         $query = $db->getQuery(true)

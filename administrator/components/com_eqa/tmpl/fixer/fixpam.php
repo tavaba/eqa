@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\HTML\HTMLHelper;
 HTMLHelper::_('behavior.formvalidator');
 HTMLHelper::_('behavior.keepalive');
-$this->wam->useScript('com_eqa.fixpam');
+//$this->wam->useScript('com_eqa.fixpam');
 
 //Preprocessing
 $form = $this->layoutData->form;

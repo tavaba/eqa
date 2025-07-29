@@ -60,6 +60,13 @@ abstract class DatetimeHelper{
 		// Check if it's Saturday (6) or Sunday (7)
 		return $dayOfWeek >= 6;
 	}
+	static public function getCurrentHanoiDatetime():string
+	{
+		$tz = new \DateTimeZone("Asia/Ho_Chi_Minh");
+		$dt = new \DateTime();
+		$dt->setTimeZone($tz);
+		return $dt->format('Y-m-d H:i:s');
+	}
 }
 
 

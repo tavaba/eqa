@@ -217,4 +217,5 @@ class FixerModel extends EqaAdminModel {
 		if (!$db->execute())
 			throw new Exception('Lỗi xóa môn thi');
 	}
+
 }

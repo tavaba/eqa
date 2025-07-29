@@ -58,21 +58,18 @@
                 name="pam1"
                 type="text"
                 label="Điểm TP1 (mới)"
-                required="true"
                 showon="changed:1"
         />
         <field
                 name="pam2"
                 type="text"
                 label="Điểm TP2 (mới)"
-                required="true"
                 showon="changed:1"
         />
         <field
                 name="final_exam"
                 type="text"
                 label="Điểm thi KTHP (mới)"
-                required="true"
                 showon="changed:1"
         />
         <field
@@ -82,5 +79,14 @@
                 description="Mô tả lý do điều chỉnh hoặc từ chối điều chỉnh điểm"
                 required="true"
         />
+        <field name="completed" type="radio" default="1" required="true" class="btn-group btn-group-yesno"
+               label="Việc xử lý đã hoàn tất?"
+               description="Chọn YES nếu đã có kết luận cuối cùng. Chọn NO nếu muốn yêu cầu thí sinh
+               cung cấp thêm thông tin hoặc thực hiện thao tác nào đó khác; trong trường hợp này,
+               hãy tạm thời chọn KHÔNG ĐIỀU CHỈNH ĐIỂM"
+               >
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+        </field>
     </fieldset>
 </form>

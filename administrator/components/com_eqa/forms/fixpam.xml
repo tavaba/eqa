@@ -21,6 +21,7 @@
                 type="list"
                 label="Học viên/sinh viên"
                 default=""
+                class="select2-basic"
                 required="true"
         >
             <option value="">-Chọn sinh viên-</option>
@@ -38,6 +39,13 @@
                 required="true"
                 default=""
                 label="Điểm TP2"
+        />
+        <field
+                name="pam"
+                type="text"
+                required="true"
+                default=""
+                label="Điểm quá trình"
         />
     </fieldset>
 </form>

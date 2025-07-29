@@ -19,7 +19,9 @@ class HtmlView extends EqaItemsHtmlView {
         $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
         $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('academicyear','Năm học',true,false,'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('term', 'Học kỳ',true,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'Tên lớp',true,false);
+	    $field = new EqaListLayoutItemFieldOption('name', 'Tên lớp',true,false);
+		$field->urlFormatString = 'index.php?option=com_eqa&view=classlearners&class_id=%d';
+	    $fields->customFieldset1[] = $field;
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('pam1', 'TP1');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('pam2', 'TP2');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('pam', 'ĐQT');

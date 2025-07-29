@@ -249,6 +249,7 @@ class GradecorrectionModel extends EqaAdminModel {
 		$changed = $formData['changed'] ?? null;
 		$description = $formData['description'] ?? null;
 		$reviewerId = $formData['reviewer_id'] ?? null;
+		$isCompleted = $formData['completed'] ?? null;
 
 		//2. Some values must be present
 		if(is_null($itemId)) throw new Exception("Thiếu mã số yêu cầu đính chính");
@@ -256,6 +257,7 @@ class GradecorrectionModel extends EqaAdminModel {
 		if(is_null($changed)) throw new Exception("Thiếu trạng thái thay đổi");
 		if(is_null($description)) throw new Exception("Thiếu mô tả việc xử lý yêu cầu đính chính");
 		if(is_null($reviewerId)) throw new Exception("Thiếu thông tin về người đã xử lý yêu cầu đính chính");
+		if(is_null($isCompleted)) throw new Exception("Thiếu thông tin về trạng thái xử lý");
 		if(
 			($constituent==ExamHelper::MARK_CONSTITUENT_PAM1 && (!is_numeric($newPam1) || $newPam2!=null || $newFinalExam!=null))
 			|| ($constituent==ExamHelper::MARK_CONSTITUENT_PAM2 && (!is_numeric($newPam2) || $newPam1!=null || $newFinalExam!=null))
@@ -275,7 +277,7 @@ class GradecorrectionModel extends EqaAdminModel {
 			'reviewer_id = ' . (int)$reviewerId,
 			'changed = ' . (int)$changed,
 			'description = ' . $db->quote($description),
-			'status = ' . ExamHelper::EXAM_PPAA_STATUS_DONE,
+			'status = ' . ($isCompleted ? ExamHelper::EXAM_PPAA_STATUS_DONE : ExamHelper::EXAM_PPAA_STATUS_REQUIRE_INFO),
 			'updated_by = ' . $db->quote($currentUsername),
 			'updated_at = ' . $db->quote($currentTime)
 		];
