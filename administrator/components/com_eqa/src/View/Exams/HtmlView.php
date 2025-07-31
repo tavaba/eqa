@@ -46,7 +46,7 @@ class HtmlView extends EqaItemsHtmlView
 		if(is_numeric($examseasonId))
             $this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);    //Maybe null
 	    else
-			$this->examseason = DatabaseHelper::getDefaultExamseason();
+			$this->examseason = null;
         if(!empty($this->examseason)) {
             $this->layoutData->formHiddenFields['examseason_id'] = $this->examseason->id;  //Được sử dụng trong trường hợp người dùng chọn 'Thêm môn thi từ lớp học phần'
         }
