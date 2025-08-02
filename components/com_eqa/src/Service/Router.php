@@ -21,6 +21,7 @@ class Router extends RouterView
 		$this->registerView(new RouterViewConfiguration('learnergradecorrections'));
 		$this->registerView(new RouterViewConfiguration('regradings'));
 		$this->registerView(new RouterViewConfiguration('gradecorrections'));
+		$this->registerView(new RouterViewConfiguration('learnerinfo'));
 
 		// Register the new learnerexam view with layout and parameter configuration
 		$learnerexam = new RouterViewConfiguration('learnerexam');

@@ -16,6 +16,10 @@ abstract class ExamHelper{
     public const TEST_TYPE_MACHINE_OBJECTIVE = 20;
     public const TEST_TYPE_MACHINE_HYBRID = 21;
     public const TEST_TYPE_COMBO_OBJECTIVE_PRACTICE = 30;
+	public const TEST_TYPE_OBJECTIVE_OR_PAPER = 51;
+	public const TEST_TYPE_OBJECTIVE_OR_PRACTICE = 52;
+	public const TEST_TYPE_OBJECTIVE_OR_DIALOG = 53;
+	public const TEST_TYPE_PAPER_OR_DIALOG = 61;
 
     public const EXAM_TYPE_OTHER = 0;                   //Thi khác
     public const EXAM_TYPE_SUBJECT_FINAL_TEST = 1;      //Thi kết thúc học phần
@@ -117,15 +121,19 @@ abstract class ExamHelper{
     static public function getTestType(int $testTypeCode): string|null
     {
         return match ($testTypeCode) {
-            self::TEST_TYPE_UNKNOWN => "Chưa xác định",
-            self::TEST_TYPE_PAPER => "Tự luận",
-            self::TEST_TYPE_PROJECT => "Đồ án",
-            self::TEST_TYPE_THESIS => "Tiểu luận",
-            self::TEST_TYPE_PRACTICE => "Thực hành",
-            self::TEST_TYPE_DIALOG => "Vấn đáp",
-            self::TEST_TYPE_MACHINE_OBJECTIVE => "Trắc nghiệm (máy)",
-            self::TEST_TYPE_MACHINE_HYBRID => "Hỗn hợp (máy)",
-            self::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE => "Trắc nghiệm + Thực hành",
+            self::TEST_TYPE_UNKNOWN => 'Chưa xác định',
+            self::TEST_TYPE_PAPER => 'Tự luận',
+            self::TEST_TYPE_PROJECT => 'Đồ án',
+            self::TEST_TYPE_THESIS => 'Tiểu luận',
+            self::TEST_TYPE_PRACTICE => 'Thực hành',
+            self::TEST_TYPE_DIALOG => 'Vấn đáp',
+            self::TEST_TYPE_MACHINE_OBJECTIVE => 'Trắc nghiệm',
+            self::TEST_TYPE_MACHINE_HYBRID => 'Trắc nghiệm + Tự luận trên máy',
+            self::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE => 'Trắc nghiệm + Thực hành',
+	        self::TEST_TYPE_OBJECTIVE_OR_PAPER => 'Tùy chọn Trắc nghiệm hoặc Tự luận',
+	        self::TEST_TYPE_OBJECTIVE_OR_PRACTICE => 'Tùy chọn Trắc nghiệm hoặc Thực hành',
+	        self::TEST_TYPE_OBJECTIVE_OR_DIALOG => 'Tùy chọn Trắc nghiiệm hoặc Vấn đáp',
+	        self::TEST_TYPE_PAPER_OR_DIALOG => 'Tùy chọn Tự luận hoặc Vấn đáp',
             default => null,
         };
     }
@@ -146,8 +154,12 @@ abstract class ExamHelper{
             self::TEST_TYPE_PRACTICE => "TH",
             self::TEST_TYPE_DIALOG => "VĐ",
             self::TEST_TYPE_MACHINE_OBJECTIVE => "TN",
-            self::TEST_TYPE_MACHINE_HYBRID => "TN+",
+            self::TEST_TYPE_MACHINE_HYBRID => "TN+TL",
             self::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE => "TN+TH",
+	        self::TEST_TYPE_OBJECTIVE_OR_PAPER => 'TN~TL',
+	        self::TEST_TYPE_OBJECTIVE_OR_PRACTICE => 'TN~TH',
+	        self::TEST_TYPE_OBJECTIVE_OR_DIALOG => 'TN~VĐ',
+	        self::TEST_TYPE_PAPER_OR_DIALOG => 'TL~VĐ',
             default => null,
         };
     }
@@ -160,20 +172,48 @@ abstract class ExamHelper{
      */
     static public function getTestTypes(): array
     {
-        $testtypes = array();
-        $testtypes[self::TEST_TYPE_UNKNOWN] = self::getTestType(self::TEST_TYPE_UNKNOWN);
-        $testtypes[self::TEST_TYPE_PAPER] = self::getTestType(self::TEST_TYPE_PAPER);
-        $testtypes[self::TEST_TYPE_PROJECT] = self::getTestType(self::TEST_TYPE_PROJECT);
-        $testtypes[self::TEST_TYPE_THESIS] = self::getTestType(self::TEST_TYPE_THESIS);
-        $testtypes[self::TEST_TYPE_PRACTICE] = self::getTestType(self::TEST_TYPE_PRACTICE);
-        $testtypes[self::TEST_TYPE_DIALOG] = self::getTestType(self::TEST_TYPE_DIALOG);
-        $testtypes[self::TEST_TYPE_MACHINE_OBJECTIVE] = self::getTestType(self::TEST_TYPE_MACHINE_OBJECTIVE);
-        $testtypes[self::TEST_TYPE_MACHINE_HYBRID] = self::getTestType(self::TEST_TYPE_MACHINE_HYBRID);
-        $testtypes[self::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE] = self::getTestType(self::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE);
-        return $testtypes;
+	    $testtypes = array();
+	    $testtypes[self::TEST_TYPE_UNKNOWN]                     = self::getTestType(self::TEST_TYPE_UNKNOWN);
+	    $testtypes[self::TEST_TYPE_PAPER]                       = self::getTestType(self::TEST_TYPE_PAPER);
+	    $testtypes[self::TEST_TYPE_PROJECT]                     = self::getTestType(self::TEST_TYPE_PROJECT);
+	    $testtypes[self::TEST_TYPE_THESIS]                      = self::getTestType(self::TEST_TYPE_THESIS);
+	    $testtypes[self::TEST_TYPE_PRACTICE]                    = self::getTestType(self::TEST_TYPE_PRACTICE);
+	    $testtypes[self::TEST_TYPE_DIALOG]                      = self::getTestType(self::TEST_TYPE_DIALOG);
+	    $testtypes[self::TEST_TYPE_MACHINE_OBJECTIVE]           = self::getTestType(self::TEST_TYPE_MACHINE_OBJECTIVE);
+	    $testtypes[self::TEST_TYPE_MACHINE_HYBRID]              = self::getTestType(self::TEST_TYPE_MACHINE_HYBRID);
+	    $testtypes[self::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE]    = self::getTestType(self::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE);
+	    $testtypes[self::TEST_TYPE_OBJECTIVE_OR_PAPER]          = self::getTestType(self::TEST_TYPE_OBJECTIVE_OR_PAPER);
+	    $testtypes[self::TEST_TYPE_OBJECTIVE_OR_PRACTICE]       = self::getTestType(self::TEST_TYPE_OBJECTIVE_OR_PRACTICE);
+	    $testtypes[self::TEST_TYPE_OBJECTIVE_OR_DIALOG]         = self::getTestType(self::TEST_TYPE_OBJECTIVE_OR_DIALOG);
+	    $testtypes[self::TEST_TYPE_PAPER_OR_DIALOG]             = self::getTestType(self::TEST_TYPE_PAPER_OR_DIALOG);
+	    return $testtypes;
     }
 
-    /**
+	/**
+	 * Xác định giá trị mã của hình thức thi dựa trên tên hình thức thi.
+	 * Được sử dụng khi import dữ liệu từ file Excel.
+	 * @param $testtypeText
+	 * @return int|null
+	 * @since 1.2.0
+	 */
+	static public function getTestTypeCode($testtypeText): int|null
+	{
+		if(empty($testtypeText))
+			return self::TEST_TYPE_UNKNOWN;
+
+		$testTypes = ExamHelper::getTestTypes();
+		foreach($testTypes as $code=>$text)
+		{
+			if(strcasecmp($text,$testtypeText)==0)
+				return $code;
+			$abbr = ExamHelper::getTestTypeAbbr($code);
+			if(strcasecmp($abbr,$testtypeText)==0)
+				return $code;
+		}
+		return null;
+	}
+
+	/**
      * Hàm này dịch từ MÃ LOẠI KỲ THI thành LOẠI KỲ THI
      * @param int $typeCode   Hằng số quy ước cho mã loại kỳ thi
      * @return string|null  Tên loại kỳ thi (dịch từ tập tin language) tương ứng với hằng số

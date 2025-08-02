@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <form>
     <fieldset name="upload">
+        <field  name="overwrite"
+                type="radio"
+                required="true"
+                default="0"
+                label="Ghi đè"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
         <field
                 name="excelfile"
                 type="file"

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Thông tin tài khoản HVSV" option="Optionxxxx">
+         <message>
+            <![CDATA[Hiển thị thông tin về tài khoản của HVSV đã đăng nhập vào website]]>
+        </message>
+    </layout>
+</metadata>

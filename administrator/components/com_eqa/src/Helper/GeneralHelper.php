@@ -48,12 +48,17 @@ abstract class GeneralHelper{
 	}
 	static public function getSignedInLearnerCode(): string|null
 	{
-		$leanerEmailPattern = "/^((AT|CT|DT|H|CH|CHAT)[0-9]{4,6}N?)@actvn\.edu\.vn$/";
+		$leanerEmailPattern = "/^((AT|CT|DT|H|CH|CHAT)[0-9]{4,6}N?)@ACTVN\.EDU\.VN$/";
 		$user = Factory::getApplication()->getIdentity();
 
 		//Nếu là HVSV thì ưu tiên lấy username theo email
-		if(isset($user->email) && preg_match($leanerEmailPattern, $user->email, $matches))
-			return $matches[1];
+		if(isset($user->email))
+		{
+			//Capitalize the user email
+			$email = strtoupper($user->email);
+			if (preg_match($leanerEmailPattern, $email, $matches))
+				return $matches[1];
+		}
 
 		return null;
 	}

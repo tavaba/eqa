@@ -12,7 +12,6 @@ use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends EqaItemsHtmlView
 {
-    protected $form;
     protected function configureItemFieldsForLayoutDefault():void{
         $option = new EqaListLayoutItemFields();
 
@@ -58,10 +57,6 @@ class HtmlView extends EqaItemsHtmlView
         }
 
     }
-    protected function prepareDataForLayoutUploadpam(): void
-    {
-        $this->form = FormHelper::getBackendForm('com_eqa.uploadpam','uploadpam.xml', array());
-    }
     protected function addToolbarForLayoutDefault(): void
     {
         parent::addToolbarForLayoutDefault();
@@ -69,7 +64,11 @@ class HtmlView extends EqaItemsHtmlView
         ToolbarHelper::appendLink('core.edit', $url,'COM_EQA_IMPORT_PAM', 'bars');
     }
 
-    protected function addToolbarForLayoutUploadpam(): void
+	protected function prepareDataForLayoutUploadpam(): void
+	{
+		$this->form = FormHelper::getBackendForm('com_eqa.uploadpam','uploadpam.xml', array());
+	}
+	protected function addToolbarForLayoutUploadpam(): void
     {
         ToolbarHelper::appenddButton('core.edit','save','COM_EQA_IMPORT_PAM','classes.importPam',false,null,true);
         ToolbarHelper::cancel('class.cancel');

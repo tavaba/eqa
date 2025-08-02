@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\Base;
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\WebAsset\WebAssetManager;
@@ -14,6 +15,7 @@ abstract class EqaItemsHtmlView extends BaseHtmlView{
     protected EqaListLayoutData $layoutData;
     protected EqaListLayoutItemFields $itemFields;
     protected EqaToolbarOption $toolbarOption;
+	protected Form $form;
     public function __construct($config = [])
     {
         parent::__construct($config);
@@ -71,16 +73,24 @@ abstract class EqaItemsHtmlView extends BaseHtmlView{
         if(!empty($activeFilters))
             $this->layoutData->activeFilters = $activeFilters;
     }
-    protected function prepareDataForLayoutUpload() : void
+
+	/*
+	 * Phương thức (ảo) này chỉ định các trường và tính chất của chúng trong upload layout
+     * @param string $source Tên của file xml chứa cấu trúc form, không bao gồm đuôi. Ví dụ: 'upload_items'
+     * @param string $name Tên của form. Ví dụ: 'com_eqa.upload_items'
+	 * @return void
+	 * @since 1.0
+	 */
+    protected function prepareDataForLayoutUpload(string $xmlFileName='', string $formName='') : void
     {
         //Toolbar
         $this->toolbarOption->setUploadTasks();
         $upperControllerNameItems = strtoupper($this->toolbarOption->taskPrefixItems);
         $this->toolbarOption->title = Text::_('COM_EQA_MANAGER_'.$upperControllerNameItems.'_UPLOAD_TITLE');
 
-        //Data
+        //Upload form
         $model = $this->getModel();
-        $this->uploadForm = $model->getUploadForm();
+        $this->uploadForm = $model->getUploadForm($xmlFileName, $formName);
     }
 
     /*

@@ -10,7 +10,6 @@ use Kma\Component\Eqa\Administrator\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends EqaItemsHtmlView {
-	protected $form;
     protected function configureItemFieldsForLayoutDefault():void{
         $option = new EqaListLayoutItemFields();
         $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
@@ -35,7 +34,7 @@ class HtmlView extends EqaItemsHtmlView {
 		ToolbarHelper::appendLink('core.create', $urlUpload,'Upload', 'upload');
 	}
 
-	protected function prepareDataForLayoutUpload(): void
+	protected function prepareDataForLayoutUpload(string $xmlFileName = '', string $formName = ''): void
 	{
 		$this->form = FormHelper::getBackendForm('com_eqa.mmproductions.upload', 'upload_mmproductions.xml',[]);
 	}

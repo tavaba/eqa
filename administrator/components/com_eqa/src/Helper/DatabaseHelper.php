@@ -17,9 +17,14 @@ abstract class DatabaseHelper
      * @return DatabaseDriver
      * @since 1.0
      */
-    static public function getDatabaseDriver(): DatabaseDriver{
+    static public function getDatabaseDriver_bak(): DatabaseDriver
+    {
         return Factory::getContainer()->get('DatabaseDriver');
     }
+	static public function getDatabaseDriver(): DatabaseDriver
+	{
+		return Factory::getContainer()->get(DatabaseDriver::class);
+	}
 
 	static public function getLearnerAdmissionYear(int $learnerId): int|null
 	{

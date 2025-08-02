@@ -2,11 +2,14 @@
 namespace Kma\Component\Eqa\Administrator\View\Subjects;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
+use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends EqaItemsHtmlView
 {
@@ -47,4 +50,20 @@ class HtmlView extends EqaItemsHtmlView
             }
         }
     }
+	protected function addToolbarForLayoutDefault(): void
+	{
+		parent::addToolbarForLayoutDefault();
+		ToolbarHelper::appendImportLink(JRoute::_('index.php?option=com_eqa&view=subjects&layout=import',false));
+	}
+
+	protected function prepareDataForLayoutImport(): void
+	{
+		$this->form = FormHelper::getBackendForm('com_eqa.subjects.import', 'upload_excelfile.xml', []);
+	}
+	protected function addToolbarForLayoutImport(): void
+	{
+		ToolbarHelper::title('Nhập thông tin môn học');
+		ToolbarHelper::appendUpload('subjects.import');
+		ToolbarHelper::cancel('subjects.cancel');
+	}
 }

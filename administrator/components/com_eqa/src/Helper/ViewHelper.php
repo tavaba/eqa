@@ -3,6 +3,7 @@
 namespace Kma\Component\Eqa\Administrator\Helper;
 use JForm;
 use JHtml;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\HTML\HTMLHelper;
 use JRoute;
 use Joomla\CMS\Language\Text;
@@ -370,9 +371,10 @@ abstract class ViewHelper
     public static function printItemsUploadForm(EqaItemsHtmlView $view, string $task='import'):void{
         $form = $view->uploadForm;
         $controllerName = StringHelper::convertPluralToSingle($view->getName());
+        $actionUrl = JRoute::_('index.php?option=com_eqa', false);
         HTMLHelper::_('behavior.formvalidator');
         ?>
-        <form name="adminForm" id="adminForm" method="POST" enctype="multipart/form-data" action="index.php?option=com_eqa">
+        <form name="adminForm" id="adminForm" method="POST" enctype="multipart/form-data" action="<?php echo $actionUrl;?>" class="form-validate">
             <input type="hidden" name="task" value="<?php echo $controllerName . '.' . $task;?>">
             <?php echo JHtml::_('form.token'); ?>
             <?php echo $form->renderFieldset('upload'); ?>
@@ -381,5 +383,28 @@ abstract class ViewHelper
 
         </div>
         <?php
+    }
+
+    /**
+     * Hàm này dùng để in ra layout upload file. Ý nghĩa của nó là
+     * đảm bảo form được thiết lập thuộc tính "enctype=multipart/form-data".
+     * Nếu không có thuộc tính này thì việc upload file sẽ không thành công.
+     *
+     * @param Form $form
+     * @param string $task
+     * @param string $fieldsetName
+     * @since 1.2.0
+     */
+    public static function printUploadForm(Form $form, string $task='', string $fieldsetName='upload'): void
+    {
+	    HTMLHelper::_('behavior.formvalidator');
+        $actionUrl = JRoute::_('index.php?option=com_eqa', false);
+	    ?>
+        <form name="adminForm" id="adminForm" method="POST" enctype="multipart/form-data" action="<?php echo $actionUrl;?>" class="form-validate">
+            <input type="hidden" name="task" value="<?php echo $task;?>">
+		    <?php echo JHtml::_('form.token'); ?>
+		    <?php echo $form->renderFieldset($fieldsetName); ?>
+        </form>
+	    <?php
     }
 }

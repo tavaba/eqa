@@ -13,7 +13,6 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 class HtmlView extends EqaItemsHtmlView
 {
-	protected $form;
     protected $examseason;
     protected function configureItemFieldsForLayoutDefault():void{
         $fields = new EqaListLayoutItemFields();
