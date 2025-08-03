@@ -9,12 +9,20 @@
                 label="COM_EQA_COURSEGROUP"
                 description="COM_EQA_COURSEGROUP_DESC"
                 pattern="[A-Z0-9]+"
+                validate="uppercasealnum"
+                addruleprefix="Kma\Component\Eqa\Administrator\Rule"
         />
         <field  name="code"
                 type="text"
                 label="COM_EQA_FORM_CLASS_CODE_LABEL"
-                description="COM_EQA_FORM_CLASS_CODE_DESC"
+                description="Ví dụ: CLC1ATATAT2-1-24(A18-KN01), ATCTKM3-1-24(A19C7-01). Cần đặt mã lớp học phần
+                    theo quy tắc sau để đảm bảo tính duy nhất và gợi nhớ. Ngoài dấu ngoặc: Mã môn học, Gạch nối,
+                    Học kỳ, Gạch nối, Năm bắt đầu năm học. Trong dấu ngoặc: Nhóm khóa học, Gạch nối, Số thứ tự
+                    lớp học phần ghi đủ 02 chữ số. Lưu ý chỉ sử dụng chữ cái in hoa, chữ số, dấu gạch nối và dấu
+                    ngoặc đơn; KHÔNG sử dụng dấu cách."
                 required="true"
+                validate="classcode"
+                addruleprefix="Kma\Component\Eqa\Administrator\Rule"
         />
         <field  name="name"
                 type="text"
