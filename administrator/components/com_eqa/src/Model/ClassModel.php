@@ -14,7 +14,6 @@ defined('_JEXEC') or die();
 class ClassModel extends EqaAdminModel {
     protected function prepareTable($table)
     {
-        $table->size=null;  //Không cho phép người dùng cập nhật trực tiếp sĩ số
 	    if(empty($table->lecturer_id))
 			$table->lecturer_id=null;
 	    if(empty($table->start))

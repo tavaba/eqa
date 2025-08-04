@@ -9,5 +9,5 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use SimpleXMLElement;
 class UppercaseAlnumRule extends FormRule
 {
-	protected $regex = '/^[A-Z0-9]+$/';
+	protected $regex = '^[A-Z0-9]+$';
 }
