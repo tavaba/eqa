@@ -54,12 +54,18 @@ class ExamsController extends EqaAdminController {
 	}
 	public function recheckStatus()
 	{
-		//Check token
-		$this->checkToken();
-
 		//Set redirect in any case
 		$url = JRoute::_('index.php?option=com_eqa&view=exams',false);
 		$this->setRedirect($url);
+
+		//TEMPORARY DISABLE THIS FUNCTIONALITY
+		$this->setMessage('Tính năng này tạm thời bị vô hiệu hóa. 
+		Sẽ cần phải điều chỉnh chương trình để có thể loại bỏ hoàn toàn
+		chức năng này.','warning'); //TODO: Remove this line after testing
+		return;
+
+		//Check token
+		$this->checkToken();
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))

@@ -406,16 +406,16 @@ class ExamroomsController extends EqaAdminController {
 		foreach ($examIds as $examId)
 		{
 			$exam = DatabaseHelper::getExamInfo($examId);
-			if ($exam->countConcluded == $exam->countToTake)
+			if ($exam->countConcluded == $exam->countTotal)
 			{
 				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
-				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi', $exam->name, $exam->countConcluded, $exam->countToTake);
+				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countTotal);
 				$app->enqueueMessage($msg, 'success');
 			}
 			elseif ($exam->countConcluded > 0)
 			{
 				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_PARTIAL);
-				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi', $exam->name, $exam->countConcluded, $exam->countToTake);
+				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countToTake);
 				$app->enqueueMessage($msg );
 			}
 			if($exam->testtype==ExamHelper::TEST_TYPE_PAPER )
