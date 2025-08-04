@@ -65,21 +65,16 @@ abstract class IOHelper
 	}
 	static public function loadSpreadsheet(string $fileName): Spreadsheet
 	{
-		try {
-			if (str_ends_with($fileName, '.xls')) {
-				$reader = new Xls();
-			} else {
-				// Assume it's an Excel 2007 or later (.xlsx)
-				$reader = ExcelIOFactory::createReader('Xlsx');
-			}
-			$spreadsheet = $reader->load($fileName);
+		try
+		{
+			$reader = new Xls();                                        //Try to open as .XLS first
+			return $reader->load($fileName);
 		}
-		catch (Exception $e){
-			$shortName = pathinfo($fileName, PATHINFO_FILENAME);
-			$msg = Text::sprintf('Loading &quot;%s&qout; faied: %s', $shortName, $e->getMessage());
-			throw new Exception($msg);
+		catch (\PhpOffice\PhpSpreadsheet\Exception $e){
+			unset($e);
+			$reader = ExcelIOFactory::createReader('Xlsx');  //Then try to open as .XLSX if failed
+			return $reader->load($fileName);
 		}
-		return $spreadsheet;
 	}
 	static public function sendHttpXlsx(Spreadsheet $spreadsheet, string $fileName, bool $includeCharts=false): void
 	{

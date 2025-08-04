@@ -7,6 +7,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 
@@ -32,6 +33,239 @@ class ClassModel extends EqaAdminModel {
 			$table->pamdate=null;
         parent::prepareTable($table);
     }
+
+	/**
+	 * Thêm HVSV vào một lớp học phần. Có sử dụng transaction.
+	 *
+	 * @param   int    $classId       ID của lớp học phần.
+	 * @param   array  $learnerCodes  Mảng chứa các mã HVSV cần thêm vào lớp dạng $rowIndex => $learnerCode.
+	 * @return array   [$countTotal, $countAdded, $countExisting]
+	 * @throws Exception Controller chịu trách nhiệm xử lý lỗi
+	 * @since 1.2.0
+	 */
+	public function importLearners(int $classId, array $learnerCodes, array $learnerMap=[]): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1. Check if the class exists and is published
+		$db->setQuery("SELECT COUNT(*) FROM `#__eqa_classes` WHERE `id`=$classId AND `published`=1");
+		$count = (int) $db->loadResult();
+		if($count==0)
+			throw new Exception('Lớp không tồn tại hoặc đã bị vô hiệu hóa');
+
+		//2. Check if any of these learners does not exist in the database
+		//   If there are absentees, throw an exception with a list of whole codes,
+		//   so the user can fix all of the errors at once instead of fixing them one-by-one
+		if(empty($learnerMap))
+			$learnerMap = DatabaseHelper::getLearnerMap([],8000);   //Lấy tối đa 8000 bản ghi
+		if(empty($learnerMap))
+			throw new Exception('Không tìm thấy dữ liệu học viên');
+		$absentees = [];
+		foreach ($learnerCodes as $rowIndex => $learnerCode)
+		{
+			if(!array_key_exists($learnerCode, $learnerMap))
+				$absentees[] = $learnerCode . "({$rowIndex})";
+		}
+		if(!empty($absentees))
+		{
+			$msg = Text::sprintf('Có %d HVSV không tồn tại trong CSDL: %s',
+				count($absentees),
+				htmlentities(implode('; ', $absentees))
+			);
+			throw new Exception($msg);
+		}
+
+		//3. Load all existing learners for this class
+		$db->setQuery("SELECT `learner_id` FROM `#__eqa_class_learner` WHERE `class_id`=$classId");
+		$existingLearnerIds = $db->loadColumn();
+
+		//4. Try to add learners to the class
+		$db->transactionStart();
+		$countExisting=0;
+		try
+		{
+			foreach ($learnerCodes as $rowIndex => $learnerCode)        //$rowIndex is the index of row in the input Excel file
+			{
+				//1. Get the learner id
+				$learnerId = $learnerMap[$learnerCode];
+
+				//2. Check if the learner has already been added to the class
+				if(in_array($learnerId, $existingLearnerIds))
+				{
+					$countExisting++;
+					continue; //Skip this row since it's already in the database
+				}
+
+				//3. Add the learner to the class
+				$db->setQuery("INSERT INTO `#__eqa_class_learner`(`class_id`, `learner_id`) VALUES($classId,$learnerId)");
+				if(!$db->execute())
+					throw new Exception("Thêm HVSV thất bại (dữ liệu tại dòng {$rowIndex})");
+			}
+			$countTotal = count($learnerCodes);
+			$countAdded=$countTotal-$countExisting;
+
+			//5. Update class size
+			$newSize = count($existingLearnerIds) + $countAdded;
+			$query = $db->getQuery(true)
+				->update('#__eqa_classes')
+				->set('`size` = '.$newSize)
+				->where('id = '.$classId);
+			$db->setQuery($query);
+			if(!$db->execute())
+				throw new Exception("Cập nhật sĩ số thất bại");
+
+			//6. Commit changes
+			$db->transactionCommit();
+			return [$countTotal, $countAdded, $countExisting];
+		}
+		catch(Exception $e){
+			$db->transactionRollback();
+			throw $e;
+		}
+	}
+
+	/**
+	 * Nhập điểm quá trình cho lớp học phần. Có sử dụng transaction.
+	 * @param   int    $classId         ID của lớp
+	 * @param   array  $data            ['row_index', 'learner_code', 'pam1', 'pam2','pam', 'allowed', 'description']
+	 * @param   bool   $setPamDateToday Lấy ngày hôm nay là ngày bàn giao điểm quá trình
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 * @since version
+	 */
+	public function importPams(int $classId, array $data, bool $setPamDateToday): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1. Check if the class exists and is published
+		$db->setQuery("SELECT COUNT(*) FROM `#__eqa_classes` WHERE `id`=$classId AND `published`=1");
+		$count = (int) $db->loadResult();
+		if($count==0)
+			throw new Exception('Lớp không tồn tại hoặc đã bị vô hiệu hóa');
+
+		//2. Ensure that no one from the class has been assigned an examinee code yet
+		//   (no exam hasn't begun)
+		$db->setQuery("SELECT * FROM `#__eqa_exam_learner` WHERE `class_id`=$classId AND `code` IS NOT NULL LIMIT 1");
+		$item = $db->loadObject();
+		if(!empty($item))
+			throw new Exception('Đã tổ chức thi, không thể nhập ĐQT');
+
+		//3. Load the mapping between learner ids and their codes for this class
+		$query = $db->getQuery(true)
+			->select('a.learner_id AS id, b.code AS code')
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+			->where('a.class_id = '.$classId);
+		$db->setQuery($query);
+		$classLearnerMap = $db->loadAssocList('code','id');     //key: learner code, value: learner id
+		if(empty($classLearnerMap))
+			throw new Exception('Lớp học phần rỗng, không thể nhập ĐQT');
+
+		//4. Check if any of these learners does not exist in the class
+		//   If there are absentees, throw an exception with a list of whole codes,
+		//   so the user can fix all of the errors at once instead of fixing them one-by-one
+		$absentees = [];
+		foreach ($data as $item)
+		{
+			$rowIndex = $item['row_index'];
+			$learnerCode = $item['learner_code'];
+
+			if(!array_key_exists($learnerCode, $classLearnerMap))
+				$absentees[] = $learnerCode . "({$rowIndex})";
+		}
+		if(!empty($absentees))
+		{
+			$msg = Text::sprintf('Có %d HVSV không tồn tại trong lớp học phần: %s',
+				count($absentees),
+				htmlentities(implode('; ', $absentees))
+			);
+			throw new Exception($msg);
+		}
+
+		//4. Try to add learners to the class
+		$db->transactionStart();
+		try
+		{
+			foreach ($data as $item)        //$rowIndex is the index of row in the input Excel file
+			{
+				//1. Prepare data
+				$rowIndex = $item['row_index'];
+				$learnerCode = $item['learner_code'];
+				$pam1 = $item['pam1'];
+				$pam2 = $item['pam2'];
+				$pam = $item['pam'];
+				$allowed = $item['allowed'];
+				$description = $item['description'];
+
+				$setData = [
+					$db->quoteName('pam1') . '=' . floatval($pam1),
+					$db->quoteName('pam2') . '=' . floatval($pam2),
+					$db->quoteName('pam')  . '=' . floatval($pam),
+				];
+				if(empty($description))
+					$setData[] = $db->quoteName('description') . '= NULL';
+				else
+					$setData[] = $db->quoteName('description') . '=' . $db->quote($description);
+
+				if($allowed)
+				{
+					$setData[] = $db->quoteName('allowed') . '=1';      //Cho phép thi
+				}
+				else
+				{
+					$setData[] = $db->quoteName('allowed') . '=0';      //Cho phép thi
+					$setData[] = $db->quoteName('expired') . '=1';      //Cho phép thi
+				}
+
+				//2. Get the learner id
+				$learnerId = $classLearnerMap[$learnerCode];
+
+				//3. Update PAM
+				$query = $db->getQuery(true)
+					->update('#__eqa_class_learner')
+					->set($setData)
+					->where('class_id = '.$classId.' AND learner_id = '.$learnerId);
+				$db->setQuery($query);
+				if(!$db->execute())
+					throw new Exception("Nhập ĐQT thất bại (dữ liệu tại dòng {$rowIndex})");
+			}
+
+			//4. Update the the number of learners who already have PAM ('npam')
+			//a) Count how many learners have been assigned PAM
+			$db->setQuery("SELECT COUNT(*) FROM `#__eqa_class_learner` WHERE `class_id`=$classId AND `pam` IS NOT NULL");
+			$npam = (int) $db->loadResult();
+			//b) Set npam
+			$db->setQuery("UPDATE `#__eqa_classes` SET `npam`={$npam} WHERE `id`={$classId}");
+			if(!$db->execute())
+				throw new Exception("Cập nhật số lượng HVSV có ĐQT thất bại");
+
+			$classSize = count($classLearnerMap);
+			$countUpdated = count($data);
+			//5. Update class PAM date if all learners have been assigned PAM
+			if($setPamDateToday && $npam==$classSize)
+			{
+				$now = DatetimeHelper::getCurrentHanoiDatetime();
+				$today = DatetimeHelper::getFullDate($now);
+				$query = $db->getQuery(true)
+					->update('#__eqa_classes')
+					->set($db->quoteName('pamdate') . '=' . $db->quote($today))
+					->where('id = '.$classId);
+				$db->setQuery($query);
+				if(!$db->execute())
+					throw new Exception("Cập nhật ngày bàn giao ĐQT thất bại");
+			}
+
+			//6. Commit changes
+			$db->transactionCommit();
+			return [$classSize, $countUpdated, $npam];
+		}
+		catch(Exception $e){
+			$db->transactionRollback();
+			throw $e;
+		}
+	}
     public function addLearners(int $classId, array $learnerCodes): void
     {
         $db = $this->getDatabase();

@@ -458,7 +458,7 @@ abstract class ExamHelper{
 		}
 
 		//If $value is NOT a numeric value
-		if(!is_numeric($value)){
+		if(!empty($value) && !is_numeric($value)){
 			if($value==='N25')
 				return ExamHelper::SPECIAL_MARK_N25;
 			if($value==='N100')
@@ -495,12 +495,12 @@ abstract class ExamHelper{
 			return false;
 		return $value;
 	}
-    static public function calculatePamForDefaultFormular(float $pam1, float $pam2)
+    static public function calculatePamForDefaultFormular(float $pam1, float $pam2): float
     {
         $pam = 0.7*$pam1 + 0.3*$pam2;
         return $pam;
     }
-	static public function calculatePam(int $subjectId, float $pam1, float $pam2)
+	static public function calculatePam(int $subjectId, float $pam1, float $pam2): float
 	{
 		//Nothing to do with $subjectId for now
 		//TODO: Xử lý trường hợp môn thi có các hệ số khác nhau

@@ -109,6 +109,6 @@ abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
 	}
     public static function appendImportLink(string $url, string $text='Import', string $requiredActions='core.create'): void
     {
-	    self::appendLink($requiredActions, $url,$text,'arrow-up-2');
+	    self::appendLink($requiredActions, $url,$text,'upload');
     }
 }

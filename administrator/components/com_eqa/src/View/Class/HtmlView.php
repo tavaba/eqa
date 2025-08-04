@@ -5,11 +5,10 @@ use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutData;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
+use SimpleXMLElement;
 
 defined('_JEXEC') or die();
 
@@ -17,6 +16,46 @@ class HtmlView extends EqaItemHtmlView {
     protected object $class;
     protected EqaListLayoutData $listLayoutData;
     protected EqaListLayoutItemFields $listLayoutItemFields;
+
+
+	protected function prepareDataForLayoutImportlearners(): void
+	{
+		$app = Factory::getApplication();
+		$classId = $app->input->getInt('class_id',0);
+
+		//Load the class
+		$model = $this->getModel();
+		$this->class = $model->getItem($classId);
+
+		//Load form
+		$this->form = FormHelper::getBackendForm('com_eqa.classlearners_import','upload_excelfile.xml', []);
+		FormHelper::addField($this->form,'class_id','hidden', $classId, null, 'upload');
+	}
+	protected function addToolbarForLayoutImportlearners(): void
+	{
+		ToolbarHelper::title('Nhập danh sách HVSV vào lớp học phần');
+		ToolbarHelper::appendUpload('class.importLearners');
+		ToolbarHelper::cancel('classlearners.cancel');
+	}
+	protected function prepareDataForLayoutImportpams(): void
+	{
+		$app = Factory::getApplication();
+		$classId = $app->input->getInt('class_id',0);
+
+		//Load the class
+		$model = $this->getModel();
+		$this->class = $model->getItem($classId);
+
+		//Load form
+		$this->form = FormHelper::getBackendForm('com_eqa.classlearners_import','upload_excelfile.xml', []);
+		FormHelper::addField($this->form,'class_id','hidden', $classId, null, 'upload');
+	}
+	protected function addToolbarForLayoutImportpams(): void
+	{
+		ToolbarHelper::title('Nhập ĐQT cho lớp học phần');
+		ToolbarHelper::appendUpload('class.importPams');
+		ToolbarHelper::cancel('classlearners.cancel');
+	}
     protected function prepareDataForLayoutAddlearners(): void
     {
         //Toolbar
@@ -33,7 +72,6 @@ class HtmlView extends EqaItemHtmlView {
     {
         ToolbarHelper::title($this->toolbarOption->title);
         ToolbarHelper::save('class.addLearners');
-        $url = JRoute::_('index.php?option=com_eqa&view=classlearners&class_id='.$this->class->id,false);
-        ToolbarHelper::appendLink(null, $url,'JTOOLBAR_CANCEL', 'delete', 'btn btn-danger');
+		ToolbarHelper::cancel('classlearners.cancel');
     }
 }

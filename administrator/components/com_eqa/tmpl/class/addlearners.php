@@ -7,6 +7,8 @@ use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');
 $class = $this->class;
+if(empty($class))
+    return;
 echo '<div>';
 {
     echo Text::_('COM_EQA_CLASS_CODE'), ': ', $class->code, '<br/>';

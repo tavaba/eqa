@@ -1,14 +1,175 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
+use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 
 defined('_JEXEC') or die();
 
-class ClassController extends  EqaFormController {
+class ClassController extends  EqaFormController
+{
+	public function importLearners(): void
+	{
+		//1. Check token
+		$this->checkToken();
+
+		//2. Check for creation permissions.
+		if(!$this->app->getIdentity()->authorise('core.create', 'com_eqa'))
+		{
+			$this->setMessage('Bạn không có quyền nhập HVSV vào lớp học phần','error');
+			$url = Route::_('index.php?option=com_eqa&view=classes', false);
+			$this->setRedirect($url);
+			return;
+		}
+
+		//3. Get data from request
+		//3.1. The class id which must have been inserted to the form in the 'classlearners' view
+		$classId = $this->input->getInt('class_id');
+		if(empty($classId))
+		{
+			$this->setMessage('Không xác định được lớp học phần','error');
+			$url = Route::_('index.php?option=com_eqa&view=classes', false);
+			$this->setRedirect($url);
+			return;
+		}
+
+		//3.2. The excel file
+		$file = $this->input->files->get('excelfile');
+		if(empty($file) || empty($file['tmp_name']))            //PHASE 1: Show upload form
+		{
+			$url = Route::_('index.php?option=com_eqa&view=class&layout=importlearners&class_id='.$classId,false);
+			$this->setRedirect($url);
+			return;
+		}
+
+		//PHASE 2: Process uploaded file
+		//4. Load the spreadsheet and read LEARNER CODEs from it
+		try
+		{
+			$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
+			$sheet = $spreadsheet->getActiveSheet();
+			$sheetData = $sheet->toArray('');
+			$rowCount = count($sheetData);
+			$learnerCodes = [];
+			for($r=14; $r<$rowCount; $r++)          //Mã HVSV đầu tiên ở ô B15
+			{
+				$row = $sheetData[$r];
+				$value = trim($row[1]);
+				if(empty($value))
+					break;
+				$learnerCodes[$r+1] = $value;      //Cột B chứa mã HVSV. Chỉ số là số hiệu của dòng trong Excel
+			}
+
+			//5. Import to database
+			$model = $this->getModel();
+			[$countTotal, $countAdded, $countExisting] = $model->importLearners($classId, $learnerCodes);
+			$msg = "Tổng số HVSV trong file: {$countTotal}. Đã có trong lớp: {$countExisting}. Đã thêm vào: {$countAdded}";
+			$this->setMessage($msg, 'success');
+		}
+		catch(Exception $e)
+		{
+			$this->setMessage(Text::_($e->getMessage()), 'error');
+		}
+		$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$classId,false);
+		$this->setRedirect($url);
+	}
+	public function importPams(): void
+	{
+		//1. Check token
+		$this->checkToken();
+
+		//2. Check for creation permissions.
+		if(!$this->app->getIdentity()->authorise('core.edit', 'com_eqa'))
+		{
+			$this->setMessage('Bạn không có quyền nhập điểm quá trình','error');
+			$url = Route::_('index.php?option=com_eqa&view=classes', false);
+			$this->setRedirect($url);
+			return;
+		}
+
+		//3. Get data from request
+		//3.1. The class id which must have been inserted to the form in the 'classlearners' view
+		$classId = $this->input->getInt('class_id');
+		if(empty($classId))
+		{
+			$this->setMessage('Không xác định được lớp học phần','error');
+			$url = Route::_('index.php?option=com_eqa&view=classes', false);
+			$this->setRedirect($url);
+			return;
+		}
+
+		//3.2. The excel file
+		$file = $this->input->files->get('excelfile');
+		if(empty($file) || empty($file['tmp_name']))            //PHASE 1: Show upload form
+		{
+			$url = Route::_('index.php?option=com_eqa&view=class&layout=importpams&class_id='.$classId,false);
+			$this->setRedirect($url);
+			return;
+		}
+
+		//PHASE 2: Process uploaded file
+		//4. Load the spreadsheet and read PAMs from it
+		try
+		{
+			$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
+			$sheet = $spreadsheet->getActiveSheet();
+			$sheetData = $sheet->toArray('');
+			$rowCount = count($sheetData);
+			$data = [];
+			for($r=14; $r<$rowCount; $r++)          //Mã HVSV đầu tiên ở ô B15
+			{
+				$row = $sheetData[$r];
+				$learnerCode = trim($row[1]);       //Cột B
+				if(empty($learnerCode))             //Kết thúc danh sách ĐQT
+					break;
+
+				//Đọc "Ghi chú" ở cột M (12)
+				$description = trim($row[12]);
+
+				//Đọc pam1, pam2, $pam lần lượt ở các cột I, J, K (8, 9, 10)
+				$pam1 = trim($row[8]);
+				$pam1 = ExamHelper::toPam($pam1, $description);
+				$pam2 = trim($row[9]);
+				$pam2 = ExamHelper::toPam($pam2, $description);
+				$pam = trim($row[10]);
+				$pam = ExamHelper::toPam($pam, $description);
+				if($pam1 === false || $pam2 === false || $pam === false)
+				{
+					$msg = Text::sprintf('Dòng %d: ĐQP không hợp lệ', $r+1);
+					throw new Exception($msg);
+				}
+
+				//Save to the array
+				$data[] = [
+					'row_index'=>$r+1,
+					'learner_code'=>$learnerCode,
+					'description'=>$description,
+					'pam1'=>$pam1,
+					'pam2'=>$pam2,
+					'pam'=>$pam,
+					'allowed' => ExamHelper::isAllowedToFinalExam($pam1, $pam2, $pam)
+				];
+			}
+
+			//5. Import to database
+			$model = $this->getModel();
+			[$classSize, $countUpdated, $npam] = $model->importPams($classId, $data, true);
+			$msg = "Sĩ số lớp học phần: {$classSize}. Số lượng được nhập ĐQT: {$countUpdated}. Tổng số HVSV đã có ĐQT: {$npam}/{$classSize}";
+			$type = $npam==$classSize ? 'success' : 'info';
+			$this->setMessage($msg, $type);
+		}
+		catch(Exception $e)
+		{
+			$this->setMessage(Text::_($e->getMessage()), 'error');
+		}
+		$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$classId,false);
+		$this->setRedirect($url);
+	}
 
     /**
      * Thêm sinh viên vào một lớp học phần.
