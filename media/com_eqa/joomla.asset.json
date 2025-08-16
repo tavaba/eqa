@@ -9,7 +9,7 @@
       "name": "select2.script",
       "type": "script",
       "dependencies": ["jquery"],
-      "uri": "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js",
+      "uri": "com_eqa/select2.4.0.13.min.js",
       "version": "4.0.13"
     },
     {
@@ -54,7 +54,8 @@
     {
       "name": "select2.style",
       "type": "style",
-      "uri":"https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"
+      "uri":"com_eqa/select2.4.0.13.min.css",
+      "version": "4.0.13"
     }
   ]
 }

@@ -397,7 +397,7 @@ abstract class DatabaseHelper
 			->where('id IN ' . $examIdSet);
 		$db->setQuery($query);
 		$durations = $db->loadColumn();
-		$durations = array_filter($durations);
+		$durations = array_filter($durations,'intval');
 
 		//3. Trả về max
 		if(empty($durations))

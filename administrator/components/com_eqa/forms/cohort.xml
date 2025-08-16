@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+   Trong form này có sử dụng custom form field
+   Vì thế, trong thẻ FIELDSET cần có thuộc tính 'addfieldprefix' tương ứng
+   Tham khảo từ:  https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+-->
+<form>
+    <fieldset name="cohort" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="code"
+                type="text"
+                label="Ký hiệu"
+                description="Chấp nhận chữ hoa, chữ số và dấu gạch dưới (không được chứa khoảng trắng)"
+                hint="H30L"
+                required="true"
+                pattern="[A-Z0-9_]+"
+        />
+        <field
+                name="name"
+                type="text"
+                required="true"
+                label="Tên gọi"
+        />
+        <field
+                name="created_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_BY"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_CREATED_AT"
+        />
+        <field
+                name="updated_by"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_BY"
+        />
+        <field
+                name="updated_at"
+                type="text"
+                readonly="true"
+                label="COM_EQA_GENERAL_UPDATED_AT"
+        />
+    </fieldset>
+</form>

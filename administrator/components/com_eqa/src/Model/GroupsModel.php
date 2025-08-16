@@ -8,10 +8,10 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 class GroupsModel extends EqaListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('code','course','admissionyear','size','published','ordering');
+        $config['filter_fields']=array('id','code','course','admissionyear','size','published','ordering');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'admissionyear', $direction = 'DESC')
+    protected function populateState($ordering = 'id', $direction = 'DESC')
     {
         parent::populateState($ordering, $direction);
     }
@@ -57,7 +57,7 @@ class GroupsModel extends EqaListModel{
         }
 
         //Ordering
-        $orderingCol = $query->db->escape($this->getState('list.ordering','admissionyear'));
+        $orderingCol = $query->db->escape($this->getState('list.ordering','id'));
         $orderingDir = $query->db->escape($this->getState('list.direction','desc'));
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 

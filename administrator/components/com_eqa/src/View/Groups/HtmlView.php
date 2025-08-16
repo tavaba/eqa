@@ -11,6 +11,7 @@ class HtmlView extends EqaItemsHtmlView {
         $option = new EqaListLayoutItemFields();
 
         $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
+		$option->id = EqaListLayoutItemFields::defaultFieldId();
         $option->check = EqaListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();

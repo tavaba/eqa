@@ -7,7 +7,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
@@ -18,6 +18,71 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 
 class ClassesController extends EqaAdminController {
+	public function addForGroupOrCohort(): void
+	{
+		$redirectUrl = Route::_('index.php?option=com_eqa&view=classes',false);
+		$this->setRedirect($redirectUrl);
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.create'))
+				throw new Exception('Bạn không có thẩm quyền thực hiện tác vụ này');
+
+			//3. Get input parameters
+			$targetType = $this->input->getString('target');
+
+			//PHASE 1. Show form
+			if(empty($targetType))
+			{
+				$redirectUrl = Route::_('index.php?option=com_eqa&view=classes&layout=addforgrouporcohort',false);
+				$this->setRedirect($redirectUrl);
+				return;
+			}
+
+			//PHASE 2. Process form data
+			if($targetType=='group')
+			{
+				$targetId = $this->input->getInt('group_id');
+				if(empty($targetId))
+					throw new Exception('Bạn phải chọn một lớp hành chính');
+			}
+			else if($targetType=='cohort')
+			{
+				$targetId = $this->input->getInt('cohort_id');
+				if(empty($targetId))
+					throw new Exception('Bạn phải chọn một nhóm HVSV (lớp con)');
+			}
+			else
+				throw new Exception('Truy vấn không hợp lệ');
+
+			$subjectIds = $this->input->get('subject_ids',[],'array');
+			$subjectIds = array_filter($subjectIds,'intval');
+			if(empty($subjectIds))
+				throw new Exception('Bạn phải chọn ít nhất một môn học');
+
+			$term = $this->input->getInt('term');
+			if(empty($term))
+				throw new Exception('Bạn phải chọn một học kỳ');
+
+			$academicyearId = $this->input->getInt('academicyear_id');
+			if(empty($academicyearId))
+				throw new Exception('Bạn phải chọn một năm học');
+
+			//4. Create classes
+			$model = $this->getModel('class');
+			foreach ($subjectIds as $subjectId)
+			{
+				$model->addForGroupOrCohort($targetType, $targetId, $subjectId, $term, $academicyearId);
+			}
+		}
+		catch(Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
     public function import(): void
     {
         $fileFormField = 'file_classes';
@@ -26,7 +91,7 @@ class ClassesController extends EqaAdminController {
 
         //Set redirect to list view in any case
         $this->setRedirect(
-            JRoute::_(
+            Route::_(
                 'index.php?option=' . $this->option . '&view=' . $this->view_list
                 . $this->getRedirectToListAppend(),
                 false
@@ -258,7 +323,7 @@ class ClassesController extends EqaAdminController {
 
         //Set redirect to list view in any case
         $this->setRedirect(
-            JRoute::_(
+            Route::_(
                 'index.php?option=' . $this->option . '&view=' . $this->view_list
                 . $this->getRedirectToListAppend(),
                 false

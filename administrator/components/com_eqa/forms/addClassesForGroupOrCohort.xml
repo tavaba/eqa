@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="target"
+                type="radio"
+                label="Tạo lớp học phần cho Lớp hành chính hanh cho Nhóm HVSV"
+                required="true"
+                default="group"
+        >
+            <option value="group">Lớp hành chính</option>
+            <option value="cohort">Nhóm HVSV (hoặc lớp con)</option>
+        </field>
+        <field
+                name="group_id"
+                type="group"
+                label="Lớp hành chính"
+                class="select2-basic"
+                showon="target:group"
+        >
+            <option value="">- Chọn lớp -</option>
+        </field>
+        <field
+                name="cohort_id"
+                type="cohort"
+                label="Nhóm HVSV (lớp con)"
+                class="select2-basic"
+                showon="target:cohort"
+        >
+            <option value="">- Chọn nhóm -</option>
+        </field>
+        <field
+                name="subject_ids"
+                type="subject"
+                label="Môn học"
+                multiple="true"
+                class="select2-basic"
+                description="Chọn 1 hoặc nhiều môn học để tạo lớp học phần."
+        >
+        </field>
+        <field
+                name="term"
+                type="list"
+                label="Học kỳ"
+                required="true"
+        >
+            <option value="">- Học kỳ -</option>
+            <option value="1">Học kỳ 1</option>
+            <option value="2">Học kỳ 2</option>
+            <option value="3">Học kỳ 3</option>
+        </field>
+        <field
+                name="academicyear_id"
+                type="academicyear"
+                label="Năm học"
+                required="true"
+        >
+            <option value="">- Năm học -</option>
+        </field>
+    </fieldset>
+</form>

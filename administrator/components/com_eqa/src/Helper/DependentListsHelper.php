@@ -51,6 +51,7 @@ abstract class DependentListsHelper
      * ]
      *
      * @return  void
+     * @since   1.2.0
      */
     public static function setup(WebAssetManager $wa, array $config)
     {

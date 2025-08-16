@@ -1,6 +1,7 @@
 <?php
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 
 defined('_JEXEC') or die;
 
@@ -87,7 +88,10 @@ JHtml::_('bootstrap.framework');
                             <?php echo Text::_('COM_EQA_BUTTON_COURSES'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=groups'); ?>" class="btn btn-secondary btn-lg">
-                            <?php echo Text::_('COM_EQA_BUTTON_GROUPS'); ?>
+		                    <?php echo Text::_('COM_EQA_BUTTON_GROUPS'); ?>
+                        </a>
+                        <a href="<?php echo Route::_('index.php?option=com_eqa&view=cohorts'); ?>" class="btn btn-secondary btn-lg">
+		                    <?php echo Text::_('Nhóm, phân lớp HVSV'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=learners'); ?>" class="btn btn-secondary btn-lg">
                             <?php echo Text::_('COM_EQA_BUTTON_LEARNERS'); ?>

@@ -8,10 +8,10 @@ use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 class ClassesModel extends EqaListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('coursegroup','code','name','size','npam', 'academicyear','term');
+        $config['filter_fields']=array('id','coursegroup','code','name','size','npam', 'academicyear','term');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'academicyear', $direction = 'desc')
+    protected function populateState($ordering = 'id', $direction = 'DESC')
     {
         parent::populateState($ordering, $direction);
     }
@@ -70,8 +70,8 @@ class ClassesModel extends EqaListModel{
         }
 
         //Ordering
-        $orderingCol = $query->db->escape($this->getState('list.ordering','academicyear'));
-        $orderingDir = $query->db->escape($this->getState('list.direction','desc'));
+        $orderingCol = $query->db->escape($this->getState('list.ordering','id'));
+        $orderingDir = $query->db->escape($this->getState('list.direction','DESC'));
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 
         return $query;
@@ -83,7 +83,9 @@ class ClassesModel extends EqaListModel{
         $id .= ':' . $this->getState('filter.testtype');
         $id .= ':' . $this->getState('filter.academicyear_id');
         $id .= ':' . $this->getState('filter.term');
-        $id .= ':' . $this->getState('filter.lecturer_id');
+	    $id .= ':' . $this->getState('filter.lecturer_id');
+	    $id .= ':' . $this->getState('list.ordering');
+	    $id .= ':' . $this->getState('list.direction');
         return parent::getStoreId($id);
     }
 }

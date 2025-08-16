@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="group_id"
+                type="group"
+                label="Lớp hành chính"
+                description="Chọn lớp hành chính để thêm HVSV vào nhóm"
+                class="select2-basic"
+                required="true"
+        >
+                <option value="">- Chọn lớp học -</option>
+        </field>
+
+        <field  name="learner_ids"
+                type="list"
+                label="HVSV"
+                description="Chọn HVSV muốn thêm vào nhóm"
+                multiple="true"
+                class="select2-basic"
+                required="true"
+        />
+    </fieldset>
+</form>

@@ -514,4 +514,94 @@ class ClassModel extends EqaAdminModel {
 		//Return the data
 		return $data;
 	}
+	public function addForGroupOrCohort(string $targetType, int $targetId, int $subjectId, int $term, int $academicyearId): void
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1. Get target code and learners
+		if($targetType==='group')
+		{
+			//1.1. Get group code
+			$db->setQuery('SELECT code FROM #__eqa_groups WHERE id='.$targetId);
+			$targetCode = $db->loadResult();
+
+			//1.2. Get learners
+			$db->setQuery('SELECT id FROM #__eqa_learners WHERE group_id='.$targetId);
+			$learnerIds = $db->loadColumn();
+		}
+		elseif ($targetType==='cohort')
+		{
+			//1.1. Get cohort code
+			$db->setQuery('SELECT code FROM #__eqa_cohorts WHERE id='.$targetId);
+			$targetCode = $db->loadResult();
+
+			//1.2. Get learners
+			$db->setQuery('SELECT learner_id FROM #__eqa_cohort_learner WHERE cohort_id='.$targetId);
+			$learnerIds = $db->loadColumn();
+		}
+		else
+			throw new Exception('Invalid target type');
+
+		//2. Get subject code
+		$db->setQuery('SELECT code, name FROM #__eqa_subjects WHERE id='.$subjectId);
+		$subject = $db->loadObject();
+
+		//3. Get academic year code
+		$db->setQuery('SELECT code FROM #__eqa_academicyears WHERE id='.$academicyearId);
+		$academicYearCode = $db->loadResult();
+		$firstYear = substr($academicYearCode,2, 2);       //Get last two digits of academic year code
+
+		//4. Calculate class code and class name
+		$classCode = Text::sprintf('%s-%d-%s(%s-01)', $subject->code, $term, $firstYear, $targetCode);
+		$className = Text::sprintf('%s-%d-%s(%s-01)', $subject->name, $term, $firstYear, $targetCode);
+
+		$db->transactionStart();
+		try
+		{
+			//5. Create a new class and get its ID
+			$columns = $db->quoteName(array('coursegroup','code','name','subject_id','term','academicyear_id','size'));
+			$values=[
+				$db->quote($targetCode),
+				$db->quote($classCode),
+				$db->quote($className),
+				$subjectId,
+				$term,
+				$academicyearId,
+				count($learnerIds)
+			];
+			$tupe = implode(',', $values);
+			$query = $db->getQuery(true)
+				->insert('#__eqa_classes')
+				->columns($columns)
+				->values($tupe);
+			$db->setQuery($query);
+			if(!$db->execute()){
+				throw new Exception('Tạo lớp học phần mới thất bại');
+			}
+			$classId = $db->insertid();
+
+			//6. Add learners to the class
+			$tupes = [];
+			foreach ($learnerIds as $learnerId){
+				$tupes[] = $classId.",".$learnerId;
+			}
+			$query = $db->getQuery(true)
+				->insert('#__eqa_class_learner')
+				->columns('class_id, learner_id')
+				->values($tupes);
+			$db->setQuery($query);
+			if(!$db->execute()){
+				throw new Exception('Thêm HVSV vào lớp học phần mới thất bại');
+			}
+
+			//7. Commit transaction
+			$db->transactionCommit();
+		}
+		catch(Exception $e)
+		{
+			//Roll back transaction
+			$db->transactionRollback();
+			throw $e;
+		}
+	}
 }

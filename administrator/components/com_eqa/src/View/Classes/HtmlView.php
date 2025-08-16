@@ -15,8 +15,9 @@ class HtmlView extends EqaItemsHtmlView
     protected function configureItemFieldsForLayoutDefault():void{
         $option = new EqaListLayoutItemFields();
 
-        $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+	    $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
+	    $option->id = EqaListLayoutItemFields::defaultFieldId();
+	    $option->check = EqaListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
         $option->customFieldset1[] = new EqaListLayoutItemFieldOption('coursegroup','COM_EQA_COURSEGROUP',true,false,'text-center');
@@ -60,9 +61,21 @@ class HtmlView extends EqaItemsHtmlView
     protected function addToolbarForLayoutDefault(): void
     {
         parent::addToolbarForLayoutDefault();
+		ToolbarHelper::appenddButton('core.create', 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
         $url = \JRoute::_('index.php?option=com_eqa&view=classes&layout=uploadpam',false);
         ToolbarHelper::appendLink('core.edit', $url,'COM_EQA_IMPORT_PAM', 'bars');
     }
+
+	protected function prepareDataForLayoutAddforgrouporcohort(): void
+	{
+		$this->form = FormHelper::getBackendForm('com_eqa.addclassesforgrouporcohort','addClassesForGroupOrCohort.xml', array());
+	}
+	protected function addToolbarForLayoutAddforgrouporcohort(): void
+	{
+		ToolbarHelper::title('Tạo lớp học phần theo lớp hành chính hoặc nhóm HVSV');
+		ToolbarHelper::save('classes.addForGroupOrCohort');
+		ToolbarHelper::cancel('class.cancel');
+	}
 
 	protected function prepareDataForLayoutUploadpam(): void
 	{
