@@ -166,7 +166,57 @@ class ExamsController extends EqaAdminController {
 		}
 
 		//Send result
-		$fileName = 'Nhập QLĐT. ' . $examInfo->name . '.xlsx';
+		if(count($examIds)==1){
+			$fileName = 'Điểm nhập QLĐT. '.$examInfo->name.'.xlsx';
+		}else{
+			$fileName = 'Điểm thi nhập Quản lý đào tạo ('.count($examIds).' môn).xlsx';
+		}
+		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+		exit();
+	}
+	public function exportResultForEms2()
+	{
+		/* EMS = Education Management System = Hệ thống quản lý đào tạo của Học viện */
+
+		//Check token
+		$this->checkToken();
+
+		//Redirect in any case
+		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=exams',false));
+
+		//Check permission
+		if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+		{
+			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
+			return;
+		}
+
+		//Get data
+		$examIds = $this->input->post->get('cid',[],'int');
+		if(empty($examIds)){
+			$this->setMessage(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'),'error');
+			return;
+		}
+
+		//Process
+		$spreadsheet = new Spreadsheet();
+		$spreadsheet->removeSheetByIndex(0);
+		$model = $this->getModel();
+		foreach ($examIds as $examId)
+		{
+			$examInfo = DatabaseHelper::getExamInfo($examId);
+			$sheet = $spreadsheet->createSheet();
+			$sheet->setTitle($examInfo->code);
+			$examResult = $model->getExamResult($examInfo->id);
+			IOHelper::writeExamResultForEms2($sheet, $examInfo, $examResult);
+		}
+
+		//Send result
+		if(count($examIds)==1){
+			$fileName = 'Điểm lần 2 nhập QLĐT. '.$examInfo->name.'.xlsx';
+		}else{
+			$fileName = 'Điểm lần 2 nhập Quản lý đào tạo ('.count($examIds).' môn).xlsx';
+		}
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();
 	}

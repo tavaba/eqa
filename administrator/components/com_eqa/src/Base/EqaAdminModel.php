@@ -11,6 +11,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use RuntimeException;
+use stdClass;
 
 /**
  * Class này sẽ được thừa kế bởi các Item Model
@@ -35,17 +36,30 @@ class EqaAdminModel extends AdminModel
      * 'loadFormData' là hàm đã có trong lớp AdminModel nhưng nó rỗng
      * Vì thế, việc định nghĩa lại ở đây sẽ giúp tránh phải định nghĩa lại ở
      * các item model được sử dụng trong component này.
-     * @return array|bool|\Joomla\CMS\Object\CMSObject
      * @since 1.0
      */
-    public function loadFormData()
-    {
-        $context = "$this->option.edit.$this->context";
-        $stateKey = $this->getName() . '.id';
-        $pk    = (int) $this->getState($stateKey);
+	public function loadFormData()
+	{
+		$app = Factory::getApplication();
 
-        return $this->getItem();
-    }
+		$context = "$this->option.edit.$this->name";            //$this->name = item name
+
+		// Check the session for previously entered form data
+		$data = $app->getUserState("$context.data", array());
+
+		if (empty($data)) {
+			// No session data, load from database
+			$data = $this->getItem();
+
+			// Prime required properties that are expected to exist
+			if (empty($data)) {
+				$data = new stdClass();
+				$data->id = 0;
+			}
+		}
+
+		return $data;
+	}
 
     /**
      * Rewrite phương thức 'getForm' của  lớp cha để tự động xác định tên form

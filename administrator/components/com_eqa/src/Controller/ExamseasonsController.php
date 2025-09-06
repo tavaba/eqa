@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
+use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
@@ -225,5 +226,33 @@ class ExamseasonsController extends EqaAdminController
 		$fileName = 'Thống kê kỳ thi.xlsx';
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		jexit();
+	}
+
+	public function exportUnpassedExaminees()
+	{
+		try
+		{
+			//Get failed examinees
+			$model = $this->getModel('examseason');
+			$failedExaminees = $model->getUnpassedExaminees();
+			if(empty($failedExaminees))
+				throw new Exception('Không có thí sinh thi lại, bảo lưu');
+
+			//Write to Excel file
+			$spreadsheet = new Spreadsheet();
+			$spreadsheet->removeSheetByIndex(0);
+			IOHelper::writeUnpassedExaminees($spreadsheet, $failedExaminees);
+
+			//Let user download the file
+			$fileName = 'Danh sách thí sinh thi lại, bảo lưu.xlsx';
+			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+			jexit();
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examseasons', false));
+			return;
+		}
 	}
 }

@@ -86,6 +86,7 @@ class HtmlView extends EqaItemsHtmlView
 		ToolbarHelper::appenddButton(null,'download','Danh sách thi','exams.export',true);
 		ToolbarHelper::appenddButton('core.edit','loop','Trạng thái', 'exams.recheckStatus',true);
 	    ToolbarHelper::appenddButton('core.manage', 'download','Bảng điểm SV', 'exams.exportResultForLearners', true);
-	    ToolbarHelper::appenddButton('core.manage', 'download','Bảng điểm ĐT', 'exams.exportResultForEms', true);
+	    ToolbarHelper::appenddButton('core.manage', 'download','Bảng điểm ĐT (Lần 1)', 'exams.exportResultForEms', true);
+	    ToolbarHelper::appenddButton('core.manage', 'download','Bảng điểm ĐT (Lần 2)', 'exams.exportResultForEms2', true);
     }
 }

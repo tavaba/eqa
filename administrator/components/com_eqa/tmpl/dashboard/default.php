@@ -112,8 +112,11 @@ JHtml::_('bootstrap.framework');
                 </div>
                 <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
                     <div class="d-grid gap-2 mt-3">
+                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&task=examseasons.exportUnpassedExaminees'); ?>" class="btn btn-primary btn-lg">
+		                    <?php echo 'Tải danh sách thi sinh thi lại và bảo lưu'; ?>
+                        </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=examseasons'); ?>" class="btn btn-primary btn-lg">
-                            <?php echo Text::_('COM_EQA_BUTTON_EXAMSEASONS'); ?>
+		                    <?php echo Text::_('COM_EQA_BUTTON_EXAMSEASONS'); ?>
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=exams'); ?>" class="btn btn-primary btn-lg">
                             <?php echo Text::_('COM_EQA_BUTTON_EXAMS'); ?>

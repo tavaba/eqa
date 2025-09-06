@@ -9,6 +9,14 @@
                 class="js-stools-search-string"
         />
         <field
+                name="unit_id"
+                type="faculty"
+                default=""
+                class="select2-basic"
+                label="Khoa phụ trách"
+                onchange="this.form.submit();"
+        />
+        <field
                 name="subject_id"
                 type="subject"
                 default=""

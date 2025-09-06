@@ -202,6 +202,8 @@ class ExamseasonController extends EqaFormController
 			//4. Get model and retrieve examinees
 			$model = $this->getModel();
 			$ineligibleEntries = $model->getIneligibleEntries($examseasonId);
+			if(empty($ineligibleEntries))
+				throw new Exception('Không có thí sinh nào bị cấm thi');
 
 			//5. Write to excel
 			$spreadsheet = new Spreadsheet();
@@ -240,6 +242,8 @@ class ExamseasonController extends EqaFormController
 			//4. Get model and retrieve sanctions
 			$model = $this->getModel();
 			$sanctions = $model->getSanctions($examseasonId);
+			if(empty($sanctions))
+				throw new Exception('Không có thí sinh nào bị kỷ luật');
 
 			//5. Write to excel
 			$spreadsheet = new Spreadsheet();

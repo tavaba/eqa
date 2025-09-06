@@ -10,8 +10,8 @@ if(!empty($class)){
     echo Text::_('COM_EQA_CLASS_NAME') . ': <b>' . htmlspecialchars($class->name) . '</b><br/>';
     echo Text::_('COM_EQA_CLASS_SIZE') . ': ' . $class->size . '<br/>';
     echo Text::_('COM_EQA_LECTURER')  .  ': ';
-    if(is_numeric($class->lecturer_id))
-        echo EmployeeHelper::getFullName($class->lecturer_id);
+    if(is_numeric($class->lecturerId))
+        echo EmployeeHelper::getFullName($class->lecturerId);
     echo '<br/>';
 }
 

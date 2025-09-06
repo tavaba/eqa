@@ -16,6 +16,7 @@ use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ClassesController extends EqaAdminController {
 	public function addForGroupOrCohort(): void
@@ -560,6 +561,51 @@ class ClassesController extends EqaAdminController {
             }
         }
     }
+
+	public function downloadPam():void
+	{
+		try
+		{
+			//Check token
+			$this->checkToken();
+
+			//Get class ids from request
+			$classIds = $this->input->post->get('cid',[],'array');
+			$classIds = array_filter($classIds,'intval');
+			if(empty($classIds))
+				throw new Exception('No class ID found');
+
+
+			//Load model
+			$model = $this->getModel();
+
+			//Prepare a spreadsheet
+			$spreadsheet = new Spreadsheet();
+			$spreadsheet->removeSheetByIndex(0);
+			foreach ($classIds as $classId)
+			{
+				$classPam = $model->exportPams($classId);
+				$classObject = DatabaseHelper::getClassInfo($classId);
+				$sheet = $spreadsheet->createSheet();
+				$sheet->setTitle(IOHelper::sanitizeSheetTitle($classObject->code));
+				IOHelper::writeClassPam($sheet, $classObject, $classPam);
+			}
+
+			//Let user download file
+			if(count($classIds)==1)
+				$fileName = 'ĐQT-' . $classObject->name . '.xlsx';
+			else
+				$fileName = 'Điểm quá trình.xlsx';
+			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+			jexit();
+		}
+		catch(Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=classes',false));
+			return;
+		}
+	}
 }
 
 class Creditclass{

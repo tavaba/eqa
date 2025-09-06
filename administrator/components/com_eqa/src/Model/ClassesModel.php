@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class ClassesModel extends EqaListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -17,7 +18,7 @@ class ClassesModel extends EqaListModel{
     }
     public function getListQuery()
     {
-        $db = $this->getDatabase();
+        $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
             array('a.id','a.coursegroup','a.code','a.name',  'a.lecturer_id',  'b.code',   'a.term', 'a.size', 'a.npam', 'a.description'),
             array('id',    'coursegroup', 'code',    'name', 'lecturer_id',  'academicyear', 'term',   'size', 'npam',   'description')
@@ -25,6 +26,7 @@ class ClassesModel extends EqaListModel{
         $query =  $db->getQuery(true);
         $query->from('#__eqa_classes AS a')
             ->leftJoin('#__eqa_academicyears AS b','a.academicyear_id = b.id')
+	        ->leftJoin('#__eqa_subjects AS c', 'c.id=a.subject_id')
             ->select($columns);
 
         //Filtering
@@ -33,6 +35,11 @@ class ClassesModel extends EqaListModel{
             $like = $db->quote('%'.$search.'%');
             $query->where('(a.name LIKE ' . $like . 'OR a.code LIKE ' . $like . ')');
         }
+
+		$unitId = $this->getState('filter.unit_id');
+	    if(is_numeric($unitId)){
+		    $query->where('c.unit_id = '.(int)$unitId);
+	    }
 
         $subject_id = $this->getState('filter.subject_id');
         if(is_numeric($subject_id)){

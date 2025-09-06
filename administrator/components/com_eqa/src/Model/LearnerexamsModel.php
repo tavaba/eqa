@@ -61,6 +61,7 @@ class LearnerexamsModel extends ListModel {
 	        ->leftJoin('#__eqa_stimulations AS d', 'd.id=a.stimulation_id')
 	        ->leftJoin('#__eqa_examseasons AS e', 'e.id=b.examseason_id')
 	        ->leftJoin('#__eqa_academicyears AS f', 'f.id=e.academicyear_id')
+	        ->leftJoin('#__eqa_classes AS g', 'g.id=a.class_id')
             ->where('a.learner_id = ' . $learnerId);
 
 	    //Ordering
@@ -83,9 +84,13 @@ class LearnerexamsModel extends ListModel {
 			$query->where('`b`.`examseason_id`='.(int)$examseasonId);
 	    }
 
-		$academicyearId = $this->getState('filter.academicyear_id');
-		if(is_numeric($academicyearId))
-			$query->where('`e`.`academicyear_id`='.(int)$academicyearId);
+	    $subjectId = $this->getState('filter.subject_id');
+	    if(is_numeric($subjectId))
+		    $query->where('g.subject_id='.(int)$subjectId);
+
+	    $academicyearId = $this->getState('filter.academicyear_id');
+	    if(is_numeric($academicyearId))
+		    $query->where('`e`.`academicyear_id`='.(int)$academicyearId);
 
 	    $term = $this->getState('filter.term');
 	    if(is_numeric($term))

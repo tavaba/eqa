@@ -1829,8 +1829,8 @@ class ExamModel extends EqaAdminModel{
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('a.code', 'b.code',       'b.lastname', 'b.firstname', 'd.code', 'c.pam1', 'c.pam2', 'c.pam', 'e.type',           'a.anomaly', 'a.mark_final', 'a.module_mark', 'a.module_grade', 'c.description'),
-			array('code',   'learner_code', 'lastname',   'firstname',   'group',  'pam1',   'pam2',   'pam',   'stimulation_type', 'anomaly',   'mark_final',   'module_mark',   'module_grade',   'description')
+			array('a.code', 'b.code',       'b.lastname', 'b.firstname', 'd.code', 'c.pam1', 'c.pam2', 'c.pam', 'e.type',           'a.attempt', 'a.anomaly', 'a.mark_final', 'a.module_mark', 'a.module_grade', 'c.description'),
+			array('code',   'learner_code', 'lastname',   'firstname',   'group',  'pam1',   'pam2',   'pam',   'stimulation_type', 'attempt',   'anomaly',   'mark_final',   'module_mark',   'module_grade',   'description')
 		);
 		$query = $db->getQuery(true)
 			->select($columns)

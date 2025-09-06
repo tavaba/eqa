@@ -63,6 +63,7 @@ class HtmlView extends EqaItemsHtmlView
         parent::addToolbarForLayoutDefault();
 		ToolbarHelper::appenddButton('core.create', 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
         $url = \JRoute::_('index.php?option=com_eqa&view=classes&layout=uploadpam',false);
+		ToolbarHelper::appenddButton('core.manage','download','Điểm QT','classes.downloadPam',true);
         ToolbarHelper::appendLink('core.edit', $url,'COM_EQA_IMPORT_PAM', 'bars');
     }
 

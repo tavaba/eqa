@@ -246,10 +246,9 @@ class ClassModel extends EqaAdminModel {
 			if($setPamDateToday && $npam==$classSize)
 			{
 				$now = DatetimeHelper::getCurrentHanoiDatetime();
-				$today = DatetimeHelper::getFullDate($now);
 				$query = $db->getQuery(true)
 					->update('#__eqa_classes')
-					->set($db->quoteName('pamdate') . '=' . $db->quote($today))
+					->set($db->quoteName('pamdate') . '=' . $db->quote($now))
 					->where('id = '.$classId);
 				$db->setQuery($query);
 				if(!$db->execute())
@@ -264,6 +263,30 @@ class ClassModel extends EqaAdminModel {
 			$db->transactionRollback();
 			throw $e;
 		}
+	}
+
+	public function exportPams(int $classId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			$db->quoteName('b.code'),
+			$db->quoteName('b.lastname'),
+			$db->quoteName('b.firstname'),
+			$db->quoteName('c.code')            . ' AS ' . $db->quoteName('group'),
+			$db->quoteName('a.pam1'),
+			$db->quoteName('a.pam2'),
+			$db->quoteName('a.pam'),
+			$db->quoteName('a.description'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'a.learner_id=b.id')
+			->leftJoin('#__eqa_groups AS c', 'c.id=b.group_id')
+			->where('a.class_id = '.$classId)
+			->order('b.firstname ASC, b.lastname ASC');
+		$db->setQuery($query);
+		return $db->loadObjectList();
 	}
     public function addLearners(int $classId, array $learnerCodes): void
     {

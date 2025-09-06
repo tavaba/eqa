@@ -55,12 +55,22 @@ abstract class DatabaseHelper
     static public function getClassInfo($id){
         if(empty($id))
             return  null;
+		$id = (int)$id;
 
         $db = self::getDatabaseDriver();
+		$subqueryCountAllowed = "SELECT COUNT(1) FROM #__eqa_class_learner WHERE class_id=$id AND allowed=1";
+		$columns = $db->quoteName(
+			array('a.id', 'a.code', 'a.name', 'b.code',     'b.name',      'e.name', 'b.credits', 'a.term', 'd.code',       'a.size', 'lecturer_id'),
+			array('id',   'code',   'name',   'subjectCode','subjectName', 'unit',   'credits',   'term',   'academicyear', 'size',  'lecturerId')
+		);
         $query = $db->getQuery(true)
-            ->from('#__eqa_classes')
-            ->select('*')
-            ->where('id = '. (int)$id);
+            ->from('#__eqa_classes AS a')
+	        ->leftJoin('#__eqa_subjects AS b','b.id=a.subject_id')
+	        ->leftJoin('#__eqa_academicyears AS d', 'd.id=a.academicyear_id')
+	        ->leftJoin('#__eqa_units AS e', 'e.id=b.unit_id')
+            ->select($columns)
+	        ->select('('.$subqueryCountAllowed.') AS countAllowed')
+            ->where('a.id = '. (int)$id);
         $db->setQuery($query);
         return $db->loadObject();
     }
