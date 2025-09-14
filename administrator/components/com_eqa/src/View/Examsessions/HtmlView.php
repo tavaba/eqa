@@ -79,10 +79,10 @@ class HtmlView extends EqaItemsHtmlView {
     {
         ToolbarHelper::title($this->toolbarOption->title);
         ToolbarHelper::appendGoHome();
-        ToolbarHelper::appenddButton('core.manage','arrow-up-2','COM_EQA_EXAMSEASON','examseason.cancel',false);
-        ToolbarHelper::appenddButton('core.manage','arrow-up-2','COM_EQA_EXAM','exam.cancel',false);
-        ToolbarHelper::appenddButton('core.create','plus-2','COM_EQA_BUTTON_ADD','examsession.add',false,'btn btn-success');
-        ToolbarHelper::appenddButton('core.create','plus-circle','COM_EQA_BUTTON_ADD_BATCH','examsession.addbatch',false,'btn btn-success');
+        ToolbarHelper::appendButton('core.manage','arrow-up-2','COM_EQA_EXAMSEASON','examseason.cancel',false);
+        ToolbarHelper::appendButton('core.manage','arrow-up-2','COM_EQA_EXAM','exam.cancel',false);
+        ToolbarHelper::appendButton('core.create','plus-2','COM_EQA_BUTTON_ADD','examsession.add',false,'btn btn-success');
+        ToolbarHelper::appendButton('core.create','plus-circle','COM_EQA_BUTTON_ADD_BATCH','examsession.addbatch',false,'btn btn-success');
         ToolbarHelper::appendDelete('examsessions.delete');
     }
 }

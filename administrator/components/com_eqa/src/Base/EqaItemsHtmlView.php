@@ -15,6 +15,7 @@ abstract class EqaItemsHtmlView extends BaseHtmlView{
     protected EqaListLayoutData $layoutData;
     protected EqaListLayoutItemFields $itemFields;
     protected EqaToolbarOption $toolbarOption;
+	protected object|null $item;
 	protected Form $form;
     public function __construct($config = [])
     {

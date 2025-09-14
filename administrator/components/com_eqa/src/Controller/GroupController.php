@@ -4,6 +4,7 @@ use Exception;
 use Joomla\CMS\Response\JsonResponse;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Model\GroupModel;
 
 defined('_JEXEC') or die();
 
@@ -15,13 +16,17 @@ class GroupController extends  EqaFormController {
 			if (empty($groupId))
 				throw new Exception('Không xác định được lớp học');
 			$this->app->setHeader('Content-Type', 'application/json');
+
+			/**
+			 * @var GroupModel $model
+			 */
 			$model = $this->getModel();
-			$learners = $model->getLearners($groupId);
-			if(empty($learners))
+			$groupLearners = $model->getLearners($groupId);
+			if(empty($groupLearners))
 				throw new Exception('Không có HVSV nào trong lớp này');
 
 			$data = [];
-			foreach ($learners as $item) {
+			foreach ($groupLearners as $item) {
 				$data[] = [
 					'value'=>$item->id,
 					'name'=>$item->code . ' - ' . $item->lastname.' '.$item->firstname

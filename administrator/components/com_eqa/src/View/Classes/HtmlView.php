@@ -61,9 +61,9 @@ class HtmlView extends EqaItemsHtmlView
     protected function addToolbarForLayoutDefault(): void
     {
         parent::addToolbarForLayoutDefault();
-		ToolbarHelper::appenddButton('core.create', 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
+		ToolbarHelper::appendButton('core.create', 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
         $url = \JRoute::_('index.php?option=com_eqa&view=classes&layout=uploadpam',false);
-		ToolbarHelper::appenddButton('core.manage','download','Điểm QT','classes.downloadPam',true);
+		ToolbarHelper::appendButton('core.manage','download','Điểm QT','classes.downloadPam',true);
         ToolbarHelper::appendLink('core.edit', $url,'COM_EQA_IMPORT_PAM', 'bars');
     }
 
@@ -84,7 +84,7 @@ class HtmlView extends EqaItemsHtmlView
 	}
 	protected function addToolbarForLayoutUploadpam(): void
     {
-        ToolbarHelper::appenddButton('core.edit','save','COM_EQA_IMPORT_PAM','classes.importPam',false,null,true);
+        ToolbarHelper::appendButton('core.edit','save','COM_EQA_IMPORT_PAM','classes.importPam',false,null,true);
         ToolbarHelper::cancel('class.cancel');
     }
 }

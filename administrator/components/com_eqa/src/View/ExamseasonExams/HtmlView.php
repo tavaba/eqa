@@ -1,14 +1,16 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\View\Exams;    //The namespace must end with the VIEW NAME.
+namespace Kma\Component\Eqa\Administrator\View\ExamseasonExams;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
 
 class HtmlView extends EqaItemsHtmlView
 {
@@ -37,23 +39,30 @@ class HtmlView extends EqaItemsHtmlView
 
     public function prepareDataForLayoutDefault(): void
     {
+		//Determin the examseason id
+	    $examseasonId = Factory::getApplication()->input->getInt('examseason_id');
+		if(empty($examseasonId))
+			die('Không xác định được kỳ thi');
+
+	    /**
+	     * Load the examseason item
+	     * @var ExamseasonModel $itemModel
+	     **/
+	    $mvcFactory = GeneralHelper::getMVCFactory();
+		$itemModel = $mvcFactory->createModel('Examseason');
+		$this->item = $itemModel->getItem($examseasonId);
+
+	    /**
+	     * Prepare the list model by setting state filter for the examseason id
+	     */
+		$listModel = $this->getModel();   //Get the list model of this view
+	    $listModel->setState('filter.examseason_id',$examseasonId);
+
         //Call parent prepare
         parent::prepareDataForLayoutDefault();
 
-        //Load additional data
-        $model = $this->getModel();
-        $examseasonId = $model->getState('filter.examseason_id');
-		if(is_numeric($examseasonId))
-            $this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);    //Maybe null
-	    else
-			$this->examseason = null;
-        if(!empty($this->examseason)) {
-            $this->layoutData->formHiddenFields['examseason_id'] = $this->examseason->id;  //Được sử dụng trong trường hợp người dùng chọn 'Thêm môn thi từ lớp học phần'
-        }
-
         //Layout data preprocessing
         if(!empty($this->layoutData->items)){
-            $examIds = array_map(function ($item){return $item->id;},$this->layoutData->items);
             foreach ($this->layoutData->items as $item) {
                 //1. Testtype code --> Testtype string
                 $item->testtype = ExamHelper::getTestType($item->testtype);
@@ -73,13 +82,28 @@ class HtmlView extends EqaItemsHtmlView
             }
         }
 
+		//Setup form hidden field to keep the examseason id
+	    $this->layoutData->formHiddenFields = ['examseason_id' => $examseasonId];
+
     }
     public function addToolbarForLayoutDefault(): void
     {
-        ToolbarHelper::title($this->toolbarOption->title);
+        ToolbarHelper::title('Danh sách môn thi của kỳ thi');
         ToolbarHelper::appendGoHome();
         ToolbarHelper::appendButton(null,'arrow-up-2','COM_EQA_EXAMSEASON','examseason.cancel',false);
+        ToolbarHelper::appendDelete('exams.delete');
+        ToolbarHelper::appendButton('core.create','plus-2','COM_EQA_BUTTON_ADD_MANUALLY','exam.add',false,'btn btn-success');
+	    ToolbarHelper::appendButton('core.create','plus-circle','Thêm theo môn học','examseason.addExams',false, 'btn btn-success');
+		$msg = 'Hãy kiểm tra lại, đảm bảo đã chọn đúng Kỳ thi! Nếu thêm vào nhầm kỳ thi, sẽ tốn
+		rất nhiều thời gian để xóa các môn thi';
+	    ToolbarHelper::appendConfirmButton('core.create', $msg,'plus-circle','Thêm theo lớp học phần','examseason.addExamsForClasses',false, 'btn btn-success');
+		$msg = 'Hãy đọc kỹ phần hướng dẫn trước khi thực hiện chức năng này: 
+		(1)Bạn cần phải tải danh sách môn thi và thí sinh trước khi thực hiện chức năng này 
+		(2)Hãy kiểm tra lại một lần nữa, đảm bảo là đã chọn đúng Kỳ thi, nếu chọn nhầm thì xóa rất lâu.
+		Do phải rà soát toàn CSDL nên thời gian thực hiện có thể tốn vài phút.';
+	    ToolbarHelper::appendConfirmButton('core.create',$msg,'plus-circle','Thêm môn thi lại','examseason.addRetakeExams',false, 'btn btn-danger');
 		ToolbarHelper::appendButton(null,'download','Danh sách thi','exams.export',true);
+		ToolbarHelper::appendButton('core.edit','loop','Trạng thái', 'exams.recheckStatus',true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm SV', 'exams.exportResultForLearners', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 1)', 'exams.exportResultForEms', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 2)', 'exams.exportResultForEms2', true);

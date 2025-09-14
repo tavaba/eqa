@@ -102,11 +102,11 @@ class HtmlView extends EqaItemHtmlView {
 	{
 		ToolbarHelper::title($this->toolbarOption->title);
 		ToolbarHelper::appendGoHome();
-		ToolbarHelper::appenddButton(null,'arrow-up-2','COM_EQA_EXAMSESSION','examsession.cancel');
-		ToolbarHelper::appenddButton(null,'arrow-up-2','COM_EQA_EXAM','exam.cancel');
-		ToolbarHelper::appenddButton(null,'arrow-up-2','COM_EQA_EXAMROOM','examroom.cancel');
-		ToolbarHelper::appenddButton('core.edit', 'plus-circle','COM_EQA_ADD_EXAMINEES','examroom.addExaminees',false,'btn btn-success');
-		ToolbarHelper::appenddButton('core.edit','shuffle','COM_EQA_CHANGE_EXAMROOM', 'examroom.change',true);
+		ToolbarHelper::appendButton(null,'arrow-up-2','COM_EQA_EXAMSESSION','examsession.cancel');
+		ToolbarHelper::appendButton(null,'arrow-up-2','COM_EQA_EXAM','exam.cancel');
+		ToolbarHelper::appendButton(null,'arrow-up-2','COM_EQA_EXAMROOM','examroom.cancel');
+		ToolbarHelper::appendButton('core.edit', 'plus-circle','COM_EQA_ADD_EXAMINEES','examroom.addExaminees',false,'btn btn-success');
+		ToolbarHelper::appendButton('core.edit','shuffle','COM_EQA_CHANGE_EXAMROOM', 'examroom.change',true);
 		ToolbarHelper::appendDelete('examroom.removeExaminees','COM_EQA_REMOVE_FROM_EXAMROOM','COM_EQA_MSG_CONFIRM_REMOVE_FROM_EXAMROOM');
 	}
     protected function prepareDataForLayoutAddexaminees(): void
@@ -132,7 +132,7 @@ class HtmlView extends EqaItemHtmlView {
     protected function addToolbarForLayoutAddexaminees() : void
     {
         ToolbarHelper::title($this->toolbarOption->title);
-        ToolbarHelper::appenddButton('core.edit','save','JTOOLBAR_SAVE','examroom.addExaminees');
+        ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','examroom.addExaminees');
         $url = JRoute::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$this->examroom->id,false);
         ToolbarHelper::appendLink(null,$url, 'JTOOLBAR_CANCEL', 'delete','btn btn-danger');
     }
@@ -152,8 +152,8 @@ class HtmlView extends EqaItemHtmlView {
 	protected function addToolbarForLayoutAnomaly() : void
 	{
 		ToolbarHelper::title('Thông tin bất thường phòng thi');
-		ToolbarHelper::appenddButton('core.edit','save','JTOOLBAR_APPLY','examroom.applyAnomaly');
-		ToolbarHelper::appenddButton('core.edit','save','JTOOLBAR_SAVE','examroom.saveAnomaly');
+		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_APPLY','examroom.applyAnomaly');
+		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','examroom.saveAnomaly');
 		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa&view=examrooms',false));
 	}
 }

@@ -73,9 +73,9 @@ class HtmlView extends EqaItemsHtmlView
     {
         ToolbarHelper::title($this->toolbarOption->title);
 	    ToolbarHelper::appendGoHome();
-	    ToolbarHelper::appenddButton('core.manage','users','Phân công chấm thi', 'paperexam.editExaminers',true);
-	    ToolbarHelper::appenddButton('core.manage','download','Tải sơ đồ phách', 'paperexam.exportMaskMap',true);
-	    ToolbarHelper::appenddButton('core.manage','download','Tải phiếu chấm thi theo số phách', 'paperexam.exportMarkingSheet',true);
+	    ToolbarHelper::appendButton('core.manage','users','Phân công chấm thi', 'paperexam.editExaminers',true);
+	    ToolbarHelper::appendButton('core.manage','download','Tải sơ đồ phách', 'paperexam.exportMaskMap',true);
+	    ToolbarHelper::appendButton('core.manage','download','Tải phiếu chấm thi theo số phách', 'paperexam.exportMarkingSheet',true);
     }
 
 	public function prepareDataForLayoutUploadmarkbymask(): void
@@ -85,7 +85,7 @@ class HtmlView extends EqaItemsHtmlView
 	public function addToolbarForLayoutUploadmarkbymask(): void
 	{
 		ToolbarHelper::title('Nhập điểm chấm thi viết theo số phách');
-		ToolbarHelper::appenddButton('core.edit','save','JTOOLBAR_SAVE','paperexams.uploadMarkByMask',false,null,true);
+		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','paperexams.uploadMarkByMask',false,null,true);
 		$cancelUrl = \JRoute::_('index.php?option=com_eqa',false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}

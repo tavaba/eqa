@@ -10,6 +10,8 @@ use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
+use Kma\Component\Eqa\Administrator\Model\ExamseasonsModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ExamseasonsController extends EqaAdminController
@@ -232,16 +234,19 @@ class ExamseasonsController extends EqaAdminController
 	{
 		try
 		{
-			//Get failed examinees
-			$model = $this->getModel('examseason');
-			$failedExaminees = $model->getUnpassedExaminees();
-			if(empty($failedExaminees))
+			/**
+			 * Get unpassed (failed or deferred) examinees
+			 * @var ExamseasonsModel $model
+			 */
+			$model = $this->getModel('Examseasons');
+			$unpassedExaminees = $model->getUnpassedExaminees();
+			if(empty($unpassedExaminees))
 				throw new Exception('Không có thí sinh thi lại, bảo lưu');
 
 			//Write to Excel file
 			$spreadsheet = new Spreadsheet();
 			$spreadsheet->removeSheetByIndex(0);
-			IOHelper::writeUnpassedExaminees($spreadsheet, $failedExaminees);
+			IOHelper::writeUnpassedExaminees($spreadsheet, $unpassedExaminees);
 
 			//Let user download the file
 			$fileName = 'Danh sách thí sinh thi lại, bảo lưu.xlsx';

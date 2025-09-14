@@ -100,10 +100,10 @@ class HtmlView extends EqaItemsHtmlView {
 
 		// Add buttons to the toolbar
 		ToolbarHelper::appendGoHome();
-		ToolbarHelper::appenddButton('core.manage', 'checkmark-circle', 'Chấp nhận','gradecorrection.accept',true,'btn btn-success');
-		ToolbarHelper::appenddButton('core.manage', 'cancel-circle', 'Từ chối','gradecorrection.reject',true,'btn btn-danger');
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Phiếu xử lý','gradecorrection.downloadReviewForm',true);
-		ToolbarHelper::appenddButton('core.manage', 'edit', 'Xử lý','gradecorrection.correct',true);
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Tổng hợp','gradecorrections.download');
+		ToolbarHelper::appendButton('core.manage', 'checkmark-circle', 'Chấp nhận','gradecorrection.accept',true,'btn btn-success');
+		ToolbarHelper::appendButton('core.manage', 'cancel-circle', 'Từ chối','gradecorrection.reject',true,'btn btn-danger');
+		ToolbarHelper::appendButton('core.manage', 'download', 'Phiếu xử lý','gradecorrection.downloadReviewForm',true);
+		ToolbarHelper::appendButton('core.manage', 'edit', 'Xử lý','gradecorrection.correct',true);
+		ToolbarHelper::appendButton('core.manage', 'download', 'Tổng hợp','gradecorrections.download');
 	}
 }

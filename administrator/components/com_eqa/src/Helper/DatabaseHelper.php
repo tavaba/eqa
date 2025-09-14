@@ -17,10 +17,6 @@ abstract class DatabaseHelper
      * @return DatabaseDriver
      * @since 1.0
      */
-    static public function getDatabaseDriver_bak(): DatabaseDriver
-    {
-        return Factory::getContainer()->get('DatabaseDriver');
-    }
 	static public function getDatabaseDriver(): DatabaseDriver
 	{
 		return Factory::getContainer()->get(DatabaseDriver::class);
@@ -115,8 +111,8 @@ abstract class DatabaseHelper
 
 		$db = self::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('a.id', 'd.code', 'd.credits', 'a.name', 'a.testtype', 'a.usetestbank', 'a.duration', 'b.name',  'b.term',  'c.code', 'a.status'),
-			array('id',   'code',   'credits',   'name',   'testtype',   'usetestbank',   'duration', 'examseason', 'term', 'academicyear', 'status')
+			array('a.id', 'd.code', 'd.credits', 'a.name', 'a.testtype', 'a.usetestbank', 'a.duration','a.examseason_id', 'b.name',  'b.term',  'c.code', 'a.status'),
+			array('id',   'code',   'credits',   'name',   'testtype',   'usetestbank',   'duration',  'examseasonId', 'examseason', 'term', 'academicyear', 'status')
 		);
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -136,6 +132,7 @@ abstract class DatabaseHelper
 		$exam->testtype = $obj->testtype;
 		$exam->useTestBank = $obj->usetestbank;
 		$exam->duration = $obj->duration;
+		$exam->examseasonId = $obj->examseasonId;
 		$exam->examseason = $obj->examseason;
 		$exam->term = $obj->term;
 		$exam->academicyear = $obj->academicyear;

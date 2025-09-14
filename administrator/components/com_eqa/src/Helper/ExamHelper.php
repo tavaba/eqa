@@ -63,7 +63,7 @@ abstract class ExamHelper{
 	public const CONCLUSION_PASSED = 10;            //Qua môn, hết lượt thi
 	public const CONCLUSION_FAILED = 20;            //Không qua môn, thi lại
 	public const CONCLUSION_FAILED_EXPIRED = 21;    //Không qua môn, hết lượt thi
-	public const CONCLUSION_RESERVED = 30;          //Bảo lưu lượt thi
+	public const CONCLUSION_DEFERRED = 30;          //Bảo lưu lượt thi
 
 	public const SECOND_ATTEMPT_LIMIT_NONE = 0;
 	public const SECOND_ATTEMPT_LIMIT_EXAM = 1;
@@ -369,7 +369,7 @@ abstract class ExamHelper{
 			self::CONCLUSION_PASSED => 'Đạt',
 			self::CONCLUSION_FAILED => 'Không đạt',
 			self::CONCLUSION_FAILED_EXPIRED => 'Học lại',
-			self::CONCLUSION_RESERVED => 'Bảo lưu'
+			self::CONCLUSION_DEFERRED => 'Bảo lưu'
 		};
 	}
 	static public function getConclusions()
@@ -379,7 +379,7 @@ abstract class ExamHelper{
 		$conclusions[self::CONCLUSION_PASSED] = self::getConclusion(self::CONCLUSION_PASSED);
 		$conclusions[self::CONCLUSION_FAILED] = self::getConclusion(self::CONCLUSION_FAILED);
 		$conclusions[self::CONCLUSION_FAILED_EXPIRED] = self::getConclusion(self::CONCLUSION_FAILED_EXPIRED);
-		$conclusions[self::CONCLUSION_RESERVED] = self::getConclusion(self::CONCLUSION_RESERVED);
+		$conclusions[self::CONCLUSION_DEFERRED] = self::getConclusion(self::CONCLUSION_DEFERRED);
 		return $conclusions;
 	}
 
@@ -544,7 +544,7 @@ abstract class ExamHelper{
 	}
 	static public function calculateModuleGrade(float $moduleMark, int $conclusion)
 	{
-		if($conclusion == ExamHelper::CONCLUSION_RESERVED)
+		if($conclusion == ExamHelper::CONCLUSION_DEFERRED)
 			return 'I';
 		if($conclusion == self::CONCLUSION_FAILED || $conclusion == self::CONCLUSION_FAILED_EXPIRED)
 			return 'F';
@@ -589,7 +589,7 @@ abstract class ExamHelper{
 			return self::CONCLUSION_FAILED_EXPIRED;
 
 		if($anomaly == self::EXAM_ANOMALY_DELAY || $anomaly == self::EXAM_ANOMALY_REDO)
-			return self::CONCLUSION_RESERVED;
+			return self::CONCLUSION_DEFERRED;
 
 		//TODO: Tính toán ngưỡng khác nhau cho Đại học và Cao học
 		//      Đưa ngưỡng điểm tổng vào cấu hình

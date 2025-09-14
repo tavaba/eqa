@@ -1,5 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
+use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
@@ -7,8 +8,6 @@ use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
-use ZipStream\Exception;
 
 defined('_JEXEC') or die();
 
@@ -18,6 +17,24 @@ class ExamseasonModel extends EqaAdminModel{
 		if(empty($table->ppaa_req_deadline))
 			$table->ppaa_req_deadline = null;
 		parent::prepareTable($table);
+	}
+
+	public function getExamCount(int $examseasonId):int
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from('#__eqa_exams')
+			->where('examseason_id='.$examseasonId);
+		$db->setQuery($query);
+		return $db->loadResult();
+	}
+
+	public function getExamForSubject(int $examseasonId, int $subjectId): object|null
+	{
+		$db = $this->getDatabase();
+		$db->setQuery("SELECT * FROM #__eqa_exams WHERE examseason_id={$examseasonId} AND subject_id={$subjectId} LIMIT 1");
+		return $db->loadObject();
 	}
 
 	public function getSubjectIdsByExamseasonId(int $examseason_id)
@@ -128,7 +145,6 @@ class ExamseasonModel extends EqaAdminModel{
             $app->enqueueMessage($msg,'error');
         }
     }
-
 	public function addRetakeExams($examseasonId)
 	{
 		$app = Factory::getApplication();
@@ -523,53 +539,6 @@ class ExamseasonModel extends EqaAdminModel{
 
 		//Return
 		return $entries;
-	}
-
-	public function getUnpassedExaminees()
-	{
-		$db = DatabaseHelper::getDatabaseDriver();
-		$columns = [
-			$db->quoteName('c.id')              . ' AS ' . $db->quoteName('id'),
-			$db->quoteName('c.code')            . ' AS ' . $db->quoteName('code'),
-			$db->quoteName('c.lastname')        . ' AS ' . $db->quoteName('lastname'),
-			$db->quoteName('c.firstname')       . ' AS ' . $db->quoteName('firstname'),
-			$db->quoteName('e.id')              . ' AS ' . $db->quoteName('subject_id'),
-			$db->quoteName('e.code')            . ' AS ' . $db->quoteName('subject_code'),
-			$db->quoteName('e.name')            . ' AS ' . $db->quoteName('subject_name'),
-			$db->quoteName('d.term')            . ' AS ' . $db->quoteName('term'),
-			$db->quoteName('f.code')            . ' AS ' . $db->quoteName('academicyear'),
-			$db->quoteName('a.exam_id')         . ' AS ' . $db->quoteName('exam_id'),
-			$db->quoteName('b.ntaken')          . ' AS ' . $db->quoteName('ntaken'),
-			$db->quoteName('a.conclusion')      . ' AS ' . $db->quoteName('conclusion'),
-		];
-
-		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
-			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
-			->leftJoin('#__eqa_classes AS d', 'd.id=a.class_id')
-			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id')
-			->leftJoin('#__eqa_academicyears AS f', 'f.id=d.academicyear_id')
-			->where('a.conclusion IN (' . implode(',', [ExamHelper::CONCLUSION_FAILED, ExamHelper::CONCLUSION_RESERVED]) . ')')
-			->where('b.expired=0')
-			// Add condition to keep only records with maximum exam_id per (code, subject_id)
-			// (maximum exam_id means last exam for given subject)
-			->where('a.exam_id = (
-            SELECT MAX(a2.exam_id) 
-            FROM #__eqa_exam_learner AS a2
-            LEFT JOIN #__eqa_class_learner AS b2 ON b2.class_id=a2.class_id AND b2.learner_id=a2.learner_id
-            LEFT JOIN #__eqa_learners AS c2 ON c2.id=a2.learner_id
-            LEFT JOIN #__eqa_classes AS d2 ON d2.id=a2.class_id
-            LEFT JOIN #__eqa_subjects AS e2 ON e2.id=d2.subject_id
-            WHERE c2.code = c.code 
-            AND e2.id = e.id
-            AND a2.conclusion IN (' . implode(',', [ExamHelper::CONCLUSION_FAILED, ExamHelper::CONCLUSION_RESERVED]) . ')
-            AND b2.expired=0
-        )');
-
-		$db->setQuery($query);
-		return $db->loadAssocList();
 	}
 
 	/**

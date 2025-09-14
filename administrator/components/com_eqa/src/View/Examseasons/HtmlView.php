@@ -26,7 +26,7 @@ class HtmlView extends EqaItemsHtmlView
         $option->customFieldset1[] = new EqaListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT', false, false, 'text-center');
         $option->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'COM_EQA_EXAMSEASON_NAME', false, true);
         $field = new EqaListLayoutItemFieldOption('nexam', 'COM_EQA_EXAM',true,false,'text-center');
-        $field->urlFormatString = 'index.php?option=com_eqa&view=exams&filter[examseason_id]=%d';
+        $field->urlFormatString = 'index.php?option=com_eqa&view=examseasonexams&examseason_id=%d';
         $option->customFieldset1[] = $field;
         $field = new EqaListLayoutItemFieldOption('nexamsession', 'COM_EQA_EXAMSESSION',true,false,'text-center');
         $field->urlFormatString = 'index.php?option=com_eqa&view=examsessions&filter[examseason_id]=%d';
@@ -83,17 +83,17 @@ class HtmlView extends EqaItemsHtmlView
     protected function addToolbarForLayoutDefault(): void
     {
         parent::addToolbarForLayoutDefault();
-	    ToolbarHelper::appenddButton('core.edit.state','unlock','Mở phúc khảo','examseason.enablePpaaReq',true,'btn btn-success');
-	    ToolbarHelper::appenddButton('core.edit.state','lock','Đóng phúc khảo','examseason.disablePpaaReq',true,'btn btn-danger');
+	    ToolbarHelper::appendButton('core.edit.state','unlock','Mở phúc khảo','examseason.enablePpaaReq',true,'btn btn-success');
+	    ToolbarHelper::appendButton('core.edit.state','lock','Đóng phúc khảo','examseason.disablePpaaReq',true,'btn btn-danger');
         ToolbarHelper::appendConfirmButton('core.edit.state','COM_EQA_MSG_CONFIRM_COMPLETE_EXAMSEASON','lock','Kết thúc đợt thi','examseasons.complete',true,'btn btn-danger');
-	    ToolbarHelper::appenddButton('core.edit.state', 'unlock','Mở (lại) đợt thi','examseasons.undoComplete',true, 'btn btn-success');
-	    ToolbarHelper::appenddButton('core.manage', 'download','DS thí sinh','examseason.exportExaminees',true);
-	    ToolbarHelper::appenddButton('core.manage', 'download','DS cấm thi','examseason.exportIneligibleEntries',true);
-	    ToolbarHelper::appenddButton('core.manage', 'download','DS kỷ luật','examseason.exportSanctions',true);
-	    ToolbarHelper::appenddButton('core.manage','download','Bảng điểm tổng hợp', 'examseason.exportLearnerMarks',true);
-	    ToolbarHelper::appenddButton('core.manage','download','Sản lượng', 'examseasons.exportProduction',true);
-	    ToolbarHelper::appenddButton('core.manage','download','Phổ điểm','examseasons.exportMarkStatistic',true);
-	    ToolbarHelper::appenddButton('core.manage','download','Báo cáo','examseasons.exportStatistic',true);
+	    ToolbarHelper::appendButton('core.edit.state', 'unlock','Mở (lại) đợt thi','examseasons.undoComplete',true, 'btn btn-success');
+	    ToolbarHelper::appendButton('core.manage', 'download','DS thí sinh','examseason.exportExaminees',true);
+	    ToolbarHelper::appendButton('core.manage', 'download','DS cấm thi','examseason.exportIneligibleEntries',true);
+	    ToolbarHelper::appendButton('core.manage', 'download','DS kỷ luật','examseason.exportSanctions',true);
+	    ToolbarHelper::appendButton('core.manage','download','Bảng điểm tổng hợp', 'examseason.exportLearnerMarks',true);
+	    ToolbarHelper::appendButton('core.manage','download','Sản lượng', 'examseasons.exportProduction',true);
+	    ToolbarHelper::appendButton('core.manage','download','Phổ điểm','examseasons.exportMarkStatistic',true);
+	    ToolbarHelper::appendButton('core.manage','download','Báo cáo','examseasons.exportStatistic',true);
     }
 
 }

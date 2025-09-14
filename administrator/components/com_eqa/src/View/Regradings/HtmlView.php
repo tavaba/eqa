@@ -69,13 +69,13 @@ class HtmlView extends EqaItemsHtmlView {
 
 		// Add buttons to the toolbar
 		ToolbarHelper::appendGoHome();
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Bảng thu phí','regradings.downloadRegradingFee');
-		ToolbarHelper::appenddButton('core.manage', 'checkmark-circle', 'Chấp nhận','regradings.accept',true,'btn btn-success');
-		ToolbarHelper::appenddButton('core.manage', 'cancel-circle', 'Từ chối','regradings.reject',true,'btn btn-danger');
-		ToolbarHelper::appenddButton('core.manage', 'list', 'Phân công chấm','regradings.assignRegradingExaminers');
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Bài thi iTest','regradings.downloadHybridRegradings');
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Bài thi viết','regradings.downloadPaperRegradings');
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Phiếu chấm thi viết','regradings.downloadPaperRegradingSheets');
-		ToolbarHelper::appenddButton('core.manage', 'download', 'Tổng hợp','regradings.download');
+		ToolbarHelper::appendButton('core.manage', 'download', 'Bảng thu phí','regradings.downloadRegradingFee');
+		ToolbarHelper::appendButton('core.manage', 'checkmark-circle', 'Chấp nhận','regradings.accept',true,'btn btn-success');
+		ToolbarHelper::appendButton('core.manage', 'cancel-circle', 'Từ chối','regradings.reject',true,'btn btn-danger');
+		ToolbarHelper::appendButton('core.manage', 'list', 'Phân công chấm','regradings.assignRegradingExaminers');
+		ToolbarHelper::appendButton('core.manage', 'download', 'Bài thi iTest','regradings.downloadHybridRegradings');
+		ToolbarHelper::appendButton('core.manage', 'download', 'Bài thi viết','regradings.downloadPaperRegradings');
+		ToolbarHelper::appendButton('core.manage', 'download', 'Phiếu chấm thi viết','regradings.downloadPaperRegradingSheets');
+		ToolbarHelper::appendButton('core.manage', 'download', 'Tổng hợp','regradings.download');
 	}
 }

@@ -11,6 +11,7 @@ class ExamInfo extends ObjectInfo
 	public int|null $credits;
 	public string $academicyear;
 	public int $term;
+	public int $examseasonId;
 	public string $examseason;
 	public int $testtype;
 	public int|null $duration;

@@ -8,6 +8,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\ClassModel;
 
 defined('_JEXEC') or die();
 
@@ -377,9 +378,12 @@ class ClassController extends  EqaFormController
 			$app->close();
 		}
 
-		//Retrieve the list of students
+		/**
+		 * Retrieve the list of students
+		 * @var ClassModel $model
+		 */
 		$model = $this->getModel();
-		$students = $model->getClassLearners($classId);
+		$students = $model->getLearners($classId);
 		if (!$students || !count($students))
 			echo new JsonResponse([], 'No student found', true);
 		else

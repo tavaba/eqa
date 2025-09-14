@@ -15,7 +15,7 @@ class HtmlView extends EqaItemHtmlView {
     protected function addToolbarForLayoutAddbatch()
     {
         ToolbarHelper::title(Text::_('COM_EQA_MANAGER_EXAMSESSION_ADD_TITLE'));
-        ToolbarHelper::appenddButton('core.create','save','JTOOLBAR_SAVE','examsession.saveBatch',false,null,true);
+        ToolbarHelper::appendButton('core.create','save','JTOOLBAR_SAVE','examsession.saveBatch',false,null,true);
         ToolbarHelper::cancel('examsession.cancel');
     }
 }

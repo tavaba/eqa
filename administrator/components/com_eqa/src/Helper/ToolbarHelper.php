@@ -47,7 +47,7 @@ abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
         if(!empty($btnClass))
             $button->setOption('button_class', $btnClass);
     }
-    public static function appenddButton($requiredActions, string $icon, string $text, string $task, bool $listCheck=false, $btnClass=null, bool $formValidate=false):void
+    public static function appendButton($requiredActions, string $icon, string $text, string $task, bool $listCheck=false, $btnClass=null, bool $formValidate=false):void
     {
         if(!GeneralHelper::checkPermissions($requiredActions))
             return;

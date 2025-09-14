@@ -18,7 +18,7 @@ class HtmlView extends EqaItemHtmlView {
 	protected function addToolbarForLayoutMasking()
 	{
 		ToolbarHelper::title('Đánh số phách bài thi viết');
-		ToolbarHelper::appenddButton('core.edit','save','JTOOLBAR_SAVE','paperexam.mask',false,null,true);
+		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','paperexam.mask',false,null,true);
 		$url = \JRoute::_('index.php?option=com_eqa&view=paperexams',false);
 		ToolbarHelper::appendLink('core.manage',$url,'JTOOLBAR_CANCEL','delete','btn btn-danger');
 	}

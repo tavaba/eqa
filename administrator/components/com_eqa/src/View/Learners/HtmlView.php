@@ -65,8 +65,8 @@ class HtmlView extends EqaItemsHtmlView
 	protected function addToolbarForLayoutDefault(): void
 	{
 		parent::addToolbarForLayoutDefault();
-		ToolbarHelper::appenddButton('core.edit','smiley','COM_EQA_RESET_DEBT','learners.resetDebt',true,'btn btn-success');
-		ToolbarHelper::appenddButton('core.edit','smiley-sad','COM_EQA_SET_DEBT','learners.setDebt',true,'btn btn-danger');
+		ToolbarHelper::appendButton('core.edit','smiley','COM_EQA_RESET_DEBT','learners.resetDebt',true,'btn btn-success');
+		ToolbarHelper::appendButton('core.edit','smiley-sad','COM_EQA_SET_DEBT','learners.setDebt',true,'btn btn-danger');
 	}
 
 	protected function prepareDataForLayoutAdddebtors(): void
@@ -77,7 +77,7 @@ class HtmlView extends EqaItemsHtmlView
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_DEBTORS'));
 		ToolbarHelper::appendGoHome();
-		ToolbarHelper::appenddButton('core.edit','save','JTOOLBAR_SAVE','learners.addDebtors',false,null, true);
+		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','learners.addDebtors',false,null, true);
 		ToolbarHelper::cancel('learner.cancel');
 	}
 }

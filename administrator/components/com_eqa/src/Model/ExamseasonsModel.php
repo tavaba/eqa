@@ -4,6 +4,8 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 class ExamseasonsModel extends EqaListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -89,4 +91,62 @@ class ExamseasonsModel extends EqaListModel{
         $id .= ':' . $this->getState('filter.published');
         return parent::getStoreId($id);
     }
+
+	/**
+	 * Get a list of examinees who have failed exams and/ or deferred them.
+	 * The examinees must still retain their eligibility to take exams.
+	 * Search is performed on all exams in all exam seasons.
+	 *
+	 * @return array of stdClass objects
+	 *
+	 * @since 1.1.2
+	 */
+	public function getUnpassedExaminees(): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			$db->quoteName('c.id')              . ' AS ' . $db->quoteName('learnerId'),
+			$db->quoteName('c.code')            . ' AS ' . $db->quoteName('learnerCode'),
+			$db->quoteName('c.lastname')        . ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('c.firstname')       . ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('e.id')              . ' AS ' . $db->quoteName('subjectId'),
+			$db->quoteName('e.code')            . ' AS ' . $db->quoteName('subjectCode'),
+			$db->quoteName('e.name')            . ' AS ' . $db->quoteName('subjectName'),
+			$db->quoteName('d.term')            . ' AS ' . $db->quoteName('term'),
+			$db->quoteName('f.code')            . ' AS ' . $db->quoteName('academicyear'),
+			$db->quoteName('a.exam_id')         . ' AS ' . $db->quoteName('examId'),
+			$db->quoteName('a.class_id')        . ' AS ' . $db->quoteName('classId'),
+			$db->quoteName('b.ntaken')          . ' AS ' . $db->quoteName('ntaken'),
+			$db->quoteName('a.conclusion')      . ' AS ' . $db->quoteName('conclusion'),
+		];
+
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
+			->leftJoin('#__eqa_classes AS d', 'd.id=a.class_id')
+			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id')
+			->leftJoin('#__eqa_academicyears AS f', 'f.id=d.academicyear_id')
+			->where('a.conclusion IN (' . implode(',', [ExamHelper::CONCLUSION_FAILED, ExamHelper::CONCLUSION_DEFERRED]) . ')')
+			->where('b.expired=0')
+			// Add condition to keep only records with maximum exam_id per (code, subject_id)
+			// (maximum exam_id means last exam for given subject)
+			->where('a.exam_id = (
+            SELECT MAX(a2.exam_id) 
+            FROM #__eqa_exam_learner AS a2
+            LEFT JOIN #__eqa_class_learner AS b2 ON b2.class_id=a2.class_id AND b2.learner_id=a2.learner_id
+            LEFT JOIN #__eqa_learners AS c2 ON c2.id=a2.learner_id
+            LEFT JOIN #__eqa_classes AS d2 ON d2.id=a2.class_id
+            LEFT JOIN #__eqa_subjects AS e2 ON e2.id=d2.subject_id
+            WHERE c2.code = c.code 
+            AND e2.id = e.id
+            AND a2.conclusion IN (' . implode(',', [ExamHelper::CONCLUSION_FAILED, ExamHelper::CONCLUSION_DEFERRED]) . ')
+            AND b2.expired=0
+        )');
+
+		$db->setQuery($query);
+		return $db->loadObjectList();
+	}
+
 }

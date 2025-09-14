@@ -83,8 +83,8 @@ class HtmlView extends EqaItemsHtmlView {
 		ToolbarHelper::title('Danh sách HVSV của lớp học phần');
         ToolbarHelper::appendGoHome();
         ToolbarHelper::appendGoBack('class.cancel','COM_EQA_EDUCLASS');
-        ToolbarHelper::appenddButton('core.edit.state','play-circle','COM_EQA_BUTTON_ALLOW_TO_TAKE_EXAM','class.allow',true,'btn btn-success');
-        ToolbarHelper::appenddButton('core.edit.state','stop-circle','COM_EQA_BUTTON_DENY_TO_TAKE_EXAM','class.deny',true,'btn btn-danger');
+        ToolbarHelper::appendButton('core.edit.state','play-circle','COM_EQA_BUTTON_ALLOW_TO_TAKE_EXAM','class.allow',true,'btn btn-success');
+        ToolbarHelper::appendButton('core.edit.state','stop-circle','COM_EQA_BUTTON_DENY_TO_TAKE_EXAM','class.deny',true,'btn btn-danger');
         ToolbarHelper::appendDelete('class.remove');
 	    ToolbarHelper::addNew('class.addLearners', 'Người học');
 	    ToolbarHelper::appendUpload('class.importLearners', 'Người học');

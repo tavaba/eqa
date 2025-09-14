@@ -495,47 +495,36 @@ class ClassModel extends EqaAdminModel {
 
         return true;
     }
-
-	public function getClassLearners(int $classId)
+	public function getLearnerIds(int $classId): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
-		$columns = $db->quoteName(
-			array(),
-			array()
-		);
+		$query = $db->getQuery(true)
+			->select('learner_id')
+			->from('#__eqa_class_learner')
+			->where('class_id = '.$classId);
+		$db->setQuery($query);
+		return $db->loadColumn();
+	}
+
+	public function getLearners(int $classId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			$db->quoteName('a.class_id')            . ' AS ' . $db->quoteName('classId'),
+			$db->quoteName('a.learner_id')          . ' AS ' . $db->quoteName('learnerId'),
+			$db->quoteName('b.code')                . ' AS ' . $db->quoteName('learnerCode'),
+			$db->quoteName('b.lastname')            . ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('b.firstname')           . ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('a.ntaken')              . ' AS ' . $db->quoteName('ntaken'),
+			$db->quoteName('a.expired')             . ' AS ' . $db->quoteName('expired'),
+		];
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_class_learner AS a')
 			->leftJoin('#__eqa_learners AS b', 'a.learner_id=b.id')
 			->where('a.class_id = ' . $classId);
 		$db->setQuery($query);
-		$learners = $db->loadObjectList();
-		if(empty($learners))
-			return null;
-
-		//Sort by firstname, then by lastname
-		$collator = new Collator("vi_VN");
-		$comparator = function($a,$b) use ($collator){
-			$round1 = $collator->compare($a->fistname,$b->firstname);
-			if($round1 != 0)
-				return $round1;
-			return $collator->compare($a->lastname,$b->lastname);
-		};
-		usort($learners, $comparator);
-
-		//Concatenate fullname and code into one field
-		$data = [];
-		foreach($learners as $i=>$learner){
-			$name = trim(htmlspecialchars("$learner->lastname $learner->firstname"));
-			$name = "$learner->code - $name)";
-			$data[$i][] = [
-				'id' => $learner->id,
-				'name' => $name
-			];
-		}
-
-		//Return the data
-		return $data;
+		return $db->loadObjectList();
 	}
 	public function addForGroupOrCohort(string $targetType, int $targetId, int $subjectId, int $term, int $academicyearId): void
 	{

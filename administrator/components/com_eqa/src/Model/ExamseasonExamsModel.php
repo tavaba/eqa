@@ -2,10 +2,11 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
+use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\EqaListModel;
 
-class ExamsModel extends EqaListModel{
+class ExamseasonExamsModel extends EqaListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('nexaminee','nexamroom','testtype','duration','kmonitor','kassess','status');
@@ -18,6 +19,11 @@ class ExamsModel extends EqaListModel{
 
     public function getListQuery()
     {
+		//Determin the examseason id from state. This must be set in the view.
+	    $examseasonId = $this->getState('filter.examseason_id');
+		if (empty($examseasonId))
+			throw new Exception('Không xác định được kỳ thi');
+
         $db = $this->getDatabase();
 	    $subExamineeCount = 'SELECT COUNT(learner_id) FROM #__eqa_exam_learner WHERE exam_id=a.id';
 	    $subExamroomCount = 'SELECT COUNT(DISTINCT examroom_id) FROM #__eqa_exam_learner WHERE examroom_id IS NOT NULL AND exam_id=a.id';
@@ -32,7 +38,8 @@ class ExamsModel extends EqaListModel{
             ->leftJoin('#__eqa_examseasons AS b', 'a.examseason_id=b.id')
             ->select($columns)
 	        ->select('('.$subExamineeCount.') AS nexaminee')
-	        ->select('('.$subExamroomCount.') AS nexamroom');
+	        ->select('('.$subExamroomCount.') AS nexamroom')
+            ->where('a.examseason_id = '.(int)$examseasonId);
 
         //Filtering
         $search = $this->getState('filter.search');
@@ -40,21 +47,6 @@ class ExamsModel extends EqaListModel{
             $like = $db->quote('%'.$search.'%');
             $query->where('a.name LIKE '.$like);
         }
-
-        $examseasonId = $this->getState('filter.examseason_id');
-        if(is_numeric($examseasonId))
-            $query->where('a.examseason_id = '.(int)$examseasonId);
-
-        $academicyear_id = $this->getState('filter.academicyear_id');
-        if(is_numeric($academicyear_id)){
-            $query->where('b.academicyear_id = '.(int)$academicyear_id);
-        }
-
-        $term = $this->getState('filter.term');
-        if(is_numeric($term)){
-            $query->where('b.term = '.(int)$term);
-        }
-
 		$subjectId = $this->getState('filter.subject_id');
 		if(is_numeric($subjectId))
 			$query->where('a.subject_id = '.(int)$subjectId);
@@ -85,8 +77,6 @@ class ExamsModel extends EqaListModel{
     {
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.examseason_id');
-        $id .= ':' . $this->getState('filter.academicyear_id');
-        $id .= ':' . $this->getState('filter.term');
         $id .= ':' . $this->getState('filter.testtype');
         $id .= ':' . $this->getState('filter.usetestbank');
         $id .= ':' . $this->getState('filter.status');

@@ -9,6 +9,7 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -20,49 +21,145 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
-class ExamController extends  EqaFormController {
-	public function cancel($key = null)
+class ExamController extends  EqaFormController
+{
+
+	/**
+	 * This method is overided because we need to modify the target of redirect.
+	 * An exam is always added to an exam season. So we need to redirect to the
+	 * 'ExamSeasonExams' view with the exam season id stored in the form data.
+	 *
+	 * @param string $key The name of the primary key of the URL variable.
+	 * @param string $urlVar The name of the URL variable if different from the primary key (sometimes required to avoid router collisions).
+	 *
+	 * @return boolean True on success.
+	 * @since 1.1.2
+	 */
+	public function save($key = null, $urlVar = null): bool
 	{
-		$this->checkToken();
-		parent::cancel($key);
+		//1. Make a copy of form data
+		$data = $this->input->post->get('jform', [], 'array');
 
-		//Rerite the redirect URL for 'cancel' in the 'addexaminees' layout
-		$examId = $this->input->post->getInt('exam_id');
-		if(!empty($examId))
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		//2. Call the parent class's save() method
+		$result = parent::save($key, $urlVar);
+
+		//3. Determine the redirect target URL
+		if(!empty($data['examseason_id']))
+			$redirect = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.(int)$data['examseason_id'],false);
+		else
+			$redirect = Route::_('index.php?option=com_eqa&view=exams',false);
+		$this->setRedirect($redirect);
+
+		//4. Return result
+		return $result;
 	}
-    public function removeExaminees(){
-        //Get exam id
-        $examId = $this->input->getInt('exam_id');
 
-        //Set redirect in any case
-        $this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+	protected function checkCanAddExaminees(int $examId, bool $throw=true): bool
+	{
+		//TODO: Improve this method so that the component can be deploy in multitenant mode
+		//1. Check if the user has edit permission
+		$user = $this->app->getIdentity();
+		if(!$user->authorise('core.edit',$this->option))
+		{
+			if($throw)
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+			return false;
+		}
 
-        // Check for request forgeries
-        if(!$this->checkToken('post',false))
-            return;
+		//2. Check if the exam has been completed
+		/**
+		 * @var ExamModel $model
+		 */
+		$model = $this->getModel();
+		$exam = $model->getItem($examId);
+		if(empty($exam))
+		{
+			if($throw)
+				throw new Exception('Không xác định được môn thi');
+			return false;
+		}
+		if($exam->status >= ExamHelper::EXAM_STATUS_EXAM_CONDUCTED){
+			if($throw)
+				throw new Exception('Môn thi đã được tiến hành, không thể thêm thí sinh');
+			return false;
+		}
 
-        //Check permissions
-        if(!$this->app->getIdentity()->authorise('core.delete',$this->option)){
-            $this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
-            return;
-        }
+		//If all the above checks are passed then we have permission to add examinees
+		return true;
+	}
+	protected function checkCanRemoveExaminees(int $examId, bool $throw=true): bool
+	{
+		//TODO: Improve this method so that the component can be deploy in multitenant mode
+		//1. Check if the user has edit permission
+		$user = $this->app->getIdentity();
+		if(!$user->authorise('core.edit',$this->option))
+		{
+			if($throw)
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+			return false;
+		}
 
-        // Get items to remove from the request.
-        $learnerIds = (array) $this->input->get('cid', [], 'int');
+		//2. Check if the exam has been completed
+		/**
+		 * @var ExamModel $model
+		 */
+		$model = $this->getModel();
+		$exam = $model->getItem($examId);
+		if(empty($exam))
+		{
+			if($throw)
+				throw new Exception('Không xác định được môn thi');
+			return false;
+		}
+		if($exam->status >= ExamHelper::EXAM_STATUS_EXAM_CONDUCTED){
+			if($throw)
+				throw new Exception('Môn thi đã được tiến hành, không thể xóa thí sinh');
+			return false;
+		}
 
-        // Remove zero values resulting from input filter
-        $learnerIds = array_filter($learnerIds);
+		//If all the above checks are passed then we have permission to add examinees
+		return true;
+	}
+    public function removeExaminees()
+    {
+		try{
+			//Get exam id
+			$examId = $this->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
 
-        if (empty($learnerIds)) {
-            $this->app->enqueueMessage('COM_EQA_NO_ITEM_SELECTED','warning');
-        } else {
-            // Get the model.
-            $model = $this->getModel();
+			// Check for request forgeries
+			$this->checkToken();
 
-            // Remove the items.
-            $model->removeExaminees($examId, $learnerIds);
-        }
+			//Check permissions
+			$this->checkCanRemoveExaminees($examId,true);
+
+			// Get items to remove from the request.
+			$learnerIds = (array) $this->input->get('cid', [], 'int');
+			$learnerIds = array_filter($learnerIds,'intval');
+			$learnerIds = array_unique($learnerIds);
+			if (empty($learnerIds))
+				throw new Exception('Chưa chọn thí sinh nào');
+
+			/**
+			 * Remove examinees from the exam
+			 * @var ExamModel $model
+			 */
+			$model = $this->getModel();
+			$model->removeExaminees($examId, $learnerIds);
+
+			//Set redirect to the examinees list page
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
+		}
 
     }
     public function addExaminees()
@@ -76,12 +173,18 @@ class ExamController extends  EqaFormController {
 
 	    try
 	    {
-			//Check permission
-		    if (!$this->app->getIdentity()->authorise('core.create',$this->option))
-				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+			//Check token
+		    $this->checkToken();
+
+			//Determine the exam id
+		    $examId = $this->app->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+		    //Check permission
+		    $this->checkCanAddExaminees($examId,true);
 
 			//Get some request data
-		    $examId = $this->app->input->getInt('exam_id');
 		    $attempt = $this->input->getInt('attempt');
 			if(empty($attempt))  //Phase 1
 			{
@@ -105,9 +208,12 @@ class ExamController extends  EqaFormController {
 			if(empty($classCode) || empty($examineeCodes))
 				throw new Exception('Dữ liệu không hợp lệ');
 
-			//Call model to add examinees
+		    /**
+		     * Call model to add examinees
+		     * @var ExamModel $model
+		     */
 		    $model = $this->getModel();
-		    $countAdded = $model->addExaminees($examId, $classCode, $examineeCodes, $attempt, $ignoreError, $addExpired);
+		    $countAdded = $model->addExamineesFromClass($examId, $classCode, $examineeCodes, $attempt, $ignoreError, $addExpired);
 
 		    //Redirect to examinees list page
 		    $msg = Text::sprintf('Có %d/%d thí sinh được thêm vào môn thi', $countAdded, count($examineeCodes));
@@ -117,33 +223,47 @@ class ExamController extends  EqaFormController {
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
 		}
     }
 	public function addFailedExaminees()
 	{
-		//Get the id of the exam to add examinees
-		$examId = $this->app->input->getInt('exam_id');
-
-		//Set redirect in any case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
-
-		// Access check
-		if (!$this->app->getIdentity()->authorise('core.create',$this->option)) {
-			// Set the internal error and also the redirect error.
-			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
-			return;
-		}
-
-		//Check $examId
-		if(empty($examId))
+		try
 		{
-			$this->setMessage(Text::_('Không xác định được môn thi'),'error');
-			return;
-		}
+			//Check token
+			$this->checkToken();
 
-		$model = $this->getModel();
-		$model->addFailedExaminees($examId);
+			//Get the id of the exam to add examinees
+			$examId = $this->app->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+			// Access check
+			$this->checkCanAddExaminees($examId,true);
+
+			/**
+			 * Add failed examinees into the exam
+			 * @var ExamModel $model
+			 */
+			$model = $this->getModel();
+			$model->addFailedExaminees($examId);
+
+			//Set redirect to the examinees list page
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		}
+		catch(Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
+		}
 	}
 
 	//Hoãn thi
@@ -490,59 +610,78 @@ class ExamController extends  EqaFormController {
 	 */
 	public function stimulate()
 	{
-		//Get exam id
-		$examId = $this->input->getInt('exam_id');
-		if(empty($examId))
+		try
 		{
-			$this->setMessage(Text::_('Không xác định được môn thi'),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
+			//Check token
+			$this->checkToken();
+
+			//Get exam id
+			$examId = $this->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+			//Check permissions
+			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			/**
+			 * Update stimulation information
+			 * @var ExamModel $model
+			 */
+			$model = $this->getModel();
+			$msg = $model->updateStimulations($examId);
+
+			//Set redirect in case of success
+			$this->setMessage($msg);
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
 			return;
 		}
-
-		//Set redirect in any case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
-
-		// Check for request forgeries
-		if(!$this->checkToken('post',false))
-			return;
-
-		//Check permissions
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option)){
-			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
-			return;
-		}
-
-		//Process
-		$model = $this->getModel();
-		$model->updateStimulations($examId);
 	}
 	public function updateDebt()
 	{
-		//Get exam id
-		$examId = $this->input->getInt('exam_id');
-		if(empty($examId))
+		try
 		{
-			$this->setMessage(Text::_('Không xác định được môn thi'),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
-			return;
+			//Check token
+			$this->checkToken();
+
+			//Get exam id
+			$examId = $this->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+			//Check permissions
+			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			/**
+			 * Update debt information
+			 * @var ExamModel $model
+			 */
+			$model = $this->getModel();
+			$messages = $model->updateDebt($examId);
+
+			//Set redirect in any case
+			$this->setMessage(implode('. ', $messages));
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
 		}
-
-		//Set redirect in any case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
-
-		// Check for request forgeries
-		if(!$this->checkToken('post',false))
-			return;
-
-		//Check permissions
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option)){
-			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
-			return;
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
 		}
-
-		//Process
-		$model = $this->getModel();
-		$model->updateDebt($examId);
 	}
 	public function importitest()
 	{

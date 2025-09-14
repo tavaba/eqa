@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
+use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
@@ -12,6 +13,32 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ExamsController extends EqaAdminController {
+
+	/**
+	 * We override the parent method because we want to redirect to
+	 * the view 'ExamseasonExams' instead of 'Exams'
+	 * @since 1.1.2
+	 */
+	public function delete(): void
+	{
+		try
+		{
+			parent::delete();
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+		}
+
+		//If an examseason id was specified then redirect to that page
+		$examseasonId = $this->input->getInt('examseason_id');
+		if(!empty($examseasonId))
+			$url = JRoute::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+		else
+			$url = JRoute::_('index.php?option=com_eqa&view=exams',false);
+		$this->setRedirect($url);
+	}
+
 	public function export()
 	{
 		$app = $this->app;

@@ -15,6 +15,57 @@ use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 defined('_JEXEC') or die();
 
 class ExamModel extends EqaAdminModel{
+	/**
+	 * Add examinees into an exam. This must search for 'ntaken', 'expired'.
+	 * This also calls updateDebt() and updateStimulation() after adding.
+	 * Existing examinees are ignored.
+	 *
+	 * @param   int    $examId
+	 * @param   array  $classLearners Each object must contain at least these fields:
+	 *                 'classId', 'learnerId','ntaken'. If the field 'expired' also exist
+	 *                 then it will be used to decide whether to add the learner to the exam
+	 *                 or not; otherwise all learners in the list are considered as NOT expired
+	 *                 and they all will be added to the exam.
+	 * @return int How many examinees have been successfully added
+	 *
+	 * @throws Exception
+	 * @since 1.1.2
+	 */
+	public function addExaminees(int $examId, array $classLearners): int
+	{
+		$db = $this->getDatabase();
+
+		//1. Prepare data
+		$columns = $db->quoteName(['exam_id', 'class_id', 'learner_id', 'attempt']);
+		$values = [];
+		foreach ($classLearners as $item){
+			if(!isset($item->expired) || !$item->expired)
+				$values[] = implode(',',[$examId,$item->classId,$item->learnerId, $item->ntaken+1]);
+		}
+		if(count($values)==0)
+			return 0;
+
+		//2. Add examinees to the exam, skipping the existing ones
+		$query = $db->getQuery(true)
+			->insert('#__eqa_exam_learner')
+			->columns($columns)
+			->values($values);
+		// Get the raw SQL and modify it to use INSERT IGNORE
+		$sql = (string) $query;
+		$sql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', $sql);
+		$db->setQuery($sql);
+		$db->execute();
+
+		//Remember the number of examinees added
+		$countAdded = $db->getAffectedRows();
+
+		//Update debt and stimulation
+		$this->updateDebt($examId);
+		$this->updateStimulations($examId);
+
+		//Return the number of examinees added
+		return $countAdded;
+	}
     public function removeExaminees(int $examId, array $learnerIds): bool
     {
 	    if (DatabaseHelper::isCompletedExam($examId))
@@ -55,7 +106,7 @@ class ExamModel extends EqaAdminModel{
      * @return bool
      * @since 1.0.3
      */
-    public function addExaminees(int $examId, string $classCode, array $learnerCodes, int $attempt, bool $ignoreError, bool $addExpired): bool
+    public function addExamineesFromClass(int $examId, string $classCode, array $learnerCodes, int $attempt, bool $ignoreError, bool $addExpired): bool
     {
 	    if (DatabaseHelper::isCompletedExam($examId))
 		    throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể thêm thí sinh');
@@ -291,7 +342,7 @@ class ExamModel extends EqaAdminModel{
 			->update('#__eqa_exam_learner')
 			->set([
 				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY,
-				'conclusion=' . ExamHelper::CONCLUSION_RESERVED
+				'conclusion=' . ExamHelper::CONCLUSION_DEFERRED
 			])
 			->where([
 				'exam_id=' . $examId,
@@ -1222,18 +1273,22 @@ class ExamModel extends EqaAdminModel{
 		//Return
 		return sizeof($stimulations);
 	}
-	public function updateStimulations($examId): bool
+
+	/**
+	 * @param $examId
+	 *
+	 * @return string A messessages for the caller
+	 *
+	 * @throws Exception
+	 * @since 1.1.0
+	 */
+	public function updateStimulations($examId): string
 	{
 		//1. Init
-		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		if (DatabaseHelper::isCompletedExam($examId))
-		{
-			$msg='Môn thi hoặc kỳ thi đã kết thúc. Không thể cập nhật thông tin khuyến khích';
-			$app->enqueueMessage($msg, 'error');
-			return false;
-		}
+			throw new Exception('Môn thi đã kết thúc. Không thể cập nhật trạng thái khuyến khích điểm');
 
 		//2. Xác định môn học và thông tin thí sinh được khuyến khích
 		//2.1. Determine the subject of this exam
@@ -1263,10 +1318,8 @@ class ExamModel extends EqaAdminModel{
 			]);
 		$db->setQuery($query);
 		$examinees = $db->loadAssocList();
-		if(empty($examinees)){
-			$app->enqueueMessage('Không có thí sinh nào của môn thi này được khuyến khích');
-			return false;
-		}
+		if(empty($examinees))
+			return 'Không có thí sinh nào của môn thi này được khuyến khích';
 
 		//3.3. Phân loại khuyến khích
 		$exemptions = [];
@@ -1307,37 +1360,37 @@ class ExamModel extends EqaAdminModel{
 		}
 		catch (Exception $e){
 			$db->transactionRollback();
-			$app->enqueueMessage($e->getMessage(), 'error');
-			return false;
+			throw $e;
 		}
 
 		//5. Return
 		$countApplied = $countAppliedExemption + $countAppliedTransfer + $countAppliedAddition;
 		$countTotal = sizeof($examinees);
-		$msg = Text::sprintf('%d/%d khuyến khích được áp dụng: %d/%d Miễn thi, %d/%d Cộng điểm, %d/%d Quy đổi điểm',
+		$msg = sprintf('%d/%d khuyến khích được áp dụng: %d/%d Miễn thi, %d/%d Cộng điểm, %d/%d Quy đổi điểm',
 			$countApplied, $countTotal,
 			$countAppliedExemption, sizeof($exemptions),
 			$countAppliedAddition, sizeof($additions),
 			$countAppliedTransfer, sizeof($transfers)
 		);
-		$type = $countApplied == $countTotal ? 'success' : 'info';
-		$app->enqueueMessage($msg, $type);
-		return true;
+		return $msg;
 	}
 
-	public function updateDebt($examId): bool
+	/**
+	 * @param $examId
+	 *
+	 * @return array An array of messages
+	 *
+	 * @throws Exception
+	 * @since 1.1.0
+	 */
+	public function updateDebt($examId): array
 	{
 		//1. Init
-		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		//2. Kiểm tra điều kiện
 		if (DatabaseHelper::isCompletedExam($examId))
-		{
-			$msg='Môn thi hoặc kỳ thi đã kết thúc. Không thể cập nhật thông tin nợ phí';
-			$app->enqueueMessage($msg, 'error');
-			return false;
-		}
+			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể cập nhật thông tin nợ phí');
 
 		//3. Lấy thông tin nợ phí hiện thời từ 2 nơi: môn thi, người học
 		$columns = $db->quoteName(
@@ -1395,38 +1448,36 @@ class ExamModel extends EqaAdminModel{
 		catch (Exception $e)
 		{
 			$db->transactionRollback();
-			$app->enqueueMessage($e->getMessage(), 'error');
+			throw $e;
 		}
+
+		//Return some information to the caller
+		$messages = [];
 
 		if(!empty($listUnset))
 		{
-			$msg = Text::sprintf('%d HVSV đã hết nợ: %s',
+			$messages[] = Text::sprintf('%d HVSV đã hết nợ: %s',
 				sizeof($listUnset),
 				implode(', ', $listUnset)
 			);
-			$app->enqueueMessage($msg, 'success');
 		}
 		if(!empty($listSet))
 		{
-			$msg = Text::sprintf('%d HVSV đã phát sinh nợ: %s',
+			$messages[] = Text::sprintf('%d HVSV đã phát sinh nợ: %s',
 				sizeof($listSet),
 				implode(', ', $listSet)
 			);
-			$app->enqueueMessage($msg, 'success');
 		}
 		if(!empty($listCannotChange))
 		{
-			$msg = Text::sprintf('%d HVSV có thay đổi trạng thái nợ phí nhưng không được cập nhật vì đã có kết quả: %s',
+			$messages[] = Text::sprintf('%d HVSV có thay đổi trạng thái nợ phí nhưng không được cập nhật vì đã có kết quả: %s',
 				sizeof($listCannotChange),
 				implode(', ', $listCannotChange)
 			);
-			$app->enqueueMessage($msg, 'warning');
 		}
 		if(empty($listSet) && empty($listUnset))
-		{
-			$app->enqueueMessage('Thông tin nợ phí không thay đổi', 'success');
-		}
-		return true;
+			$messages[] = 'Thông tin nợ phí không thay đổi';
+		return $messages;
 	}
 
 	public function setExamStatus(int $examId, int $status): bool
@@ -1597,7 +1648,7 @@ class ExamModel extends EqaAdminModel{
 		//3. Xử lý các trường hợp hoãn thi
 		$query = $db->getQuery(true)
 			->update('#__eqa_exam_learner')
-			->set('conclusion=' . ExamHelper::CONCLUSION_RESERVED)
+			->set('conclusion=' . ExamHelper::CONCLUSION_DEFERRED)
 			->where([
 				'exam_id=' . $examId,
 				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY

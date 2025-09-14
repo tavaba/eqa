@@ -2348,7 +2348,6 @@ abstract class IOHelper
 		$font->setName('Times New Roman');
 		$font->setSize($FONT_SIZE);
 	}
-
 	static public function writeUnpassedExaminees(Spreadsheet $spreadsheet, array $unpassedExaminees): void
 	{
 		//A. Write the summary sheet
@@ -2380,89 +2379,46 @@ abstract class IOHelper
 			$seq++;
 			$data[] = [
 				$seq,
-				$item['code'],
-				$item['lastname'],
-				$item['firstname'],
-				$item['subject_code'],
-				$item['subject_name'],
-				$item['term'],
-				$item['academicyear'],
-				(string) $item['ntaken'],
-				ExamHelper::getConclusion($item['conclusion'])
+				$item->learnerCode,
+				$item->lastname,
+				$item->firstname,
+				$item->subjectCode,
+				$item->subjectName,
+				$item->term,
+				$item->academicyear,
+				(string) $item->ntaken,
+				ExamHelper::getConclusion($item->conclusion)
 			];
 		}
 		$sheet->fromArray($data, '', 'A'.$row);
 
 
 		//B. Write the sheduling sheet
-		//1. Initialization for graph coloring algorithm
-		$learners = [];
+		//1. Prepare input data for the sheduling operation
+		$schedulingData = [];
 		$exams = [];
-		$learnerExams = [];
 		foreach ($unpassedExaminees as $item)
 		{
-			//Build list of learners
-			$learnerId = $item['id'];
-			if (!isset($learners[$learnerId]))
-			{
-				$learners[$learnerId] = [
-					'code'=>$item['code'],
-					'lastname'=>$item['lastname'],
-					'firstname'=>$item['firstname'],
+			$schedulingData[] = [
+				$item->subjectId,
+				$item->learnerId
+			];
+
+			if(!array_key_exists($item->subjectId,$exams))
+				$exams[$item->subjectId] = [
+					'code' => $item->subjectCode,
+					'name' => $item->subjectName,
+					'count' => 1
 				];
-			}
-
-			//Build list of exams
-			$examId = $item['subject_id'];
-			if (!isset($exams[$examId]))
-			{
-				$exams[$examId] = [
-					'code'=>$item['subject_code'],
-					'name'=>$item['subject_name'],
-					'count'=>1
-					];
-			}
 			else
-				$exams[$examId]['count']++;
+				$exams[$item->subjectId]['count']++;
+		}
 
-			//Build list of exams for each learner
-			$learnerExams[$learnerId][] = $examId;
-		}
-		//2. Build the confict matrix
-		$conflicts = [];
-		foreach ($learnerExams as $examIds) {
-			for ($i=0; $i<count($examIds); $i++) {
-				for ($j=$i+1; $j<count($examIds); $j++) {
-					$a = $examIds[$i];
-					$b = $examIds[$j];
-					$conflicts[$a][$b] = true;
-					$conflicts[$b][$a] = true;
-				}
-			}
-		}
-		//3. Color the graph (assign exams to subsets)
-		//Graph coloring is NP-hard in general, but greedy algorithms
-		//often work well for practical sizes:
-		$colors = []; // examId => color index
-		foreach ($conflicts as $examId => $neighbors) {
-			$usedColors = [];
-			foreach ($neighbors as $neighbor => $_) {
-				if (isset($colors[$neighbor])) {
-					$usedColors[$colors[$neighbor]] = true;
-				}
-			}
-			$color = 0;
-			while (isset($usedColors[$color])) {
-				$color++;
-			}
-			$colors[$examId] = $color;
-		}
-		//4.Group exams by color (subset)
-		$subsets = [];
-		foreach ($colors as $examId => $color) {
-			$subsets[$color][] = $examId;
-		}
-		//5. Write the scheduling sheets
+		//2. Do the scheduling using the GraphColorer class
+		$graphColorer = new GraphColorer(10, $schedulingData);
+		$examSubsets = $graphColorer->schedule();
+
+		//3. Write the scheduling sheets
 		//5.1. Initialization
 		$sheet = $spreadsheet->createSheet();
 		$sheet->setTitle('Chia nhóm môn thi');
@@ -2484,10 +2440,10 @@ abstract class IOHelper
 		//5.3. Write subsets of exams
 		$headingRow = $row;
 		$row++;
-		foreach ($subsets as $color => $examIds)
+		foreach ($examSubsets as $index=>$examIds)
 		{
 			//Write subset title in column A and set vertical alignment to center
-			$sheet->getCell('A'.$row)->setValue($color+1);
+			$sheet->getCell('A'.$row)->setValue($index+1);
 			$sheet->mergeCells([1,$row, 1, $row+sizeof($examIds)-1]);
 			$style = $sheet->getStyle([1,$row, 1, $row+sizeof($examIds)-1]);
 			$style->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);

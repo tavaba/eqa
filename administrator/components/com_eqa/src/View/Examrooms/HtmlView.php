@@ -61,11 +61,11 @@ class HtmlView extends EqaItemsHtmlView {
     {
         ToolbarHelper::title($this->toolbarOption->title);
         ToolbarHelper::appendGoHome();
-        ToolbarHelper::appenddButton(null,'arrow-up-2','COM_EQA_EXAM', 'exam.cancel');
-        ToolbarHelper::appenddButton(null,'arrow-up-2','COM_EQA_EXAMSESSION', 'examsession.cancel');
+        ToolbarHelper::appendButton(null,'arrow-up-2','COM_EQA_EXAM', 'exam.cancel');
+        ToolbarHelper::appendButton(null,'arrow-up-2','COM_EQA_EXAMSESSION', 'examsession.cancel');
         ToolbarHelper::appendDelete('examrooms.delete');
-	    ToolbarHelper::appenddButton(null,'download','COM_EQA_EXPORT','examrooms.export',true);
-	    ToolbarHelper::appenddButton(null,'warning','COM_EQA_ANOMALY','examroom.editAnomaly',true,'btn btn-danger');
+	    ToolbarHelper::appendButton(null,'download','COM_EQA_EXPORT','examrooms.export',true);
+	    ToolbarHelper::appendButton(null,'warning','COM_EQA_ANOMALY','examroom.editAnomaly',true,'btn btn-danger');
     }
 
 	protected function prepareDataForLayoutImport()
@@ -75,7 +75,7 @@ class HtmlView extends EqaItemsHtmlView {
 	protected function addToolbarForLayoutImport()
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_LOAD_EXAMROOM_REPORT'));
-		ToolbarHelper::appenddButton('core.edit','save','JTOOLBAR_SAVE','examrooms.import',false,null,true);
+		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','examrooms.import',false,null,true);
 		$url = \JRoute::_('index.php?option=com_eqa',false);
 		ToolbarHelper::appendLink(null,$url,'JTOOLBAR_CANCEL','cancel','btn btn-danger');
 	}

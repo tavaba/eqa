@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
@@ -121,21 +122,21 @@ class HtmlView extends EqaItemsHtmlView {
     {
         $option = $this->toolbarOption;
         ToolbarHelper::title($option->title);
-        $url = JRoute::_('index.php?option=com_eqa&view=exams',false);
 		ToolbarHelper::appendGoHome();
+		$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$this->exam->examseasonId,false);
         ToolbarHelper::appendLink(null,$url,'COM_EQA_EXAM', 'arrow-up-2');
-	    ToolbarHelper::appenddButton('core.create','plus-2','COM_EQA_BUTTON_ADD_EXAMINEES','exam.addExaminees',false,'btn btn-success');
-	    ToolbarHelper::appenddButton('core.create','plus-2','Thêm HVSV chưa đạt','exam.addFailedExaminees',false,'btn btn-success');
+	    ToolbarHelper::appendButton('core.create','plus-2','COM_EQA_BUTTON_ADD_EXAMINEES','exam.addExaminees',false,'btn btn-success');
+	    ToolbarHelper::appendButton('core.create','plus-2','Thêm HVSV chưa đạt','exam.addFailedExaminees',false,'btn btn-success');
         ToolbarHelper::appendDelete('exam.removeExaminees');
-	    ToolbarHelper::appenddButton('core.edit', 'loop','Khuyến khích','exam.stimulate',false, 'btn btn-success');
+	    ToolbarHelper::appendButton('core.edit', 'loop','Khuyến khích','exam.stimulate',false, 'btn btn-success');
 		$msg = 'Điều này có thể làm xáo trộn trạng thái thí sinh môn thi. Bạn có chắc muốn thực hiện?';
 		ToolbarHelper::appendConfirmButton('core.edit',$msg, 'loop','Nợ phí','exam.updateDebt',false,'btn btn-success');
-	    ToolbarHelper::appenddButton('core.edit','pause','Hoãn thi','exam.delay',true, 'btn btn-danger');
-	    ToolbarHelper::appenddButton('core.edit','play','Hủy hoãn thi','exam.undoDelay',true, 'btn btn-success');
-	    ToolbarHelper::appenddButton('core.create','calendar','Chia phòng ngẫu nhiên','exam.distribute',false);
+	    ToolbarHelper::appendButton('core.edit','pause','Hoãn thi','exam.delay',true, 'btn btn-danger');
+	    ToolbarHelper::appendButton('core.edit','play','Hủy hoãn thi','exam.undoDelay',true, 'btn btn-success');
+	    ToolbarHelper::appendButton('core.create','calendar','Chia phòng ngẫu nhiên','exam.distribute',false);
 		$urlDistribute2 = JRoute::_('index.php?option=com_eqa&view=exam&layout=distribute2&exam_id='.$this->exam->id, false);
 	    ToolbarHelper::appendLink('core.create', $urlDistribute2,'Chia phòng theo lớp', 'calendar');
-	    ToolbarHelper::appenddButton(null,'download','Xuất môn thi','exam.export');
-	    ToolbarHelper::appenddButton(null,'download','Xuất ca iTest','exam.exportitest');
+	    ToolbarHelper::appendButton(null,'download','Xuất môn thi','exam.export');
+	    ToolbarHelper::appendButton(null,'download','Xuất ca iTest','exam.exportitest');
     }
 }

@@ -19,7 +19,7 @@ class HtmlView extends EqaItemHtmlView {
 	protected function addToolbarForLayoutReject()
 	{
 		ToolbarHelper::title('Từ chối yêu cầu đính chính điểm');
-		ToolbarHelper::appenddButton('core.edit','expired', 'Từ chối', 'gradecorrection.reject', false, 'btn btn-danger');
+		ToolbarHelper::appendButton('core.edit','expired', 'Từ chối', 'gradecorrection.reject', false, 'btn btn-danger');
 		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
 	}
 	protected function prepareDataForLayoutCorrect()
@@ -31,7 +31,7 @@ class HtmlView extends EqaItemHtmlView {
 	protected function addToolbarForLayoutCorrect()
 	{
 		ToolbarHelper::title('Đính chính điểm');
-		ToolbarHelper::appenddButton('core.edit','save', 'JTOOLBAR_SAVE', 'gradecorrection.correct', false, 'btn btn-success', true);
+		ToolbarHelper::appendButton('core.edit','save', 'JTOOLBAR_SAVE', 'gradecorrection.correct', false, 'btn btn-success', true);
 		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
 	}
 }
