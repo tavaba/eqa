@@ -5,6 +5,7 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
+use Joomla\Database\ParameterType;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -110,6 +111,41 @@ class FixerController extends  EqaFormController
 				->set('ntaken=1')
 				->where("learner_id={$examinee->learnerId}")
 				->where("class_id={$examinee->classId}");
+			$db->setQuery($query);
+			$db->execute();
+		}
+	}
+
+	public function updateBase4Mark()
+	{
+		if(!$this->app->getIdentity()->authorise('core.admin'))
+			die('Invalid request');
+
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//Load all exam-learner records
+		$query = $db->getQuery(true)
+			->select('exam_id, learner_id, module_mark, module_base4_mark')
+			->from('#__eqa_exam_learner')
+			->where('module_mark IS NOT NULL');
+		$db->setQuery($query);
+		$records = $db->loadAssocList();
+
+		//Update base4 mark for each record
+		$query = $db->getQuery(true)
+			->update('#__eqa_exam_learner')
+			->set('module_base4_mark=:base4Mark')
+			->where('exam_id=:examId')
+			->where('learner_id=:learnerId');
+		foreach ($records as $record)
+		{
+			if($record['module_base4_mark'] != null)
+				continue;
+
+			$base4Mark = ExamHelper::calculateBase4Mark($record['module_mark']);
+			$query->bind(':base4Mark',$base4Mark, ParameterType::STRING);
+			$query->bind(':examId',$record['exam_id'], ParameterType::INTEGER);
+			$query->bind(':learnerId',$record['learner_id'], ParameterType::INTEGER);
 			$db->setQuery($query);
 			$db->execute();
 		}

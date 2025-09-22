@@ -117,6 +117,12 @@ abstract class ConfigHelper{
 			self::init();
 		return self::$params->get('params.threshold_final_exam_mark');
 	}
+	public static function getThresholdForPassFailSubject(): float
+	{
+		if(self::$uninitialized)
+			self::init();
+		return self::$params->get('params.threshold_pass_fail');
+	}
 	public static function getKWeekendMonitoring(): float
 	{
 		if(self::$uninitialized)

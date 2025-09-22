@@ -194,6 +194,34 @@ CREATE TABLE `#__eqa_learners` (
 	UNIQUE (`code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Học viên, sinh viên (Không quản lý tài khoản đăng nhập)';
 
+CREATE TABLE `#__eqa_cohorts` (
+    `id` INT AUTO_INCREMENT,
+	`code` VARCHAR(20) NOT NULL COMMENT 'Ký hiệu nhóm. Ví dụ: H30L',
+	`name` VARCHAR(255) NOT NULL COMMENT 'Tên nhóm: H30 Lào',
+	`published` BOOLEAN NOT NULL DEFAULT TRUE,
+	`ordering` INT NOT NULL DEFAULT 0,
+	`created_at` DATETIME,
+	`created_by` VARCHAR(255),
+	`updated_at` DATETIME,
+	`updated_by` VARCHAR(255),
+	`checked_out` INT DEFAULT NULL,
+	`checked_out_time` DATETIME DEFAULT NULL,
+    PRIMARY KEY (`id`),
+	UNIQUE(`code`)
+) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Nhóm HVSV';
+
+CREATE TABLE `#__eqa_cohort_learner` (
+    `cohort_id` INT  NOT NULL,
+    `learner_id` INT  NOT NULL,
+	PRIMARY KEY (`cohort_id`,`learner_id`),
+	CONSTRAINT fk_eqa_cohort_learner_cohort FOREIGN KEY(`cohort_id`)
+		REFERENCES `#__eqa_cohorts`(`id`)
+		ON DELETE CASCADE,
+	CONSTRAINT fk_eqa_cohort_learner_learner FOREIGN KEY(`learner_id`)
+		REFERENCES `#__eqa_learners`(`id`)
+		ON DELETE RESTRICT
+) ENGINE=InnoDB default charset = utf8mb4;
+
 CREATE TABLE `#__eqa_subjects` (
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(255) NOT NULL COMMENT 'Mã môn học',
@@ -201,6 +229,7 @@ CREATE TABLE `#__eqa_subjects` (
 	`degree` INT NOT NULL COMMENT 'Bậc học',
 	`credits` REAL COMMENT 'Số tín chỉ (có thể lẻ)',
 	`unit_id` INT COMMENT 'Khóa ngoại: Đơn vị phụ trách môn học',
+	`is_pass_fail` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Môn điều kiện, không tính điểm',
 	`finaltesttype` INT NOT NULL COMMENT 'Hình thức thi mặc định cho thi kết thúc học phần (định nghĩa bằng constants)',
 	`finaltestduration` INT COMMENT 'Thời gian làm bài thi, tính bằng phút',
 	`finaltestweight` REAL NOT NULL COMMENT 'Trọng số điểm thi kết thúc học phần',
@@ -385,6 +414,7 @@ CREATE TABLE `#__eqa_exams`(
 	`subject_id` INT NOT NULL COMMENT 'Khóa ngoại: môn học',
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên môn thi',
 	`examseason_id` INT NOT NULL COMMENT 'Khóa ngoại: Kỳ thi',
+	`is_pass_fail` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Môn điều kiện, không tính điểm (copy từ subject)',
 	`testtype` INT NOT NULL COMMENT 'Hình thức thi như finaltesttype trong bảng `subjects`',
 	`duration` INT COMMENT 'Thời gian làm bài thi, tính bằng phút (copy từ subjects)',
 	`kmonitor` REAL NOT NULL DEFAULT 1.0 COMMENT 'Hệ số tính sản lượng coi thi (copy từ subjects)',
@@ -472,6 +502,7 @@ CREATE TABLE `#__eqa_exam_learner`(
 	`mark_ppaa` REAL COMMENT 'Điểm thi KTHP sau phúc khảo (chưa xử lý kỷ luật nếu có)',
 	`mark_final` REAL COMMENT 'Điểm thi KTHP sau khi phúc khảo và trừ kỷ luật nếu có',
 	`module_mark` REAL COMMENT 'Điểm HP; nếu là thi lần 2 thì đã áp dụng giới hạn điểm thi lần 2',
+	`module_base4_mark` REAL COMMENT 'Điểm HP quy đổi sang hệ 4',
 	`module_grade` CHAR(2) COMMENT 'Điểm HP bằng chữ',
 	`conclusion` TINYINT COMMENT 'Kết luận (qua, làm lại bài thi, phải thi lại, phải học lại...); định nghĩa bằng constants',
 	`description` TEXT,
@@ -618,3 +649,34 @@ CREATE TABLE `#__eqa_mmproductions`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Machine Marking Productions';
 
+CREATE TABLE `#__eqa_conducts`(
+    `id` 						INT AUTO_INCREMENT,
+    `learner_id`				INT NOT NULL,
+	`academicyear_id` 			INT NOT NULL,
+	`term` 						INT NOT NULL,
+	`excused_absence_count`		INT DEFAULT 0	COMMENT 'Số buổi vắng có phép',
+	`unexcused_absence_count`	INT DEFAULT 0	COMMENT 'Số buổi vắng không phép',
+	`resit_count`				INT DEFAULT 0	COMMENT 'Số môn thi lại',                 
+	`retake_count`				INT DEFAULT 0	COMMENT	'Số môn học lại',                
+	`award_count`				INT DEFAULT 0	COMMENT	'Số lần được khen thưởng',                
+	`disciplinary_action_count`	INT DEFAULT 0	COMMENT	'Số lần bị xử lý kỷ luật',   
+	`academic_score` 			REAL 			COMMENT 'Điểm học tập trung bình',
+	`academic_rating`			TINYINT 		COMMENT 'Phân loại học tập',
+	`conduct_score` 			REAL 			COMMENT 'Điểm rèn luyện bằng số',
+	`conduct_rating`			TINYINT 		COMMENT 'Phân loại',
+	`note`						VARCHAR(255),
+	`description`				TEXT,
+	`created_at` DATETIME,
+	`created_by` VARCHAR(255),
+	`updated_at` DATETIME,
+	`updated_by` VARCHAR(255),
+	PRIMARY KEY (`id`),
+	CONSTRAINT fk_eqa_conducts_learner FOREIGN KEY (`learner_id`)
+		REFERENCES `#__eqa_learners`(`id`)
+		ON DELETE RESTRICT,
+	CONSTRAINT fk_eqa_conducts_academicyear FOREIGN KEY (`academicyear_id`)
+		REFERENCES `#__eqa_academicyears`(`id`)
+		ON DELETE RESTRICT,
+	INDEX idx_eqa_conducts_term(`term`),
+	UNIQUE(`learner_id`,`academicyear_id`,`term`)
+) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Đánh giá rèn luyện';

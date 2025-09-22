@@ -98,7 +98,7 @@ class HtmlView extends EqaItemsHtmlView{
 			return;
 
 		// Add buttons to the toolbar
-		ToolbarHelper::appendButton('eqa.supervise', 'download', 'Tải danh sách','gradecorrections.download');
+		ToolbarHelper::appenddButton('eqa.supervise', 'download', 'Tải danh sách','gradecorrections.download');
 
 		// Render the toolbar
 		ToolbarHelper::render();

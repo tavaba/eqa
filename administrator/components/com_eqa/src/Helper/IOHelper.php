@@ -29,6 +29,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Font;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -2477,6 +2478,310 @@ abstract class IOHelper
 		$borderStyle = Border::BORDER_THIN;
 		$rangeStyle = $sheet->getStyle([1, $headingRow, $COLS, $lastRow]);
 		$rangeStyle->getBorders()->getAllBorders()->setBorderStyle($borderStyle);
+	}
+
+	static public function writeConductReport(Worksheet $sheet, string $academicyear, int $termCode, string $title, int $studyYear, array $conducts): void
+	{
+		$headers = ['TT', 'Mã HVSV', 'Họ và tên', 'LD', 'KLD', 'Tổng', 'HL', 'TL', 'KT', 'KL', 'Điểm', 'PL', 'Điểm', 'PL', 'Ghi chú'];
+		$widths = [5,     12,          25,          4,    5,     6,     4,    4,    4,    4,     6,     4,      6,    4,      15];
+		$COLS = count($headers);
+
+		//Set column widths
+		for($i=1; $i<=$COLS; $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		}
+
+		//Set default font size and name for $COLS columns and count($conducts) rows
+		$font = $sheet->getStyle([1,1,$COLS,count($conducts)+100])->getFont();
+		$font->setName('Times New Roman');
+		$font->setSize(12);
+
+
+		/**
+		 * Print the title
+		 * Merge all the $COLS columns; set font to be bold, text to be centered
+		 */
+		$row=1;
+		$title = mb_strtoupper($title);
+		$sheet->getCell('A'.$row)->setValue($title);
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		/**
+		 * Print the subtile
+		 * Merge all the $COLS columns; set font to be italic, text to be centered
+		 */
+		$row++;
+		$subTitle = 'Năm học '.$academicyear;
+		if($termCode != DatetimeHelper::TERM_NONE)
+			$subTitle .= ' - ' . DatetimeHelper::decodeTerm($termCode);
+		$subTitle .= " (Năm thứ {$studyYear})";
+		$sheet->getCell('A'.$row)->setValue($subTitle);
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getFont()->setItalic(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		/*
+		 * Print the heading rows
+		 */
+		$row += 2;
+		$headingRow = $row;
+		$col = 1;
+		$sheet->setCellValue([$col,$row],'TT');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		$col++;
+		$sheet->setCellValue([$col,$row],'Mã HVSV');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		$col++;
+		$sheet->setCellValue([$col,$row],'Họ và tên');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		$col++;
+		$sheet->setCellValue([$col,$row],'Số tiết nghỉ học');
+		$sheet->mergeCells([$col, $row, $col+2, $row]);
+		$sheet->setCellValue([$col,$row+1],'LD');
+		$sheet->setCellValue([$col+1,$row+1],'KLD');
+		$sheet->setCellValue([$col+2,$row+1],'Tổng');
+
+		$col+=3;
+		$sheet->setCellValue([$col,$row],'HL');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		$col++;
+		$sheet->setCellValue([$col,$row],'TL');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		$col++;
+		$sheet->setCellValue([$col,$row],'KT');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		$col++;
+		$sheet->setCellValue([$col,$row],'KL');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		$col++;
+		$sheet->setCellValue([$col,$row],'Học tập');
+		$sheet->mergeCells([$col, $row, $col+1, $row]);
+		$sheet->setCellValue([$col,$row+1],'Điểm');
+		$sheet->setCellValue([$col+1,$row+1],'PL');
+
+		$col +=2;
+		$sheet->setCellValue([$col,$row],'Rèn luyện');
+		$sheet->mergeCells([$col, $row, $col+1, $row]);
+		$sheet->setCellValue([$col,$row+1],'Điểm');
+		$sheet->setCellValue([$col+1,$row+1],'PL');
+
+		$col+=2;
+		$sheet->setCellValue([$col,$row],'Ghi chú');
+		$sheet->mergeCells([$col, $row, $col, $row+1]);
+
+		//Make all the header centered (horizontal and vertical), bold
+		$headerStyle = $sheet->getStyle([1,$row, $COLS, $row+1]);
+		$headerStyle->getFont()->setBold(true);
+		$headerStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$headerStyle->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+		/**
+		 * Print the main data area
+		 */
+		$firstDataRow = $row = $headingRow+2;
+		$seq=0;
+		$data = [];
+		foreach ($conducts as $conduct)
+		{
+			$seq++;
+			$data[] =[
+				$seq,
+				$conduct->learnerCode,
+				implode(' ', [$conduct->lastname, $conduct->firstname]),
+				$conduct->excusedAbsenceCount?:null,
+				$conduct->unexcusedAbsenceCount?:null,
+				($conduct->excusedAbsenceCount + $conduct->unexcusedAbsenceCount)?:null,
+				$conduct->resitCount ?: null,
+				$conduct->retakeCount ?: null,
+				$conduct->awardCount ?: null,
+				$conduct->disciplinaryCount ?: null,
+				$conduct->academicScore,
+				RatingHelper::decodeToAbbr($conduct->academicRating),
+				$conduct->conductScore,
+				RatingHelper::decodeToAbbr($conduct->conductRating),
+				$conduct->note,
+			];
+
+
+		}
+		$sheet->fromArray($data, '', 'A'.$row);
+
+		//Centerlize the data range, except the column 'C'
+		$lastDataRow = $firstDataRow + count($conducts)-1;
+		$style = $sheet->getStyle([1, $firstDataRow, $COLS, $lastDataRow]);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$fulnameColumnStyle = $sheet->getStyle([3,$firstDataRow, 3, $lastDataRow]);
+		$fulnameColumnStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+		//Values in column 'K' (academic score) should have exactly 2 decimal places
+		$sheet->getStyle('K'.$firstDataRow.':K'.$lastDataRow)
+			->getNumberFormat()
+			->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+
+		//Write the summary row and make this row centered and bold
+		$row = $lastDataRow + 1;
+		$sheet->setCellValue('A'.$row, 'TỔNG');
+		$sheet->mergeCells([1,$row, 3, $row]);
+
+		$sheet->setCellValue('D'.$row, '=SUM(D'.$firstDataRow.':D'.$lastDataRow.')');
+		$sheet->setCellValue('E'.$row, '=SUM(E'.$firstDataRow.':E'.$lastDataRow.')');
+		$sheet->setCellValue('F'.$row, '=SUM(F'.$firstDataRow.':F'.$lastDataRow.')');
+		$sheet->setCellValue('G'.$row, '=SUM(G'.$firstDataRow.':G'.$lastDataRow.')');
+		$sheet->setCellValue('H'.$row, '=SUM(H'.$firstDataRow.':H'.$lastDataRow.')');
+		$sheet->setCellValue('I'.$row, '=SUM(I'.$firstDataRow.':I'.$lastDataRow.')');
+		$sheet->setCellValue('J'.$row, '=SUM(J'.$firstDataRow.':J'.$lastDataRow.')');
+
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Draw borders around the table
+		$borderStyle = Border::BORDER_THIN;
+		$style = $sheet->getStyle([1, $headingRow, $COLS, $row]);
+		$style->getBorders()->getAllBorders()->setBorderStyle($borderStyle);
+
+		/**
+		 * D. Print the statistics
+		 */
+
+		//1. Calculate statistics
+		$total = count($conducts);
+		$academicCounts = [];
+		$conductCounts = [];
+		$academicInfos = [];
+		$conductInfos = [];
+		$passedCount=0;
+		$ratingCodes = array_keys(RatingHelper::getRatings());
+		foreach ($ratingCodes as $ratingCode)
+		{
+			$academicCounts[$ratingCode] = 0;
+			$conductCounts[$ratingCode] = 0;
+		}
+		foreach ($conducts as $conduct)
+		{
+			$academicCounts[$conduct->academicRating]++;
+			$conductCounts[$conduct->conductRating]++;
+
+			if(!in_array($conduct->academicRating,[RatingHelper::WEAK, RatingHelper::POOR]))
+				$passedCount++;
+		}
+		foreach ($ratingCodes as $ratingCode)
+		{
+			if($academicCounts[$ratingCode]>0)
+				$academicInfos[$ratingCode] = sprintf('%s: %d (%.1f%%)',
+					RatingHelper::decode($ratingCode),
+					$academicCounts[$ratingCode],
+					$academicCounts[$ratingCode]/$total*100
+				);
+			else
+				$academicInfos[$ratingCode] = sprintf('%s: %d',
+					RatingHelper::decode($ratingCode),
+					$academicCounts[$ratingCode]
+				);
+
+			if($conductCounts[$ratingCode]>0)
+				$conductInfos[$ratingCode] = sprintf('%s: %d (%.1f%%)',
+					RatingHelper::decode($ratingCode),
+					$conductCounts[$ratingCode],
+					$conductCounts[$ratingCode]/$total*100
+				);
+			else
+				$conductInfos[$ratingCode] = sprintf('%s: %d',
+					RatingHelper::decode($ratingCode),
+					$conductCounts[$ratingCode]
+				);
+		}
+
+		//2. Write the academic results statistics
+		$row += 2;
+		$sheet->setCellValue('A'.$row, 'TỔNG HỢP CHUNG');
+		$sheet->mergeCells([1,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		$row++;
+		$sheet->setCellValue('A'.$row, '*');
+		$sheet->setCellValue('C'.$row, 'Phân loại học tập');
+		$sheet->mergeCells([3,$row, $COLS, $row]);
+		$sheet->getStyle([1,$row, $COLS, $row])->getFont()->setBold(true);
+
+		$row++;
+		$sheet->setCellValue('C'.$row, $academicInfos[RatingHelper::EXCELLENT]);
+		$sheet->setCellValue('D'.$row, $academicInfos[RatingHelper::GOOD]);
+		$sheet->mergeCells([4, $row, 6, $row]);
+		$sheet->setCellValue('H'.$row, $academicInfos[RatingHelper::FAIRLY_GOOD]);
+		$sheet->mergeCells([8, $row, 11, $row]);
+
+		$row++;
+		$sheet->setCellValue('C'.$row, $academicInfos[RatingHelper::AVERAGE]);
+		$sheet->setCellValue('D'.$row, $academicInfos[RatingHelper::WEAK]);
+		$sheet->mergeCells([4, $row, 6, $row]);
+		$sheet->setCellValue('H'.$row, $academicInfos[RatingHelper::POOR]);
+		$sheet->mergeCells([8, $row, 11, $row]);
+
+		$row++;
+		$cellValue = sprintf('Tổng số ĐẠT: %d (%.1f%%)',$passedCount, $passedCount/$total*100);
+		$sheet->setCellValue('C'.$row, $cellValue);
+		$sheet->mergeCells([3,$row, 6, $row]);
+		$failedCount = $total-$passedCount;
+		$cellValue = sprintf('Tổng số KHÔNG ĐẠT: %d (%.1f%%)',$failedCount, $failedCount/$total*100);
+		$sheet->setCellValue('H'.$row, $cellValue);
+		$sheet->mergeCells([8,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+
+
+		//3. Write the conduct results statistics
+		$row+=2;
+		$sheet->setCellValue('A'.$row, '*');
+		$sheet->setCellValue('C'.$row, 'Phân loại rèn luyện');
+		$sheet->mergeCells([3,$row, $COLS, $row]);
+		$sheet->getStyle([1,$row, $COLS, $row])->getFont()->setBold(true);
+
+		$row++;
+		$sheet->setCellValue('C'.$row, $conductInfos[RatingHelper::EXCELLENT]);
+		$sheet->setCellValue('D'.$row, $conductInfos[RatingHelper::GOOD]);
+		$sheet->mergeCells([4, $row, 6, $row]);
+		$sheet->setCellValue('H'.$row, $conductInfos[RatingHelper::FAIRLY_GOOD]);
+		$sheet->mergeCells([8, $row, 11, $row]);
+		$sheet->setCellValue('M'.$row, $conductInfos[RatingHelper::AVERAGE_FAIR]);
+		$sheet->mergeCells([13, $row, $COLS, $row]);
+
+		$row++;
+		$sheet->setCellValue('C'.$row, $conductInfos[RatingHelper::AVERAGE]);
+		$sheet->setCellValue('D'.$row, $conductInfos[RatingHelper::WEAK]);
+		$sheet->mergeCells([4, $row, 6, $row]);
+		$sheet->setCellValue('H'.$row, $conductInfos[RatingHelper::POOR]);
+		$sheet->mergeCells([8, $row, 11, $row]);
+
+		/**
+		 * Print the signing areas
+		 */
+		$row += 2;
+		$sheet->setCellValue('A'.$row, 'TRƯỞNG PHÒNG ĐÀO TẠO');
+		$sheet->mergeCells([1,$row, 3, $row]);
+		$sheet->setCellValue('D'.$row, 'HỆ TRƯỞNG HỆ QLHVSV');
+		$sheet->mergeCells([4,$row, 10, $row]);
+		$sheet->setCellValue('K'.$row, 'NGƯỜI LẬP BIỂU');
+		$sheet->mergeCells([11,$row, $COLS, $row]);
+		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
 	}
 
 	static private function phpWordDefineCommonStyles(PhpWord $phpWord): void

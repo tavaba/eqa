@@ -11,45 +11,41 @@
         <field
                 name="academicyear_id"
                 type="academicyear"
-                label="COM_EQA_ACADEMICYEAR"
+                label="Năm học"
                 default=""
                 onchange="this.form.submit();"
         >
-            <option value="">COM_EQA_ACADEMICYEAR_REQUEST</option>
+            <option value="">- Năm học -</option>
         </field>
         <field
                 name="term"
                 type="term"
-                label="COM_EQA_TERM"
                 default=""
+                label="Học kỳ"
                 onchange="this.form.submit();"
         />
-        <field  name="examseason_id"
-                type="examseason"
+        <field
+                name="course_id"
+                type="course"
+                default=""
                 class="select2-basic"
-                label="COM_EQA_EXAMSEASON"
+                label="COM_EQA_FORM_LEARNERS_FILTER_COURSE_LABEL"
                 onchange="this.form.submit();"
         >
-            <option value="">COM_EQA_EXAMSEASON_REQUEST</option>
+            <option value="">COM_EQA_FORM_LEARNERS_FILTER_COURSE_MSG</option>
         </field>
-        <field  name="exam_status"
-                type="examstatus"
-                label="COM_EQA_STATUS"
-                onchange="this.form.submit();"
-        >
-            <option value="">COM_EQA_STATUS_REQUEST</option>
-        </field>
-        <field  name="exam_id"
-                type="exam"
+        <field
+                name="group_id"
+                type="group"
+                default=""
                 class="select2-basic"
-                label="COM_EQA_EXAM"
+                label="COM_EQA_FORM_LEARNERS_FILTER_GROUP_LABEL"
                 onchange="this.form.submit();"
         >
-            <option value="">COM_EQA_EXAM_REQUEST</option>
+            <option value="">COM_EQA_FORM_LEARNERS_FILTER_GROUP_MSG</option>
         </field>
     </fields>
     <fields name="list">
-
         <field
                 name="limit"
                 type="limitbox"

@@ -70,6 +70,33 @@ abstract class DatabaseHelper
         $db->setQuery($query);
         return $db->loadObject();
     }
+	static public function getCourseStudyYear(string|int $courseCodeOrId, string|int $currentAcademicyearCodeOrId):int
+	{
+		$db = self::getDatabaseDriver();
+
+		//1. Get the course admission year
+		$query = $db->getQuery(true)
+			->select('admissionyear')
+			->from('#__eqa_courses');
+		if(is_numeric($courseCodeOrId))
+			$query->where('id=' . (int)$courseCodeOrId);
+		else
+			$query->where('code=' . $db->quote($courseCodeOrId));
+		$db->setQuery($query);
+		$admissionYear = $db->loadResult();
+
+		//2. If the academic year is given by id, load its code
+		if(is_numeric($currentAcademicyearCodeOrId)){
+			$currentAcademicyearCode = self::getAcademicyearCode((int)$currentAcademicyearCodeOrId);
+		}
+		else
+			$currentAcademicyearCode = $currentAcademicyearCodeOrId;
+
+		//3. Calculate and return study year
+		$startYear = substr($currentAcademicyearCode, 0, 4);
+		return $startYear - $admissionYear + 1;
+	}
+
 	static public function getExamName(int $examId)
 	{
 		$db = self::getDatabaseDriver();

@@ -23,9 +23,7 @@
                 label="COM_EQA_TERM"
                 default=""
                 onchange="this.form.submit();"
-        >
-            <option value="">COM_EQA_TERM_REQUEST</option>
-        </field>
+        />
         <field
                 name="type"
                 type="examtype"

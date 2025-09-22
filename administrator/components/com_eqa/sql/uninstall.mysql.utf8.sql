@@ -1,8 +1,11 @@
 /*
- * COM_EQA version 1.03
+ * COM_EQA version 1.2.1
  */
+DROP TABLE IF EXISTS `#__eqa_conducts`;
 DROP TABLE IF EXISTS `#__eqa_mmproductions`;
 DROP TABLE IF EXISTS `#__eqa_class_learner`;
+DROP TABLE IF EXISTS `#__eqa_cohort_learner`;
+DROP TABLE IF EXISTS `#__eqa_cohorts`;
 DROP TABLE IF EXISTS `#__eqa_regradings`;
 DROP TABLE IF EXISTS `#__eqa_gradecorrections`;
 DROP TABLE IF EXISTS `#__eqa_papers`;

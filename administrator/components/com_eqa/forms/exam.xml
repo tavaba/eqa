@@ -30,6 +30,19 @@
                 description="COM_EQA_EXAM_NAME_DESC"
                 required="true"
         />
+        <field  name="is_pass_fail"
+                type="radio"
+                required="true"
+                default="1"
+                label="Là môn điều kiện"
+                description="Nếu là môn điều kiện thì chỉ yêu cầu HVSV phải &quot;ĐẠT&quot;,
+                điểm thi không tính vào trung bình học kỳ, trung bình chung tích lũy.
+                Hiện có 2 môn cụ thể: Giáo dục thể chất, Giáo dục Quốc phòng An ninh."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
         <field
                 name="testtype"
                 type="testtype"

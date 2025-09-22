@@ -27,8 +27,8 @@ class ExamexamineesModel extends ListModel {
 
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
-            array('a.learner_id','a.code','b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed', 'e.type',      'a.debtor','d.name',  'a.anomaly', 'a.mark_orig',  'a.mark_final', 'a.module_mark', 'a.module_grade', 'a.conclusion'),
-            array('id',          'code',  'learner_code', 'lastname',   'firstname',   'attempt',    'pam1',   'pam2', 'pam',  'allowed',   'stimulation', 'debtor',  'examroom','anomaly',   'mark_orig',    'mark_final',   'module_mark',   'module_grade',   'conclusion')
+            array('a.learner_id','a.code','b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed', 'e.type',      'a.debtor','d.name',  'a.anomaly', 'a.mark_orig',  'a.mark_final', 'a.module_mark', 'a.module_base4_mark', 'a.module_grade', 'a.conclusion'),
+            array('id',          'code',  'learner_code', 'lastname',   'firstname',   'attempt',    'pam1',   'pam2', 'pam',  'allowed',   'stimulation', 'debtor',  'examroom','anomaly',   'mark_orig',    'mark_final',   'module_mark',   'module_base4_mark',   'module_grade',   'conclusion')
         );
         $query = $db->getQuery(true)
             ->select($columns)

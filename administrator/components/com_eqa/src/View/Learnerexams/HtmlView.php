@@ -35,6 +35,7 @@ class HtmlView extends EqaItemsHtmlView {
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('ppaaMark', 'Điểm PK', false, false, 'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('finalMark', 'Điểm thực', false, false, 'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('moduleMark', 'Điểm HP', false, false, 'text-center');
+	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('moduleBase4Mark', 'Hệ 4', false, false, 'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('moduleGrade', 'Điểm chữ', false, false, 'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('conclusion', 'Kết luận', false, false, 'text-center');
     }

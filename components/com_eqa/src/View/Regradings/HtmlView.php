@@ -90,7 +90,7 @@ class HtmlView extends EqaItemsHtmlView{
 			return;
 
 		// Add buttons to the toolbar
-		ToolbarHelper::appendButton('eqa.supervise', 'download', 'Danh sách thu phí','regradings.downloadRegradingFee');
+		ToolbarHelper::appenddButton('eqa.supervise', 'download', 'Danh sách thu phí','regradings.downloadRegradingFee');
 
 		// Render the toolbar
 		ToolbarHelper::render();

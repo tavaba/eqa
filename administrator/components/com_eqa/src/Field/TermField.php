@@ -5,11 +5,10 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
+use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 
 class TermField extends ListField
 {
-    protected const TERM_FIRST=1;
-    protected const TERM_LAST=3;
     protected $type = 'term';
 
     /**
@@ -21,10 +20,11 @@ class TermField extends ListField
      */
     protected function getOptions()
     {
-        $options = parent::getOptions();
-        for($term = self::TERM_FIRST; $term<=self::TERM_LAST; $term++)
-            $options[] = HTMLHelper::_('select.option',$term,$term);
-        return $options;
+        $options = [];
+	    $options[] = HTMLHelper::_('select.option','','- Học kỳ -');
+		foreach (DatetimeHelper::getTerms() as $term=>$label)
+			$options[] = HTMLHelper::_('select.option',$term,$label);
+		return $options;
     }
 
 }

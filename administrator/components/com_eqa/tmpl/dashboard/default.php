@@ -50,6 +50,11 @@ JHtml::_('bootstrap.framework');
 			            <?php echo "Thống kê"; ?>
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab8-tab" data-bs-toggle="tab" data-bs-target="#tab8" type="button" role="tab" aria-controls="tab6" aria-selected="false">
+			            <?php echo "Đánh giá rèn luyện"; ?>
+                    </button>
+                </li>
             </ul>
 
             <!-- Tab panes -->
@@ -184,6 +189,13 @@ JHtml::_('bootstrap.framework');
                         </a>
                         <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=examseasons'); ?>" class="btn btn-primary btn-lg">
 				            <?php echo "Xuất số liệu thống kê"; ?>
+                        </a>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="tab8" role="tabpanel" aria-labelledby="tab8-tab">
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="<?php echo Route::_('index.php?option=com_eqa&view=conducts'); ?>" class="btn btn-primary btn-lg">
+				            <?php echo "Kết quả rèn luyện"; ?>
                         </a>
                     </div>
                 </div>
