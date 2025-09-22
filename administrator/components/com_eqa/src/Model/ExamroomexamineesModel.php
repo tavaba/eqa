@@ -27,8 +27,8 @@ class ExamroomexamineesModel extends ListModel {
 
         $db = $this->getDatabase();
         $columns = $db->quoteName(
-            array('a.learner_id', 'a.code',        'b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed','a.mark_final', 'a.module_mark', 'a.module_grade', 'a.conclusion'),
-            array('id',           'examinee_code', 'learner_code', 'lastname',    'firstname',   'attempt',  'pam1',   'pam2', 'pam',   'allowed',   'mark_final',  'module_mark',   'module_grade',   'conclusion')
+            array('a.learner_id', 'a.code',        'b.code',       'b.lastname', 'b.firstname', 'a.attempt', 'c.pam1', 'c.pam2','c.pam','c.allowed','a.mark_final', 'a.module_mark', 'a.module_base4_mark', 'a.module_grade', 'a.conclusion'),
+            array('id',           'examinee_code', 'learner_code', 'lastname',    'firstname',   'attempt',  'pam1',   'pam2', 'pam',   'allowed',   'mark_final',  'module_mark',   'module_base4_mark',   'module_grade',   'conclusion')
         );
         $query = $db->getQuery(true)
             ->select($columns)

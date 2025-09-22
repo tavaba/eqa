@@ -542,6 +542,27 @@ abstract class ExamHelper{
 			$moduleMark = min([$moduleMark, 6.9]);
 		return $moduleMark;
 	}
+	static public function calculateBase4Mark(float $moduleMark): float
+	{
+		if($moduleMark >= 9.0)
+			return 4.0;
+		if($moduleMark >= 8.5)
+			return 3.8;
+		if($moduleMark >= 7.8)
+			return 3.5;
+		if($moduleMark >= 7.0)
+			return 3.0;
+		if($moduleMark >= 6.3)
+			return 2.4;
+		if($moduleMark >= 5.5)
+			return 2.0;
+		if($moduleMark >= 4.8)
+			return 1.5;
+		if($moduleMark >= 4.0)
+			return 1.0;
+		return 0;
+	}
+
 	static public function calculateModuleGrade(float $moduleMark, int $conclusion)
 	{
 		if($conclusion == ExamHelper::CONCLUSION_DEFERRED)

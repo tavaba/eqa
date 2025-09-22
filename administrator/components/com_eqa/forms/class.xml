@@ -64,9 +64,7 @@
                 type="term"
                 required="true"
                 label="COM_EQA_FORM_CLASS_TERM_LABEL"
-        >
-            <option value="">COM_EQA_FORM_CLASS_TERM_MSG</option>
-        </field>
+        />
         <field  name="start"
                 type="calendar"
                 showtime="false"

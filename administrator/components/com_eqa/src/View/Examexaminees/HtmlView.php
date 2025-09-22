@@ -53,7 +53,8 @@ class HtmlView extends EqaItemsHtmlView {
         $f = new EqaListLayoutItemFieldOption('module_mark', 'COM_EQA_MODULE_MARK_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_MARK');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('module_grade', 'COM_EQA_MODULE_GRADE_ABBR', false, false, 'text-center');
+	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('module_base4_mark', 'Hệ 4', false, false, 'text-center');
+	    $f = new EqaListLayoutItemFieldOption('module_grade', 'COM_EQA_MODULE_GRADE_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_GRADE');
         $fields->customFieldset1[] = $f;
 		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('conclusion', 'Kết luận');

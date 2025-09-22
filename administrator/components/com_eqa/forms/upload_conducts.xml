@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="upload" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="academicyear_id"
+                type="academicyear"
+                required="true"
+                label="COM_EQA_ACADEMICYEAR"
+                />
+
+        <field  name="term"
+                type="term"
+                required="true"
+                label="COM_EQA_TERM"
+                />
+
+        <field  name="files"
+                type="file"
+                multiple="true"
+                required="true"
+                label="Tập tin dữ liệu"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

@@ -131,6 +131,11 @@
 					default="4.0"
 					label="Ngưỡng điểm đạt thi KTHP"
 			/>
+			<field	name="threshold_pass_fail"
+					  type="number"
+					  default="4.0"
+					  label="Ngưỡng điểm đạt đối với môn điều kiện"
+			/>
 		</fieldset>
 		<fieldset
 			name="ppaa"

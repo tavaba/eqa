@@ -50,8 +50,8 @@ class LearnerexamsModel extends ListModel {
 
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
-            array('f.code',       'e.term', 'e.name',     'a.exam_id', 'b.name', 'd.type',     'd.value',     'c.pam1', 'c.pam2', 'c.pam', 'a.attempt', 'c.allowed', 'a.debtor', 'a.anomaly','a.mark_orig', 'a.ppaa', 'a.mark_ppaa', 'a.mark_final', 'a.module_mark', 'a.module_grade', 'a.conclusion'),
-            array('academicyear', 'term',   'examseason', 'id',        'name',   'stimulType', 'stimulValue', 'pam1',   'pam2',   'pam',   'attempt',   'allowed',   'isDebtor', 'anomaly',  'origMark',    'ppaa',   'ppaaMark',    'finalMark',    'moduleMark',    'moduleGrade',    'conclusion')
+            array('f.code',       'e.term', 'e.name',     'a.exam_id', 'b.name', 'd.type',     'd.value',     'c.pam1', 'c.pam2', 'c.pam', 'a.attempt', 'c.allowed', 'a.debtor', 'a.anomaly','a.mark_orig', 'a.ppaa', 'a.mark_ppaa', 'a.mark_final', 'a.module_mark', 'a.module_base4_mark', 'a.module_grade', 'a.conclusion'),
+            array('academicyear', 'term',   'examseason', 'id',        'name',   'stimulType', 'stimulValue', 'pam1',   'pam2',   'pam',   'attempt',   'allowed',   'isDebtor', 'anomaly',  'origMark',    'ppaa',   'ppaaMark',    'finalMark',    'moduleMark',    'moduleBase4Mark',    'moduleGrade',    'conclusion')
         );
         $query = $db->getQuery(true)
             ->select($columns)

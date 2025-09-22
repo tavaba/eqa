@@ -52,9 +52,7 @@
                 label="COM_EQA_FORM_CLASSES_FILTER_TERM_LABEL"
                 default=""
                 onchange="this.form.submit();"
-        >
-            <option value="">COM_EQA_FORM_CLASSES_FILTER_TERM_MSG</option>
-        </field>
+        />
         <field
                 name="lecture_id"
                 type="employee"
