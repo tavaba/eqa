@@ -493,12 +493,16 @@ abstract class ExamHelper{
 		$value = (float)$value;
 		if($value<0 || $value>10)
 			return false;
-		return $value;
+
+		//Round the value as required by configuration
+		$precision = ConfigHelper::getProgressMarkPrecision();
+		return round($value, $precision);
 	}
     static public function calculatePamForDefaultFormular(float $pam1, float $pam2): float
     {
-        $pam = 0.7*$pam1 + 0.3*$pam2;
-        return $pam;
+	    $precision = ConfigHelper::getProgressMarkPrecision();
+	    $pam = 0.7*$pam1 + 0.3*$pam2;
+	    return round($pam, $precision);
     }
 	static public function calculatePam(int $subjectId, float $pam1, float $pam2): float
 	{

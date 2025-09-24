@@ -539,6 +539,7 @@ class RegradingsModel extends EqaListModel
 		$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
 		$finalMark = ExamHelper::calculateFinalMark($newMark, $anomaly, $attempt, $addValue, $admissionYear);
 		$moduleMark = ExamHelper::calculateModuleMark($learnerId, $pam, $finalMark, $attempt, $admissionYear);
+		$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 		$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
@@ -549,6 +550,7 @@ class RegradingsModel extends EqaListModel
 			->set($db->quoteName('mark_ppaa') . '=' . $newMark)
 			->set($db->quoteName('mark_final') . '=' . $finalMark)
 			->set($db->quoteName('module_mark') . '=' . $moduleMark)
+			->set($db->quoteName('module_base4_mark') . '=' . $moduleBase4Mark)
 			->set($db->quoteName('module_grade') . '=' . $db->quote($moduleGrade))
 			->set($db->quoteName('conclusion') . '=' . $conclusion)
 			->where('exam_id=' . $examId)

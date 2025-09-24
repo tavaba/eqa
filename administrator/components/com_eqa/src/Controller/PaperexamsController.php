@@ -3,13 +3,16 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 require JPATH_ROOT.'/vendor/autoload.php';
 
+use Exception;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
+use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
-use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
@@ -18,8 +21,7 @@ class PaperexamsController extends EqaAdminController {
 	public function uploadMarkByMask()
 	{
 		$fileFormField = 'excelfile';
-		$componentConfig = ComponentHelper::getParams('com_eqa');
-		$examMarkPrecision = $componentConfig->get('params.precision_exam',1);
+		$examMarkPrecision = ConfigHelper::getExamMarkPrecision();
 
 		//Check token
 		$this->checkToken();
@@ -29,12 +31,12 @@ class PaperexamsController extends EqaAdminController {
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
 			$this->setMessage($msg,'error');
-			$this->setRedirect(JRoute('index.php?option=com_eqa',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa',false));
 			return;
 		}
 
 		//Redirect in any cases
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa', false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa', false));
 
 		//Check input files
 		$files = $this->input->files;

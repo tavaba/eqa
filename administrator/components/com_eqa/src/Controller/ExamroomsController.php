@@ -10,6 +10,7 @@ use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamroomModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use stdClass;
 
@@ -194,7 +195,10 @@ class ExamroomsController extends EqaAdminController {
 			}
 
 
-			//4. Call model
+			/**
+			 * 4. Load model and do import
+			 * @var ExamroomModel $model
+			 */
 			$model = $this->getModel();
 			$examroomName = $sheet->getTitle();
 			try

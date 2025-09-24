@@ -351,6 +351,7 @@ class GradecorrectionModel extends EqaAdminModel {
 		$addValue = $examinee->stimulType==StimulationHelper::TYPE_ADD ? $examinee->stimulValue : 0;
 		$finalMark = ExamHelper::calculateFinalMark($newFinalExam, $examinee->anomaly, $examinee->attempt, $addValue, $admissionYear);
 		$moduleMark = ExamHelper::calculateModuleMark($examinee->learnerId, $newPam, $finalMark, $examinee->attempt, $admissionYear);
+		$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 		$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $examinee->anomaly, $examinee->attempt);
 		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
@@ -361,6 +362,7 @@ class GradecorrectionModel extends EqaAdminModel {
 			->set($db->quoteName('mark_ppaa') . '=' . $newFinalExam)
 			->set($db->quoteName('mark_final') . '=' . $finalMark)
 			->set($db->quoteName('module_mark') . '=' . $moduleMark)
+			->set($db->quoteName('module_base4_mark') . '=' . $moduleBase4Mark)
 			->set($db->quoteName('module_grade') . '=' . $db->quote($moduleGrade))
 			->set($db->quoteName('conclusion') . '=' . $conclusion)
 			->where('exam_id=' . $examinee->examId)

@@ -499,6 +499,7 @@ class PaperexamModel extends EqaAdminModel{
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
 				$finalMark = ExamHelper::calculateFinalMark($mark, $anomaly, $attempt, $addValue, $admissionYear);
 				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt, $admissionYear);
+				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				$query = $db->getQuery(true)
@@ -507,6 +508,7 @@ class PaperexamModel extends EqaAdminModel{
 						'mark_orig = ' . $mark,
 						'mark_final = ' . $finalMark,
 						'module_mark = ' . $moduleMark,
+						'module_base4_mark = ' . $moduleBase4Mark,
 						'module_grade = ' . $db->quote($moduleGrade),
 						'conclusion = ' . $conclusion
 					])

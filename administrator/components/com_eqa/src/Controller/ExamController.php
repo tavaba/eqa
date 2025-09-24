@@ -5,9 +5,11 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
@@ -608,7 +610,7 @@ class ExamController extends  EqaFormController
 	 *
 	 * @since version 1.0.0
 	 */
-	public function stimulate()
+	public function stimulate(): void
 	{
 		try
 		{
@@ -646,7 +648,7 @@ class ExamController extends  EqaFormController
 			return;
 		}
 	}
-	public function updateDebt()
+	public function updateDebt(): void
 	{
 		try
 		{
@@ -683,8 +685,10 @@ class ExamController extends  EqaFormController
 			$this->setRedirect($url);
 		}
 	}
-	public function importitest()
+	public function importitest(): void
 	{
+		$examMarkPrecision = ConfigHelper::getExamMarkPrecision();
+
 		//Check token
 		$this->checkToken();
 
@@ -760,7 +764,7 @@ class ExamController extends  EqaFormController
 				return;
 			}
 			else
-				$examinee->mark = (float)$mark;
+				$examinee->mark = GeneralHelper::toFloat($mark, $examMarkPrecision);
 			$examinee->description = $dataRow[$colwDescription];
 			$examinees[] = $examinee;
 		}

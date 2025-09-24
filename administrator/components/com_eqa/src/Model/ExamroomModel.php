@@ -321,6 +321,7 @@ class ExamroomModel extends EqaAdminModel {
 		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
 		$countAnomaly = 0;
+		$EXAM_MARK_DECIMAL_PLACES = ConfigHelper::getExamMarkPrecision();  //Chỉ số thập phân của điểm
 
 		$db->transactionStart();
 		try
@@ -335,7 +336,7 @@ class ExamroomModel extends EqaAdminModel {
 			foreach ($examinees as $examinee){
 				$code = $examinee->code;
 				$learnerCode = $examinee->learnerCode;
-				$mark = GeneralHelper::toFloat($examinee->value);
+				$mark = GeneralHelper::toFloat($examinee->value, $EXAM_MARK_DECIMAL_PLACES);
 				$description = $examinee->description;
 
 				//Kiểm tra tính hợp lệ của cột 'điểm'
@@ -392,6 +393,7 @@ class ExamroomModel extends EqaAdminModel {
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
 				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue, $admissionYear);
 				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt, $admissionYear);
+				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				if(empty($description))
@@ -405,6 +407,7 @@ class ExamroomModel extends EqaAdminModel {
 						'anomaly = ' . $anomaly,
 						'mark_final = ' . $finalMark,
 						'module_mark = ' . $moduleMark,
+						'module_base4_mark = ' . $moduleBase4Mark,
 						'module_grade = ' . $db->quote($moduleGrade),
 						'conclusion = ' . $conclusion,
 						'description = ' . $description

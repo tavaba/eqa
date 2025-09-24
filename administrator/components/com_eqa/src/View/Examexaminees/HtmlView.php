@@ -115,6 +115,9 @@ class HtmlView extends EqaItemsHtmlView {
 		            $item->pam2 = ExamHelper::specialMarkToText($item->pam2);
 	            if($item->pam<0)
 		            $item->pam = ExamHelper::specialMarkToText($item->pam);
+
+				if($item->module_base4_mark > 0)
+	                $item->module_base4_mark = sprintf('%.1f',$item->module_base4_mark);
             }
         }
 

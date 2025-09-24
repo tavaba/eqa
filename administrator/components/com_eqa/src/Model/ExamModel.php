@@ -15,6 +15,19 @@ use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 defined('_JEXEC') or die();
 
 class ExamModel extends EqaAdminModel{
+	public function prepareTable($table)
+	{
+		if(empty($table->questiondeadline))
+			$table->questiondeadline=null;
+		if(empty($table->questiondate))
+			$table->questiondate=null;
+		if(empty($table->questionsender_id))
+			$table->questionsender_id=null;
+		if(empty($table->questionauthor_id))
+			$table->questionauthor_id=null;
+		if(empty($table->nquestion))
+			$table->nquestion=null;
+	}
 	/**
 	 * Add examinees into an exam. This must search for 'ntaken', 'expired'.
 	 * This also calls updateDebt() and updateStimulation() after adding.
@@ -430,19 +443,6 @@ class ExamModel extends EqaAdminModel{
 		}
 	}
 
-    public function prepareTable($table)
-    {
-        if(empty($table->questiondeadline))
-            $table->questiondeadline=null;
-        if(empty($table->questiondate))
-            $table->questiondate=null;
-        if(empty($table->questionsender_id))
-            $table->questionsender_id=null;
-        if(empty($table->questionauthor_id))
-            $table->questionauthor_id=null;
-        if(empty($table->nquestion))
-            $table->nquestion=null;
-    }
 
 	public function updateExamQuestion(int $examId, int $questionAuthorId, int $questionSenderId, int $questionQuantity, string $questionDate):bool
 	{
@@ -932,6 +932,34 @@ class ExamModel extends EqaAdminModel{
 		return true;
 	}
 
+	/**
+	 * Check if all the examinees of the given exam have already gotten their
+	 * original exam marks (and therefore the anomaly information, if any).
+	 * Ony the examinees with a examinee code will be check.
+	 * This function is used to make a decision whether to do  module mark,
+	 * module grade... calculation for the exam.
+	 *
+	 * @param   int  $examId
+	 *
+	 * @return bool
+	 * @since 1.2.2
+	 */
+	public function isFullMark(int $examId): bool
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('count(*)')
+			->from('#__eqa_exam_learner')
+			->where([
+				'exam_id=' . $examId,
+				'code IS NOT NULL',
+				'mark_orig IS NULL'
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+		return $db->loadResult()==0;
+	}
+
 	private function applyStimulTransfers(DatabaseDriver $db, $examId, $subjectId, $examinees):int
 	{
 		//LƯU Ý: Cần phải set trạng thái "Nợ học phí" trước khi gọi phương thức này
@@ -958,6 +986,7 @@ class ExamModel extends EqaAdminModel{
 			$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
 			$conclusion = ExamHelper::CONCLUSION_PASSED;
 			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $stimulationValue, $stimulationValue, $attempt, $admissionYear);
+			$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 			$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 			$query = $db->getQuery(true)
 				->update('#__eqa_exam_learner')
@@ -966,6 +995,7 @@ class ExamModel extends EqaAdminModel{
 					'mark_orig=' . $stimulationValue,
 					'mark_final=' . $stimulationValue,
 					'module_mark=' . $moduleMark,
+					'module_base4_mark=' . $moduleBase4Mark,
 					'conclusion=' . $conclusion,
 					'module_grade=' . $db->quote($moduleGrade)
 				])
@@ -1040,6 +1070,7 @@ class ExamModel extends EqaAdminModel{
 			$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
 			$conclusion = ExamHelper::CONCLUSION_PASSED;
 			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $stimulationValue, $attempt, $admissionYear);
+			$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 			$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 			$query = $db->getQuery(true)
 				->update('#__eqa_exam_learner')
@@ -1048,6 +1079,7 @@ class ExamModel extends EqaAdminModel{
 					'mark_orig=' . $stimulationValue,
 					'mark_final=' . $stimulationValue,
 					'module_mark=' . $moduleMark,
+					'module_base4_mark=' . $moduleBase4Mark,
 					'conclusion=' . $conclusion,
 					'module_grade=' . $db->quote($moduleGrade)
 				])
@@ -1797,6 +1829,7 @@ class ExamModel extends EqaAdminModel{
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
 				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue, $admissionYear);
 				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt,$admissionYear);
+				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				if(empty($description))
@@ -1809,6 +1842,7 @@ class ExamModel extends EqaAdminModel{
 						'mark_orig = ' . $mark,
 						'mark_final = ' . $finalMark,
 						'module_mark = ' . $moduleMark,
+						'module_base4_mark = ' . $moduleBase4Mark,
 						'module_grade = ' . $db->quote($moduleGrade),
 						'conclusion = ' . $conclusion,
 						'description = ' . $description
