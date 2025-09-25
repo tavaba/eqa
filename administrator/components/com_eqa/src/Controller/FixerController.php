@@ -13,6 +13,7 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Psr\Log\LoggerInterface;
 use stdClass;
 
 defined('_JEXEC') or die();
@@ -149,6 +150,60 @@ class FixerController extends  EqaFormController
 			$db->setQuery($query);
 			$db->execute();
 		}
+	}
+
+	public function recalc():void
+	{
+		if(!$this->app->getIdentity()->authorise('core.admin'))
+			die('Invalid request');
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			'a.exam_id          AS examId',
+			'a.learner_id       AS learnerId',
+			'a.class_id         AS classId',
+			'a.mark_final       AS finalMark',
+			'b.pam              AS pam'
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b','b.class_id=a.class_id AND b.learner_id=a.learner_id');
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList();
+		if(empty($examinees)) { echo "Nothing to do"; jexit(); }
+
+		foreach ($examinees as $examinee)
+		{
+			$moduleMark = ExamHelper::calculateModuleMark(0,$examinee->pam,$examinee->finalMark,1,2023);
+			$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
+			$conclusion = ExamHelper::conclude($moduleMark, $examinee->finalMark, ExamHelper::EXAM_ANOMALY_NONE, 1, 2023);
+			$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark,$conclusion);
+
+			//Update exam result
+			$query = $db->getQuery(true)
+				->update('#__eqa_exam_learner')
+				->set([
+					'module_mark='.$moduleMark,
+					'module_base4_mark='.$moduleBase4Mark,
+					'module_grade='.$db->quote($moduleGrade),
+					'conclusion='.$conclusion
+				])
+				->where('exam_id='.$examinee->examId)
+				->where('learner_id='.$examinee->learnerId);
+			$db->setQuery($query)->execute();
+
+			//Update class info
+			if($conclusion == ExamHelper::CONCLUSION_PASSED)
+			{
+				$query = $db->getQuery(true)
+					->update('#__eqa_class_learner')
+					->set('expired=1')
+					->where('class_id='.$examinee->classId)
+					->where('learner_id='.$examinee->learnerId);
+				$db->setQuery($query)->execute();
+			}
+		}
+		echo count($examinees).' examinees have been updated';
 	}
 
 }

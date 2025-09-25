@@ -64,6 +64,12 @@
                 label="COM_EQA_FORM_SUBJECT_TESTTYPE_LABEL"
         />
         <field
+                name="finaltestduration"
+                type="interger"
+                label="Thời gian thi"
+                description="Thời gian làm bài thi KTHP, tính bằng phút"
+        />
+        <field
                 name="finaltestweight"
                 type="text"
                 default="0.7"

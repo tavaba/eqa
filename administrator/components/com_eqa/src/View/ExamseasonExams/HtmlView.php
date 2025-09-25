@@ -20,7 +20,9 @@ class HtmlView extends EqaItemsHtmlView
         $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
         $fields->check = EqaListLayoutItemFields::defaultFieldCheck();
 
-        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('name','COM_EQA_EXAM',false,true);
+        $f = new EqaListLayoutItemFieldOption('name','COM_EQA_EXAM');
+		$f->urlFormatString='index.php?option=com_eqa&view=exam&layout=edit&id=%d';
+	    $fields->customFieldset1[] = $f;
         $f = new EqaListLayoutItemFieldOption('nexaminee','COM_EQA_EXAMINEE',true,false,'text-center');
         $f->urlFormatString='index.php?option=com_eqa&view=examexaminees&exam_id=%d';
         $fields->customFieldset1[] = $f;
