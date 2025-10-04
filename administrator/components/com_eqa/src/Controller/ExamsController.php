@@ -43,7 +43,7 @@ class ExamsController extends EqaAdminController {
 	{
 		$app = $this->app;
 		$this->checkToken();
-		if(!$app->getIdentity()->authorise('core.manage',$this->option))
+		if(!$app->getIdentity()->authorise('core.manage', $this->option))
 		{
 			echo Text::_('COM_EQA_MSG_UNAUTHORISED');
 			exit();
@@ -95,7 +95,7 @@ class ExamsController extends EqaAdminController {
 		$this->checkToken();
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -123,7 +123,7 @@ class ExamsController extends EqaAdminController {
 		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=exams',false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -166,7 +166,7 @@ class ExamsController extends EqaAdminController {
 		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=exams',false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -212,7 +212,7 @@ class ExamsController extends EqaAdminController {
 		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=exams',false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;

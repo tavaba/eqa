@@ -80,7 +80,7 @@ class EqaFormController extends FormController
         //Check 'core.edit.own'
         //Nếu cấu hình không cho phép 'core.edit.own' thì trả về false
         $user = $this->app->getIdentity();
-        if(!$user->authorise('core.edit.own',$this->option))
+        if(!$user->authorise('core.edit.own', $this->option))
             return false;
 
         //Nếu không có dữ liệu cụ thể thì trả về false
@@ -153,7 +153,8 @@ class EqaFormController extends FormController
      * @throws Exception
      * @since 1.0
      */
-    public function resetorder(){
+    public function resetorder(): bool
+    {
         // Check for request forgeries.
         $this->checkToken();
 
@@ -177,7 +178,7 @@ class EqaFormController extends FormController
             $this->setMessage(Text::_('COM_EQA_MSG_SUCCESS_RESET_ORDER'), 'success');
         else
             $this->setMessage(Text::_('COM_EQA_MSG_ERROR_RESET_ORDER'),'error');
+
+		return true;
     }
-
-
 }

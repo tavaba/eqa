@@ -18,6 +18,11 @@ use Kma\Component\Eqa\Administrator\Helper\StringHelper;
 
 class EqaAdminController extends AdminController
 {
+	protected function allowImport():bool
+	{
+		$user = $this->app->getIdentity();
+		return $user->authorise('core.create', $this->option);
+	}
 
     /**
      * EqaAdminController là lớp helper sẽ được thừa kế bởi các Items Controllers trong EQA_COMPONENT.
@@ -52,7 +57,7 @@ class EqaAdminController extends AdminController
         $targetLayout = 'upload';
 
         // Access check
-        if (!$this->app->getIdentity()->authorise('core.create',$this->option)) {
+        if (!$this->allowImport()) {
             // Set the internal error and also the redirect error.
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
 

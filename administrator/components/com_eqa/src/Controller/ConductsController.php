@@ -124,7 +124,7 @@ class ConductsController extends EqaAdminController {
 			$this->checkToken();
 
 			//Check permission
-			if(!$this->app->getIdentity()->authorise('core.create',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.create', $this->option))
 				throw new Exception(Text::_('JERROR_ALERTNOAUTHOR'));
 
 			//Try get first portion of form data

@@ -18,7 +18,16 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-class ClassesController extends EqaAdminController {
+class ClassesController extends EqaAdminController
+{
+	protected function allowImport(): bool
+	{
+		$r = parent::allowImport();
+		if($r)
+			return true;
+		return $this->app->getIdentity()->authorise('eqa.create.class', $this->option);
+	}
+
 	public function addForGroupOrCohort(): void
 	{
 		$redirectUrl = Route::_('index.php?option=com_eqa&view=classes',false);
@@ -29,7 +38,10 @@ class ClassesController extends EqaAdminController {
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.create'))
+			$user = $this->app->getIdentity();
+			$canDo = $user->authorise('core.create', $this->option);
+			$canDo |= $user->authorise('eqa.create.class', $this->option);
+			if(!$canDo)
 				throw new Exception('Bạn không có thẩm quyền thực hiện tác vụ này');
 
 			//3. Get input parameters
@@ -100,8 +112,11 @@ class ClassesController extends EqaAdminController {
         );
 
         //Access Check
-        $app = Factory::getApplication();
-        if(!$app->getIdentity()->authorise('core.create','com_eqa'))
+	    $app = $this->app;
+	    $user = $this->app->getIdentity();
+	    $canDo = $user->authorise('core.create', $this->option);
+	    $canDo |= $user->authorise('eqa.create.class', $this->option);
+	    if(!$canDo)
         {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
             return;
@@ -333,7 +348,7 @@ class ClassesController extends EqaAdminController {
 
         //Access Check
         $app = Factory::getApplication();
-        if(!$app->getIdentity()->authorise('core.edit','com_eqa'))
+        if(!$app->getIdentity()->authorise('core.edit', $this->option))
         {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
             return;

@@ -25,7 +25,7 @@ class PaperexamController extends  EqaFormController {
 		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=paperexams',false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('eqa.mask',$this->option)){
+		if(!$this->app->getIdentity()->authorise('eqa.mask', $this->option)){
 			$this->setMessage('Bạn không có quyền thực hiện chức năng này', 'error');
 			return;
 		}
@@ -55,7 +55,7 @@ class PaperexamController extends  EqaFormController {
 		$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
 
 		//Check permission
-		if (!$this->app->getIdentity()->authorise('eqa.mask',$this->option))
+		if (!$this->app->getIdentity()->authorise('eqa.mask', $this->option))
 		{
 			$this->setMessage('Không có quyền thực hiện tác vụ', 'error');
 			return;
@@ -94,7 +94,7 @@ class PaperexamController extends  EqaFormController {
 		$this->checkToken();
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option)){
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option)){
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
 			return;
@@ -118,7 +118,7 @@ class PaperexamController extends  EqaFormController {
 		$this->checkToken();
 
 		//Check permissions
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));

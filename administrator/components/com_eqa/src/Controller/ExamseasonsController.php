@@ -26,7 +26,7 @@ class ExamseasonsController extends EqaAdminController
 		$this->setRedirect($url);
 
 		//Check permission
-		if (!$this->app->getIdentity()->authorise('core.edit.state'))
+		if (!$this->app->getIdentity()->authorise('core.edit.state', $this->option))
 		{
 			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 
@@ -60,7 +60,7 @@ class ExamseasonsController extends EqaAdminController
 		$this->setRedirect($url);
 
 		//Check permission
-		if (!$this->app->getIdentity()->authorise('core.edit.state'))
+		if (!$this->app->getIdentity()->authorise('core.edit.state', $this->option))
 		{
 			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 

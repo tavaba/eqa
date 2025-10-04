@@ -9,6 +9,7 @@ use Matrix\Exception;
 
 abstract class RatingHelper{
 	public const EXCELLENT      = 10;
+	public const VERY_GOOD      = 15;
 	public const GOOD           = 20;
 	public const FAIRLY_GOOD    = 30;
 	public const AVERAGE_FAIR   = 40;
@@ -20,6 +21,7 @@ abstract class RatingHelper{
 	{
 		return match ($rating) {
 			self::EXCELLENT => 'Xuất sắc',
+			self::VERY_GOOD => 'Giỏi',
 			self::GOOD => 'Tốt',
 			self::FAIRLY_GOOD => 'Khá',
 			self::AVERAGE_FAIR => 'Trung bình khá',
@@ -33,6 +35,7 @@ abstract class RatingHelper{
 	{
 		return match ($rating) {
 			self::EXCELLENT => 'XS',
+			self::VERY_GOOD => 'G',
 			self::GOOD => 'T',
 			self::FAIRLY_GOOD => 'K',
 			self::AVERAGE_FAIR => 'TBK',
@@ -47,6 +50,7 @@ abstract class RatingHelper{
 	{
 		return [
 			self::EXCELLENT => self::decode(self::EXCELLENT),
+			self::VERY_GOOD => self::decode(self::VERY_GOOD),
 			self::GOOD => self::decode(self::GOOD),
 			self::FAIRLY_GOOD => self::decode(self::FAIRLY_GOOD),
 			self::AVERAGE_FAIR => self::decode(self::AVERAGE_FAIR),
@@ -79,7 +83,7 @@ abstract class RatingHelper{
 			if($score >= 3.60)
 				return  self::EXCELLENT;
 			if($score >= 3.20)
-				return self::GOOD;
+				return self::VERY_GOOD;
 			if($score >= 2.50)
 				return self::FAIRLY_GOOD;
 			if($score >= 2.00)
@@ -93,7 +97,7 @@ abstract class RatingHelper{
 			if($score >= 9.0)
 				return  self::EXCELLENT;
 			if($score >= 8.0)
-				return self::GOOD;
+				return self::VERY_GOOD;
 			if($score >= 7.0)
 				return self::FAIRLY_GOOD;
 			if($score >= 5.0)

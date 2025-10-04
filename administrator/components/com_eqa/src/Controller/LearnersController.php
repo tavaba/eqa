@@ -40,7 +40,7 @@ class LearnersController extends EqaAdminController{
         }
 
         //Access Check
-        if(!$app->getIdentity()->authorise('core.create','com_eqa'))
+        if(!$app->getIdentity()->authorise('core.create', $this->option))
         {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
             return;
@@ -177,7 +177,7 @@ class LearnersController extends EqaAdminController{
 
 		//Access Check
 		$app = Factory::getApplication();
-		if(!$app->getIdentity()->authorise('core.edit','com_eqa'))
+		if(!$app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
 			return;
@@ -226,7 +226,7 @@ class LearnersController extends EqaAdminController{
 
 		//Access Check
 		$app = Factory::getApplication();
-		if(!$app->getIdentity()->authorise('core.edit','com_eqa'))
+		if(!$app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
 			return;
@@ -268,7 +268,7 @@ class LearnersController extends EqaAdminController{
 
 		//Access Check
 		$app = Factory::getApplication();
-		if(!$app->getIdentity()->authorise('core.edit','com_eqa'))
+		if(!$app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
 			return;

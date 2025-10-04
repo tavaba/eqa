@@ -363,7 +363,7 @@ class ExamseasonController extends EqaFormController
 		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -400,7 +400,7 @@ class ExamseasonController extends EqaFormController
 		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -441,7 +441,7 @@ class ExamseasonController extends EqaFormController
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 
 			//3. Get data from post
@@ -481,7 +481,7 @@ class ExamseasonController extends EqaFormController
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 
 			//3. Get data from post
@@ -522,7 +522,7 @@ class ExamseasonController extends EqaFormController
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.manage',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception('Bạn không có quyền thực hiện chức năng này');
 
 			//3. Get form data

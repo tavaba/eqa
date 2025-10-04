@@ -60,12 +60,22 @@ class HtmlView extends EqaItemsHtmlView
     }
     protected function addToolbarForLayoutDefault(): void
     {
-        parent::addToolbarForLayoutDefault();
-		ToolbarHelper::appendButton('core.create', 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
+	    ToolbarHelper::title('Quản lý lớp học phần');
+		ToolbarHelper::appendGoHome();
+	    ToolbarHelper::appendButton(['core.create','eqa.create.class'],'plus','JTOOLBAR_NEW','class.add',false,'btn btn-success');
+	    ToolbarHelper::appendButton('core.delete','delete','JTOOLBAR_DELETE','class.delete',true,'btn btn-danger');
+	    ToolbarHelper::appendButton(['core.create','eqa.create.class'],'upload','JTOOLBAR_UPLOAD','classes.upload');
+		ToolbarHelper::appendButton(['core.create','eqa.create.class'], 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
         $url = \JRoute::_('index.php?option=com_eqa&view=classes&layout=uploadpam',false);
 		ToolbarHelper::appendButton('core.manage','download','Điểm QT','classes.downloadPam',true);
-        ToolbarHelper::appendLink('core.edit', $url,'COM_EQA_IMPORT_PAM', 'bars');
+        ToolbarHelper::appendLink(['core.edit','core.edit.own','eqa.edit.class'], $url,'COM_EQA_IMPORT_PAM', 'bars');
     }
+	protected function addToolbarForLayoutUpload(): void
+	{
+		ToolbarHelper::title('Nhập lớp học phần');
+		ToolbarHelper::appendButton(['core.create','eqa.create.class'],'save','JTOOLBAR_SAVE','classes.import',false,null,true);
+		ToolbarHelper::cancel('class.cancel');
+	}
 
 	protected function prepareDataForLayoutAddforgrouporcohort(): void
 	{
@@ -84,6 +94,7 @@ class HtmlView extends EqaItemsHtmlView
 	}
 	protected function addToolbarForLayoutUploadpam(): void
     {
+		ToolbarHelper::title('Tải bảng điểm quá trình');
         ToolbarHelper::appendButton('core.edit','save','COM_EQA_IMPORT_PAM','classes.importPam',false,null,true);
         ToolbarHelper::cancel('class.cancel');
     }

@@ -51,7 +51,7 @@ class ExamroomController extends  EqaFormController {
         $examroomId = $this->app->input->getInt('examroom_id');
 
         // Access check
-        if (!$this->app->getIdentity()->authorise('core.edit',$this->option)) {
+        if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
             // Set the internal error and also the redirect error.
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
             $this->setRedirect(
@@ -119,7 +119,7 @@ class ExamroomController extends  EqaFormController {
 		$this->setRedirect(JRoute::_($url, false));
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option)){
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option)){
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
 			return;
 		}
@@ -144,7 +144,7 @@ class ExamroomController extends  EqaFormController {
 		$this->checkToken();
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examrooms',false));

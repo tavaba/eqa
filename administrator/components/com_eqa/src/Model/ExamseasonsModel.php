@@ -105,19 +105,21 @@ class ExamseasonsModel extends EqaListModel{
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
-			$db->quoteName('c.id')              . ' AS ' . $db->quoteName('learnerId'),
-			$db->quoteName('c.code')            . ' AS ' . $db->quoteName('learnerCode'),
-			$db->quoteName('c.lastname')        . ' AS ' . $db->quoteName('lastname'),
-			$db->quoteName('c.firstname')       . ' AS ' . $db->quoteName('firstname'),
-			$db->quoteName('e.id')              . ' AS ' . $db->quoteName('subjectId'),
-			$db->quoteName('e.code')            . ' AS ' . $db->quoteName('subjectCode'),
-			$db->quoteName('e.name')            . ' AS ' . $db->quoteName('subjectName'),
-			$db->quoteName('d.term')            . ' AS ' . $db->quoteName('term'),
-			$db->quoteName('f.code')            . ' AS ' . $db->quoteName('academicyear'),
-			$db->quoteName('a.exam_id')         . ' AS ' . $db->quoteName('examId'),
-			$db->quoteName('a.class_id')        . ' AS ' . $db->quoteName('classId'),
-			$db->quoteName('b.ntaken')          . ' AS ' . $db->quoteName('ntaken'),
-			$db->quoteName('a.conclusion')      . ' AS ' . $db->quoteName('conclusion'),
+			$db->quoteName('c.id')                  . ' AS ' . $db->quoteName('learnerId'),
+			$db->quoteName('c.code')                . ' AS ' . $db->quoteName('learnerCode'),
+			$db->quoteName('c.lastname')            . ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('c.firstname')           . ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('e.id')                  . ' AS ' . $db->quoteName('subjectId'),
+			$db->quoteName('e.code')                . ' AS ' . $db->quoteName('subjectCode'),
+			$db->quoteName('e.name')                . ' AS ' . $db->quoteName('subjectName'),
+			$db->quoteName('e.finaltesttype')       . ' AS ' . $db->quoteName('testType'),
+			$db->quoteName('e.finaltestduration')   . ' AS ' . $db->quoteName('testDuration'),
+			$db->quoteName('d.term')                . ' AS ' . $db->quoteName('term'),
+			$db->quoteName('f.code')                . ' AS ' . $db->quoteName('academicyear'),
+			$db->quoteName('a.exam_id')             . ' AS ' . $db->quoteName('examId'),
+			$db->quoteName('a.class_id')            . ' AS ' . $db->quoteName('classId'),
+			$db->quoteName('b.ntaken')              . ' AS ' . $db->quoteName('ntaken'),
+			$db->quoteName('a.conclusion')          . ' AS ' . $db->quoteName('conclusion'),
 		];
 
 		$query = $db->getQuery(true)

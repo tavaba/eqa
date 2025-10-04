@@ -19,7 +19,7 @@ class ExamroomsController extends EqaAdminController {
     {
         $app = $this->app;
         $this->checkToken();
-        if(!$app->getIdentity()->authorise('core.manage',$this->option))
+        if(!$app->getIdentity()->authorise('core.manage', $this->option))
         {
             echo Text::_('COM_EQA_MSG_UNAUTHORISED');
             exit();
@@ -76,7 +76,7 @@ class ExamroomsController extends EqaAdminController {
 			$this->checkToken();
 
 			//Access Check
-			if(!$app->getIdentity()->authorise('core.create',$this->option))
+			if(!$app->getIdentity()->authorise('core.create', $this->option))
 				throw new Exception(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'));
 
 			//retrieve form data

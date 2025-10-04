@@ -20,7 +20,7 @@ class SubjectController extends  EqaFormController {
 			return;
 
 		//Check privilege
-		if(!$this->app->getIdentity()->authorise('core.create',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.create', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -75,7 +75,7 @@ class SubjectController extends  EqaFormController {
 			return;
 
 		//Check privilege
-		if(!$this->app->getIdentity()->authorise('core.delete',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.delete', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;

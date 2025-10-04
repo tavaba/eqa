@@ -2409,6 +2409,8 @@ abstract class IOHelper
 				$exams[$item->subjectId] = [
 					'code' => $item->subjectCode,
 					'name' => $item->subjectName,
+					'type' => $item->testType?ExamHelper::getTestType($item->testType):null,
+					'duration' => $item->testDuration,
 					'count' => 1
 				];
 			else
@@ -2423,8 +2425,8 @@ abstract class IOHelper
 		//5.1. Initialization
 		$sheet = $spreadsheet->createSheet();
 		$sheet->setTitle('Chia nhóm môn thi');
-		$headers = ['Nhóm', 'Mã môn', 'Môn học', 'Số thí sinh', 'Tổng số'];
-		$widths = [6,      10,            40,             12,     12];
+		$headers = ['Nhóm', 'Mã môn', 'Môn học', 'Hình thức thi', 'Thời gian thi', 'Số thí sinh', 'Tổng số'];
+		$widths = [6,      10,            40,         15,             12,                  12,     12];
 		$COLS = sizeof($headers);
 		for($i=1; $i<=$COLS; $i++)
 		{
@@ -2457,7 +2459,9 @@ abstract class IOHelper
 				$data[] = [
 					$exams[$examId]['code'],
 					$exams[$examId]['name'],
-					$exams[$examId]['count']
+					$exams[$examId]['type'],
+					$exams[$examId]['duration'],
+					$exams[$examId]['count'],
 				];
 				$subsetLearnerCount += $exams[$examId]['count'];
 			}
@@ -2465,9 +2469,9 @@ abstract class IOHelper
 
 			//Write total number of learners of each subset in column E
 			//and set vertical alignment to center
-			$sheet->getCell('E'.$row)->setValue($subsetLearnerCount);
-			$sheet->mergeCells([5,$row, 5, $row+sizeof($examIds)-1]);
-			$style = $sheet->getStyle([5,$row, 5, $row+sizeof($examIds)-1]);
+			$sheet->getCell('G'.$row)->setValue($subsetLearnerCount);
+			$sheet->mergeCells([7,$row, 7, $row+sizeof($examIds)-1]);
+			$style = $sheet->getStyle([7,$row, 7, $row+sizeof($examIds)-1]);
 			$style->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
 			//Goto next block
@@ -2478,6 +2482,63 @@ abstract class IOHelper
 		$borderStyle = Border::BORDER_THIN;
 		$rangeStyle = $sheet->getStyle([1, $headingRow, $COLS, $lastRow]);
 		$rangeStyle->getBorders()->getAllBorders()->setBorderStyle($borderStyle);
+
+
+		/**
+		 * C. Write the list of examinees of each subset to a seperate worksheet
+		 */
+		//1. Group all the examinees by examId
+		$examExaminees = [];
+		foreach ($unpassedExaminees as $item)
+		{
+			if(!array_key_exists($item->subjectId,$examExaminees))
+				$examExaminees[$item->subjectId]=[];
+			$examExaminees[$item->subjectId][] = $item;
+		}
+
+		//2. Aggregate the examinees into groups according to the subsets
+		$subsetExaminees = [];
+		foreach ($examSubsets as $index=>$examIds)
+		{
+			$subsetExaminees[$index] = [];
+			foreach ($examIds as $examId)
+			{
+				$subsetExaminees[$index] = array_merge($subsetExaminees[$index], $examExaminees[$examId]);
+			}
+		}
+
+		//3. Write each subset of examinees to a separate worksheet
+		$collator = new Collator('vi_VN');
+		foreach ($subsetExaminees as $index=>$examinees)
+		{
+			//Sort the examinees within each subset alphabetically
+			usort($examinees, function ($a, $b) use ($collator)
+			{
+				$res = $collator->compare($a->firstname, $b->firstname);
+				if($res != 0)
+					return $res;
+				return $collator->compare($a->lastname, $b->lastname);
+			});
+
+			//Create a new worksheet with index+1 as its title
+			$sheet = $spreadsheet->createSheet();
+			$sheet->setTitle('List ' . ($index+1));
+			$sheet->fromArray(['TT','Mã HVSV','Họ đệm', 'Tên', 'Mã môn', 'Tên môn'], '', 'A1');
+			$data = [];
+			$seq=0;
+			foreach ($examinees as $examinee)
+			{
+				$data[] = [
+					++$seq,
+					$examinee->learnerCode,
+					$examinee->lastname,
+					$examinee->firstname,
+					$examinee->subjectCode,
+					$examinee->subjectName
+				];
+			}
+			$sheet->fromArray($data, '', 'A2');
+		}
 	}
 
 	static public function writeConductReport(Worksheet $sheet, string $academicyear, int $termCode, string $title, int $studyYear, array $conducts): void
@@ -2604,14 +2665,14 @@ abstract class IOHelper
 				$conduct->excusedAbsenceCount?:null,
 				$conduct->unexcusedAbsenceCount?:null,
 				($conduct->excusedAbsenceCount + $conduct->unexcusedAbsenceCount)?:null,
-				$conduct->resitCount ?: null,
 				$conduct->retakeCount ?: null,
+				$conduct->resitCount ?: null,
 				$conduct->awardCount ?: null,
 				$conduct->disciplinaryCount ?: null,
 				$conduct->academicScore,
-				RatingHelper::decodeToAbbr($conduct->academicRating),
+				$conduct->academicRating?RatingHelper::decodeToAbbr($conduct->academicRating):null,
 				$conduct->conductScore,
-				RatingHelper::decodeToAbbr($conduct->conductRating),
+				$conduct->conductRating?RatingHelper::decodeToAbbr($conduct->conductRating):null,
 				$conduct->note,
 			];
 

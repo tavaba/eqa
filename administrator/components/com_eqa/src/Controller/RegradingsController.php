@@ -22,7 +22,7 @@ class RegradingsController extends EqaAdminController {
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 				throw new Exception('Bạn không có quyền thực hiện chức năng này');
 
 			//3. Get form data
@@ -55,7 +55,7 @@ class RegradingsController extends EqaAdminController {
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 				throw new Exception('Bạn không có quyền thực hiện chức năng này');
 
 			//3. Get form data
@@ -126,7 +126,7 @@ class RegradingsController extends EqaAdminController {
 			$this->checkToken();
 
 			//Bước 2. Kiểm tra quyền
-			if(!$this->app->getIdentity()->authorise('core.edit',$this->option)) {
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
 				throw new Exception('Bạn không có quyền truy cập trang này');
 			}
 
@@ -178,7 +178,7 @@ class RegradingsController extends EqaAdminController {
 		try
 		{
 			//Bước 1. Check permission
-			if(!$this->app->getIdentity()->authorise('core.manage','com_eqa'))
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
 			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
@@ -227,7 +227,7 @@ class RegradingsController extends EqaAdminController {
 		try
 		{
 			//Check permission
-			if(!$this->app->getIdentity()->authorise('eqa.mask','com_eqa'))
+			if(!$this->app->getIdentity()->authorise('eqa.mask', $this->option))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
 			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
@@ -285,7 +285,7 @@ class RegradingsController extends EqaAdminController {
 		try
 		{
 			//Check permission
-			if(!$this->app->getIdentity()->authorise('core.manage','com_eqa'))
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
 			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
@@ -331,7 +331,7 @@ class RegradingsController extends EqaAdminController {
 		try
 		{
 			//Check permission
-			if(!$this->app->getIdentity()->authorise('core.manage','com_eqa'))
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
 			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
@@ -409,7 +409,7 @@ class RegradingsController extends EqaAdminController {
 		try
 		{
 			//2. Check permission
-			if (!$this->app->getIdentity()->authorise('core.manage', 'com_eqa')) {
+			if (!$this->app->getIdentity()->authorise('core.manage', $this->option)) {
 				throw new Exception('Bạn không có quyền truy cập trang này');
 			}
 
@@ -551,7 +551,7 @@ class RegradingsController extends EqaAdminController {
 			$this->checkToken();
 
 			//2.Check permission
-			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 				throw new Exception('Bạn không có quyền truy cập trang này');
 
 			//3. Retreive data from post request

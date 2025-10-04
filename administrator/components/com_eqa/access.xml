@@ -9,9 +9,9 @@
 		<action name="core.edit" title="JACTION_EDIT" />
 		<action name="core.edit.state" title="JACTION_EDITSTATE" />
 		<action name="core.edit.own" title="JACTION_EDITOWN" />
-		<action name="core.edit.value" title="JACTION_EDITVALUE" />
-		<action name="core.execute.transition" title="JACTION_EXECUTETRANSITION" />
 
+		<action name="eqa.create.class" title="Tạo lớp học phần"/>
+		<action name="eqa.edit.class" title="Sửa thông tin lớp học phần"/>
 		<action name="eqa.supervise" title="Quản lý HVSV"/>
 		<action name="eqa.mask" title="Quản lý phách bài thi"/>
 	</section>

@@ -24,7 +24,7 @@ class GradecorrectionsController extends EqaAdminController {
 		try
 		{
 			//1. Check permission
-			if(!$this->app->getIdentity()->authorise('core.manage'))
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
 			//3. Get grade correction requests of that examseason

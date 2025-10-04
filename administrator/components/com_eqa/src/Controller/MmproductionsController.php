@@ -18,7 +18,7 @@ class MmproductionsController extends EqaAdminController
 		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=mmproductions',false));
 
 		//Check permissions
-		if(!$this->app->getIdentity()->authorise('core.create',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.create', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;

@@ -14,13 +14,28 @@ defined('_JEXEC') or die();
 
 class ClassController extends  EqaFormController
 {
+	protected function allowAdd($data = []): bool
+	{
+		$r = parent::allowAdd($data);
+		if($r)
+			return true;
+		return $this->app->getIdentity()->authorise('eqa.create.class', $this->option);
+	}
+	public function allowEdit($data = [], $key = 'id', $creator_field = 'created_by'): bool
+	{
+		$r = parent::allowEdit($data, $key, $creator_field);
+		if($r)
+			return true;
+		return $this->app->getIdentity()->authorise('eqa.edit.class', $this->option);
+	}
+
 	public function importLearners(): void
 	{
 		//1. Check token
 		$this->checkToken();
 
 		//2. Check for creation permissions.
-		if(!$this->app->getIdentity()->authorise('core.create', 'com_eqa'))
+		if(!$this->allowEdit())
 		{
 			$this->setMessage('Bạn không có quyền nhập HVSV vào lớp học phần','error');
 			$url = Route::_('index.php?option=com_eqa&view=classes', false);
@@ -85,7 +100,7 @@ class ClassController extends  EqaFormController
 		$this->checkToken();
 
 		//2. Check for creation permissions.
-		if(!$this->app->getIdentity()->authorise('core.edit', 'com_eqa'))
+		if(!$this->allowEdit())
 		{
 			$this->setMessage('Bạn không có quyền nhập điểm quá trình','error');
 			$url = Route::_('index.php?option=com_eqa&view=classes', false);
@@ -187,7 +202,7 @@ class ClassController extends  EqaFormController
         $classId = $this->app->input->getInt('class_id');
 
         // Access check
-        if (!$this->app->getIdentity()->authorise('core.create',$this->option)) {
+        if (!$this->allowEdit()) {
             // Set the internal error and also the redirect error.
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
             $this->setRedirect(
@@ -256,7 +271,7 @@ class ClassController extends  EqaFormController
 
 
         // Access check
-        if (!$this->app->getIdentity()->authorise('core.edit.state',$this->option)) {
+        if (!$this->allowEdit()) {
             $this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
             return;
         }
@@ -294,7 +309,7 @@ class ClassController extends  EqaFormController
 
 
         // Access check
-        if (!$this->app->getIdentity()->authorise('core.edit.state',$this->option)) {
+        if (!$this->allowEdit()) {
             $this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
             return;
         }
@@ -332,7 +347,7 @@ class ClassController extends  EqaFormController
 
 
         // Access check
-        if (!$this->app->getIdentity()->authorise('core.delete',$this->option)) {
+        if (!$this->allowEdit()) {
             $this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
             return;
         }
@@ -366,7 +381,7 @@ class ClassController extends  EqaFormController
 		$app = $this->app;
 
 		//Check access
-		if (!$app->getIdentity()->authorise('core.manage',$this->option)) {
+		if (!$app->getIdentity()->authorise('core.manage', $this->option)) {
 			echo new JsonResponse([], 'Access denied', true);
 			$app->close();
 		}

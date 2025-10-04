@@ -27,7 +27,7 @@ class PaperexamsController extends EqaAdminController {
 		$this->checkToken();
 
 		//Check permissions
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
 			$this->setMessage($msg,'error');

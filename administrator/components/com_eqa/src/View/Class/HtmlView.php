@@ -17,6 +17,12 @@ class HtmlView extends EqaItemHtmlView {
     protected EqaListLayoutData $listLayoutData;
     protected EqaListLayoutItemFields $listLayoutItemFields;
 
+	protected function addToolbarForLayoutEdit(): void
+	{
+		ToolbarHelper::title($this->toolbarOption->title);
+		ToolbarHelper::appendButton(['core.create','eqa.create.class','core.edit','eqa.edit.class','core.edit.own'],'save','JTOOLBAR_SAVE','class.save',false,'btn btn-success');
+		ToolbarHelper::cancel('class.cancel');
+	}
 
 	protected function prepareDataForLayoutImportlearners(): void
 	{

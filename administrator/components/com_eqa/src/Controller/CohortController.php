@@ -16,7 +16,7 @@ class CohortController extends  EqaFormController {
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.create', 'com_eqa'))
+			if(!$this->app->getIdentity()->authorise('core.create', $this->option))
 				throw new Exception('Bạn không có quyền thực hiện tác vụ này');
 
 			//3. Get the cohort id
@@ -64,7 +64,7 @@ class CohortController extends  EqaFormController {
 			$this->checkToken();
 
 			//2. Check permission
-			if(!$this->app->getIdentity()->authorise('core.delete', 'com_eqa'))
+			if(!$this->app->getIdentity()->authorise('core.delete', $this->option))
 				throw new Exception('Bạn không có quyền thực hiện tác vụ này');
 
 			//3. Get the cohort id from post data

@@ -61,7 +61,7 @@ class ExamController extends  EqaFormController
 		//TODO: Improve this method so that the component can be deploy in multitenant mode
 		//1. Check if the user has edit permission
 		$user = $this->app->getIdentity();
-		if(!$user->authorise('core.edit',$this->option))
+		if(!$user->authorise('core.edit', $this->option))
 		{
 			if($throw)
 				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
@@ -94,7 +94,7 @@ class ExamController extends  EqaFormController
 		//TODO: Improve this method so that the component can be deploy in multitenant mode
 		//1. Check if the user has edit permission
 		$user = $this->app->getIdentity();
-		if(!$user->authorise('core.edit',$this->option))
+		if(!$user->authorise('core.edit', $this->option))
 		{
 			if($throw)
 				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
@@ -282,7 +282,7 @@ class ExamController extends  EqaFormController
 		$this->setRedirect(JRoute::_($url, false));
 
 		//Check permissions
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -313,7 +313,7 @@ class ExamController extends  EqaFormController
 		$this->setRedirect(JRoute::_($url, false));
 
 		//Check permissions
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
 			return;
@@ -338,7 +338,7 @@ class ExamController extends  EqaFormController
 		$this->checkToken();
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
 			$this->setMessage($msg, 'error');
@@ -374,7 +374,7 @@ class ExamController extends  EqaFormController
 		$examId = $this->app->input->getInt('exam_id');
 
 		// Access check
-		if (!$this->app->getIdentity()->authorise('core.create',$this->option)) {
+		if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
 			// Set the internal error and also the redirect error.
 			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
 			$this->setRedirect(
@@ -431,7 +431,7 @@ class ExamController extends  EqaFormController
 		$examId = $this->app->input->getInt('exam_id');
 
 		// Access check
-		if (!$this->app->getIdentity()->authorise('core.create',$this->option)) {
+		if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
 			// Set the internal error and also the redirect error.
 			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
 			$this->setRedirect(
@@ -465,7 +465,7 @@ class ExamController extends  EqaFormController
 	{
 		$app = $this->app;
 		$this->checkToken();
-		if(!$app->getIdentity()->authorise('core.manage',$this->option))
+		if(!$app->getIdentity()->authorise('core.manage', $this->option))
 		{
 			echo Text::_('COM_EQA_MSG_UNAUTHORISED');
 			exit();
@@ -499,7 +499,7 @@ class ExamController extends  EqaFormController
 	{
 		$app = $this->app;
 		$this->checkToken();
-		if(!$app->getIdentity()->authorise('core.manage',$this->option))
+		if(!$app->getIdentity()->authorise('core.manage', $this->option))
 		{
 			echo Text::_('COM_EQA_MSG_UNAUTHORISED');
 			exit();
@@ -623,7 +623,7 @@ class ExamController extends  EqaFormController
 				throw new Exception('Không xác định được môn thi');
 
 			//Check permissions
-			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 
 			/**
@@ -661,7 +661,7 @@ class ExamController extends  EqaFormController
 				throw new Exception('Không xác định được môn thi');
 
 			//Check permissions
-			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 
 			/**
@@ -693,7 +693,7 @@ class ExamController extends  EqaFormController
 		$this->checkToken();
 
 		//Check permission
-		if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
 			$this->setMessage($msg, 'error');

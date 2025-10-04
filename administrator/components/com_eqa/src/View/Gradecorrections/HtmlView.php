@@ -39,7 +39,7 @@ class HtmlView extends EqaItemsHtmlView {
 	{
 		try
 		{
-			if(!Factory::getApplication()->getIdentity()->authorise('core.manage','com_eqa'))
+			if(!Factory::getApplication()->getIdentity()->authorise('core.manage', $this->option))
 				throw new Exception('Bạn không có quyền xem thông tin này');
 
 			//Gọi phương thức lớp cha

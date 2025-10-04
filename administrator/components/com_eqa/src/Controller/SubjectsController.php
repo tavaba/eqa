@@ -21,7 +21,7 @@ class SubjectsController extends EqaAdminController{
 			$this->checkToken();
 
 			//2. Check permissions
-			if(!$this->app->getIdentity()->authorise('core.create',$this->option))
+			if(!$this->app->getIdentity()->authorise('core.create', $this->option))
 				throw new Exception('Bạn không có quyền nhập môn học');
 
 			//3. Retrieve data from request
