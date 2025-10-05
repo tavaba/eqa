@@ -21,6 +21,16 @@ use RuntimeException;
  */
 class EqaListModel extends ListModel
 {
+	/**
+	 * Method to autopopulate the model state.
+	 * @since 1.2.2
+	 */
+	protected function populateState($ordering = null, $direction = null)
+	{
+		$ordering = $this->getUserStateFromRequest($this->context . '.ordercol', 'filter_order', $ordering);
+		$direction = $this->getUserStateFromRequest($this->context . '.orderdirn', 'filter_order_Dir', $direction);
+		parent::populateState($ordering, $direction);
+	}
 
     /**
      * 'UploadForm' có nghĩa là form để upload file dữ liệu.
