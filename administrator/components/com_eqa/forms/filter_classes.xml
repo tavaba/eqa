@@ -64,6 +64,11 @@
         </field>
     </fields>
     <fields name="list">
+        <field
+                name="fullordering"
+                type="hidden"
+                value=""
+        />
 
         <field
                 name="limit"

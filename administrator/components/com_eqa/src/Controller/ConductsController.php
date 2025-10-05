@@ -189,20 +189,32 @@ class ConductsController extends EqaAdminController {
 			$ids = array_unique($ids); //Remove duplicate entries
 			if(count($ids)==0) throw new Exception('Chưa chọn mục nào để tính điểm rèn luyện');
 
-			/** @var ConductModel $model */
-			$model = $this->getModel();
+			/** @var ConductModel $conductModel */
+			$conductModel = $this->getModel();
 			foreach ($ids as $id)
 			{
-				$item = $model->getItem($id);
+				$item = $conductModel->getItem($id);
 				$learnerId = $item->learner_id;
 				$academicyearId = $item->academicyear_id;
 				$term = $item->term;
-				$learnerExams = $model->getLearnerExams($learnerId, $academicyearId, $term);
+				$learnerExams = $conductModel->getLearnerExams($learnerId, $academicyearId, $term);
+				if(empty($learnerExams))
+				{
+					$learnerModel = $this->getModel('Learner');
+					$learner = $learnerModel->getItem($learnerId);
+					$msg = sprintf('%s (%s) chưa có kết quả môn thi nào ở Học kỳ %d Năm học %s',
+						implode(' ', [$learner->lastname, $learner->firstname]),
+						$learner->code,
+						$term,
+						DatabaseHelper::getAcademicyearCode($academicyearId)
+					);
+					throw new Exception($msg);
+				}
 				$countResits = $this->countResitExams($learnerExams);
 				$countRetakes = $this->countRetakeSubjects($learnerExams);
 				$termMark = $this->calculateTermMark($learnerExams);
 				$termRating = RatingHelper::rateAcademicScore($termMark);
-				$model->updateAcademicResults($id,$countResits,$countRetakes,$termMark,$termRating);
+				$conductModel->updateAcademicResults($id,$countResits,$countRetakes,$termMark,$termRating);
 			}
 
 			//Set message and redirect back to list view

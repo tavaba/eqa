@@ -47,6 +47,11 @@
     </fields>
     <fields name="list">
         <field
+                name="fullordering"
+                type="hidden"
+                value=""
+        />
+        <field
                 name="limit"
                 type="limitbox"
                 label="JGLOBAL_LIST_LIMIT"
