@@ -20,5 +20,18 @@
                 label="Tập tin dữ liệu"
                 accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         />
+        <field  name="import_mark"
+                type="radio"
+                required="true"
+                default="0"
+                label="Nhập cả điểm học kỳ"
+                description="Ứng dụng sẽ đọc điểm trung bình học kỳ ở cột K và
+                tự tính toán xếp loại học tập. Nếu bật tùy chọn này mà
+                không có điểm hoặc điểm không hợp lệ thì sẽ báo lỗi."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
     </fieldset>
 </form>

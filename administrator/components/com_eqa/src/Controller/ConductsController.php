@@ -15,12 +15,21 @@ use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Helper\RatingHelper;
 use Kma\Component\Eqa\Administrator\Model\ConductModel;
 use Kma\Component\Eqa\Administrator\Model\ConductsModel;
+use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use stdClass;
 
 class ConductsController extends EqaAdminController {
-	private function importSheet(Worksheet $sheet, int $academicyearId, int $term): void
+	private function isValidBase4Mark($value):bool
+	{
+		if (!is_numeric($value))
+			return false;
+		if($value<0 || $value>4)
+			return false;
+		return true;
+	}
+	private function importSheet(Worksheet $sheet, int $academicyearId, int $term, bool $importMark): void
 	{
 		$data = $sheet->toArray();
 		$firstRow = 0;
@@ -48,11 +57,23 @@ class ConductsController extends EqaAdminController {
 			$item->excusedAbsenceCount = intval($row[3]);     //Cột D: Số buổi nghỉ có phép
 			$item->unexcusedAbsenceCount = intval($row[4]);   //Cột E: Số buổi nghỉ không phép
 			$item->awardCount = intval($row[8]);              //Cột I: số lần khen thưởng
-			$item->disciplinaryCount = intval($row[9]);       //Cột K: số lần kỷ luật
+			$item->disciplinaryCount = intval($row[9]);       //Cột J: số lần kỷ luật
 			$item->conductScore = intval($row[12]);           //Cột M: Điểm rèn luyện
 			$item->conductRating = RatingHelper::rateConductScore($item->conductScore);
-			$item->note=$row[14];                             //Cột O: Ghi chú
-			$model->importItem($academicyearId, $term,$item,true);
+			$item->note=$row[14];
+			if($importMark)
+			{
+				$mark = $row[10];    //Cột K: Điểm trung bình theo Hệ 4
+				if(!$this->isValidBase4Mark($mark))
+				{
+					$msg = sprintf('Sheet %s, dòng %d: điểm không hợp lệ (%s)',
+						htmlspecialchars($sheet->getTitle()), $r+1, htmlspecialchars($mark));
+					throw new Exception($msg);
+				}
+				$item->academicScore = $mark;
+				$item->academicRating = RatingHelper::rateAcademicScore($item->academicScore);
+			}
+			$model->importItem($academicyearId, $term,$item,$importMark,true);
 			$r++;
 		}
 	}
@@ -149,12 +170,14 @@ class ConductsController extends EqaAdminController {
 			if(empty($files[0]['tmp_name']))
 				throw new Exception('Không tìm thấy tệp tin');
 
+			$importMark = (bool)$input->post->get('import_mark',false);
+
 			foreach ($files as $file)
 			{
 				$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
 				foreach ($spreadsheet->getAllSheets() as $sheet)
 				{
-					$this->importSheet($sheet,$academicyearId,$term);
+					$this->importSheet($sheet,$academicyearId,$term, $importMark);
 				}
 			}
 

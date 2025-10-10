@@ -10,7 +10,7 @@ defined('_JEXEC') or die();
 
 class ConductModel extends EqaAdminModel
 {
-	public function importItem(int $academicyearId, int $term, object $item, bool $updateExisting=true):void
+	public function importItem(int $academicyearId, int $term, object $item, bool $importMark, bool $updateExisting=true):void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$user = Factory::getApplication()->getIdentity();
@@ -42,6 +42,11 @@ class ConductModel extends EqaAdminModel
 			$setClause[] = 'note = '. $quotedNote;
 			$setClause[] = 'updated_by=' . $db->quote($user->username);
 			$setClause[] = 'updated_at = NOW()';
+			if ($importMark)
+			{
+				$setClause[] = 'academic_score = '.$item->academicScore;
+				$setClause[] = 'academic_rating = '.$item->academicRating;
+			}
 			$query = $db->getQuery(true)
 				->update('#__eqa_conducts')
 				->set($setClause)
@@ -56,15 +61,30 @@ class ConductModel extends EqaAdminModel
 		}
 
 		//Insert
-		$quotedNote = empty($item->note) ? $db->quote('') : $db->quote($item->note);
-		$columns = ['learner_id','academicyear_id','term','excused_absence_count','unexcused_absence_count',
-					'award_count','disciplinary_action_count','conduct_score','conduct_rating','note', 'created_at', 'created_by'];
-		$values = [$learnerId,$academicyearId,$term,
-					$item->excusedAbsenceCount,$item->unexcusedAbsenceCount,
-					$item->awardCount,$item->disciplinaryCount,
-					$item->conductScore,$db->quote($item->conductRating),$quotedNote,
-					$db->quote(date('Y-m-d H:i:s')),$db->quote($user->username)
+		if($importMark)
+		{
+			$quotedNote = empty($item->note) ? $db->quote('') : $db->quote($item->note);
+			$columns = ['learner_id','academicyear_id','term','excused_absence_count','unexcused_absence_count',
+				'award_count','disciplinary_action_count','academic_score','academic_rating','conduct_score','conduct_rating','note', 'created_at', 'created_by'];
+			$values = [$learnerId,$academicyearId,$term,
+				$item->excusedAbsenceCount,$item->unexcusedAbsenceCount,
+				$item->awardCount,$item->disciplinaryCount,
+				$item->academicScore,$item->academicRating,
+				$item->conductScore,$item->conductRating,$quotedNote,
+				$db->quote(date('Y-m-d H:i:s')),$db->quote($user->username)
 			];
+		}
+		else{
+			$quotedNote = empty($item->note) ? $db->quote('') : $db->quote($item->note);
+			$columns = ['learner_id','academicyear_id','term','excused_absence_count','unexcused_absence_count',
+				'award_count','disciplinary_action_count','conduct_score','conduct_rating','note', 'created_at', 'created_by'];
+			$values = [$learnerId,$academicyearId,$term,
+				$item->excusedAbsenceCount,$item->unexcusedAbsenceCount,
+				$item->awardCount,$item->disciplinaryCount,
+				$item->conductScore,$item->conductRating,$quotedNote,
+				$db->quote(date('Y-m-d H:i:s')),$db->quote($user->username)
+			];
+		}
 		$query = $db->getQuery(true)
 				->insert('#__eqa_conducts')
 				->columns($columns)
