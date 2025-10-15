@@ -12,7 +12,9 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 class ConductsModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('courseId','groupId','firstname', 'academicScore', 'academicRating', 'conductScore', 'conductRating');
+        $config['filter_fields']=array('learnerCode', 'firstname', 'excusedAbsenceCount','unexcusedAbsenceCount', 'retakeCount',
+	        'resitCount', 'awardCount', 'disciplinaryCount', 'totalCredits',
+	        'academicScore', 'academicRating', 'conductScore', 'conductRating');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'firstname', $direction = 'asc')
@@ -37,6 +39,7 @@ class ConductsModel extends ListModel {
 			$db->quoteName('a.retake_count')            . ' AS ' . $db->quoteName('retakeCount'),
 			$db->quoteName('a.award_count')             . ' AS ' . $db->quoteName('awardCount'),
 			$db->quoteName('a.disciplinary_action_count')   . ' AS ' . $db->quoteName('disciplinaryCount'),
+			$db->quoteName('a.total_credits')           . ' AS ' . $db->quoteName('totalCredits'),
 			$db->quoteName('a.academic_score')          . ' AS ' . $db->quoteName('academicScore'),
 			$db->quoteName('a.academic_rating')         . ' AS ' . $db->quoteName('academicRating'),
 			$db->quoteName('a.conduct_score')           . ' AS ' . $db->quoteName('conductScore'),
@@ -56,7 +59,8 @@ class ConductsModel extends ListModel {
 		$orderingCol = $query->db->escape($this->getState('list.ordering','code'));
 		$orderingDir = $query->db->escape($this->getState('list.direction','asc'));
 		$query->order($db->quoteName($orderingCol).' '.$orderingDir);
-		$query->order('firstname ASC, lastname ASC');
+		if($orderingCol==='firstname')
+			$query->order('lastname ' . $orderingDir);
 
 		//Filtering
 		$search = $this->getState('filter.search');

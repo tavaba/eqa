@@ -8,14 +8,14 @@ use Joomla\Database\DatabaseInterface;
 use Matrix\Exception;
 
 abstract class RatingHelper{
-	public const EXCELLENT      = 10;
-	public const VERY_GOOD      = 15;
-	public const GOOD           = 20;
-	public const FAIRLY_GOOD    = 30;
-	public const AVERAGE_FAIR   = 40;
-	public const AVERAGE        = 50;
-	public const WEAK           = 60;
-	public const POOR           = 70;
+	public const EXCELLENT      = 90;
+	public const VERY_GOOD      = 80;
+	public const GOOD           = 70;
+	public const FAIRLY_GOOD    = 60;
+	public const AVERAGE_FAIR   = 50;
+	public const AVERAGE        = 40;
+	public const WEAK           = 30;
+	public const POOR           = 20;
 
 	public static function decode(int $rating): string
 	{

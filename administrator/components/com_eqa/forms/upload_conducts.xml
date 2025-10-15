@@ -24,10 +24,22 @@
                 type="radio"
                 required="true"
                 default="0"
-                label="Nhập cả điểm học kỳ"
-                description="Ứng dụng sẽ đọc điểm trung bình học kỳ ở cột K và
+                label="Nhập điểm học kỳ"
+                description="Ứng dụng sẽ đọc điểm trung bình học kỳ ở cột L và
                 tự tính toán xếp loại học tập. Nếu bật tùy chọn này mà
                 không có điểm hoặc điểm không hợp lệ thì sẽ báo lỗi."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="import_credits"
+                type="radio"
+                required="true"
+                default="0"
+                label="Nhập số tín chỉ"
+                description="Ứng dụng sẽ ghi nhận số tín chỉ tại cột K. Nếu bật tùy chọn
+                này mà giá trị tại cột K không hợp lệ hoặc trống thì sẽ báo lỗi."
                 class="btn-group btn-group-yesno"
         >
             <option value="0">JNO</option>

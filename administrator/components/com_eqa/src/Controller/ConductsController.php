@@ -32,7 +32,7 @@ class ConductsController extends EqaAdminController {
 			return false;
 		return true;
 	}
-	private function importSheet(Worksheet $sheet, int $academicyearId, int $term, bool $importMark): void
+	private function importSheet(Worksheet $sheet, int $academicyearId, int $term, bool $importMark, bool $importCredits): void
 	{
 		$data = $sheet->toArray();
 		$firstRow = 0;
@@ -61,12 +61,12 @@ class ConductsController extends EqaAdminController {
 			$item->unexcusedAbsenceCount = intval($row[4]);   //Cột E: Số buổi nghỉ không phép
 			$item->awardCount = intval($row[8]);              //Cột I: số lần khen thưởng
 			$item->disciplinaryCount = intval($row[9]);       //Cột J: số lần kỷ luật
-			$item->conductScore = intval($row[12]);           //Cột M: Điểm rèn luyện
+			$item->conductScore = intval($row[13]);           //Cột N: Điểm rèn luyện
 			$item->conductRating = RatingHelper::rateConductScore($item->conductScore);
 			$item->note=$row[14];
 			if($importMark)
 			{
-				$mark = $row[10];    //Cột K: Điểm trung bình theo Hệ 4
+				$mark = $row[11];    //Cột L: Điểm trung bình theo Hệ 4
 				if(!$this->isValidBase4Mark($mark))
 				{
 					$msg = sprintf('Sheet %s, dòng %d: điểm không hợp lệ (%s)',
@@ -76,7 +76,19 @@ class ConductsController extends EqaAdminController {
 				$item->academicScore = $mark;
 				$item->academicRating = RatingHelper::rateAcademicScore($item->academicScore);
 			}
-			$model->importItem($academicyearId, $term,$item,$importMark,true);
+
+			if($importCredits)
+			{
+				$creditNumber = $row[10];    //Cột K: Tổng số tín chỉ
+				if(!is_numeric($creditNumber) || $creditNumber<=0)
+				{
+					$msg = sprintf('Sheet %s, dòng %d: tổng số tín chỉ phải là một số nguyên dương (>0)', htmlspecialchars($sheet->getTitle()), $r+1);
+					throw new Exception($msg);
+				}
+				$item->totalCredits = floatval($creditNumber);
+
+			}
+			$model->importItem($academicyearId, $term,$item, $importMark, $importCredits,true);
 			$r++;
 		}
 	}
@@ -104,7 +116,7 @@ class ConductsController extends EqaAdminController {
 	 *
 	 * @since version
 	 */
-	private function calculateTermMark(array $exams):float|false
+	private function calculateTermResult(array $exams):array|false
 	{
 		//For one subject pick only one exam with highest mark,
 		//ignoring pass/fail exams
@@ -137,7 +149,10 @@ class ConductsController extends EqaAdminController {
 		}
 		if($totalCredits==0)
 			return false;
-		return round($sum/$totalCredits,2);
+		return [
+			'total_credits' => $totalCredits,
+			'score' => round($sum/$totalCredits,2)
+			];
 	}
 	private function sortByName(array &$conducts):void
 	{
@@ -184,13 +199,14 @@ class ConductsController extends EqaAdminController {
 				throw new Exception('Không tìm thấy tệp tin');
 
 			$importMark = (bool)$input->post->get('import_mark',false);
+			$importCredits = (bool)$input->post->get('import_credits',false);
 
 			foreach ($files as $file)
 			{
 				$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
 				foreach ($spreadsheet->getAllSheets() as $sheet)
 				{
-					$this->importSheet($sheet,$academicyearId,$term, $importMark);
+					$this->importSheet($sheet,$academicyearId,$term, $importMark, $importCredits);
 				}
 			}
 
@@ -236,8 +252,8 @@ class ConductsController extends EqaAdminController {
 				$learnerExams = $conductModel->getLearnerExams($learnerId, $academicyearId, $term);
 				$countResits = $this->countResitExams($learnerExams);
 				$countRetakes = $this->countRetakeSubjects($learnerExams);
-				$termMark = $this->calculateTermMark($learnerExams);
-				if($termMark===false)
+				$termResult = $this->calculateTermResult($learnerExams);
+				if($termResult===false)
 				{
 					/**
 					 * @var LearnerModel $learnerModel
@@ -252,8 +268,10 @@ class ConductsController extends EqaAdminController {
 					);
 					throw new Exception($msg);
 				}
-				$termRating = RatingHelper::rateAcademicScore($termMark);
-				$conductModel->updateAcademicResults($id,$countResits,$countRetakes,$termMark,$termRating);
+				$termScore = $termResult['score'];
+				$termRating = RatingHelper::rateAcademicScore($termScore);
+				$totalCredits = $termResult['total_credits'];
+				$conductModel->updateAcademicResults($id,$countResits,$countRetakes,$termScore,$termRating, $totalCredits);
 			}
 
 			//Set message and redirect back to list view
