@@ -2657,6 +2657,19 @@ abstract class IOHelper
 		$data = [];
 		foreach ($conducts as $conduct)
 		{
+			$error = is_null($conduct->academicRating)
+				|| is_null($conduct->conductRating)
+				|| is_null($conduct->academicScore)
+				|| is_null($conduct->conductScore);
+			if($error)
+			{
+				$msg = sprintf('%s (%s) chưa có đủ kết quả',
+					implode(' ', [$conduct->lastname, $conduct->firstname]),
+					$conduct->learnerCode
+				);
+				throw new Exception($msg);
+			}
+
 			$seq++;
 			$data[] =[
 				$seq,
@@ -2782,7 +2795,7 @@ abstract class IOHelper
 
 		$row++;
 		$sheet->setCellValue('C'.$row, $academicInfos[RatingHelper::EXCELLENT]);
-		$sheet->setCellValue('D'.$row, $academicInfos[RatingHelper::GOOD]);
+		$sheet->setCellValue('D'.$row, $academicInfos[RatingHelper::VERY_GOOD]);
 		$sheet->mergeCells([4, $row, 6, $row]);
 		$sheet->setCellValue('H'.$row, $academicInfos[RatingHelper::FAIRLY_GOOD]);
 		$sheet->mergeCells([8, $row, 11, $row]);

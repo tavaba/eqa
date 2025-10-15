@@ -66,13 +66,11 @@ abstract class RatingHelper{
 			return  self::EXCELLENT;
 		if($score >= 80)
 			return self::GOOD;
-		if($score >= 70)
+		if($score >= 65)
 			return self::FAIRLY_GOOD;
-		if($score >= 60)
-			return self::AVERAGE_FAIR;
 		if($score >= 50)
 			return self::AVERAGE;
-		if($score >= 30)
+		if($score >= 35)
 			return self::WEAK;
 		return self::POOR;
 	}

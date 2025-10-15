@@ -11,10 +11,13 @@ use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Helper\RatingHelper;
 use Kma\Component\Eqa\Administrator\Model\ConductModel;
 use Kma\Component\Eqa\Administrator\Model\ConductsModel;
+use Kma\Component\Eqa\Administrator\Model\LearnerModel;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -93,7 +96,15 @@ class ConductsController extends EqaAdminController {
 				++$count;
 		return $count;
 	}
-	private function calculateTermMark(array $exams):float
+
+	/**
+	 * @param   array  $exams
+	 *
+	 * @return float|false Return FALSE if total number of credits is zero
+	 *
+	 * @since version
+	 */
+	private function calculateTermMark(array $exams):float|false
 	{
 		//For one subject pick only one exam with highest mark,
 		//ignoring pass/fail exams
@@ -124,6 +135,8 @@ class ConductsController extends EqaAdminController {
 				$totalCredits += $exam->creditNumber;
 			}
 		}
+		if($totalCredits==0)
+			return false;
 		return round($sum/$totalCredits,2);
 	}
 	private function sortByName(array &$conducts):void
@@ -221,11 +234,17 @@ class ConductsController extends EqaAdminController {
 				$academicyearId = $item->academicyear_id;
 				$term = $item->term;
 				$learnerExams = $conductModel->getLearnerExams($learnerId, $academicyearId, $term);
-				if(empty($learnerExams))
+				$countResits = $this->countResitExams($learnerExams);
+				$countRetakes = $this->countRetakeSubjects($learnerExams);
+				$termMark = $this->calculateTermMark($learnerExams);
+				if($termMark===false)
 				{
-					$learnerModel = $this->getModel('Learner');
+					/**
+					 * @var LearnerModel $learnerModel
+					 */
+					$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
 					$learner = $learnerModel->getItem($learnerId);
-					$msg = sprintf('%s (%s) chưa có kết quả môn thi nào ở Học kỳ %d Năm học %s',
+					$msg = sprintf('Lỗi tính điểm TB cho %s (%s). Hãy đảm bảo HVSV đã có kết quả thi ở Học kỳ %d Năm học %s',
 						implode(' ', [$learner->lastname, $learner->firstname]),
 						$learner->code,
 						$term,
@@ -233,9 +252,6 @@ class ConductsController extends EqaAdminController {
 					);
 					throw new Exception($msg);
 				}
-				$countResits = $this->countResitExams($learnerExams);
-				$countRetakes = $this->countRetakeSubjects($learnerExams);
-				$termMark = $this->calculateTermMark($learnerExams);
 				$termRating = RatingHelper::rateAcademicScore($termMark);
 				$conductModel->updateAcademicResults($id,$countResits,$countRetakes,$termMark,$termRating);
 			}
