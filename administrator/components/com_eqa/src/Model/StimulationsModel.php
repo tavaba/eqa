@@ -30,7 +30,7 @@ class StimulationsModel extends ListModel {
         //Filtering
         $search = $this->getState('filter.search');
         if(!empty($search)){
-            $like = $db->quote('%'.$search.'%');
+            $like = $db->quote('%'.trim($search).'%');
             $query->where('(CONCAT_WS(" ",`c`.`lastname`,`c`.`firstname`) LIKE '.$like.' OR `c`.`code` LIKE '.$like .')');
         }
 

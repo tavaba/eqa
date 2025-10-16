@@ -34,7 +34,7 @@ class CohortsModel extends EqaListModel{
         //Filtering
         $search = $this->getState('filter.search');
         if(!empty($search)){
-            $like = $db->quote('%'.$search.'%');
+            $like = $db->quote('%'.trim($search).'%');
             $query->where('(a.code LIKE ' . $like . 'OR a.name LIKE ' . $like . ')');
         }
 

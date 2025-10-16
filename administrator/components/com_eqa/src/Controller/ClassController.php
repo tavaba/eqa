@@ -7,8 +7,10 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ClassModel;
+use Kma\Component\Eqa\Administrator\Model\LearnerModel;
 
 defined('_JEXEC') or die();
 
@@ -371,39 +373,106 @@ class ClassController extends  EqaFormController
 		DatabaseHelper::updateClassNPam($classId);
     }
 
-	/**
-	 * Lấy danh sách sinh viên trong một lớp học phần dưới dạng JSON.
-	 * Mỗi phần tử có 2 thuộc tính: 'id', 'name'
-	 * @since 1.2.0
-	 */
-	public function getJsonClassLearners()
+	protected function checkAllowEditPam(int $classId, int $learnerId, bool $throw): bool
 	{
-		$app = $this->app;
-
-		//Check access
-		if (!$app->getIdentity()->authorise('core.manage', $this->option)) {
-			echo new JsonResponse([], 'Access denied', true);
-			$app->close();
-		}
-
-		//Get the class id from the request
-		$classId = $app->input->getInt('class_id', 0);
-		if (!$classId) {
-			echo new JsonResponse([], 'Invalid class ID', true);
-			$app->close();
+		//Check permission
+		$user = $this->app->getIdentity();
+		if(!$user->authorise('eqa.edit.mark', $this->option))
+		{
+			if($throw)
+				throw new Exception("Bạn không có quyền sửa điểm quá trình");
+			return false;
 		}
 
 		/**
-		 * Retrieve the list of students
+		 * Check additional conditions
 		 * @var ClassModel $model
 		 */
 		$model = $this->getModel();
-		$students = $model->getLearners($classId);
-		if (!$students || !count($students))
-			echo new JsonResponse([], 'No student found', true);
-		else
-			echo new JsonResponse($students);
-		$app->close();
+		if(!$model->canEditPam($classId, $learnerId))
+		{
+			if($throw)
+				throw new Exception("Không thể sửa điểm quá trình của HVSV này (có thể vì đã có điểm thi)");
+			return false;
+		}
+		return true;
+	}
+	public function editPam()
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Get the class id from the request
+			$classId = $this->input->getInt('class_id');
+			if (empty($classId))
+				throw new Exception("Không xác định được lớp học phần");
+
+			/*
+			 * 3. Get learner id from the request
+			 * For PHASE 1, this  ID is sent in an array named 'cid'.
+			 * For PHASE 2, this ID is sent in a field named 'learner_id'.
+			 */
+			$cid = $this->input->get('cid', [], 'array');
+			$cid = array_filter($cid);
+			if (!empty($cid))
+				$learnerId = $cid[0];
+			else
+				$learnerId = $this->input->getInt('learner_id');
+			if(empty($learnerId))
+				throw new Exception("Không xác định được HVSV nào");
+
+			//4. Check permissions
+			$this->checkAllowEditPam($classId, $learnerId, true);
+
+			//5. Try to get some info from the request
+			$description = $this->input->getString('description');
+
+			//PHASE 1: Show edit form (if any of the fields are not filled)
+			if (empty($description))
+			{
+				$url = Route::_('index.php?option=com_eqa&view=class&layout=editpam&class_id=' . $classId . '&learner_id=' . $learnerId, false);
+				$this->setRedirect($url);
+				return;
+			}
+
+			/**
+			 * PHASE 2: Save data to DB
+			 * @var ClassModel $model
+			 */
+			$pam1    = $this->input->getFloat('pam1');
+			$pam2    = $this->input->getFloat('pam2');
+			$pam     = $this->input->getFloat('pam');
+			$allowed = $this->input->getBool('allowed');
+			$expired = $this->input->getBool('expired');
+			if (is_null($pam1) || is_null($pam2) || is_null($pam) || is_null($allowed) || is_null($expired))
+				throw new Exception("Dữ liệu không hợp lệ. Cần phải điền đầy đủ thông tin");
+			$model = $this->getModel();
+			$model->updatePam($classId, $learnerId, $pam1, $pam2, $pam, $allowed, $expired, $description);
+
+			/**
+			 * Set a sussess message
+			 * @var LearnerModel $learnerModel
+			 */
+			$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
+			$learner      = $learnerModel->getItem($learnerId);
+			$name         = implode(' ', [$learner->lastname, $learner->firstname]);
+			$name = htmlspecialchars($name);
+			$msg          = "Đã cập nhận ĐQT cho <b>{$name} ({$learner->code})</b>";
+			$this->setMessage($msg, 'success');
+			$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id=' . $classId, false);
+			$this->setRedirect($url);
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			if (!empty($classId))
+				$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id=' . $classId, false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=classes', false);
+			$this->setRedirect($url);
+		}
 	}
 
 }

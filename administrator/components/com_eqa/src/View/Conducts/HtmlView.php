@@ -89,9 +89,10 @@ class HtmlView extends EqaItemsHtmlView
         ToolbarHelper::title('Kết quả rèn luyện HVSV');
 	    ToolbarHelper::appendGoHome();
 		$url = Route::_('index.php?option=com_eqa&view=conducts&layout=default',false);
-		ToolbarHelper::appendLink('core.manage',$url,'Làm mới','loop','btn btn-success');
+		ToolbarHelper::appendLink('core.manage',$url,'Làm mới trang','loop','btn btn-success');
 	    ToolbarHelper::appendUpload('conducts.import','Nhập kết quả rèn luyện');
 	    ToolbarHelper::appendButton('core.edit','fas fa-calculator','Tính kết quả học tập','conducts.caclculateAcacdemicResults',true);
+		ToolbarHelper::deleteList('','conducts.delete');
 		$msg = 'Trước khi tải về bảng thống kê, cần chọn "Năm học" và "Học kỳ" thông qua bộ lọc trên trang!';
 	    ToolbarHelper::appendConfirmButton(null,$msg,'download','Thống kê theo lớp','conducts.exportClassesReport',false);
 	    ToolbarHelper::appendConfirmButton(null,$msg,'download','Thống kê theo khóa','conducts.exportCoursesReport',false);

@@ -72,6 +72,7 @@ class HtmlView extends EqaItemsHtmlView {
 		ToolbarHelper::appendButton('core.manage', 'download', 'Bảng thu phí','regradings.downloadRegradingFee');
 		ToolbarHelper::appendButton('core.manage', 'checkmark-circle', 'Chấp nhận','regradings.accept',true,'btn btn-success');
 		ToolbarHelper::appendButton('core.manage', 'cancel-circle', 'Từ chối','regradings.reject',true,'btn btn-danger');
+		ToolbarHelper::appendButton('core.manage', 'plus-circle', 'Tạo yêu cầu PK','regradings.add',false,'btn btn-success');
 		ToolbarHelper::appendButton('core.manage', 'list', 'Phân công chấm','regradings.assignRegradingExaminers');
 		ToolbarHelper::appendButton('core.manage', 'download', 'Bài thi iTest','regradings.downloadHybridRegradings');
 		ToolbarHelper::appendButton('core.manage', 'download', 'Bài thi viết','regradings.downloadPaperRegradings');

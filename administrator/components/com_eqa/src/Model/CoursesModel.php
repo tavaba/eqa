@@ -32,7 +32,7 @@ class CoursesModel extends EqaListModel{
         //Filtering
         $search = $this->getState('filter.search');
         if(!empty($search)){
-            $like = $db->quote('%'.$search.'%');
+            $like = $db->quote('%'.trim($search).'%');
             $query->where('a.description LIKE '.$like);
         }
 

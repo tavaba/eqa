@@ -42,7 +42,7 @@ class ExamexamineesModel extends ListModel {
         //Filtering
         $search = $this->getState('filter.search');
         if(!empty($search)){
-            $like = $db->quote('%'.$search.'%');
+            $like = $db->quote('%'.trim($search).'%');
             $query->where('(concat_ws(" ",`b`.`lastname`,`b`.`firstname`) LIKE '.$like.' OR `b`.`code` LIKE '.$like.')');
         }
 

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+   Trong form này có sử dụng custom form field
+   Vì thế, trong thẻ FIELDSET cần có thuộc tính 'addfieldprefix' tương ứng
+   Tham khảo từ:  https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+-->
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="class_id"
+                type="hidden"
+        />
+        <field
+                name="learner_id"
+                type="hidden"
+        />
+        <field
+                name="pam1"
+                type="text"
+                required="true"
+                default=""
+                label="Điểm TP1"
+        />
+        <field
+                name="pam2"
+                type="text"
+                required="true"
+                default=""
+                label="Điểm TP2"
+        />
+        <field
+                name="pam"
+                type="text"
+                required="true"
+                default=""
+                label="Điểm quá trình"
+        />
+        <field  name="allowed"
+                type="radio"
+                default="1"
+                label="Được dự thi KTHP"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="expired"
+                type="radio"
+                default="0"
+                label="Hết lượt thi"
+                showon="allowed:1"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field
+                name="description"
+                type="textarea"
+                required="true"
+                default=""
+                label="Ghi chú"
+                description="Bổ sung lý do chỉnh sửa điểm quá trình vào đây"
+        />
+    </fieldset>
+</form>

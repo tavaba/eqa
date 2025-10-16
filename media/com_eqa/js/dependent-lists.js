@@ -3,6 +3,27 @@
  * @subpackage  Dependent Lists Utility
  * @copyright   Copyright (C) 2024. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ * Usage: Your view must include a code fragment like below:
+ *        //Load asset
+ *        $this->wam->useScript('com_eqa.dependent_lists');
+ *
+ *        //Init dependent lists
+ *        DependentListsHelper::setup2Level(
+ *            $this->wam,
+ *            'jform',
+ *            'class_id',
+ *            'learner_id',
+ *            '- Chọn HVSV -',
+ *            JRoute::_('index.php?option=com_eqa&task=fixer.jsonGetClassLearners',false)
+ *        );
+ * The URL (endpoint) should accept both GET and POST methods.
+ * It should return JSON data in the following format:
+ * [
+ *      {"value":"1","name":"Cao Minh An"},
+ *      {"value":"2","name":"Vi Du Linh"}
+ * ]
+ * This script will automatically detect the CSRF token used by Joomla
+ * and send it along with each AJAX request.
  */
 
 (function($) {

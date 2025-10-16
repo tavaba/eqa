@@ -38,7 +38,7 @@ class MonitoringexamsModel extends EqaListModel{
         //Filtering
         $search = $this->getState('filter.search');
         if(!empty($search)){
-            $like = $db->quote('%'.$search.'%');
+            $like = $db->quote('%'.trim($search).'%');
             $query->where('a.name LIKE '.$like);
         }
 

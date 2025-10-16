@@ -14,5 +14,6 @@
 		<action name="eqa.edit.class" title="Sửa thông tin lớp học phần"/>
 		<action name="eqa.supervise" title="Quản lý HVSV"/>
 		<action name="eqa.mask" title="Quản lý phách bài thi"/>
+		<action name="eqa.edit.mark" title="Sửa điểm"/>
 	</section>
 </access>

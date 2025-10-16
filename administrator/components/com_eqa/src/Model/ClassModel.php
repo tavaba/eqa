@@ -34,6 +34,33 @@ class ClassModel extends EqaAdminModel {
     }
 
 	/**
+	 * Check whether PAM of a learner can be editted. For now a PAM record can be editted
+	 * if the learner has not gotten mark from any exams yet.
+	 *
+	 * @param   int  $classId
+	 * @param   int  $learnerId
+	 *
+	 * @return bool
+	 *
+	 * @since 1.2.3
+	 */
+	public function canEditPam(int $classId, int $learnerId):bool
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from('#__eqa_exam_learner')
+			->where([
+				'class_id = '.$classId,
+				'learner_id= '.$learnerId,
+				'conclusion IS NOT NULL'
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+		return !$db->loadResult();
+	}
+
+	/**
 	 * Thêm HVSV vào một lớp học phần. Có sử dụng transaction.
 	 *
 	 * @param   int    $classId       ID của lớp học phần.
@@ -264,7 +291,30 @@ class ClassModel extends EqaAdminModel {
 			throw $e;
 		}
 	}
+	public function updatePam(int $classId, int $learnerId, float $pam1, float $pam2, float $pam, bool $allowed, bool $expired, string $description)
+	{
+		$userId = Factory::getApplication()->getIdentity()->id;
+		$currentTime = DatetimeHelper::getCurrentHanoiDatetime();
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->update('#__eqa_class_learner')
+			->set([
+				'description='.$db->quote($description),
+				'pam1='.$pam1,
+				'pam2='.$pam2,
+				'pam='.$pam,
+				'allowed='.intval($allowed),
+				'expired='.intval($expired),
+				'updated_by='.$userId,
+				'updated_at=' . $db->quote($currentTime),
+			])
+			->where('class_id = '.$classId.' AND learner_id = '.$learnerId);
+		$db->setQuery($query);
 
+		//Execute the query. If the query fails, throw an exception with error message
+		if(!$db->execute())
+			throw new Exception($this->getError());
+	}
 	public function exportPams(int $classId): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -525,6 +575,31 @@ class ClassModel extends EqaAdminModel {
 			->where('a.class_id = ' . $classId);
 		$db->setQuery($query);
 		return $db->loadObjectList();
+	}
+	public function getLearnerInfo($classId, $learnerId)
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			$db->quoteName('a.class_id')            . ' AS ' . $db->quoteName('classId'),
+			$db->quoteName('a.learner_id')          . ' AS ' . $db->quoteName('learnerId'),
+			$db->quoteName('b.code')                . ' AS ' . $db->quoteName('learnerCode'),
+			$db->quoteName('b.lastname')            . ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('b.firstname')           . ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('a.pam1')                . ' AS ' . $db->quoteName('pam1'),
+			$db->quoteName('a.pam2')                . ' AS ' . $db->quoteName('pam2'),
+			$db->quoteName('a.pam')                 . ' AS ' . $db->quoteName('pam'),
+			$db->quoteName('a.allowed')             . ' AS ' . $db->quoteName('allowed'),
+			$db->quoteName('a.description')         . ' AS ' . $db->quoteName('description'),
+			$db->quoteName('a.ntaken')              . ' AS ' . $db->quoteName('ntaken'),
+			$db->quoteName('a.expired')             . ' AS ' . $db->quoteName('expired'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'a.learner_id=b.id')
+			->where('a.class_id = '.$classId.' AND a.learner_id = '.$learnerId);
+		$db->setQuery($query);
+		return $db->loadObject();
 	}
 	public function addForGroupOrCohort(string $targetType, int $targetId, int $subjectId, int $term, int $academicyearId): void
 	{

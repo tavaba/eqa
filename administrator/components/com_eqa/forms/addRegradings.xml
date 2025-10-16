@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field
+                name="examseason_id"
+                type="examseason"
+                label="Kỳ thi"
+                required="true"
+        />
+    </fieldset>
+</form>

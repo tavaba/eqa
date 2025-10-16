@@ -9,7 +9,6 @@ use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
 use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends EqaItemsHtmlView {
@@ -89,5 +88,6 @@ class HtmlView extends EqaItemsHtmlView {
 	    ToolbarHelper::addNew('class.addLearners', 'Người học');
 	    ToolbarHelper::appendUpload('class.importLearners', 'Người học');
 	    ToolbarHelper::appendUpload('class.importPams', 'Điểm QT');
+	    ToolbarHelper::appendButton('eqa.edit.mark','edit','Sửa ĐQT','class.editPam',true);
     }
 }

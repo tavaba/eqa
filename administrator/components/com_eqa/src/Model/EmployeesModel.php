@@ -30,7 +30,7 @@ class EmployeesModel extends EqaListModel{
         //Filtering
         $search = $this->getState('filter.search');
         if(!empty($search)){
-            $like = $db->quote('%'.$search.'%');
+            $like = $db->quote('%'.trim($search).'%');
             $query->where('(concat_ws(" ",`lastname`,`firstname`) LIKE '.$like.' OR a.code LIKE '.$like .')');
         }
 

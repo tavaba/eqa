@@ -27,8 +27,8 @@ class ClasslearnersModel extends ListModel {
 
 		$db = $this->getDatabase();
 		$columns = $db->quoteName(
-			array('a.learner_id','b.code', 'b.lastname', 'b.firstname', 'c.code', 'a.pam1', 'a.pam2','a.pam','a.allowed', 'a.ntaken', 'a.expired', 'a.description'),
-			array('id',           'code',   'lastname',    'firstname',  'group',   'pam1',   'pam2', 'pam',   'allowed',   'ntaken',   'expired', 'description')
+			array('a.learner_id','b.code',         'b.lastname', 'b.firstname', 'c.code', 'a.pam1', 'a.pam2','a.pam','a.allowed', 'a.ntaken', 'a.expired', 'a.description'),
+			array('id',   'code',   'lastname',    'firstname',  'group',   'pam1',   'pam2', 'pam',   'allowed',   'ntaken',   'expired', 'description')
 		);
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -46,7 +46,7 @@ class ClasslearnersModel extends ListModel {
 		//Filtering
 		$search = $this->getState('filter.search');
 		if(!empty($search)){
-			$like = $db->quote('%'.$search.'%');
+			$like = $db->quote('%'.trim($search).'%');
 			$query->where('(CONCAT(`b`.`lastname`, " ", `b`.`firstname`) LIKE ' . $like .' OR `b`.`code` LIKE ' . $like . ')');
 		}
 
