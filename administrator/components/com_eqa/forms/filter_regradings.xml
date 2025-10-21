@@ -13,10 +13,7 @@
                 label="Kỳ thi"
                 default=""
                 onchange="this.form.submit();"
-        >
-            <option value="">-Kỳ thi-</option>
-            <option value="0">(Kỳ thi mặc định)</option>
-        </field>
+        />
         <field  name="status"
                 type="ppaastatus"
                 label="Trạn thái xử lý"

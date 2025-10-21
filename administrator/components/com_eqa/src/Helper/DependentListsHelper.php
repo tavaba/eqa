@@ -18,6 +18,7 @@ abstract class DependentListsHelper
 	 * @param   array  $config  JavaScript configuration
 	 *
 	 * @return  string  JavaScript code
+	 * @since   1.2.0
 	 */
 	protected static function generateInitScript(array $config)
 	{
@@ -58,7 +59,7 @@ abstract class DependentListsHelper
         // Validate required configuration
         $required = ['prefix', 'list1', 'list2', 'prompt2', 'url2'];
         foreach ($required as $key) {
-            if (empty($config[$key])) {
+            if (!isset($config[$key])) {
                 throw new \InvalidArgumentException("Missing required configuration: {$key}");
             }
         }
@@ -85,7 +86,7 @@ abstract class DependentListsHelper
 
         // Add list3 configuration if provided
         if (!empty($config['list3'])) {
-            if (empty($config['prompt3']) || empty($config['url3'])) {
+            if (!isset($config['prompt3']) || empty($config['url3'])) {
                 throw new \InvalidArgumentException("When list3 is provided, prompt3 and url3 are required");
             }
             
@@ -117,6 +118,7 @@ abstract class DependentListsHelper
      * @param   string          $url2      AJAX URL for list2
      * 
      * @return  void
+     * @since 1.2.1
      */
     public static function setup2Level(WebAssetManager $wa, $prefix, $list1, $list2, $prompt2, $url2)
     {
@@ -143,6 +145,7 @@ abstract class DependentListsHelper
      * @param   string          $url3      AJAX URL for list3
      * 
      * @return  void
+     * @since 1.2.1
      */
     public static function setup3Level(WebAssetManager $wa, $prefix, $list1, $list2, $list3, $prompt2, $prompt3, $url2, $url3)
     {

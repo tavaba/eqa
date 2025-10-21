@@ -1155,4 +1155,25 @@ class ExamseasonModel extends EqaAdminModel{
 		//Return
 		return $stat;
 	}
+
+	/**
+	 * Get list of exams in an exam season.
+	 *
+	 * @param   int  $examseasonId
+	 *
+	 * @return array
+	 *
+	 * @since 1.2.3
+	 */
+	public function getExams(int $examseasonId): array
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('a.id, a.name, b.code')
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_subjects AS b', 'b.id=a.subject_id')
+			->where('examseason_id='.$examseasonId);
+		$db->setQuery($query);
+		return $db->loadObjectList();
+	}
 }

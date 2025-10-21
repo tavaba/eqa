@@ -5,15 +5,117 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
+use Kma\Component\Eqa\Administrator\Model\ExamModel;
+use Kma\Component\Eqa\Administrator\Model\LearnerModel;
+use Kma\Component\Eqa\Administrator\Model\RegradingModel;
+use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class RegradingsController extends EqaAdminController {
+	/**
+	 * This method allow the exam organizer to create a new regrading request for
+	 * some learners in one exam.
+	 * @since 1.2.3
+	 */
+	public function add()
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('eqa.supervise',$this->option))
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+
+			//3. Try to get form data
+			$examId = $this->input->getInt('exam_id');
+
+			//PHASE 1. Show form
+			if(empty($examId))
+			{
+				$url  = Route::_('index.php?option=com_eqa&view=regradings&layout=add', false);
+				$this->setRedirect($url);
+				return;
+			}
+
+			/**
+			 * PHASE 2. Save data
+			 * @var RegradingModel $regradingModel
+			 */
+			//1. Get ids of selected examinees
+			$learnerIds = $this->input->get('learner_ids',[],'array');
+			$learnerIds = array_filter($learnerIds,'intval');
+			if(empty($learnerIds))
+				throw new Exception('Không có thí sinh nào được chọn');
+			$accepted = $this->input->getBool('accepted',false);
+
+			//2. Prepare data for saving
+			$userId = $this->app->getIdentity()->id;
+			$status = $accepted ? ExamHelper::EXAM_PPAA_STATUS_ACCEPTED : ExamHelper::EXAM_PPAA_STATUS_INIT;
+			$data = [
+				'exam_id'=>$examId,
+				'status' => $status,
+				'requested_by'=>$userId,
+				'requested_at'=>date('Y-m-d H:i:s'),
+			];
+			if($accepted)
+			{
+				$data['handled_by'] = $userId;
+				$data['handled_at'] = date('Y-m-d H:i:s');
+			}
+
+			/**
+			 * 3. Load Exam Model and check where can add PPAA requests
+			 * @var ExamModel $examModel
+			 */
+			$examModel = GeneralHelper::getMVCFactory()->createModel('Exam');
+			if(!$examModel->canRequestPpaa($examId))
+				throw new Exception('Không thể tạo yêu cầu phúc khảo đối với môn thi.
+				Hãy kiểm tra xem đã mở phúc khảo kỳ thi hay chưa, thời hạn phúc khảo đã qua
+				hay chưa');
+
+			/**
+			 * 4. Load model for saving
+			 * @var RegradingModel $regradingModel
+			 */
+			$regradingModel = $this->getModel('Regrading');
+			foreach ($learnerIds as $learnerId)
+			{
+				$data['learner_id'] = $learnerId;
+				$regradingModel->save($data);
+
+				//Update 'ppaa' info in the #__eqa_exam_learner table
+				if(!$examModel->updateExamineePpaa($examId, $learnerId, ExamHelper::EXAM_PPAA_REVIEW))
+				{
+					$msg = htmlspecialchars($examModel->getError());
+					throw new Exception($msg);
+				}
+
+				//Clear the state for new item
+				$regradingModel->setState('regrading.id',null);
+			}
+
+			//6. Redirect back to list view
+			$this->setMessage('Tạo yêu cầu phúc khảo thành công', 'success');
+			$url  = Route::_('index.php?option=com_eqa&view=regradings', false);
+			$this->setRedirect($url);
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			return;
+		}
+	}
 	public function accept()
 	{
 		try

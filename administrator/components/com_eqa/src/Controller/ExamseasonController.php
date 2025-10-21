@@ -5,6 +5,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
@@ -553,4 +554,32 @@ class ExamseasonController extends EqaFormController
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examseasons',false));
 		}
 	}
+
+	public function getJsonListOfExams()
+	{
+		//1. Get examseason id
+		$examseasonId = $this->input->getInt("examseason_id");
+		if(empty($examseasonId))
+		{
+			echo new JsonResponse([],'Examseason ID not found',true);
+			jexit();
+		}
+
+		/**
+		 * 2. Load model and get data
+		 * @var ExamseasonModel $model
+		 */
+		$model = $this->getModel();
+		$exams = $model->getExams($examseasonId);
+		$data = [];
+		foreach ($exams as $exam) {
+			$data[] = [
+				'value'=>$exam->id,
+				'name'=>"{$exam->code} - {$exam->name}"
+			];
+		}
+		echo new JsonResponse($data);
+		jexit();
+	}
+
 }

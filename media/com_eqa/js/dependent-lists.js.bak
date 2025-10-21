@@ -69,17 +69,9 @@
             }, options);
 
             // Build field selectors
-            var list1Selector;
-            var list2Selector;
-            if(options.prefix)
-            {
-                list1Selector = '#' + options.prefix + '_' + options.list1;
-                list2Selector = '#' + options.prefix + '_' + options.list2;
-            }
-            else{
-                list1Selector = '#' + options.list1;
-                list2Selector = '#' + options.list2;
-            }
+            var list1Selector = '#' + options.prefix + '_' + options.list1;
+            var list2Selector = '#' + options.prefix + '_' + options.list2;
+
             var $list1 = $(list1Selector);
             var $list2 = $(list2Selector);
 
@@ -108,7 +100,7 @@
             }
 
             // Required options for all configurations
-            var required = ['list1', 'list2', 'url2'];
+            var required = ['prefix', 'list1', 'list2', 'prompt2', 'url2'];
             for (var i = 0; i < required.length; i++) {
                 if (!options[required[i]] || typeof options[required[i]] !== 'string') {
                     console.error('DependentLists: Missing or invalid required option:', required[i]);
@@ -120,6 +112,11 @@
             if (options.list3) {
                 if (typeof options.list3 !== 'string') {
                     console.error('DependentLists: list3 must be a string');
+                    return false;
+                }
+                
+                if (!options.prompt3 || typeof options.prompt3 !== 'string') {
+                    console.error('DependentLists: prompt3 is required when list3 is provided');
                     return false;
                 }
                 
@@ -145,11 +142,7 @@
 
             // Get list3 element if it exists
             if (options.list3) {
-                var list3Selector;
-                if(options.prefix)
-                    list3Selector = '#' + options.prefix + '_' + options.list3;
-                else
-                    list3Selector = '#' + options.list3;
+                var list3Selector = '#' + options.prefix + '_' + options.list3;
                 $list3 = $(list3Selector);
                 
                 if (!$list3.length) {

@@ -2,7 +2,9 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use JFactory;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\Utilities\ArrayHelper;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -13,6 +15,74 @@ use function Symfony\Component\String\b;
 defined('_JEXEC') or die();
 
 class RegradingModel extends EqaAdminModel {
+	protected function canDelete($record): bool
+	{
+		/*
+		 * A record can be delete if the following conditions are met
+		 * - The corresponding request was sent by the current user
+		 *   (column 'requested_by' in #__eqa_regradings table)
+		 * - A regrading mark has been set and approved
+		 *   (column 'result' in #__eqa_regradings IS NOT NULL)
+		 * - The corresponding examseason has not been completed yet
+		 *   (column 'completed' in #__eqa_examseasons table is FALSE)
+		 */
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			'a.requested_by         AS requestedBy',
+			'a.result               AS result',
+			'c.completed            AS completed',
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_regradings AS a')
+			->leftJoin('#__eqa_exams AS b', 'b.id=a.exam_id')
+			->leftJoin('#__eqa_examseasons AS c', 'c.id=b.examseason_id')
+			->where('a.id='.(int)$record->id);
+		$db->setQuery($query);
+		$info = $db->loadObject();
+
+		if(empty($info))
+			return false;
+
+		//A record can be deleted only by the user who submitted it
+		$currentUserId = Factory::getApplication()->getIdentity()->id;
+		if($currentUserId != $info->requestedBy)
+			throw new Exception('Yêu cầu phúc khảo chỉ có thể được xóa bởi người đã khởi tạo nó');
+		if($info->resull !== null)
+			throw new Exception('Đã có kết quả phúc khảo nên không thể xóa');
+		if($info->completed)
+			throw new Exception('Kỳ thi đã hoàn thành nên không thể xóa');
+		return true;
+	}
+
+	public function delete(&$pks)
+	{
+		//1. Clear PPAA info in the #__eqa_exam_learner table
+		$db = DatabaseHelper::getDatabaseDriver();
+		$pks = ArrayHelper::toInteger($pks);
+		$query = $db->getQuery(true)
+			->select('exam_id AS examId, learner_id AS learnerId')
+			->from('#__eqa_regradings')
+			->where('id IN (' . implode(',', $pks) . ')');
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList();
+		if(empty($examinees))
+			return false; //Nothing more to do here
+
+		foreach ($examinees as $examinee){
+			$query = $db->getQuery(true)
+				->update('#__eqa_exam_learner')
+				->set('ppaa_status = 0')
+				->where('exam_id='.$examinee->examId.' AND learner_id='.$examinee->learnerId);
+			$db->setQuery($query);
+			if(!$db->execute())
+				return false;
+		}
+
+		//2. Delete records
+		return parent::delete($pks);
+	}
+
 	/**
 	 * Ghi nhận yêu cầu đính chính được chấp nhận
 	 * @param   int     $itemId

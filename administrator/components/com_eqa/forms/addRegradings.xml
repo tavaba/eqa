@@ -7,5 +7,33 @@
                 label="Kỳ thi"
                 required="true"
         />
+        <field
+                name="exam_id"
+                type="list"
+                label="Môn thi"
+                required="true"
+                class = "select2-basic"
+        />
+        <field
+                name="learner_ids"
+                type="list"
+                label="Thí sinh"
+                required="true"
+                class = "select2-basic"
+                multiple="true"
+        />
+        <field  name="accepted"
+                type="radio"
+                required="true"
+                default="0"
+                label="Chấp nhận"
+                description="Nếu chọn YES thì trạng thái mặc định của yêu cầu
+                là &quot;Đã được chấp nhận;&quot;. Ngược lại trạng thái sẽ
+                là &quot;Đã gửi yêu cầu&quot;."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
     </fieldset>
 </form>

@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Exception;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
@@ -793,5 +794,33 @@ class ExamController extends  EqaFormController
 			$exam->countToTake + $exam->countExempted
 		);
 		$this->app->enqueueMessage($msg);
+	}
+
+	public function getJsonListOfExaminees()
+	{
+		//1. Get the exam id
+		$examId = $this->input->getInt('exam_id');
+		if(empty($examId))
+		{
+			echo new JsonResponse([],'Exam ID not found',true);
+			jexit();
+		}
+
+		/**
+		 * Load model and get data
+		 * @var ExamModel $model
+		 */
+		$model = $this->getModel();
+		$examinees = $model->getExaminees($examId);
+		$data = [];
+		foreach ($examinees as $examinee)
+		{
+			$data[] = [
+				'value' => $examinee->id,
+				'name' => "{$examinee->code} - {$examinee->lastname} {$examinee->firstname}"
+			];
+		}
+		echo new JsonResponse($data);
+		jexit();
 	}
 }

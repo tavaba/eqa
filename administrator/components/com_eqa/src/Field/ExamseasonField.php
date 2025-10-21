@@ -29,7 +29,9 @@ class ExamseasonField extends ListField
             ->order('id DESC');
         $db->setQuery($query);
         $items = $db->loadObjectList();
-        $options = parent::getOptions();
+        $options = [];
+	    $options[] = HTMLHelper::_('select.option', null, ' -Chọn kỳ thi- ');
+	    $options[] = HTMLHelper::_('select.option', 0, '(Kỳ thi mặc định)');
         foreach ($items as $item)
         {
             $options[] = HTMLHelper::_('select.option', $item->id, $item->name);

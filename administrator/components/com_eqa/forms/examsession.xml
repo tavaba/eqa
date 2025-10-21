@@ -9,9 +9,7 @@
                 class="select2-basic"
                 label="COM_EQA_EXAMSEASON"
                 required="true"
-            >
-            <option value="">COM_EQA_EXAMSEASON_REQUEST</option>
-        </field>
+        />
         <field  name="start"
                 type="calendar"
                 showtime="true"

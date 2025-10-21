@@ -10,9 +10,7 @@
                 type="examseason"
                 required="true"
                 label="COM_EQA_EXAMSEASON"
-        >
-            <option value="">COM_EQA_EXAMSEASON_REQUEST</option>
-        </field>
+        />
         <field
                 name="subject_id"
                 type="subject"

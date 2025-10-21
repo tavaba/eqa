@@ -1930,6 +1930,36 @@ class ExamModel extends EqaAdminModel{
 		return $db->loadObjectList();
 	}
 
+
+	public function canRequestPpaa(int $examId):bool
+	{
+		/*
+		 * A PPAA request can be sent to an exam if the following conditions are met:
+		 * - The corresponding examseason has not been completed yet
+		 *   (column 'completed' in #__eqa_examseasons table is FALSE)
+		 * - The corresponding examseason is opened for PPAA requests
+		 *   (column 'ppaa_req_enabled' in #__eqa_examseasons table is TRUE).
+		 * - The PPAA request deadline for the corresponding examseason has not passed yet.
+		 *   (column 'ppaa_req_deadline' in #__eqa_examseasons table).
+		 */
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select(['b.completed', 'b.ppaa_req_enabled', 'b.ppaa_req_deadline'])
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_examseasons AS b', 'b.id=a.examseason_id')
+			->where('a.id=' . $examId);
+		$db->setQuery($query);
+		$info = $db->loadObject();
+		if(empty($info))
+			return false;
+		if($info->completed)
+			return false;
+		if(!$info->ppaa_req_enabled)
+			return  false;
+		if(time() > strtotime($info->ppaa_req_deadline))
+			return false;
+		return true;
+	}
 	protected function canCompleteResult(array|object $examinees): bool
 	{
 		if(is_object($examinees))
@@ -1997,5 +2027,30 @@ class ExamModel extends EqaAdminModel{
 		//
 
 
+	}
+	public function getExaminees(int $examId):array
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('b.id, b.code, b.lastname, b.firstname')
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+			->where('a.exam_id='.$examId);
+		$db->setQuery($query);
+		return $db->loadObjectList();
+	}
+
+	public function updateExamineePpaa(int $examId, int $learnerId, int $ppaaCode): bool
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->update('#__eqa_exam_learner')
+			->set('ppaa='.$ppaaCode)
+			->where([
+				'exam_id='.$examId,
+				'learner_id='.$learnerId]
+			);
+		$db->setQuery($query);
+		return $db->execute();
 	}
 }
