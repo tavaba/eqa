@@ -1511,6 +1511,33 @@ class ExamModel extends EqaAdminModel{
 			$messages[] = 'Thông tin nợ phí không thay đổi';
 		return $messages;
 	}
+	public function setDebt(int $examId, int $learnerId, bool $value):bool
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//Can change debt status if the final result is not concluded
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from('#__eqa_exam_learner')
+			->where([
+				'exam_id='.$examId,
+				'learner_id='.$learnerId,
+				'conclusion IS NULL'
+			]);
+		$db->setQuery($query);
+		if($db->loadResult() == 0)
+			return false;
+
+		$query = $db->getQuery(true)
+			->update('#__eqa_exam_learner')
+			->set('debtor='.(int)$value)
+			->where([
+				'exam_id='.$examId,
+				'learner_id='.$learnerId
+			]);
+		$db->setQuery($query);
+		return $db->execute();
+	}
 
 	public function setExamStatus(int $examId, int $status): bool
 	{

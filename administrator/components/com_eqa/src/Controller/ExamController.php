@@ -1,9 +1,13 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Exception;
+use Joomla\CMS\Application\CMSWebApplicationInterface;
+use Joomla\CMS\Form\FormFactoryInterface;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
+use Joomla\Input\Input;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaFormController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
@@ -13,6 +17,7 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
+use Kma\Component\Eqa\Administrator\Model\LearnerModel;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -26,6 +31,12 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 class ExamController extends  EqaFormController
 {
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSWebApplicationInterface $app = null, ?Input $input = null, ?FormFactoryInterface $formFactory = null)
+	{
+		parent::__construct($config, $factory, $app, $input, $formFactory);
+		$this->registerTask('clearDebt','setDebt');
+		$this->registerTask('markDebt','setDebt');
+	}
 
 	/**
 	 * This method is overided because we need to modify the target of redirect.
@@ -674,6 +685,133 @@ class ExamController extends  EqaFormController
 
 			//Set redirect in any case
 			$this->setMessage(implode('. ', $messages));
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
+		}
+	}
+	public function setDebt():void
+	{
+		try
+		{
+			//Check token
+			$this->checkToken();
+
+			//Get exam id
+			$examId = $this->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+			//Check permissions
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			//Get the ids of learners who have been marked as having paid their fees
+			$paidIds = $this->input->post->get('cid', [], 'array');
+			$paidIds = array_filter($paidIds, 'intval');
+			if(empty($paidIds))
+				throw new Exception("Không có thí sinh nào được chọn");
+
+			//Get task
+			$task = $this->getTask();
+			$value = $task==='clearDebt' ? 0 : 1;
+			$action = $task==='clearDebt' ? 'xóa nợ' : 'ghi nợ';
+
+			/**
+			 * Clear debt information
+			 * @var ExamModel $examModel
+			 * @var LearnerModel $learnerModel
+			 */
+			$examModel = $this->getModel();
+			$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
+			foreach ($paidIds as $paidId)
+			{
+				$ok = $examModel->setDebt($examId, $paidId, $value);
+				$learner = $learnerModel->getItem($paidId);
+				$learnerInfo = sprintf('%s (%s)',
+					implode(' ', [$learner->lastname, $learner->firstname]),
+					$learner->code
+				);
+				if($ok)
+				{
+					$msg = sprintf('Đã %s cho thí sinh <b>%s</b>', $action, $learnerInfo);
+					$this->app->enqueueMessage($msg,'success');
+				}
+				else
+				{
+					$msg = sprintf('Phát sinh lỗi khi %s cho <b>%s</b>. 
+						Hãy đảm bảm rằng thí sinh chưa có điểm thi!',
+						$action, $learnerInfo);
+					throw new Exception($msg);
+				}
+			}
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
+		}
+	}
+	public function clearDebt_bak():void
+	{
+		try
+		{
+			//Check token
+			$this->checkToken();
+
+			//Get exam id
+			$examId = $this->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+			//Check permissions
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			//Get the ids of learners who have been marked as having paid their fees
+			$paidIds = $this->input->post->get('cid', [], 'array');
+			$paidIds = array_filter($paidIds, 'intval');
+			if(empty($paidIds))
+				throw new Exception("Không có thí sinh nào được chọn");
+
+			/**
+			 * Clear debt information
+			 * @var ExamModel $examModel
+			 * @var LearnerModel $learnerModel
+			 */
+			$examModel = $this->getModel();
+			$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
+			foreach ($paidIds as $paidId)
+			{
+				$ok = $examModel->setDebt($examId,$paidId,false);
+				$learner = $learnerModel->getItem($paidId);
+				$learnerInfo = sprintf('%s (%s)',
+					implode(' ', [$learner->lastname, $learner->firstname]),
+					$learner->code
+				);
+				if($ok)
+				{
+					$msg = sprintf('Đã xóa nợ cho thí sinh <b>%s</b>', $learnerInfo);
+					$this->app->enqueueMessage($msg,'success');
+				}
+				else
+				{
+					$msg = sprintf('Phát sinh lỗi khi xóa nợ cho <b>%s</b>. Hãy đảm bảm rằng thí sinh chưa có điểm thi!', $learnerInfo);
+					throw new Exception($msg);
+				}
+			}
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
