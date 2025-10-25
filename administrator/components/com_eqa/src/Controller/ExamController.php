@@ -600,20 +600,9 @@ class ExamController extends  EqaFormController
 			$row++;
 		}
 
-
-		// Export the spreadsheet to a temporary file
-		$tempFile = tempnam(sys_get_temp_dir(), $exam->name) . '.xlsx';
-		$writer = new Xlsx($spreadsheet);
-		$writer->save($tempFile);
-
-		// Force download of the Excel file
-		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		header('Content-Disposition: attachment; filename="Ca iTest - ' . $exam->name . '.xlsx"');
-		header('Cache-Control: max-age=0');
-		readfile($tempFile);
-
-		// Clean up temporary file
-		unlink($tempFile);
+		//Let user download the file
+		$fileName = "Ca thi iTest. {$exam->name}.xlsx";
+		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();
 	}
 
@@ -749,66 +738,6 @@ class ExamController extends  EqaFormController
 					$msg = sprintf('Phát sinh lỗi khi %s cho <b>%s</b>. 
 						Hãy đảm bảm rằng thí sinh chưa có điểm thi!',
 						$action, $learnerInfo);
-					throw new Exception($msg);
-				}
-			}
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
-		}
-		catch (Exception $e)
-		{
-			$this->setMessage($e->getMessage(),'error');
-			if(empty($examId))
-				$url = Route::_('index.php?option=com_eqa',false);
-			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
-			$this->setRedirect($url);
-		}
-	}
-	public function clearDebt_bak():void
-	{
-		try
-		{
-			//Check token
-			$this->checkToken();
-
-			//Get exam id
-			$examId = $this->input->getInt('exam_id');
-			if(empty($examId))
-				throw new Exception('Không xác định được môn thi');
-
-			//Check permissions
-			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
-				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
-
-			//Get the ids of learners who have been marked as having paid their fees
-			$paidIds = $this->input->post->get('cid', [], 'array');
-			$paidIds = array_filter($paidIds, 'intval');
-			if(empty($paidIds))
-				throw new Exception("Không có thí sinh nào được chọn");
-
-			/**
-			 * Clear debt information
-			 * @var ExamModel $examModel
-			 * @var LearnerModel $learnerModel
-			 */
-			$examModel = $this->getModel();
-			$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
-			foreach ($paidIds as $paidId)
-			{
-				$ok = $examModel->setDebt($examId,$paidId,false);
-				$learner = $learnerModel->getItem($paidId);
-				$learnerInfo = sprintf('%s (%s)',
-					implode(' ', [$learner->lastname, $learner->firstname]),
-					$learner->code
-				);
-				if($ok)
-				{
-					$msg = sprintf('Đã xóa nợ cho thí sinh <b>%s</b>', $learnerInfo);
-					$this->app->enqueueMessage($msg,'success');
-				}
-				else
-				{
-					$msg = sprintf('Phát sinh lỗi khi xóa nợ cho <b>%s</b>. Hãy đảm bảm rằng thí sinh chưa có điểm thi!', $learnerInfo);
 					throw new Exception($msg);
 				}
 			}
