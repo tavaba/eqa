@@ -46,6 +46,8 @@ class ConductModel extends EqaAdminModel
 			{
 				$setClause[] = 'academic_score = '.$item->academicScore;
 				$setClause[] = 'academic_rating = '.$item->academicRating;
+				$setClause[] = 'resit_count = ' . $item->resitCount;
+				$setClause[] = 'retake_count = ' . $item->retakeCount;
 			}
 			if($importCredits)
 			{
