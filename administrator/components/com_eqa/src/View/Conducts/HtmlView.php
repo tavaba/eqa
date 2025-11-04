@@ -92,6 +92,8 @@ class HtmlView extends EqaItemsHtmlView
 		ToolbarHelper::appendLink('core.manage',$url,'Làm mới trang','loop','btn btn-success');
 	    ToolbarHelper::appendUpload('conducts.import','Nhập kết quả rèn luyện');
 	    ToolbarHelper::appendButton('core.edit','fas fa-calculator','Tính kết quả học tập','conducts.caclculateAcacdemicResults',true);
+	    $msg = 'Trước khi thực hiện tính trung bình năm, cần chọn "Năm học" và "Khóa đào tạo" thông qua bộ lọc trên trang!';
+	    ToolbarHelper::appendConfirmButton('core.edit',$msg,'fas fa-calculator','Tính trung bình năm','conducts.caclculateAcacdemicYearResults',false);
 		ToolbarHelper::deleteList('','conducts.delete');
 		$msg = 'Trước khi tải về bảng thống kê, cần chọn "Năm học" và "Học kỳ" thông qua bộ lọc trên trang!';
 	    ToolbarHelper::appendConfirmButton(null,$msg,'download','Thống kê theo lớp','conducts.exportClassesReport',false);

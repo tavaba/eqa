@@ -63,7 +63,7 @@ class ConductsController extends EqaAdminController {
 			$item->disciplinaryCount = intval($row[9]);       //Cột J: số lần kỷ luật
 			$item->conductScore = intval($row[13]);           //Cột N: Điểm rèn luyện
 			$item->conductRating = RatingHelper::rateConductScore($item->conductScore);
-			$item->note=$row[14];
+			$item->note=$row[15];                            //Cột P: Ghi chú
 			if($importMark)
 			{
 				$mark = $row[11];    //Cột L: Điểm trung bình theo Hệ 4
@@ -290,6 +290,39 @@ class ConductsController extends EqaAdminController {
 		}
 	}
 
+	/*
+	 * Tính kết quả rèn luyện và học tập cho cả năm học
+	 */
+	public function caclculateAcacdemicYearResults():void
+	{
+		try
+		{
+			//Check token
+			$this->checkToken();
+
+			//Get filters. There must be academicyear_id and course_id fields.
+			$input = $this->app->input;
+			$filters = $input->post->get('filter', [], 'array');
+			if(!is_numeric($filters['academicyear_id']) || !is_numeric($filters['course_id']))
+				throw new Exception('Thiếu thông tin năm học hoặc/và khóa học');
+			$academicyearId = intval($filters['academicyear_id']);
+			$courseId = intval($filters['course_id']);
+
+			/**
+			 * Load the model for calculating results
+			 * @var ConductsModel $model
+			 */
+			$model = $this->getModel('Conducts');
+			$model->caclculateAcacdemicYearResults($academicyearId, $courseId);
+			$this->setMessage('Tính điểm rèn luyện và học tập thành công','success');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=conducts',false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=conducts',false));
+		}
+	}
 	public function exportClassesReport():void
 	{
 		try
