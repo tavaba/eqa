@@ -13,7 +13,7 @@ class LearnerexamsController extends BaseController
 	public function RequestRegrading(): void
 	{
 		$this->checkToken();
-		$learnerCode = GeneralHelper::getCurrentUsername();
+		$learnerCode = GeneralHelper::getSignedInLearnerCode();
 
 		//Redirect in any case
 		$url = JRoute::_('index.php?option=com_eqa&view=learnerexams', false);

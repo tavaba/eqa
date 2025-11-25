@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Đăng ký sát hạch tiếng Anh">
+        <message>
+            <![CDATA[Hiển thị mã QR để SV đăng ký thi sát hạch tiếng Anh]]>
+        </message>
+    </layout>
+
+    <!-- Các trường cấu hình menu nằm trong thẻ <fields> ở đây -->
+    <fields name="params" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <fieldset name="options" label="JOPTIONS" >
+            <field  name="enabled"
+                    type="radio"
+                    required="true"
+                    default="0"
+                    label="Cho phép HVSV đăng ký"
+                    class="btn-group btn-group-yesno"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field  name="title"
+                    type="text"
+                    required="true"
+                    default=""
+                    label="Tên kỳ thi"
+                    description="Ví dụ: Sát hạch tiếng Anh đầu ra năm 2025. Đợt 3"
+            />
+            <field  name="exam_date"
+                    type="text"
+                    required="true"
+                    default=""
+                    label="Ngày thi"
+                    description="Ví dụ: 13-14/12/2025. Ghi thời gian thi (định dạng tự do)"
+            />
+
+            <field
+                    name="bank"
+                    type="bank"
+                    label="Ngân hàng người thu phí"
+                    required="true"
+                    default="970422"
+            />
+            <field
+                    name="account_number"
+                    type="text"
+                    label="Số tài khoản người thu phí"
+                    description="Cần kiểm tra cẩn thận số tài khoản. Phần mềm không có khả năng kiểm tra tính chính xác của giá trị nhập vào"
+                    required="true"
+                    default="0944646746"
+            />
+
+            <field
+                    name="prefix"
+                    type="text"
+                    label="Mã nộp tiền"
+                    default="THUHOTIENGANH20253"
+                    description="Ví dụ: THUHOTIENGANH20253. Chỉ gồm chữ cái và chữ số. Giá trị này được ghép với mã HVSV để tạo thành mã nộp tiền cuối cùng"
+                    required="true"
+                    filter="alnum"
+                    size="20"
+            />
+
+            <field
+                    name="deadline"
+                    type="calendar"
+                    label="Thời hạn đăng ký"
+                    required="true"
+                    filter="SERVER_UTC"
+                    showtime="true"
+                    format="%Y-%m-%d %H:%M"
+            />
+
+            <field
+                    name="fee"
+                    type="number"
+                    label="Phí dự thi"
+                    description="Số tiền (VNĐ)"
+                    required="true"
+                    filter="integer"
+                    min="0"
+                    step="1000"
+                    default="300000"
+            />
+
+        </fieldset>
+
+    </fields>
+</metadata>
