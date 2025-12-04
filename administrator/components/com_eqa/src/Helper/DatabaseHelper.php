@@ -281,6 +281,31 @@ abstract class DatabaseHelper
 		$nexaminee = $db->loadResult();
 		return $nexaminee;
 	}
+	static public function getLastExamResultOfLearnerOfClass(int $classId, int $learnerId):array|null
+	{
+		$db = self::getDatabaseDriver();
+		$columns = [
+			'mark_final',
+			'attempt',
+			'module_mark',
+			'module_base4_mark',
+			'module_grade',
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner')
+			->where("class_id=$classId AND learner_id=$learnerId AND conclusion IS NOT NULL")
+			->order('exam_id DESC')
+			->setLimit(1);
+		$db->setQuery($query);
+		return $db->loadAssoc();
+	}
+	static public function getExamNoPaperCount(int $examId): int
+	{
+		$db = self::getDatabaseDriver();
+		$db->setQuery('SELECT COUNT(1) FROM #__eqa_papers WHERE nsheet = 0 AND exam_id='.$examId);
+		return $db->loadResult();
+	}
 	static public function getExamPaperCount(int $examId): int
 	{
 		$db = self::getDatabaseDriver();
@@ -292,12 +317,6 @@ abstract class DatabaseHelper
 		foreach ($items as $item)
 			$nsheet += $item;
 		return $nsheet;
-	}
-	static public function getExamNoPaperCount(int $examId): int
-	{
-		$db = self::getDatabaseDriver();
-		$db->setQuery('SELECT COUNT(1) FROM #__eqa_papers WHERE nsheet = 0 AND exam_id='.$examId);
-		return $db->loadResult();
 	}
 	static public function getExamSheetCount(int $examId): int
 	{

@@ -5,7 +5,9 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Field\TermField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 
 class LearnerclassesModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -22,15 +24,26 @@ class LearnerclassesModel extends ListModel {
 			return null;
 
         $db = DatabaseHelper::getDatabaseDriver();
-        $columns = $db->quoteName(
-            array('b.id', 'c.code',       'b.term', 'b.name', 'a.pam1', 'a.pam2', 'a.pam', 'a.allowed', 'a.ntaken', 'a.expired'),
-            array('id',   'academicyear', 'term',   'name',   'pam1',   'pam2',   'pam',   'allowed',    'ntaken',  'expired')
-        );
+		$columns = [
+			'a.class_id'        . ' AS ' . 'id',
+			'c.code'            . ' AS ' . 'academicyear',
+			'b.term'            . ' AS ' . 'term',
+			'b.name'            . ' AS ' . 'name',
+			'd.code'            . ' AS ' . 'subjectCode',
+			'd.credits'         . ' AS ' . 'credits',
+			'a.pam1'            . ' AS ' . 'pam1',
+			'a.pam2'            . ' AS ' . 'pam2',
+			'a.pam'             . ' AS ' . 'pam',
+			'a.allowed'         . ' AS ' . 'allowed',
+			'a.ntaken'          . ' AS ' . 'ntaken',
+			'a.expired'         . ' AS ' . 'expired'
+			];
         $query = $db->getQuery(true)
             ->select($columns)
             ->from('#__eqa_class_learner AS a')
             ->leftJoin('#__eqa_classes AS b','b.id=a.class_id')
             ->leftJoin('#__eqa_academicyears AS c', 'c.id=b.academicyear_id')
+	        ->leftJoin('#__eqa_subjects AS d', 'd.id=b.subject_id')
             ->where('a.learner_id = ' . $learnerId);
 
 	    //Ordering
@@ -42,8 +55,14 @@ class LearnerclassesModel extends ListModel {
         $search = $this->getState('filter.search');
         if(!empty($search)){
             $like = $db->quote('%'.trim($search).'%');
-            $query->where('`b`.`name` LIKE ' . $like );
+            $query->where('`b`.`name` LIKE ' . $like . ' OR `d`.`code` LIKE ' . $like);
         }
+		$academicyearId = $this->getState('filter.academicyear_id');
+		if(is_numeric($academicyearId))
+			$query->where('b.academicyear_id='.$academicyearId);
+		$term = $this->getState('filter.term');
+	    if(is_numeric($term) && $term!=DatetimeHelper::TERM_NONE)
+		    $query->where('b.term='.$term);
 
         return $query;
     }
