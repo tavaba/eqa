@@ -38,7 +38,6 @@ class HtmlView extends EqaItemsHtmlView {
         //giúp cố định 'cohort_id'
         $this->layoutData->formActionParams = [
             'view'=>'cohortlearners',
-            'layout'=>'default',
             'cohort_id'=>$cohortId
         ];
 

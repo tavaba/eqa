@@ -73,6 +73,7 @@ class HtmlView extends EqaItemsHtmlView {
 
 		//Set form params for layout
 		$this->layoutData->formActionParams = [
+			'view'=>'learnerclasses',
 			'learner_id'=>$learnerId
 		];
 	}

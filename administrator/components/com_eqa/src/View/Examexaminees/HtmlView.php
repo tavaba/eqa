@@ -71,7 +71,6 @@ class HtmlView extends EqaItemsHtmlView {
         //giúp cố định 'exam_id'
         $this->layoutData->formActionParams = [
             'view'=>'examexaminees',
-            'layout'=>'default',
             'exam_id'=>$examId
         ];
 
@@ -104,7 +103,10 @@ class HtmlView extends EqaItemsHtmlView {
 				if($item->stimulation !== null)
 					$item->stimulation = StimulationHelper::getStimulationType($item->stimulation);
 
-				$item->anomaly = ExamHelper::getAnomaly($item->anomaly);
+				if($item->anomaly == ExamHelper::EXAM_ANOMALY_NONE)
+					$item->anomaly = '';
+				else
+					$item->anomaly = ExamHelper::getAnomaly($item->anomaly);
 
 				if(!is_null($item->conclusion))
 					$item->conclusion = ExamHelper::getConclusion($item->conclusion);

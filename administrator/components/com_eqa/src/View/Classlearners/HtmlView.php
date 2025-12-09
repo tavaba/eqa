@@ -53,7 +53,6 @@ class HtmlView extends EqaItemsHtmlView {
         //giúp cố định 'class_id'
         $this->layoutData->formActionParams = [
             'view'=>'classlearners',
-            'layout'=>'default',
             'class_id'=>$classId
         ];
 
