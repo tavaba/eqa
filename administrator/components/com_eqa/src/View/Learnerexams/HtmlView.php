@@ -21,7 +21,9 @@ class HtmlView extends EqaItemsHtmlView {
         $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
         $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('academicyear','Năm học',true,false,'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('term', 'Học kỳ',false,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'Môn thi',true,false);
+	    $f = new EqaListLayoutItemFieldOption('name', 'Môn thi',true,false);
+		$f->urlFormatString = 'index.php?option=com_eqa&view=examexaminees&exam_id=%d';
+	    $fields->customFieldset1[] = $f;
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('stimulType', 'KK', false, false, 'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('stimulValue', 'Điểm KK', false, false, 'text-center');
 	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('pam1', 'TP1', false, false, 'text-center');
@@ -67,6 +69,11 @@ class HtmlView extends EqaItemsHtmlView {
 				$item->conclusion = $item->conclusion ? ExamHelper::getConclusion($item->conclusion) : '';
 			}
 		}
+
+		//Set up form params
+		$this->layoutData->formActionParams = [
+			'learner_id'=>$learnerId
+		];
 	}
 
 	protected function addToolbarForLayoutDefault(): void
