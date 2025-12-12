@@ -84,8 +84,11 @@ class HtmlView extends EqaItemsHtmlView
             }
         }
 
-		//Setup form hidden field to keep the examseason id
-	    $this->layoutData->formHiddenFields = ['examseason_id' => $examseasonId];
+		//Setup form params to keep the examseason id
+	    $this->layoutData->formActionParams = [
+			'view'=>'examseasonExams',
+			'examseason_id' => $examseasonId
+	    ];
 
     }
     public function addToolbarForLayoutDefault(): void

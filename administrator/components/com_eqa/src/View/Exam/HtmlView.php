@@ -58,7 +58,8 @@ class HtmlView extends EqaItemHtmlView{
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_MANAGER_EXAM_DISTRIBUTE_EXAMINEES'));
 		ToolbarHelper::appendButton('core.create','save','JTOOLBAR_SAVE','exam.distribute',false,null,true);
-		ToolbarHelper::appendButton(null,'cancel','JTOOLBAR_CANCEL','exam.cancel');
+		$cancelUrl = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$this->exam->id,false);
+		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 
 	protected function prepareDataForLayoutDistribute2(){
@@ -74,7 +75,8 @@ class HtmlView extends EqaItemHtmlView{
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_MANAGER_EXAM_DISTRIBUTE_EXAMINEES'));
 		ToolbarHelper::appendButton('core.create','save','JTOOLBAR_SAVE','exam.distribute2',false,null,true);
-		ToolbarHelper::appendButton(null,'cancel','JTOOLBAR_CANCEL','exam.cancel');
+		$cancelUrl = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$this->exam->id,false);
+		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 
 	protected function prepareDataForLayoutUploaditest(){

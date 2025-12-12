@@ -23,7 +23,8 @@ class ConclusionField extends ListField
     protected function getOptions()
     {
         $options = parent::getOptions();
-	    $options[] = HTMLHelper::_('select.option', 0, 'Chưa có');
+	    $options[] = HTMLHelper::_('select.option', 0, 'Chưa có kết luận');
+	    $options[] = HTMLHelper::_('select.option', 1, 'Đã có kết luận');
         foreach (ExamHelper::getConclusions() as $code=>$text)
         {
             $options[] = HTMLHelper::_('select.option', $code, $text);

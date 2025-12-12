@@ -65,16 +65,6 @@
         >
             <option value="">- Kết luận -</option>
         </field>
-        <field  name="concluded"
-                type="list"
-                default=""
-                onchange="this.form.submit();"
-                label="Kết quả"
-        >
-            <option value="">- Kết quả -</option>
-            <option value="0">Chưa có kết quả</option>
-            <option value="1">Đã có kết quả</option>
-        </field>
     </fields>
     <fields name="list">
         <field

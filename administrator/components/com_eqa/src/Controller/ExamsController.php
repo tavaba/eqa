@@ -8,7 +8,9 @@ use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -82,14 +84,18 @@ class ExamsController extends EqaAdminController {
 	public function recheckStatus()
 	{
 		//Set redirect in any case
-		$url = JRoute::_('index.php?option=com_eqa&view=exams',false);
+		$examseasonId = $this->input->getInt('examseason_id');
+		if(empty($examseasonId))
+			$url = JRoute::_('index.php?option=com_eqa&view=exams',false);
+		else
+			$url = JRoute::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
 		$this->setRedirect($url);
 
-		//TEMPORARY DISABLE THIS FUNCTIONALITY
-		$this->setMessage('Tính năng này tạm thời bị vô hiệu hóa. 
-		Sẽ cần phải điều chỉnh chương trình để có thể loại bỏ hoàn toàn
-		chức năng này.','warning'); //TODO: Remove this line after testing
-		return;
+//		//TEMPORARY DISABLE THIS FUNCTIONALITY
+//		$this->setMessage('Tính năng này tạm thời bị vô hiệu hóa.
+//		Sẽ cần phải điều chỉnh chương trình để có thể loại bỏ hoàn toàn
+//		chức năng này.','warning'); //TODO: Remove this line after testing
+//		return;
 
 		//Check token
 		$this->checkToken();
@@ -109,10 +115,26 @@ class ExamsController extends EqaAdminController {
 			return;
 		}
 
-		//update
+		/**
+		 * update
+		 * @var ExamModel $model
+		 */
 		$model = $this->getModel();
-		foreach ($examIds as $examId)
-			$model->recheckStatus($examId);
+		try
+		{
+			foreach ($examIds as $examId)
+			{
+				$model->doConclusionForDebtorsOrAbsentExaminees($examId);
+				$model->doConclusionForDeferredExaminees($examId);
+				if($model->isWithAllMarks($examId))
+					$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
+			}
+		}
+		catch(Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			return;
+		}
 	}
 	public function exportResultForLearners()
 	{

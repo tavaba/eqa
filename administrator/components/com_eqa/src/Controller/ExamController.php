@@ -380,38 +380,62 @@ class ExamController extends  EqaFormController
 		//Redirect
 		$this->setRedirect(JRoute::_('index.php?option=com_eqa'));
 	}
-	public function distribute()
+	private function checkCanDistributeExamineesAmongRooms(int $examId, bool $throw=true):bool
 	{
-		//Get the id of the exam to add examinees
-		$examId = $this->app->input->getInt('exam_id');
-
-		// Access check
-		if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
-			// Set the internal error and also the redirect error.
-			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
-			$this->setRedirect(
-				Route::_(
-					'index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,
-					false
-				)
-			);
+		//1. Check if the user has edit permission
+		$user = $this->app->getIdentity();
+		if(!$user->authorise('core.create', $this->option))
+		{
+			if($throw)
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
 			return false;
 		}
 
-		//Xác định pha của nhiệm vụ
-		$phase = $this->app->input->getAlnum('phase','');
-		if($phase !== 'getdata')
+		//2. Check if the exam has not been conducted and all the examinees have gotten their PAMs
+		/**
+		 * @var ExamModel $model
+		 */
+		$model = $this->getModel();
+		if($model->isWithSomeMarks($examId))
 		{
-			// Redirect to the 'distribute' screen.
-			$this->setRedirect(
-				Route::_(
-					'index.php?option=com_eqa&view=exam&layout=distribute&exam_id='.$examId,
-					false
-				)
-			);
+			if($throw)
+				throw new Exception('Đã có điểm thi. Không thể chia phòng thi.');
+			return false;
 		}
-		else
+		if(!$model->isWithAllPams($examId)){
+			if($throw)
+				throw new Exception('Chưa đủ điểm quá trình. Không thể chia phòng thi.');
+			return false;
+		}
+
+		//If all the above checks are passed then we have permission to add examinees
+		return true;
+	}
+	public function distribute(): void
+	{
+		try
 		{
+			//Get the id of the exam to add examinees
+			$examId = $this->app->input->getInt('exam_id',0);
+
+			// Access check
+			$this->checkCanDistributeExamineesAmongRooms($examId);
+
+			//Xác định pha của nhiệm vụ
+			$phase = $this->app->input->getAlnum('phase','');
+			if($phase !== 'getdata')
+			{
+				// Redirect to the 'distribute' screen.
+				$this->setRedirect(
+					Route::_(
+						'index.php?option=com_eqa&view=exam&layout=distribute&exam_id='.$examId,
+						false
+					)
+				);
+				return;
+			}
+
+			//Phase 2
 			//Pha này thì cần check token
 			$this->checkToken();
 
@@ -430,48 +454,67 @@ class ExamController extends  EqaFormController
 				)
 			);
 		}
-
-		return true;
-
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa&view=exams', false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false);
+			$this->setRedirect($url);
+		}
 	}
-	public function distribute2()
+	public function distribute2():void
 	{
-		//Check token
-		$this->checkToken();
+		try
+		{
+			//Check token
+			$this->checkToken();
 
-		//Get the id of the exam to add examinees
-		$examId = $this->app->input->getInt('exam_id');
+			//Get the id of the exam to add examinees
+			$examId = $this->app->input->getInt('exam_id', 0);
 
-		// Access check
-		if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
-			// Set the internal error and also the redirect error.
-			$this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
+			// Access check
+			$this->checkCanDistributeExamineesAmongRooms($examId);
+
+			//1. Chuẩn bị dữ liệu
+			$data = $this->input->get('jform',null,'array');
+
+			//PHASE 1: Show form
+			if(empty($data))
+			{
+				$url = Route::_(
+					'index.php?option=com_eqa&view=exam&layout=distribute2&exam_id='.$examId,
+					false
+				);
+				$this->setRedirect($url);
+				return;
+			}
+
+			/**
+			 * PHASE 2: Process form data
+			 * @var ExamModel $model
+			 */
+			$model = $this->getModel();
+			$model->distribute2($examId, $data);
+
+			//Add xong thì redirect về trang xem danh sách phòng thi
 			$this->setRedirect(
 				Route::_(
-					'index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,
+					'index.php?option=com_eqa&view=examrooms',
 					false
 				)
 			);
-			return false;
 		}
-
-		//1. Chuẩn bị dữ liệu
-		$data = $this->input->get('jform',null,'array');
-
-		//2. Gọi model để thêm thí sinh
-		$model = $this->getModel();
-		$model->distribute2($examId, $data);
-
-		//Add xong thì redirect về trang xem danh sách lớp học phần
-		$this->setRedirect(
-			Route::_(
-				'index.php?option=com_eqa&view=examrooms',
-				false
-			)
-		);
-
-		return true;
-
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa&view=exams', false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false);
+			$this->setRedirect($url);
+		}
 	}
 	public function export()
 	{

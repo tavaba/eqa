@@ -76,19 +76,14 @@ class ExamexamineesModel extends ListModel {
 
 	    $conclusion = $this->getState('filter.conclusion');
 	    if(is_numeric($conclusion))
-		    $query->where('a.conclusion=' . (int)$conclusion);
-
-
-
-	    $concluded = $this->getState('filter.concluded');
-	    if(is_numeric($concluded))
 	    {
-		    if($concluded==0)
-			    $query->where('conclusion IS NULL');
-		    else
-			    $query->where('conclusion IS NOT NULL');
+			if($conclusion == 0)
+				$query->where('a.conclusion IS NULL');
+			elseif ($conclusion == 1)
+				$query->where('a.conclusion IS NOT NULL');
+			else
+		        $query->where('a.conclusion=' . (int) $conclusion);
 	    }
-
 
 	    //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering','firstname'));

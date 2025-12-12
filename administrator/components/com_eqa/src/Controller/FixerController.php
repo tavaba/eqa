@@ -196,4 +196,118 @@ class FixerController extends  EqaFormController
 		echo count($examinees).' examinees have been updated';
 	}
 
+	public function conclude()
+	{
+		if(!$this->app->getIdentity()->authorise('core.admin'))
+			die('Invalid request');
+
+		//Xác định các kỳ thi có thí sinh chưa được kết luận
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			'c.name AS examseason',
+			'b.name AS exam',
+			'd.code AS learnerCode',
+			'd.lastname AS lastname',
+			'd.firstname AS firstname'
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_exams AS b','b.id=a.exam_id')
+			->leftJoin('#__eqa_examseasons AS c','c.id=b.examseason_id')
+			->leftJoin('#__eqa_learners AS d','d.id=a.learner_id')
+			->leftJoin('#__eqa_class_learner AS e', 'e.class_id=a.class_id AND e.learner_id=a.learner_id')
+			->where('e.expired=0 AND a.debtor=0 AND a.conclusion IS NULL')
+			->order('b.examseason_id DESC, a.exam_id DESC');
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList();
+
+		echo '<table class="table table-bordered">';
+		$i=0;
+		foreach ($examinees as $examinee)
+		{
+			echo '<tr>';
+			echo '<td>'.++$i.'</td>';
+			echo '<td>'.$examinee->examseason.'</td>';
+			echo '<td>'.$examinee->exam.'</td>';
+			echo '<td>'.$examinee->learnerCode.' '.$examinee->lastname.' '.$examinee->firstname.'</td>';
+			echo '</tr>';
+		}
+		echo '</table>';
+	}
+
+	public function defer()
+	{
+		if(!$this->app->getIdentity()->authorise('core.admin'))
+			die('Invalid request');
+
+		//Tìm tất cả các trường hợp hoãn thi mà kết luận lại là "Không đạt"
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			'c.name AS examseason',
+			'b.name AS exam',
+			'd.code AS learnerCode',
+			'd.lastname AS lastname',
+			'd.firstname AS firstname'
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_exams AS b','b.id=a.exam_id')
+			->leftJoin('#__eqa_examseasons AS c','c.id=b.examseason_id')
+			->leftJoin('#__eqa_learners AS d','d.id=a.learner_id')
+			->leftJoin('#__eqa_class_learner AS e', 'e.class_id=a.class_id AND e.learner_id=a.learner_id')
+			->where('a.anomaly=30 AND a.conclusion<>30')
+			->order('b.examseason_id DESC, a.exam_id DESC');
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList();
+
+		echo '<table class="table table-bordered">';
+		$i=0;
+		foreach ($examinees as $examinee)
+		{
+			echo '<tr>';
+			echo '<td>'.++$i.'</td>';
+			echo '<td>'.$examinee->examseason.'</td>';
+			echo '<td>'.$examinee->exam.'</td>';
+			echo '<td>'.$examinee->learnerCode.' '.$examinee->lastname.' '.$examinee->firstname.'</td>';
+			echo '</tr>';
+		}
+		echo '</table>';
+
+	}
+
+	public function unconcludeProhibitedExaminees()
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//Load list
+		$columns = [
+			'class_id AS classId',
+			'learner_id AS learnerId'
+		];
+		$query   = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_class_learner')
+			->where('allowed=0');
+		$db->setQuery($query);
+		$learners = $db->loadObjectList();
+
+		//Update
+		$query = $db->getQuery(true)
+			->update('#__eqa_exam_learner')
+			->set('conclusion=NULL')
+			->where([
+				'stimulation_id IS NULL',
+				'class_id = :classId AND learner_id = :learnerId'
+			]);
+		foreach ($learners as $learner)
+		{
+			$query->bind(':classId', $learner->classId, ParameterType::INTEGER);
+			$query->bind(':learnerId', $learner->learnerId, ParameterType::INTEGER);
+			$db->setQuery($query);
+			$db->execute();
+		}
+		echo 'Done';
+	}
 }

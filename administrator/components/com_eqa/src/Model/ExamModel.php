@@ -503,8 +503,11 @@ class ExamModel extends EqaAdminModel{
 	}
 	public function distribute(int $examId, $data):bool
 	{
-		if (DatabaseHelper::isCompletedExam($examId))
-			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể chia phòng');
+		if ($this->isWithSomeMarks($examId))
+			throw new Exception('Đã có điểm thi. Không thể chia phòng thi.');
+
+		if(!$this->isWithAllPams($examId))
+			throw new Exception('Chưa đủ điểm quá trình. Không thể chia phòng thi.');
 
 		$app = Factory::getApplication();
 		$db = $this->getDatabase();
@@ -712,8 +715,11 @@ class ExamModel extends EqaAdminModel{
 	}
 	public function distribute2(int $examId, $data):bool
 	{
-		if (DatabaseHelper::isCompletedExam($examId))
-			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể chia phòng');
+		if ($this->isWithSomeMarks($examId))
+			throw new Exception('Đã có điểm thi. Không thể chia phòng thi.');
+
+		if(!$this->isWithAllPams($examId))
+			throw new Exception('Chưa đủ điểm quá trình. Không thể chia phòng thi.');
 
  		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -930,34 +936,6 @@ class ExamModel extends EqaAdminModel{
 		$msg = Text::sprintf('COM_EQA_MSG_N_EXAMINEES_DISTRIBUTED_INTO_N_EXAMROOMS',$countExaminee,$countExamroom);
 		$app->enqueueMessage($msg,'success');
 		return true;
-	}
-
-	/**
-	 * Check if all the examinees of the given exam have already gotten their
-	 * original exam marks (and therefore the anomaly information, if any).
-	 * Ony the examinees with a examinee code will be check.
-	 * This function is used to make a decision whether to do  module mark,
-	 * module grade... calculation for the exam.
-	 *
-	 * @param   int  $examId
-	 *
-	 * @return bool
-	 * @since 1.2.2
-	 */
-	public function isFullMark(int $examId): bool
-	{
-		$db = $this->getDatabase();
-		$query = $db->getQuery(true)
-			->select('count(*)')
-			->from('#__eqa_exam_learner')
-			->where([
-				'exam_id=' . $examId,
-				'code IS NOT NULL',
-				'mark_orig IS NULL'
-			])
-			->setLimit(1);
-		$db->setQuery($query);
-		return $db->loadResult()==0;
 	}
 
 	private function applyStimulTransfers(DatabaseDriver $db, $examId, $subjectId, $examinees):int
@@ -1552,194 +1530,160 @@ class ExamModel extends EqaAdminModel{
 		$db->setQuery($query);
 		return $db->execute();
 	}
-
-	public function recheckStatus(int $examId): bool
+	public function isWithAllPams(int $examId):bool
 	{
-		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
-
-		//Lấy status hiện tại, kết hợp lấy tên môn thi
 		$query = $db->getQuery(true)
-			->select([
-				$db->quoteName('name'),
-				$db->quoteName('status'),
+			->select('COUNT(*)')
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->where([
+				'a.exam_id='.$examId,
+				'b.pam IS NULL'
 			])
-			->from('#__eqa_exams')
-			->where('id=' . $examId);
+			->setLimit(1);
 		$db->setQuery($query);
-		$item = $db->loadObject();
-		$curentStatus = $item->status;
-		$examName = $item->name;
-
-		//Nếu không phải "dở điểm" thì bỏ qua
-		if($curentStatus != ExamHelper::EXAM_STATUS_MARK_PARTIAL)
-			return false;
-
-		/**
-		 * Kết luận các trường hợp chưa kết luận
-		 * - Không đạt quá trình: hết lượt
-		 * - Nợ học phí, vắng thi: mất lượt
-		 * - Hoãn thi
-		 */
-		//1. Xử lý các trường hợp không đạt quá trình
-		$columns = $db->quoteName(
-			array('a.class_id', 'a.learner_id'),
-			array('class_id', 'learner_id')
-		);
+		return $db->loadResult()==0;
+	}
+	public function isWithSomeMarks(int $examId):bool
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from('#__eqa_exam_learner')
+			->where([
+				'exam_id='.$examId,
+				'stimulation_id IS NULL',
+				'mark_orig IS NOT NULL'
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+		return $db->loadResult()>0;
+	}
+	public function isWithAllMarks(int $examId):bool
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->where([
+				'b.allowed=1',
+				'a.exam_id='.$examId,
+				'a.conclusion IS NULL'
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+		return $db->loadResult()==0;
+	}
+	public function doConclusionForDebtorsOrAbsentExaminees(int $examId):void
+	{
+		//Load current info
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns=[
+			'a.class_id AS classId',
+			'a.learner_id AS learnerId',
+			'a.anomaly AS anomaly',
+			'a.attempt AS attempt',
+			'b.pam AS pam',
+			'c.subject_id AS subjectId'
+		];
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_class_learner AS b', '(b.class_id=a.class_id AND b.learner_id=a.learner_id)')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_classes AS c', 'c.id=b.class_id')
 			->where([
-				$db->quoteName('a.exam_id') . '=' . $examId,
-				$db->quoteName('b.allowed') . '=0'
-			]);
-		$db->setQuery($query);
-		$prohibitedLearners = $db->loadObjectList();
-		if(!empty($prohibitedLearners)){
-			foreach ($prohibitedLearners as $learner)
-			{
-				//Cấm thi ở lớp học phần
-				$query = $db->getQuery(true)
-					->update('#__eqa_class_learner')
-					->set('expired=1')
-					->where([
-						'class_id=' . $learner->class_id,
-						'learner_id=' . $learner->learner_id
-				]);
-				$db->setQuery($query);
-				if(!$db->execute())
-				{
-					$msg = Text::sprintf('Lỗi cập nhật thông tin môn thi <b>%s</b>', htmlspecialchars($examName));
-					$app->enqueueMessage($msg, 'error');
-					return false;
-				}
-
-				//Kết luận ở môn thi
-				$query = $db->getQuery(true)
-					->update('#__eqa_exam_learner')
-					->set('conclusion=' . ExamHelper::CONCLUSION_FAILED_EXPIRED)
-					->where([
-						'exam_id=' . $examId,
-						'learner_id=' . $learner->learner_id
-					]);
-				$db->setQuery($query);
-				if(!$db->execute())
-				{
-					$msg = Text::sprintf('Lỗi cập nhật thông tin môn thi <b>%s</b>', htmlspecialchars($examName));
-					$app->enqueueMessage($msg, 'error');
-					return false;
-				}
-			}
-		}
-
-		//2. Xử lý các trường hợp nợ học phí hoặc vắng thi không lý do
-		$columns = $db->quoteName(
-			array('a.class_id', 'a.learner_id', 'a.attempt'),
-			array('class_id', 'learner_id', 'attempt')
-		);
-		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_class_learner AS b', '(b.class_id=a.class_id AND b.learner_id=a.learner_id)')
-			->where([
-				'a.exam_id=' . $examId,
-				'b.allowed<>0',
-				'(a.debtor <> 0 OR a.anomaly=' . ExamHelper::EXAM_ANOMALY_ABSENT . ')'
+				'(a.debtor=1 OR a.anomaly=' . ExamHelper::EXAM_ANOMALY_ABSENT.')',
+				'b.allowed=1',
+				'a.conclusion IS NULL'
 			]);
 		$db->setQuery($query);
 		$examinees = $db->loadObjectList();
-		if(!empty($examinees)){
-			$maxAttempts = ConfigHelper::getMaxExamAttempts();
-			foreach ($examinees as $learner)
-			{
-				//Kết luận ở lớp học phần: trừ 1 lượt thi
-				if($learner->attempt >= $maxAttempts)
-					$expired=1;
-				else
-					$expired=0;
-				$query = $db->getQuery(true)
-					->update('#__eqa_class_learner')
-					->set([
-						'expired=' . $expired,
-						'ntaken=' . $learner->attempt
-					])
-					->where([
-						'class_id=' . $learner->class_id,
-						'learner_id=' . $learner->learner_id
-					]);
-				$db->setQuery($query);
-				if(!$db->execute())
-				{
-					$msg = Text::sprintf('Lỗi cập nhật thông tin môn thi <b>%s</b>', htmlspecialchars($examName));
-					$app->enqueueMessage($msg, 'error');
-					return false;
-				}
 
-				//Kết luận ở môn thi: trượt 1 lượt thi
-				if($learner->attempt >= $maxAttempts)
-					$conclusion = ExamHelper::CONCLUSION_FAILED_EXPIRED;
-				else
-					$conclusion = ExamHelper::CONCLUSION_FAILED;
-				$query = $db->getQuery(true)
-					->update('#__eqa_exam_learner')
-					->set([
-						'mark_orig=0',
-						'mark_final=0',
-						'module_mark=0',
-						'module_grade=\'F\'',
-						'conclusion=' . $conclusion
-					])
-					->where([
-						'exam_id=' . $examId,
-						'learner_id=' . $learner->learner_id
-					]);
-				$db->setQuery($query);
-				if(!$db->execute())
-				{
-					$msg = Text::sprintf('Lỗi cập nhật thông tin môn thi <b>%s</b>', htmlspecialchars($examName));
-					$app->enqueueMessage($msg, 'error');
-					return false;
-				}
+		//Update info
+		foreach ($examinees as $examinee)
+		{
+			$classId = $examinee->classId;
+			$learnerId = $examinee->learnerId;
+			$pam       = $examinee->pam;
+			$subjectId = $examinee->subjectId;
+			$attempt   = $examinee->attempt;
+			$anomaly   = $examinee->anomaly;
+			$markOrig = 0;
+			$markFinal = 0;
+			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt,0);
+			$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
+			$conclusion = ExamHelper::conclude($moduleMark, $markFinal, $anomaly, $attempt);
+			$moduleGrade= ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+
+			//1. Update marks and conclusion
+			$query = $db->getQuery(true)
+				->update('#__eqa_exam_learner')
+				->set([
+					'mark_orig=' . $markOrig,
+					'mark_final=' . $markFinal,
+					'module_mark=' . $moduleMark,
+					'module_base4_mark=' . $moduleBase4Mark,
+					'module_grade='. $db->quote($moduleGrade),
+					'conclusion='.$conclusion
+				])
+				->where([
+					'exam_id='.$examId,
+					'learner_id='.$learnerId
+				]);
+			$db->setQuery($query);
+			if (!$db->execute()) {
+				throw new Exception('Lỗi cập nhật thông tin môn thi cho các thí sinh nợ phí');
+			}
+
+			//2. Update status in class_learner table
+			$expired = $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED ? 1 : 0;
+			$query = $db->getQuery(true)
+				->update('#__eqa_class_learner')
+				->set([
+					'ntaken=' . $attempt,
+					'expired=' . $expired
+				])
+				->where([
+					'class_id='.$classId,
+					'learner_id='.$learnerId
+				]);
+			$db->setQuery($query);
+			if (!$db->execute()) {
+				throw new Exception('Lỗi cập nhật thông tin lớp học phần cho các thí sinh nợ phí');
 			}
 		}
-
-		//3. Xử lý các trường hợp hoãn thi
+	}
+	public function doConclusionForDeferredExaminees(int $examId):void
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
 		$query = $db->getQuery(true)
 			->update('#__eqa_exam_learner')
-			->set('conclusion=' . ExamHelper::CONCLUSION_DEFERRED)
+			->set([
+				'mark_orig=NULL',
+				'mark_final=NULL',
+				'module_mark=NULL',
+				'module_base4_mark=NULL',
+				'module_grade=' . $db->quote('I'),
+				'conclusion=' . ExamHelper::CONCLUSION_DEFERRED
+			])
 			->where([
-				'exam_id=' . $examId,
-				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY
+				'exam_id='.$examId,
+				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY,
+				'conclusion IS NULL'
 			]);
 		$db->setQuery($query);
-		if(!$db->execute())
-		{
-			$msg = Text::sprintf('Lỗi cập nhật thông tin môn thi <b>%s</b>', htmlspecialchars($examName));
-			$app->enqueueMessage($msg, 'error');
-			return false;
+		if (!$db->execute()) {
+			throw new Exception('Lỗi cập nhật thông tin môn thi cho các thí sinh hoãn thi');
 		}
+	}
 
-		//Đếm lại điểm
-		$db->setQuery('SELECT COUNT(1) FROM #__eqa_exam_learner WHERE conclusion IS NULL AND exam_id=' . $examId);
-		$count = $db->loadResult();
-		if($count==0)
-		{
-			$query = $db->getQuery(true)
-				->update('#__eqa_exams')
-				->set('status=' . ExamHelper::EXAM_STATUS_MARK_FULL)
-				->where('id=' . $examId);
-			$db->setQuery($query);
-			if(!$db->execute())
-			{
-				$msg = Text::sprintf('Lỗi cập nhật thông tin môn thi <b>%s</b>', htmlspecialchars($examName));
-				$app->enqueueMessage($msg, 'error');
-				return false;
-			}
-			$msg = Text::sprintf('Đã cập nhật thông tin môn thi <b>%s</b>', htmlspecialchars($examName));
-			$app->enqueueMessage($msg, 'success');
-		}
-		return true;
+	public function conclude(int $examId):void
+	{
+		//TODO: Implement conclude() method.
+		//This method should/can be call after marks have been updated
+		//or any changes are made to the examinees
 	}
 
 	/**
