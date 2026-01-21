@@ -21,6 +21,7 @@ defined('_JEXEC') or die('Restricted access');
  *
  * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ * @since 1.0.0
  */
 class com_eqaInstallerScript
 {
@@ -35,6 +36,7 @@ class com_eqaInstallerScript
      * @param  \stdClass $parent - Parent object calling object.
      *
      * @return void
+     * @since 1.0.0
      */
     public function preflight($type, $parent) 
     {

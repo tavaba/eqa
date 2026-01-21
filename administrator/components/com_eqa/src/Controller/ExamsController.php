@@ -124,7 +124,7 @@ class ExamsController extends EqaAdminController {
 		{
 			foreach ($examIds as $examId)
 			{
-				$model->doConclusionForDebtorsOrAbsentExaminees($examId);
+				$model->doConclusionForDebtorsOrAbsentOrBannedExaminees($examId);
 				$model->doConclusionForDeferredExaminees($examId);
 				if($model->isWithAllMarks($examId))
 					$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);

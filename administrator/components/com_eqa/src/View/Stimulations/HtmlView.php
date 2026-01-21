@@ -55,9 +55,9 @@ class HtmlView extends EqaItemsHtmlView {
 		ToolbarHelper::title($this->toolbarOption->title);
 		ToolbarHelper::appendGoHome();
 		$urlAddStimulations = \JRoute::_('index.php?option=com_eqa&view=stimulations&layout=add', false);
-	//	ToolbarHelper::appendLink('core.create', $urlAddStimulations, 'COM_EQA_ADD','plus-circle');
+		ToolbarHelper::appendLink('core.create', $urlAddStimulations, 'COM_EQA_ADD','plus-circle');
 		$confirmMsg = Text::_('COM_EQA_MSG_CONFIRM_DELETE');
-	//	ToolbarHelper::appendConfirmButton('core.delete', $confirmMsg, 'delete', 'JTOOLBAR_DELETE', 'subject.clearStimulations',true,'btn btn-danger');
+		ToolbarHelper::appendConfirmButton('core.delete', $confirmMsg, 'delete', 'JTOOLBAR_DELETE', 'subject.clearStimulations',true,'btn btn-danger');
 	}
 
 	protected function prepareDataForLayoutAdd()

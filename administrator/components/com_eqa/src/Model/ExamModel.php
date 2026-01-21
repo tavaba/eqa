@@ -1576,7 +1576,7 @@ class ExamModel extends EqaAdminModel{
 		$db->setQuery($query);
 		return $db->loadResult()==0;
 	}
-	public function doConclusionForDebtorsOrAbsentExaminees(int $examId):void
+	public function doConclusionForDebtorsOrAbsentOrBannedExaminees(int $examId):void
 	{
 		//Load current info
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -1594,9 +1594,9 @@ class ExamModel extends EqaAdminModel{
 			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
 			->leftJoin('#__eqa_classes AS c', 'c.id=b.class_id')
 			->where([
-				'(a.debtor=1 OR a.anomaly=' . ExamHelper::EXAM_ANOMALY_ABSENT.')',
-				'b.allowed=1',
-				'a.conclusion IS NULL'
+				'a.exam_id='.$examId,
+				'(a.debtor=1 OR a.anomaly=' . ExamHelper::EXAM_ANOMALY_ABSENT.' OR a.anomaly=' . ExamHelper::EXAM_ANOMALY_BAN.')',
+				'b.allowed=1'
 			]);
 		$db->setQuery($query);
 		$examinees = $db->loadObjectList();
@@ -1670,8 +1670,7 @@ class ExamModel extends EqaAdminModel{
 			])
 			->where([
 				'exam_id='.$examId,
-				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY,
-				'conclusion IS NULL'
+				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY
 			]);
 		$db->setQuery($query);
 		if (!$db->execute()) {
@@ -1684,6 +1683,7 @@ class ExamModel extends EqaAdminModel{
 		//TODO: Implement conclude() method.
 		//This method should/can be call after marks have been updated
 		//or any changes are made to the examinees
+		//Lưu ý trường hợp chưa có điểm thì chưa thể kết luận.
 	}
 
 	/**

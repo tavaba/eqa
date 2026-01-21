@@ -155,6 +155,11 @@ JHtml::_('bootstrap.framework');
                             </a>
                         </div>
                         <div class="col-md-6 d-grid">
+                            <a href="<?php echo Route::_('index.php?option=com_eqa&view=SecondAttempts'); ?>" class="btn btn-outline-primary">
+                                <i class="fas fa-file-alt me-1"></i> Danh sách thi lần 2
+                            </a>
+                        </div>
+                        <div class="col-md-6 d-grid">
                             <a href="<?php echo Route::_('index.php?option=com_eqa&view=examseasons'); ?>" class="btn btn-outline-primary">
                                 <i class="fas fa-calendar-check me-1"></i> <?php echo Text::_('COM_EQA_BUTTON_EXAMSEASONS'); ?>
                             </a>

@@ -15,13 +15,6 @@ class SubjectController extends  EqaFormController {
 		//Redirect in any case
 		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=stimulations',false));
 
-		/**
-		 * TEMPORARY DISABLE THIS FUNCTIONALITY
-		 */
-		$this->setMessage('Hệ thống tạm thời không hỗ trợ tính năng này', 'error');
-		return;
-
-
 		//Check token
 		if(!$this->checkToken('post', false))
 			return;
