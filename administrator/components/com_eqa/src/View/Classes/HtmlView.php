@@ -2,38 +2,37 @@
 namespace Kma\Component\Eqa\Administrator\View\Classes;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
     protected function configureItemFieldsForLayoutDefault():void{
-        $option = new EqaListLayoutItemFields();
+        $option = new ListLayoutItemFields();
 
-	    $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-	    $option->id = EqaListLayoutItemFields::defaultFieldId();
-	    $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+	    $option->sequence = ListLayoutItemFields::defaultFieldSequence();
+	    $option->id = ListLayoutItemFields::defaultFieldId();
+	    $option->check = ListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('coursegroup','COM_EQA_COURSEGROUP',true,false,'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('code', 'COM_EQA_CLASS_CODE', true,true);
-        $field = new EqaListLayoutItemFieldOption('name','COM_EQA_CLASS_NAME',true,false);
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('coursegroup','COM_EQA_COURSEGROUP',true,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('code', 'COM_EQA_CLASS_CODE', true,true);
+        $field = new ListLayoutItemFieldOption('name','COM_EQA_CLASS_NAME',true,false);
         $field->altField = 'description';
         $option->customFieldset1[] = $field;
         //Trường 'lecturer' thực tế không tồn tại
         // ==> Ở phần layout cần căn cứ vào lecturer_id để tính toán Họ và tên của lecturer.
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('lecturer','COM_EQA_LECTURER');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('academicyear','COM_EQA_ACADEMICYEAR', true,false,'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('term','COM_EQA_TERM', true,false,'text-center');
-        $field = new EqaListLayoutItemFieldOption('size','COM_EQA_CLASS_SIZE', true,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('lecturer','COM_EQA_LECTURER');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('academicyear','COM_EQA_ACADEMICYEAR', true,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('term','COM_EQA_TERM', true,false,'text-center');
+        $field = new ListLayoutItemFieldOption('size','COM_EQA_CLASS_SIZE', true,false,'text-center');
         $field->urlFormatString = 'index.php?option=com_eqa&view=classlearners&class_id=%d';
         $option->customFieldset1[] = $field;
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('npam','COM_EQA_PAM_ABBR',true,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('npam','COM_EQA_PAM_ABBR',true,false,'text-center');
 
         //Set the option
         $this->itemFields = $option;
@@ -90,7 +89,11 @@ class HtmlView extends EqaItemsHtmlView
 
 	protected function prepareDataForLayoutUploadpam(): void
 	{
-		$this->form = FormHelper::getBackendForm('com_eqa.uploadpam','uploadpam.xml', array());
+		$this->form = FormHelper::getBackendForm('com_eqa.upload.pam','uploadpam.xml', array());
+	}
+	protected function prepareDataForLayoutUpload(): void
+	{
+		$this->form = FormHelper::getBackendForm('com_eqa.upload.classes','upload_classes.xml', array());
 	}
 	protected function addToolbarForLayoutUploadpam(): void
     {

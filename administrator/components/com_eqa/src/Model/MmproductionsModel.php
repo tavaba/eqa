@@ -3,16 +3,16 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
-class MmproductionsModel extends EqaListModel{
+class MmproductionsModel extends ListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('id', 'firstname','quantity');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'id', $direction = 'desc')
+    protected function populateState($ordering = 'id', $direction = 'desc'): void
     {
         parent::populateState($ordering, $direction);
     }

@@ -3,13 +3,13 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 
 defined('_JEXEC') or die();
 
-class MmproductionModel extends EqaAdminModel {
+class MmproductionModel extends AdminModel {
 	public function importMmp(int $examId, array $examinerProductions, int $role): bool
 	{
 		$db = DatabaseHelper::getDatabaseDriver();

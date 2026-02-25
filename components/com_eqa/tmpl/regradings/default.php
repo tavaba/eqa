@@ -1,6 +1,6 @@
 <?php
 
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 if($this->errorMessage)

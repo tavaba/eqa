@@ -2,8 +2,8 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
-class EmployeeController extends  EqaFormController {
+use Kma\Library\Kma\Controller\FormController;
+class EmployeeController extends  FormController {
 
 }
 

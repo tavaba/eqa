@@ -2,54 +2,51 @@
 namespace Kma\Component\Eqa\Administrator\View\Conducts;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Component\Eqa\Administrator\Helper\TermHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\RatingHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
     protected $examseason;
     protected function configureItemFieldsForLayoutDefault():void{
-        $fields = new EqaListLayoutItemFields();
-        $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $fields->check = EqaListLayoutItemFields::defaultFieldCheck();
+        $fields = new ListLayoutItemFields();
+        $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $fields->check = ListLayoutItemFields::defaultFieldCheck();
 
-//	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('academicyear','Năm học',false,false,'text-center');
-//	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('term','Học kỳ',false,false,'text-center');
-//	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('course','Khóa',false,false,'text-center');
-//	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('group','Lớp',false,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerCode','Mã HVSV',true,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('lastname','Họ đệm');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('firstname','Tên', true);
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('excusedAbsenceCount','Vắng LD',true,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('unexcusedAbsenceCount','Vắng KLD',true,false,'text-center');
-	    $f = new EqaListLayoutItemFieldOption('retakeCount','HL',true,false,'text-center');
+//	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('academicyear','Năm học',false,false,'text-center');
+//	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('term','Học kỳ',false,false,'text-center');
+//	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('course','Khóa',false,false,'text-center');
+//	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('group','Lớp',false,false,'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learnerCode','Mã HVSV',true,false,'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('lastname','Họ đệm');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('firstname','Tên', true);
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('excusedAbsenceCount','Vắng LD',true,false,'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('unexcusedAbsenceCount','Vắng KLD',true,false,'text-center');
+	    $f = new ListLayoutItemFieldOption('retakeCount','HL',true,false,'text-center');
 		$f->titleDesc = 'Số lượt học lại';
 	    $fields->customFieldset1[] = $f;
-	    $f = new EqaListLayoutItemFieldOption('resitCount','TL',true,false,'text-center');
+	    $f = new ListLayoutItemFieldOption('resitCount','TL',true,false,'text-center');
 		$f->titleDesc = 'Số lượt thi lại';
 	    $fields->customFieldset1[] = $f;
-	    $f = new EqaListLayoutItemFieldOption('awardCount','KT',true,false,'text-center');
+	    $f = new ListLayoutItemFieldOption('awardCount','KT',true,false,'text-center');
 		$f->titleDesc = 'Số lượt được khen thưởng';
 	    $fields->customFieldset1[] = $f;
-	    $f = new EqaListLayoutItemFieldOption('disciplinaryCount','KL',true,false,'text-center');
+	    $f = new ListLayoutItemFieldOption('disciplinaryCount','KL',true,false,'text-center');
 	    $f->titleDesc = 'Số lượt bị kỷ luật';
 	    $fields->customFieldset1[] = $f;
-	    $f = new EqaListLayoutItemFieldOption('totalCredits','Số TC',true,false,'text-center');
+	    $f = new ListLayoutItemFieldOption('totalCredits','Số TC',true,false,'text-center');
 	    $f->titleDesc = 'Tổng số tín chỉ';
 	    $fields->customFieldset1[] = $f;
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('academicScore','Điểm HT',true,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('academicRating', 'XL HT',true,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('conductScore', 'Điểm RL',true,false,'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('conductRating', 'XL RL',true,false,'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('academicScore','Điểm HT',true,false,'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('academicRating', 'XL HT',true,false,'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('conductScore', 'Điểm RL',true,false,'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('conductRating', 'XL RL',true,false,'text-center');
 
         //Set the option
         $this->itemFields = $fields;
@@ -63,7 +60,7 @@ class HtmlView extends EqaItemsHtmlView
         //Layout data preprocessing
         if(!empty($this->layoutData->items)){
             foreach ($this->layoutData->items as $item) {
-				$item->term = DatetimeHelper::decodeTerm($item->termCode);
+				$item->term = TermHelper::decodeTerm($item->termCode);
 				if($item->excusedAbsenceCount==0)
 					$item->excusedAbsenceCount='';
 	            if($item->unexcusedAbsenceCount==0)
@@ -102,7 +99,7 @@ class HtmlView extends EqaItemsHtmlView
 
 	protected function prepareDataForLayoutImport(): void
 	{
-		$this->uploadForm = FormHelper::getBackendForm('com_eqa.conducts.import', 'upload_conducts.xml',[]);
+		$this->form = FormHelper::getBackendForm('com_eqa.conducts.import', 'upload_conducts.xml',[]);
 	}
 
 	protected function addToolbarForLayoutImport(): void

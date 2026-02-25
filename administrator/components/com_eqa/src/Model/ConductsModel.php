@@ -4,12 +4,12 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\RatingHelper;
+use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 
 class ConductsModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -19,7 +19,7 @@ class ConductsModel extends ListModel {
 	        'academicScore', 'academicRating', 'conductScore', 'conductRating');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'firstname', $direction = 'asc')
+    protected function populateState($ordering = 'firstname', $direction = 'asc'): void
     {
         parent::populateState($ordering, $direction);
     }
@@ -150,7 +150,7 @@ class ConductsModel extends ListModel {
 			->select('c.*')
 			->from('#__eqa_conducts AS c')
 			->where('c.academicyear_id='.$academicyearId)
-			->where('c.term <> '. DatetimeHelper::TERM_NONE);
+			->where('c.term <> '. TermHelper::TERM_NONE);
 		if($courseId)
 		{
 			$query->leftJoin('#__eqa_learners AS l','l.id=c.learner_id')
@@ -246,7 +246,7 @@ class ConductsModel extends ListModel {
 			$properties['conduct_score'] = round($properties['conduct_score']);
 			$values = [
 				$academicyearId,
-				DatetimeHelper::TERM_NONE,
+				TermHelper::TERM_NONE,
 				$id,
 				$properties['excused_absence_count'],
 				$properties['unexcused_absence_count'],

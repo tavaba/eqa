@@ -4,11 +4,11 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
-class MmproductionsController extends EqaAdminController
+class MmproductionsController extends AdminController
 {
 	public function import(){
 		//Check token

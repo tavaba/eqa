@@ -2,13 +2,13 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Component\Eqa\Administrator\Helper\TermHelper;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 
-class ConductModel extends EqaAdminModel
+class ConductModel extends AdminModel
 {
 	public function importItem(int $academicyearId, int $term, object $item, bool $importMark, bool $importCredits, bool $updateExisting=true):void
 	{
@@ -125,7 +125,7 @@ class ConductModel extends EqaAdminModel
 				'a.learner_id=' . $learnerId,
 				'c.academicyear_id=' . $academicyearId
 			]);
-		if($term != DatetimeHelper::TERM_NONE)
+		if($term != TermHelper::TERM_NONE)
 			$query->where('c.term=' . $term);
 		$db->setQuery($query);
 		return $db->loadObjectList();

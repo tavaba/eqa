@@ -4,21 +4,22 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ClassModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
+use Kma\Library\Kma\Helper\ComponentHelper;
 
 defined('_JEXEC') or die();
 
-class ClassController extends  EqaFormController
+class ClassController extends  FormController
 {
-	protected function allowAdd($data = []): bool
+	protected function allowAdd($data = [], $specificPermission = null): bool
 	{
-		$r = parent::allowAdd($data);
+		$r = parent::allowAdd($data, $specificPermission);
 		if($r)
 			return true;
 		return $this->app->getIdentity()->authorise('eqa.create.class', $this->option);
@@ -455,7 +456,7 @@ class ClassController extends  EqaFormController
 			 * Set a sussess message
 			 * @var LearnerModel $learnerModel
 			 */
-			$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
+			$learnerModel = ComponentHelper::getMVCFactory()->createModel('Learner');
 			$learner      = $learnerModel->getItem($learnerId);
 			$name         = implode(' ', [$learner->lastname, $learner->firstname]);
 			$name = htmlspecialchars($name);

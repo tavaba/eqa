@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<access component="com_eqa">
+	<section name="component">
+		<action name="core.admin" title="JACTION_ADMIN" />
+		<action name="core.options" title="JACTION_OPTIONS" />
+		<action name="core.manage" title="JACTION_MANAGE" />
+		<action name="core.create" title="JACTION_CREATE" />
+		<action name="core.delete" title="JACTION_DELETE" />
+		<action name="core.edit" title="JACTION_EDIT" />
+		<action name="core.edit.state" title="JACTION_EDITSTATE" />
+		<action name="core.edit.own" title="JACTION_EDITOWN" />
+
+		<action name="com.delete.own" title="Xóa tài nguyên mình tạo ra" />
+		<action name="com.sync.respondent" title="Đồng bộ thông tin HVSV, CBGV" />
+		<action name="com.sync.class" title="Đồng bộ thông tin lớp học phần" />
+		<action name="com.sync.unit" title="Đồng bộ thông tin khóa học, khoa..." />
+		<action name="com.create.unit" title="Thêm cơ quan, đơn vị" />
+		<action name="com.create.respondent" title="Thêm người được khảo sát" />
+		<action name="com.create.rgroup" title="Tạo nhóm người được khảo sát" />
+		<action name="com.create.topic" title="Tạo chủ đề khảo sát" />
+		<action name="com.create.form" title="Tạo mẫu phiếu khảo sát" />
+		<action name="com.create.survey" title="Tạo khảo sát" />
+		<action name="com.monitor.survey" title="Theo dõi khảo sát" />
+		<action name="com.analyse.survey" title="Xem kết quả khảo sát" />
+	</section>
+
+	<section name="respondentgroup">
+		<action name="core.admin" title="Thiết lập quyền truy cập nhóm" />
+		<action name="core.edit" title="Chỉnh sửa thông tin nhóm" />
+		<action name="core.manage" title="Xem và Sử dụng nhóm trong cuộc khảo sát" />
+	</section>
+
+	<section name="form">
+		<action name="core.admin" title="Thiết lập quyền truy cập phiếu khảo sát" />
+		<action name="core.edit" title="Chỉnh sửa thông tin phiếu khảo sát" />
+		<action name="core.manage" title="Xem và Sử dụng phiếu để thực hiện khảo sát" />
+	</section>
+
+	<section name="campaign">
+		<action name="core.admin" title="Thiết lập quyền truy cập đợt khảo sát" />
+		<action name="core.edit" title="Chỉnh sửa thông tin đợt khảo sát, bao gồm việc tạo các cuộc khảo sát" />
+		<action name="com.monitor.survey" title="Giám sát trạng thái cuộc khảo sát" />
+		<action name="com.analyse.survey" title="Xem kết quả khảo sát" />
+	</section>
+
+	<section name="survey">
+		<action name="core.admin" title="Thiết lập quyền truy cập cuộc khảo sát" />
+		<action name="core.edit" title="Chỉnh sửa thông tin cuộc khảo sát" />
+		<action name="com.monitor.survey" title="Giám sát trạng thái cuộc khảo sát" />
+		<action name="com.analyse.survey" title="Xem kết quả khảo sát" />
+	</section>
+</access>

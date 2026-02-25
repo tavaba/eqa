@@ -3,24 +3,24 @@ namespace Kma\Component\Eqa\Administrator\View\Regradingemployees; //The namespa
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Field\ExamsessionemployeeField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView {
+class HtmlView extends ItemsHtmlView {
 	protected $examseason;
 	protected function configureItemFieldsForLayoutDefault():void{
-		$option = new EqaListLayoutItemFields();
-		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
+		$option = new ListLayoutItemFields();
+		$option->sequence = ListLayoutItemFields::defaultFieldSequence();
 		$option->customFieldset1 = array();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('name','Môn thi');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('count','Số bài', false, false,'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examiner1','Cán bộ chấm thi 1');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examiner2','Cán bộ chấm thi 2');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('name','Môn thi');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('count','Số bài', false, false,'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner1','Cán bộ chấm thi 1');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner2','Cán bộ chấm thi 2');
 
 		//Set the option
 		$this->itemFields = $option;
@@ -43,7 +43,7 @@ class HtmlView extends EqaItemsHtmlView {
 		}
 
 		//Khởi tạo model 'regradings'
-		$factory = GeneralHelper::getMVCFactory();
+		$factory = ComponentHelper::getMVCFactory();
 		$model = $factory->createModel('regradings');
 
 		//Setup layout data

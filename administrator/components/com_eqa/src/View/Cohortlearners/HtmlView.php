@@ -2,27 +2,22 @@
 namespace Kma\Component\Eqa\Administrator\View\Cohortlearners; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView {
+class HtmlView extends ItemsHtmlView {
     protected $cohort;
     protected function configureItemFieldsForLayoutDefault():void{
         $fields = $this->itemFields;      //Just shorten the name
-        $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $fields->check = EqaListLayoutItemFields::defaultFieldCheck();
-        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('code','COM_EQA_LEARNER_CODE',true,false,'text-center');
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldLastname();
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldFirstname();
+        $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $fields->check = ListLayoutItemFields::defaultFieldCheck();
+        $fields->customFieldset1[] = new ListLayoutItemFieldOption('code','COM_EQA_LEARNER_CODE',true,false,'text-center');
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
     }
     protected function prepareDataForLayoutDefault(): void
     {
@@ -42,7 +37,7 @@ class HtmlView extends EqaItemsHtmlView {
         ];
 
         //Cohort Item
-	    $mvcFactory = GeneralHelper::getMVCFactory();
+	    $mvcFactory = ComponentHelper::getMVCFactory();
 		$cohortModel = $mvcFactory->createModel('Cohort', 'Administrator');
 	    $this->cohort = $cohortModel->getItem($cohortId);
 

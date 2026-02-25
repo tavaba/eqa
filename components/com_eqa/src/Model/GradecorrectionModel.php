@@ -4,13 +4,14 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 
-class GradecorrectionModel extends EqaAdminModel{
-	public function canDelete($record): bool
+class GradecorrectionModel extends AdminModel{
+	public function canDelete($record=null): bool
 	{
 		//Chỉ có thể xóa nếu yêu cầu chưa được tiếp nhận hay từ chối
 		if($record->status > ExamHelper::EXAM_PPAA_STATUS_INIT)
@@ -38,7 +39,7 @@ class GradecorrectionModel extends EqaAdminModel{
 			return false; //Error
 		if(!$ppaa->enabled)
 			return false; //Disabled
-		if(GeneralHelper::isTimeOver($ppaa->deadline))
+		if(DatetimeHelper::isTimeOver($ppaa->deadline))
 			return false; //Time over
 
 		//Thỏa mãn đồng thời tất cả các điều kiện trên mới được
@@ -49,7 +50,7 @@ class GradecorrectionModel extends EqaAdminModel{
 		//Check time
 		if($request->status >= ExamHelper::EXAM_PPAA_STATUS_DONE)
 			return false;
-		if($request->enabled && !GeneralHelper::isTimeOver($request->deadline))
+		if($request->enabled && !DatetimeHelper::isTimeOver($request->deadline))
 			return false;
 
 		return true;

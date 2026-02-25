@@ -6,7 +6,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -14,7 +14,7 @@ use Kma\Component\Eqa\Administrator\Model\ExamroomModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use stdClass;
 
-class ExamroomsController extends EqaAdminController {
+class ExamroomsController extends AdminController {
     public function export(): void
     {
         $app = $this->app;

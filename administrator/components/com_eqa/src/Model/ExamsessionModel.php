@@ -3,13 +3,13 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Object\CMSObject;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 
 defined('_JEXEC') or die();
 
-class ExamsessionModel extends EqaAdminModel {
+class ExamsessionModel extends AdminModel {
     public function getItem($pk = null): CMSObject|bool
     {
         // Get the item using the parent method

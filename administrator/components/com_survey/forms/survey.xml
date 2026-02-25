@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+
+        <field
+                name="title"
+                type="text"
+                label="Tên gọi"
+                hint="Khảo sát cán bộ, nhân viên năm 2025"
+                description="Nên đặt tên ngắn gọn để tiện cho việc hiển thị sau này.
+                               Nếu cần diễn giải chi tiết thì đưa vào phần mô tả dưới đây"
+                required="true"
+                validate="assetName"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="Mô tả chi tiết"
+                hint="Khảo sát cán bộ, nhân viên năm 2025 để xác định mức độ hài lòng
+                về các mặt công tác: công tác cán bộ, công tác đào tạo, bồi dưỡng,
+                đảm bảo cơ sở vật chất, đảm bảo môi trường cảnh quan..."
+        />
+
+        <field
+                name="form_id"
+                type="surveyform"
+                label="Mẫu phiếu khảo sát"
+                required="true"
+        >
+            <option value="">- Mẫu phiếu khảo sát -</option>
+        </field>
+        <field
+                name="start_time"
+                type="calendar"
+                label="Bắt đầu"
+                showtime="true"
+                singleheader="true"
+                translateformat="true"
+                required="true"
+        />
+        <field
+                name="end_time"
+                label="Kết thúc"
+                type="calendar"
+                showtime="true"
+                singleheader="true"
+                translateformat="true"
+                required="true"
+        />
+        <field
+                name="auth_mode"
+                type="authmode"
+                label="Quyền gửi phản hồi"
+                description="&quot;Bất kỳ ai&quot;: ai cũng có thể gửi yêu cầu mà không
+                    cần phải xác thực; hệ quả là mỗi người có thể gửi phản hồi nhiều lần.
+                    &quot;Người đã xác thực&quot;: bất kỳ ai (có trong danh sách tổng
+                    &quot;Người được khảo sát&quot;) đã được xác thực thành công thì
+                    đều có quyền gửi phản hồi. &quot;Người trong danh sách&quot;: chỉ những
+                    người được chỉ định trong danh sách người khảo sát của cuộc khảo sát
+                    mới có quyền gửi phản hồi."
+                required="true"
+                default=""
+        >
+            <option value="">- Quyền gửi phản hồi -</option>
+        </field>
+        <field
+                name="allow_edit_response"
+                type="radio"
+                label="Cho sửa ý kiến"
+                description="Cho phép người được khảo sát xem lại và chỉnh sửa
+                        ý kiến phản hồi của mình"
+                default="0"
+                class="btn-group btn-group-yesno"
+                showon="auth_mode!:0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field
+                name="strictly_anonymous"
+                type="radio"
+                default="0"
+                label="Ẩn danh hoàn toàn"
+                description="Mặc định, kết quả khảo sát được xử lý ẩn danh
+                        nhưng trong CSDL vẫn lưu vết tác giả của mỗi ý kiến phản hồi.
+                        Nếu chọn &quot;Ẩn danh hoàn toàn&quot; thì phần mềm sẽ không
+                        lưu vết và hoàn toàn không thể xác định ai gửi ý kiến nào"
+                class="btn-group btn-group-yesno"
+                showon="auth_mode!:0[AND]allow_edit_response:0"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+    </fieldset>
+
+    <fieldset name="permissions">
+        <field
+                name="asset_id"
+                type="hidden"
+                filter="unset"
+        />
+
+        <field
+                name="rules"
+                type="rules"
+                label="JGLOBAL_ACTION_PERMISSIONS_LABEL"
+                class="inputbox"
+                validate="rules"
+                filter="rules"
+                component="com_survey"
+                section="survey"
+        />
+    </fieldset>
+
+    <fieldset name="metadata">
+        <field
+                name="created"
+                type="calendar"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+                format="%Y-%m-%d %H:%M:%S"
+                readonly="true"
+        />
+
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="modified"
+                type="calendar"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+                readonly="true"
+                format="%Y-%m-%d %H:%M:%S"
+        />
+
+        <field
+                name="modified_by"
+                type="user"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+    </fieldset>
+</form>

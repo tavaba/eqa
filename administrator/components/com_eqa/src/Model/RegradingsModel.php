@@ -4,8 +4,8 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Library\Kma\Model\AdminModel;
+use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
@@ -16,7 +16,7 @@ use stdClass;
 
 defined('_JEXEC') or die();
 
-class RegradingsModel extends EqaListModel
+class RegradingsModel extends ListModel
 {
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
@@ -24,7 +24,7 @@ class RegradingsModel extends EqaListModel
 		parent::__construct($config, $factory);
 	}
 
-	protected function populateState($ordering = 'a.id', $direction = 'DESC')
+	protected function populateState($ordering = 'a.id', $direction = 'DESC'): void
 	{
 		parent::populateState($ordering, $direction);
 	}

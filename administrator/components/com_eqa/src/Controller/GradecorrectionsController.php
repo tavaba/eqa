@@ -7,12 +7,12 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
 use JSession;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-class GradecorrectionsController extends EqaAdminController {
+class GradecorrectionsController extends AdminController {
 	public function download()
 	{
 		/**

@@ -3,28 +3,28 @@ namespace Kma\Component\Eqa\Administrator\View\Examsessionemployees; //The names
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Field\ExamsessionemployeeField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView {
+class HtmlView extends ItemsHtmlView {
 	protected $examsession;
 	protected function configureItemFieldsForLayoutDefault():void{
-		$option = new EqaListLayoutItemFields();
-		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
+		$option = new ListLayoutItemFields();
+		$option->sequence = ListLayoutItemFields::defaultFieldSequence();
 		$option->customFieldset1 = array();
-		$f = new EqaListLayoutItemFieldOption('examroom','COM_EQA_EXAMROOM');
+		$f = new ListLayoutItemFieldOption('examroom','COM_EQA_EXAMROOM');
 		$f->altField = 'description';   //Will be prepared
 		$option->customFieldset1[] = $f;
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('monitor1','COM_EQA_EXAM_MONITOR1_ABBR');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('monitor2','COM_EQA_EXAM_MONITOR2_ABBR');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('monitor3','COM_EQA_EXAM_MONITOR3_ABBR');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examiner1','COM_EQA_EXAM_EXAMINER1_ABBR');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examiner2','COM_EQA_EXAM_EXAMINER2_ABBR');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('monitor1','COM_EQA_EXAM_MONITOR1_ABBR');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('monitor2','COM_EQA_EXAM_MONITOR2_ABBR');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('monitor3','COM_EQA_EXAM_MONITOR3_ABBR');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner1','COM_EQA_EXAM_EXAMINER1_ABBR');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner2','COM_EQA_EXAM_EXAMINER2_ABBR');
 
 
 		//Set the option

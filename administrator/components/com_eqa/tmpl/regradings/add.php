@@ -1,4 +1,6 @@
 <?php
+
+use Kma\Library\Kma\Helper\ViewHelper;
+
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
-ViewHelper::printForm($this->form,'basic','index.php?option=com_eqa', []);
+ViewHelper::printForm($this->form,'basic');

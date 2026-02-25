@@ -2,7 +2,7 @@
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 ?>
 <div>
 	Một số lưu ý:

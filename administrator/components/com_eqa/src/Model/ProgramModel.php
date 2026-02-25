@@ -1,10 +1,10 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 
 defined('_JEXEC') or die();
 
-class ProgramModel extends EqaAdminModel {
+class ProgramModel extends AdminModel {
 
     //Rewrite hàm này để xử lý trường hợp người dùng để trống
     //các trường kiểu INTEGER 'firstrelease' hoặc/và 'lastupdate'.

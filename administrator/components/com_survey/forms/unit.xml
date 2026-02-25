@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+
+        <field
+                name="code"
+                type="text"
+                label="Ký hiệu"
+                required="true"
+                pattern="[A-Z0-9_\-.]+"
+                validate="assetCode"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="name"
+                type="text"
+                label="Tên nhóm"
+                required="true"
+                validate="assetName"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="type"
+                type="respondentunittype"
+                label="Phân loại"
+                required="true"
+        >
+                <option value="">- Phân loại -</option>
+        </field>
+
+        <field
+                name="note"
+                type="textarea"
+                label="Mô tả"
+        />
+
+        <field
+                name="published"
+                type="radio"
+                default="1"
+                label="Kích hoạt"
+                class="btn-group btn-group-yesno"
+        >
+        <option value="0">JNO</option>
+        <option value="1">JYES</option>
+        </field>
+    </fieldset>
+
+    <fieldset name="metadata">
+        <field
+                name="created"
+                type="calendar"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+                format="%Y-%m-%d %H:%M:%S"
+                readonly="true"
+        />
+
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="modified"
+                type="calendar"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+                readonly="true"
+                format="%Y-%m-%d %H:%M:%S"
+        />
+
+        <field
+                name="modified_by"
+                type="user"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+    </fieldset>
+</form>

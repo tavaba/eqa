@@ -3,30 +3,30 @@ namespace Kma\Component\Eqa\Administrator\View\Examrooms; //The namespace must e
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView {
+class HtmlView extends ItemsHtmlView {
     protected function configureItemFieldsForLayoutDefault():void{
-        $option = new EqaListLayoutItemFields();
-        $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+        $option = new ListLayoutItemFields();
+        $option->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $option->check = ListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('dayofweek', 'COM_EQA_DAY_OF_WEEK', false, false, 'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('start', 'COM_EQA_EXAM_TIME', true, false, 'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('examsession', 'COM_EQA_EXAMSESSION');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('code','COM_EQA_ROOM');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('exams', 'COM_EQA_EXAM');
-        $f = new EqaListLayoutItemFieldOption('nexaminee', 'COM_EQA_NUMBER_OF_EXAMINEES', true, false, 'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('dayofweek', 'COM_EQA_DAY_OF_WEEK', false, false, 'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('start', 'COM_EQA_EXAM_TIME', true, false, 'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('examsession', 'COM_EQA_EXAMSESSION');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('code','COM_EQA_ROOM');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('exams', 'COM_EQA_EXAM');
+        $f = new ListLayoutItemFieldOption('nexaminee', 'COM_EQA_NUMBER_OF_EXAMINEES', true, false, 'text-center');
         $f->urlFormatString = 'index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id=%d';
 	    $option->customFieldset1[] = $f;
-	    $f = new EqaListLayoutItemFieldOption('nanomaly', 'COM_EQA_ANOMALY', true, false, 'text-center');
+	    $f = new ListLayoutItemFieldOption('nanomaly', 'COM_EQA_ANOMALY', true, false, 'text-center');
 	    $f->urlFormatString = 'index.php?option=com_eqa&view=examroom&layout=anomaly&examroom_id=%d';
         $option->customFieldset1[] = $f;
 

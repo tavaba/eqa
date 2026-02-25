@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpWord\PhpWord;
@@ -16,7 +16,7 @@ use PhpOffice\PhpWord\Style\Tab;
 
 defined('_JEXEC') or die();
 
-class GradecorrectionController extends  EqaFormController {
+class GradecorrectionController extends  FormController {
 	public function accept()
 	{
 		try

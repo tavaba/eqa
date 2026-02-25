@@ -5,17 +5,17 @@ use JFactory;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Utilities\ArrayHelper;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use function Symfony\Component\String\b;
 
 defined('_JEXEC') or die();
 
-class RegradingModel extends EqaAdminModel {
-	protected function canDelete($record): bool
+class RegradingModel extends AdminModel {
+	public function canDelete($record=null): bool
 	{
 		/*
 		 * A record can be delete if the following conditions are met

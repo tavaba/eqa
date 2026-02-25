@@ -1,7 +1,6 @@
 <?php
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
-$view = ViewHelper::castToEqaItemsHtmlView($this);
+use Kma\Library\Kma\Helper\ViewHelper;
 ?>
 <div class="accordion">
 	<div class="accordion-item">
@@ -28,4 +27,4 @@ $view = ViewHelper::castToEqaItemsHtmlView($this);
 <div></div>
 <hr/>
 <?php
-ViewHelper::printItemsDefaultLayout($view->getLayoutData(), $view->getListLayoutItemFields());
+ViewHelper::printItemsDefaultLayout($this->getLayoutData(), $this->getListLayoutItemFields());

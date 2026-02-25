@@ -1,7 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 
-class EmployeesController extends EqaAdminController{
+class EmployeesController extends AdminController{
 }

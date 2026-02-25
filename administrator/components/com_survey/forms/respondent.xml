@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="type"
+                type="respondenttype"
+                label="Phân loại"
+                required="true"
+        >
+            <option value="">- Phân loại -</option>
+        </field>
+        <field
+                name="code"
+                type="text"
+                label="Mã"
+                pattern="[A-Z0-9\.\-_]+"
+                validate="assetCode"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="is_person"
+                type="radio"
+                default="1"
+                label="Là một cá nhân"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+                name="lastname"
+                type="text"
+                label="Họ đệm"
+                showon="is_person:1"
+        />
+        <field
+                name="firstname"
+                type="text"
+                label="Tên"
+                showon="is_person:1"
+        />
+        <field
+                name="gender"
+                type="gender"
+                label="Giới tính"
+                showon="is_person:1"
+        >
+            <option value="">- Giới tính -</option>
+        </field>
+        <field
+                name="name"
+                type="text"
+                label="Tên gọi"
+                description="Là tên của cơ quan, đơn vị, tổ chức chứ không phải họ và tên của cá nhân"
+                showon="is_person:0"
+        />
+        <field
+                name="unit_id"
+                type="unit"
+                label="Đơn vị"
+                class="select2-basic"
+        >
+            <option value="">- Đơn vị -</option>
+        </field>
+        <field
+                name="phone"
+                type="text"
+                label="Điện thoại liên hệ"
+                pattern="\+?[0-9]{7,}"
+        />
+        <field
+                name="email"
+                type="email"
+                label="Email liên hệ"
+                pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}"
+                validate="email"
+        />
+        <field
+                name="address"
+                type="textarea"
+                label="Địa chỉ liên hệ"
+        />
+
+        <field
+                name="note"
+                type="textarea"
+                label="Mô tả"
+        />
+
+        <field
+                name="published"
+                type="radio"
+                default="1"
+                label="Kích hoạt"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+    </fieldset>
+
+    <fieldset name="metadata">
+        <field
+                name="created"
+                type="calendar"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+                size="22"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+        />
+
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="modified"
+                type="calendar"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+                size="22"
+                readonly="true"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+        />
+
+        <field
+                name="modified_by"
+                type="user"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+    </fieldset>
+</form>

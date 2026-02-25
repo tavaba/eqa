@@ -1,6 +1,6 @@
 <?php
 
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
 
 defined('_JEXEC') or die();

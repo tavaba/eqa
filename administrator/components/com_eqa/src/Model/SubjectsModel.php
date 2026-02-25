@@ -5,16 +5,16 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
-class SubjectsModel extends EqaListModel{
+class SubjectsModel extends ListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('department_code','code','credits','finaltesttype','testbankyear','published', 'ordering');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'code', $direction = 'desc')
+    protected function populateState($ordering = 'code', $direction = 'desc'): void
     {
         parent::populateState($ordering, $direction);
     }

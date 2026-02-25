@@ -3,15 +3,15 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 defined('_JEXEC') or die();
 
-class ExamseasonModel extends EqaAdminModel{
+class ExamseasonModel extends AdminModel{
 	protected function prepareTable($table)
 	{
 		if(empty($table->ppaa_req_deadline))

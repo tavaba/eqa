@@ -10,10 +10,6 @@ defined('_JEXEC') or die();
 
 abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
 {
-    public static function getToolbarFactory(): ToolbarFactoryInterface
-    {
-        return Factory::getContainer()->get(ToolbarFactoryInterface::class);
-    }
 
     public static function getToolbarInstance(): Toolbar
     {

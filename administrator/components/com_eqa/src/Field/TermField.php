@@ -4,8 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 
 class TermField extends ListField
 {
@@ -22,7 +21,7 @@ class TermField extends ListField
     {
         $options = [];
 	    $options[] = HTMLHelper::_('select.option','','- Học kỳ -');
-		foreach (DatetimeHelper::getTerms() as $term=>$label)
+		foreach (TermHelper::getTerms() as $term=>$label)
 			$options[] = HTMLHelper::_('select.option',$term,$label);
 		return $options;
     }

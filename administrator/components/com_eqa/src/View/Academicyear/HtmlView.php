@@ -2,7 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\View\Academicyear; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 
-class HtmlView extends EqaItemHtmlView {
+class HtmlView extends ItemHtmlView {
 }

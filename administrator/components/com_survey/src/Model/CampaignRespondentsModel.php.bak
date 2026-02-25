@@ -1,0 +1,272 @@
+<?php
+namespace Kma\Component\Survey\Administrator\Model;
+defined('_JEXEC') or die();
+
+use Exception;
+use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\DatabaseHelper;
+use Kma\Library\Kma\Model\ListModel;
+
+class CampaignRespondentsModel extends ListModel
+{
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
+    {
+        $config['filter_fields']=array('id', 'code', 'responded');
+        parent::__construct($config, $factory);
+    }
+
+    protected function populateState($ordering = 'firstname', $direction = 'asc'): void
+    {
+        parent::populateState($ordering, $direction);
+    }
+    protected function getListQuery_slow(int $campaignId, array $respondentIds)
+    {
+        $db = DatabaseHelper::getDatabaseDriver();
+
+        // Subquery đếm số survey thuộc campaign mà respondent tham gia
+        $subqueryCountSurveys = $db->getQuery(true)
+            ->select('COUNT(DISTINCT ' . $db->quoteName('sr.survey_id') . ')')
+            ->from($db->quoteName('#__survey_survey_respondent', 'sr'))
+            ->innerJoin('#__survey_surveys AS s', 's.id = sr.survey_id')
+            ->where($db->quoteName('sr.respondent_id') . ' = ' . $db->quoteName('r.id'))
+            ->where($db->quoteName('s.campaign_id') . ' = ' .$campaignId);
+
+        // Subquery đếm số survey mà respondent đã phản hồi
+        $subqueryCountResponded = $db->getQuery(true)
+            ->select('COUNT(DISTINCT ' . $db->quoteName('sr.survey_id') . ')')
+            ->from($db->quoteName('#__survey_survey_respondent', 'sr'))
+            ->innerJoin('#__survey_surveys AS s', 's.id = sr.survey_id')
+            ->where($db->quoteName('sr.respondent_id') . ' = ' . $db->quoteName('r.id'))
+            ->where($db->quoteName('s.campaign_id') . ' = ' . $campaignId)
+            ->where($db->quoteName('sr.responded') . ' = 1');
+
+        // Tính toán progress
+        $progressCalculation = 'CASE 
+            WHEN (' . $subqueryCountSurveys . ') > 0 THEN ((' . $subqueryCountResponded . ') * 100) / (' . $subqueryCountSurveys . ')
+            ELSE 0
+            END';
+
+        //Temporary query that will act as a base for our final query
+        $baseQuery = $db->getQuery(true)
+            ->select([
+                $db->quoteName('r.id'),
+                $db->quoteName('r.code'),
+                $db->quoteName('r.name'),
+                $db->quoteName('r.lastname'),
+                $db->quoteName('r.firstname'),
+                $db->quoteName('r.is_person') . ' AS ' . $db->quoteName('isPerson'),
+                $db->quoteName('u.code') . ' AS ' . $db->quoteName('unitCode')
+            ])
+            ->select('(' . $subqueryCountSurveys . ') AS ' . $db->quoteName('countSurveys'))
+            ->select('(' . $subqueryCountResponded . ') AS ' . $db->quoteName('countResponded'))
+            ->from($db->quoteName('#__survey_respondents', 'r'))
+            ->leftJoin('#__survey_units AS u', 'u.id = r.unit_id')
+            ->where('r.id IN (' . implode(',', $respondentIds) . ')');
+        // Query chính: SELECT từ derived table và tính progress
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('base.id'),
+                $db->quoteName('base.code'),
+                $db->quoteName('base.lastname'),
+                $db->quoteName('base.firstname'),
+                $db->quoteName('base.isPerson'),
+                $db->quoteName('base.unitCode'),
+                $db->quoteName('base.countSurveys'),
+                $db->quoteName('base.countResponded')
+            ])
+            ->select('CASE 
+            WHEN base.countSurveys = 0 THEN 0 
+            ELSE (base.countResponded * 100) / base.countSurveys
+            END AS progress')
+            ->from('(' . $baseQuery . ') AS base');
+
+        return $query;
+    }
+    protected function getListQuery_fast(int $campaignId, array $respondentIds)
+    {
+        $db = DatabaseHelper::getDatabaseDriver();
+
+
+        // Subquery đếm số survey thuộc campaign mà respondent tham gia
+        $subqueryCountSurveys = $db->getQuery(true)
+            ->select('COUNT(DISTINCT ' . $db->quoteName('sr.survey_id') . ')')
+            ->from($db->quoteName('#__survey_survey_respondent', 'sr'))
+            ->innerJoin('#__survey_surveys AS s', 's.id = sr.survey_id')
+            ->where($db->quoteName('sr.respondent_id') . ' = ' . $db->quoteName('r.id'))
+            ->where($db->quoteName('s.campaign_id') . ' = ' .$campaignId);
+
+        // Subquery đếm số survey mà respondent đã phản hồi
+        $subqueryCountResponded = $db->getQuery(true)
+            ->select('COUNT(DISTINCT ' . $db->quoteName('sr.survey_id') . ')')
+            ->from($db->quoteName('#__survey_survey_respondent', 'sr'))
+            ->innerJoin('#__survey_surveys AS s', 's.id = sr.survey_id')
+            ->where($db->quoteName('sr.respondent_id') . ' = ' . $db->quoteName('r.id'))
+            ->where($db->quoteName('s.campaign_id') . ' = ' . $campaignId)
+            ->where($db->quoteName('sr.responded') . ' = 1');
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('r.id'),
+                $db->quoteName('r.code'),
+                $db->quoteName('r.name'),
+                $db->quoteName('r.lastname'),
+                $db->quoteName('r.firstname'),
+                $db->quoteName('r.is_person') . ' AS ' . $db->quoteName('isPerson'),
+                $db->quoteName('u.code') . ' AS ' . $db->quoteName('unitCode')
+            ])
+            ->select('(' . $subqueryCountSurveys . ') AS ' . $db->quoteName('countSurveys'))
+            ->select('(' . $subqueryCountResponded . ') AS ' . $db->quoteName('countResponded'))
+            ->from($db->quoteName('#__survey_respondents', 'r'))
+            ->leftJoin('#__survey_units AS u', 'u.id = r.unit_id')
+            ->where('r.id IN (' . implode(',', $respondentIds) . ')');
+
+        return $query;
+    }
+    protected function getListQuery_faster(int $campaignId, array $respondentIds)
+    {
+        $db = DatabaseHelper::getDatabaseDriver();
+
+        // Subquery đếm số survey mà respondent đã phản hồi
+        $subqueryCountResponded = $db->getQuery(true)
+            ->select('COUNT(DISTINCT ' . $db->quoteName('sr.survey_id') . ')')
+            ->from($db->quoteName('#__survey_survey_respondent', 'sr'))
+            ->innerJoin('#__survey_surveys AS s', 's.id = sr.survey_id')
+            ->where($db->quoteName('sr.respondent_id') . ' = ' . $db->quoteName('r.id'))
+            ->where($db->quoteName('s.campaign_id') . ' = ' . $campaignId)
+            ->where($db->quoteName('sr.responded') . ' = 1');
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('r.id'),
+                $db->quoteName('r.code'),
+                $db->quoteName('r.name'),
+                $db->quoteName('r.lastname'),
+                $db->quoteName('r.firstname'),
+                $db->quoteName('r.is_person') . ' AS ' . $db->quoteName('isPerson'),
+                $db->quoteName('u.code') . ' AS ' . $db->quoteName('unitCode')
+            ])
+            ->select('(' . $subqueryCountResponded . ') AS ' . $db->quoteName('countResponded'))
+            ->from($db->quoteName('#__survey_respondents', 'r'))
+            ->leftJoin('#__survey_units AS u', 'u.id = r.unit_id')
+            ->where('r.id IN (' . implode(',', $respondentIds) . ')');
+
+        return $query;
+    }
+    protected function getListQuery_fastest(array $respondentIds)
+    {
+        $db = DatabaseHelper::getDatabaseDriver();
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('r.id'),
+                $db->quoteName('r.code'),
+                $db->quoteName('r.name'),
+                $db->quoteName('r.lastname'),
+                $db->quoteName('r.firstname'),
+                $db->quoteName('r.is_person') . ' AS ' . $db->quoteName('isPerson'),
+                $db->quoteName('u.code') . ' AS ' . $db->quoteName('unitCode')
+            ])
+            ->from($db->quoteName('#__survey_respondents', 'r'))
+            ->leftJoin('#__survey_units AS u', 'u.id = r.unit_id')
+            ->where('r.id IN (' . implode(',', $respondentIds) . ')');
+
+        return $query;
+    }
+    protected function getListQuery()
+    {
+        $db = DatabaseHelper::getDatabaseDriver();
+        $campaignId = $this->getState('filter.campaign_id');
+        if(empty($campaignId))
+            throw new Exception('No campaign id provided');
+        $db->setQuery("SELECT performance_mode FROM #__survey_campaigns WHERE id={$campaignId}");
+        $performanceMode = $db->loadResult();
+
+
+        /*
+         * Load all the respondents who participaits in this campaign
+         */
+        $query = $db->getQuery(true)
+            ->select('DISTINCT ' . $db->quoteName('sr.respondent_id'))
+            ->from($db->quoteName('#__survey_survey_respondent', 'sr'))
+            ->innerJoin('#__survey_surveys AS s', 's.id = sr.survey_id')
+            ->where($db->quoteName('s.campaign_id') . ' = :campaign_id')
+            ->bind(':campaign_id', $campaignId, \Joomla\Database\ParameterType::INTEGER);
+        $db->setQuery($query);
+        $respondentIds = $db->loadColumn();
+
+        $query = match ($performanceMode) {
+            SurveyHelper::PERFORMANCE_SLOW => $this->getListQuery_slow($campaignId, $respondentIds),
+            SurveyHelper::PERFORMANCE_FAST => $this->getListQuery_fast($campaignId, $respondentIds),
+            SurveyHelper::PERFORMANCE_FASTER => $this->getListQuery_faster($campaignId, $respondentIds),
+            SurveyHelper::PERFORMANCE_FASTEST => $this->getListQuery_fastest($respondentIds),
+            default => null,
+        };
+
+        // Filter by search in title
+        $search = $this->getState('filter.search');
+        if (!empty($search)) {
+            $like = $db->quote('%' . $db->escape(trim($search), true)  . '%');
+            $query->where('(r.code LIKE '.$like.' OR concat_ws(" ", r.lastname, r.firstname, r.name) LIKE '.$like.')');
+        }
+
+        $type = $this->getState('filter.type');
+        if(is_numeric($type))
+            $query->where($db->quoteName('r.type').'='.(int)$type);
+        $isPerson = $this->getState('filter.is_person');
+        if(is_numeric($isPerson))
+            $query->where('r.is_person=' . (int)$isPerson);
+        $unitId = $this->getState('filter.unit_id');
+        if(is_numeric($unitId))
+            $query->where($db->quoteName('r.unit_id').'='.(int)$unitId);
+
+        //Ordering
+        $orderingCol = $query->db->escape($this->getState('list.ordering', 'firstname'));
+        if($orderingCol==='progress' && $performanceMode>SurveyHelper::PERFORMANCE_SLOW)
+            $orderingCol = 'id';
+        else if($orderingCol==='countSurveys' && $performanceMode>SurveyHelper::PERFORMANCE_FAST)
+            $orderingCol = 'id';
+        else if($orderingCol==='countResponded' && $performanceMode>SurveyHelper::PERFORMANCE_FASTER)
+            $orderingCol = 'id';
+
+        $orderingDir = $query->db->escape($this->getState('list.direction', 'asc'));
+        $query->order($db->quoteName($orderingCol).' '.$orderingDir);
+        if($orderingCol=='firstname')
+            $query->order('lastname ASC');
+
+        return $query;
+    }
+
+    public function getStoreId($id = ''): string
+    {
+        $id .= ':' . $this->getState('filter.survey_id');
+        $id .= ':' . $this->getState('filter.search');
+        $id .= ':' . $this->getState('filter.type');
+        $id .= ':' . $this->getState('filter.is_person');
+        $id .= ':' . $this->getState('filter.unit_id');
+        $id .= ':' . $this->getState('filter.respondentgroup_id');
+        $id .= ':' . $this->getState('filter.gender');
+        $id .= ':' . $this->getState('filter.responded');
+        return parent::getStoreId($id);
+    }
+
+    /**
+     * Check whether the current user has permission to add/remove respondent in a survey
+     *
+     * @return bool
+     * @since 1.0.0
+     */
+    public function canAddOrRemove(): bool
+    {
+        /**
+         * A user is allowed to add/remove respondents in a survey only if
+         * he/she has permission to edit that survey
+         * @var SurveyModel $model
+         */
+        $surveyId = (int)$this->getState('filter.survey_id');
+        $mvcFactory = ComponentHelper::getMVCFactory();
+        $model = $mvcFactory->createModel('Survey');
+        return $model->canEdit($surveyId);
+    }
+}

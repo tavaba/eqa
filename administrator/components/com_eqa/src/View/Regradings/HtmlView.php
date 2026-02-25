@@ -2,36 +2,33 @@
 namespace Kma\Component\Eqa\Administrator\View\Regradings; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DependentListsHelper;
+use Kma\Library\Kma\Helper\DependentListsHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView {
+class HtmlView extends ItemsHtmlView {
 	protected $examseason;
 	protected function configureItemFieldsForLayoutDefault():void{
-		$option = new EqaListLayoutItemFields();
+		$option = new ListLayoutItemFields();
 
 		//Các trường thông tin
-		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-		$option->check = EqaListLayoutItemFields::defaultFieldCheck();
+		$option->sequence = ListLayoutItemFields::defaultFieldSequence();
+		$option->check = ListLayoutItemFields::defaultFieldCheck();
 		$option->customFieldset1 = array();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerCode', 'Mã HVSV');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerLastname', 'Họ đệm');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerFirstname', 'Tên');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examName', 'Môn thi');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('origMark', 'Điểm gốc');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('ppaaMark', 'Điểm PK');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('statusText', 'Trạng thái');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('description', 'Nội dung xử lý');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('learnerCode', 'Mã HVSV');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('learnerLastname', 'Họ đệm');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('learnerFirstname', 'Tên');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('examName', 'Môn thi');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('origMark', 'Điểm gốc');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('ppaaMark', 'Điểm PK');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('statusText', 'Trạng thái');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('description', 'Nội dung xử lý');
 		$this->itemFields = $option;
 	}
 	protected function prepareDataForLayoutDefault(): void
@@ -87,9 +84,9 @@ class HtmlView extends EqaItemsHtmlView {
 	protected function prepareDataForLayoutAdd()
 	{
 		$this->form = FormHelper::getBackendForm('com_eqa.regradings.add', 'addRegradings.xml',[]);
-		$this->wam->useScript('com_eqa.dependent_lists');
+		$this->wa->useScript('com_eqa.dependent_lists');
 		DependentListsHelper::setup3Level(
-			$this->wam,
+			$this->wa,
 			'',
 			'examseason_id',
 			'exam_id',

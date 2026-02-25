@@ -8,7 +8,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -20,7 +20,7 @@ use Kma\Component\Eqa\Administrator\Model\SubjectModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpWord\PhpWord;
 
-class ExamseasonController extends EqaFormController
+class ExamseasonController extends FormController
 {
 	protected function checkCanAddExams(int $examseasonId, bool $examseasonMustBeEmpty=false, bool $throw=true): bool
 	{

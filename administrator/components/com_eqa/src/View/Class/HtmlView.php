@@ -4,20 +4,20 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutData;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
+use Kma\Library\Kma\View\ListLayoutData;
+use Kma\Library\Kma\View\ListLayoutItemFields;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\ClassModel;
 use SimpleXMLElement;
 
 defined('_JEXEC') or die();
 
-class HtmlView extends EqaItemHtmlView {
+class HtmlView extends ItemHtmlView {
     protected object $class;
-    protected EqaListLayoutData $listLayoutData;
-    protected EqaListLayoutItemFields $listLayoutItemFields;
+    protected ListLayoutData $listLayoutData;
+    protected ListLayoutItemFields $listLayoutItemFields;
 
 	protected function addToolbarForLayoutEdit(): void
 	{

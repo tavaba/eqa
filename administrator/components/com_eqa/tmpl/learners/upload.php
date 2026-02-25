@@ -1,7 +1,9 @@
 <?php
+
+use Kma\Library\Kma\Helper\ViewHelper;
+
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
 $samplePath = 'media/com_eqa/xlsx/sample_students.xlsx';
 $sampleUrl = JUri::root().$samplePath;
 ?>
@@ -25,4 +27,4 @@ $sampleUrl = JUri::root().$samplePath;
 </div>
 <hr/>
 <?php
-ViewHelper::printItemsUploadForm($this);
+ViewHelper::printUploadForm($this->form);

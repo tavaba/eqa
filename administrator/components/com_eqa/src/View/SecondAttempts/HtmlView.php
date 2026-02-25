@@ -2,27 +2,27 @@
 namespace Kma\Component\Eqa\Administrator\View\SecondAttempts;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
     protected function configureItemFieldsForLayoutDefault():void{
-        $option = new EqaListLayoutItemFields();
+        $option = new ListLayoutItemFields();
 
-	    $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-	    $option->id = EqaListLayoutItemFields::defaultFieldId();
-	    $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+	    $option->sequence = ListLayoutItemFields::defaultFieldSequence();
+	    $option->id = ListLayoutItemFields::defaultFieldId();
+	    $option->check = ListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
-	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('class_id','class_id');
-	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('learner_id','learner_id');
-	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('paid','paid');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('class_id','class_id');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('learner_id','learner_id');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('paid','paid');
 
         //Set the option
         $this->itemFields = $option;

@@ -3,17 +3,17 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
-class ExamseasonsModel extends EqaListModel{
+class ExamseasonsModel extends ListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('id', 'academicyear','term','type','attermpt','nexam','default','completed');
         parent::__construct($config, $factory);
     }
-    public function populateState($ordering = 'id', $direction = 'DESC')
+    public function populateState($ordering = 'id', $direction = 'DESC'): void
     {
         parent::populateState($ordering, $direction);
     }

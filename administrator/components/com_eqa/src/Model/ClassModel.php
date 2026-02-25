@@ -5,13 +5,13 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 
-class ClassModel extends EqaAdminModel {
+class ClassModel extends AdminModel {
     protected function prepareTable($table)
     {
 	    if(empty($table->lecturer_id))

@@ -27,27 +27,27 @@
         />
         <field
                 name="created_by"
-                type="text"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
                 readonly="true"
-                label="COM_EQA_GENERAL_CREATED_BY"
         />
         <field
                 name="created_at"
                 type="text"
                 readonly="true"
-                label="COM_EQA_GENERAL_CREATED_AT"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
         />
         <field
-                name="updated_by"
-                type="text"
+                name="modified_by"
+                type="user"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
                 readonly="true"
-                label="COM_EQA_GENERAL_UPDATED_BY"
         />
         <field
-                name="updated_at"
+                name="modified_at"
                 type="text"
                 readonly="true"
-                label="COM_EQA_GENERAL_UPDATED_AT"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
         />
     </fieldset>
 </form>

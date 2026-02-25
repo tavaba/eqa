@@ -3,16 +3,16 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use JFactory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Helper\FormHelper;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use function Symfony\Component\String\b;
 
 defined('_JEXEC') or die();
 
-class GradecorrectionModel extends EqaAdminModel {
+class GradecorrectionModel extends AdminModel {
 
 	public function getRequest(int $itemId)
 	{

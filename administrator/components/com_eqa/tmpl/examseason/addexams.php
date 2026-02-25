@@ -5,7 +5,7 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');

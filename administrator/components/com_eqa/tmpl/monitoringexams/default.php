@@ -2,8 +2,8 @@
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 $examseason = $this->examseason;
 if(empty($examseason))
 {

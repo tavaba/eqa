@@ -5,34 +5,31 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutData;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 
-class HtmlView extends EqaItemsHtmlView{
+class HtmlView extends ItemsHtmlView{
 	protected $errorMessage;
 	protected function configureItemFieldsForLayoutDefault():void{
-		$option = new EqaListLayoutItemFields();
+		$option = new ListLayoutItemFields();
 
 		//Các trường thông tin
-		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-		$option->check = EqaListLayoutItemFields::defaultFieldCheck();
+		$option->sequence = ListLayoutItemFields::defaultFieldSequence();
+		$option->check = ListLayoutItemFields::defaultFieldCheck();
 		$option->customFieldset1 = array();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerCode', 'Mã HVSV');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerLastname', 'Họ đệm');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('learnerFirstname', 'Tên');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('examName', 'Môn thi');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('constituentText', 'Thành phần');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('reason', 'Mô tả');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('statusText', 'Trạng thái');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('description', 'Nội dung xử lý');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('handlers', 'Người xử lý');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('learnerCode', 'Mã HVSV');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('learnerLastname', 'Họ đệm');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('learnerFirstname', 'Tên');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('examName', 'Môn thi');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('constituentText', 'Thành phần');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('reason', 'Mô tả');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('statusText', 'Trạng thái');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('description', 'Nội dung xử lý');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('handlers', 'Người xử lý');
 		$this->itemFields = $option;
 	}
 	protected function prepareDataForLayoutDefault(): void
@@ -43,7 +40,7 @@ class HtmlView extends EqaItemsHtmlView{
 				throw new Exception("Bạn không có quyền truy cập thông tin này");
 
 			//Create and set default model
-			$mvcFactory = GeneralHelper::getMVCFactory();
+			$mvcFactory = ComponentHelper::getMVCFactory();
 			$model = $mvcFactory->createModel('Gradecorrections', 'Administrator');
 			$this->setModel($model, true);
 

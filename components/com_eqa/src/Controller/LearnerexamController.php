@@ -15,7 +15,7 @@ class LearnerexamController extends BaseController
 	{
 		$app = Factory::getApplication();
 		$examId = $app->input->getInt('exam_id');
-		$learnerCode = GeneralHelper::getCurrentUsername();
+		$learnerCode = GeneralHelper::getSignedInLearnerCode();
 
 		//Redirect in any case
 		$url = JRoute::_('index.php?option=com_eqa&view=learnerexams', false);
@@ -38,7 +38,7 @@ class LearnerexamController extends BaseController
 		$examId = $app->input->getInt('exam_id');
 		$markConstituent = $app->input->getInt('constituent');
 		$reason = $app->input->getString('reason');
-		$learnerCode = GeneralHelper::getCurrentUsername();
+		$learnerCode = GeneralHelper::getSignedInLearnerCode();
 
 		//Redirect in any case
 		$url = JRoute::_('index.php?option=com_eqa&view=learnerexams', false);

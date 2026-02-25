@@ -3,26 +3,23 @@ namespace Kma\Component\Eqa\Administrator\View\Examseason; //The namespace must 
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutData;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
+use Kma\Library\Kma\View\ListLayoutData;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
-use Kma\Component\Eqa\Administrator\Helper\StringHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\ClassesModel;
 use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
-use Kma\Component\Eqa\Administrator\Model\SubjectsModel;
 
-class HtmlView extends EqaItemHtmlView {
+class HtmlView extends ItemHtmlView {
     protected $examseason;
-    protected EqaListLayoutData $listLayoutData;
-    protected EqaListLayoutItemFields $listLayoutItemFields;
+    protected ListLayoutData $listLayoutData;
+    protected ListLayoutItemFields $listLayoutItemFields;
 	protected function prepareDataForLayoutAddexams(): void
 	{
 		//Determine the examseason id
@@ -43,13 +40,13 @@ class HtmlView extends EqaItemHtmlView {
 		$existingSubjectIds = $itemModel->getSubjectIdsByExamseasonId($examseasonId);
 		$termSubjectIds = $itemModel->getSubjectIdsByTerm($this->examseason->academicyear_id, $this->examseason->term);
 		$limitSubjectIds = array_diff($termSubjectIds, $existingSubjectIds);
-		$factory = GeneralHelper::getMVCFactory();
+		$factory = ComponentHelper::getMVCFactory();
 		$listModel = $factory->createModel('subjects');
 		$listModel->setState('filter.limit_subject_ids',$limitSubjectIds);
 		$this->setModel($listModel, true);
 
 		//Prepare list layout data
-		$this->listLayoutData = new EqaListLayoutData();
+		$this->listLayoutData = new ListLayoutData();
 		$this->loadCommonListLayoutData($this->listLayoutData, $listModel);
 		$this->listLayoutData->formActionParams = [
 			'view' => 'examseason',
@@ -71,26 +68,26 @@ class HtmlView extends EqaItemHtmlView {
 
 
 		//Prepare list layout item fields
-		$this->listLayoutItemFields = new EqaListLayoutItemFields();
+		$this->listLayoutItemFields = new ListLayoutItemFields();
 		$itemFields = $this->listLayoutItemFields; //Just shorten the name
 
-		$itemFields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-		$itemFields->check = EqaListLayoutItemFields::defaultFieldCheck();
+		$itemFields->sequence = ListLayoutItemFields::defaultFieldSequence();
+		$itemFields->check = ListLayoutItemFields::defaultFieldCheck();
 
 		$itemFields->customFieldset1 = array();
-		$field = new EqaListLayoutItemFieldOption('department_code', 'COM_EQA_GENERAL_SUBJECT_DEPARTMENT',true,false);
+		$field = new ListLayoutItemFieldOption('department_code', 'COM_EQA_GENERAL_SUBJECT_DEPARTMENT',true,false);
 		$field->cssClass = 'text-center';
 		$itemFields->customFieldset1[] = $field;
-		$field = new EqaListLayoutItemFieldOption('code','COM_EQA_GENERAL_SUBJECT_CODE', true, false);
+		$field = new ListLayoutItemFieldOption('code','COM_EQA_GENERAL_SUBJECT_CODE', true, false);
 		$field->cssClass = 'text-center';
 		$itemFields->customFieldset1[] = $field;
-		$itemFields->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'COM_EQA_GENERAL_SUBJECT_NAME');
-		$itemFields->customFieldset1[] = new EqaListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
-		$itemFields->customFieldset1[] = new EqaListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);
-		$field = new EqaListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
+		$itemFields->customFieldset1[] = new ListLayoutItemFieldOption('name', 'COM_EQA_GENERAL_SUBJECT_NAME');
+		$itemFields->customFieldset1[] = new ListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
+		$itemFields->customFieldset1[] = new ListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);
+		$field = new ListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
 		$field->cssClass = 'text-center';
 		$itemFields->customFieldset1[] = $field;
-		$itemFields->published = EqaListLayoutItemFields::defaultFieldPublished();
+		$itemFields->published = ListLayoutItemFields::defaultFieldPublished();
 	}
 	protected function addToolbarForLayoutAddexams(): void
 	{
@@ -115,14 +112,14 @@ class HtmlView extends EqaItemHtmlView {
 
 		//Setup the list model
 		/** @var ClassesModel $listModel */
-		$factory = GeneralHelper::getMVCFactory();
+		$factory = ComponentHelper::getMVCFactory();
 		$listModel = $factory->createModel('classes');
 		$listModel->setState('filter.academicyear_id', $this->examseason->academicyear_id);
 		$listModel->setState('filter.term', $this->examseason->term);
 		$this->setModel($listModel, true);
 
 		//Prepare list layout data
-		$this->listLayoutData = new EqaListLayoutData();
+		$this->listLayoutData = new ListLayoutData();
 		$this->loadCommonListLayoutData($this->listLayoutData, $listModel);
 		$this->listLayoutData->formActionParams = [
 			'view' => 'examseason',
@@ -139,22 +136,22 @@ class HtmlView extends EqaItemHtmlView {
 		}
 
 		//Prepare list layout item fields
-		$option = new EqaListLayoutItemFields();
+		$option = new ListLayoutItemFields();
 
-		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-		$option->check = EqaListLayoutItemFields::defaultFieldCheck();
+		$option->sequence = ListLayoutItemFields::defaultFieldSequence();
+		$option->check = ListLayoutItemFields::defaultFieldCheck();
 
 		$option->customFieldset1 = array();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('academicyear','COM_EQA_ACADEMICYEAR', true,false,'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('term','COM_EQA_TERM', true,false,'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('code', 'COM_EQA_CLASS_CODE', true,false);
-		$field = new EqaListLayoutItemFieldOption('name','COM_EQA_CLASS_NAME',true,false);
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('academicyear','COM_EQA_ACADEMICYEAR', true,false,'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('term','COM_EQA_TERM', true,false,'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('code', 'COM_EQA_CLASS_CODE', true,false);
+		$field = new ListLayoutItemFieldOption('name','COM_EQA_CLASS_NAME',true,false);
 		$field->altField = 'description';
 		$option->customFieldset1[] = $field;
 		//Trường 'lecturer' thực tế không tồn tại
 		// ==> Ở phần layout cần căn cứ vào lecturer_id để tính toán Họ và tên của lecturer.
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('lecturer','COM_EQA_LECTURER');
-		$field = new EqaListLayoutItemFieldOption('size','COM_EQA_CLASS_SIZE', true,false,'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('lecturer','COM_EQA_LECTURER');
+		$field = new ListLayoutItemFieldOption('size','COM_EQA_CLASS_SIZE', true,false,'text-center');
 		$field->urlFormatString = 'index.php?option=com_eqa&view=classlearners&class_id=%d';
 		$option->customFieldset1[] = $field;
 

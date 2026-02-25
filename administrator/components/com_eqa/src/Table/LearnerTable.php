@@ -1,10 +1,11 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Table;
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Base\EqaTable;
-use Kma\Component\Eqa\Administrator\Helper\StringHelper;
 
-class LearnerTable extends EqaTable{
+use Kma\Library\Kma\Helper\StringHelper;
+use Kma\Component\Eqa\Administrator\Base\Table;
+
+class LearnerTable extends Table{
     public function check()
     {
         //Parent check

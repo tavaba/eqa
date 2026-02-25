@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+
+        <field
+                name="title"
+                type="text"
+                label="Tên gọi"
+                description="Hãy đặt tên ngắn gọn để tiện hiển thị. Những thông tin
+                    chi tiết khác hãy đưa vào trường &quot;Mô tả&quot;."
+                required="true"
+                validate="assetName"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="Mô tả"
+        />
+        <field
+                name="form_id"
+                type="surveyform"
+                label="Mẫu phiếu khảo sát"
+                description="Mẫu phiếu này sẽ được mặc định áp dụng cho mọi cuộc khảo sát của đợt khảo sát"
+                required="true"
+        >
+            <option value="">- Mẫu phiếu khảo sát -</option>
+        </field>
+        <field
+                name="start_time"
+                type="calendar"
+                label="Bắt đầu"
+                description="Thời điểm bắt đầu khảo sát; áp dụng mặc định cho các cuộc khảo sát
+                    của đợt khảo sát. Có thể thay đổi thời gian trong từng cuộc khảo sát nếu cần."
+                showtime="true"
+                singleheader="true"
+                translateformat="true"
+                required="true"
+        />
+        <field
+                name="end_time"
+                label="Kết thúc"
+                description="Thời điểm kết thúc khảo sát; áp dụng mặc định cho các cuộc khảo sát
+                    của đợt khảo sát. Có thể thay đổi thời gian trong từng cuộc khảo sát nếu cần."
+                type="calendar"
+                showtime="true"
+                singleheader="true"
+                translateformat="true"
+                required="true"
+        />
+        <field
+                name="auth_mode"
+                type="authmode"
+                label="Quyền gửi phản hồi"
+                description="Cơ chế kiểm soát quyền gửi phản hồi mặc định cho các cuộc
+                    kháo sát. Có thể thay đổi thời gian trong từng cuộc khảo sát nếu cần.
+                    &quot;Bất kỳ ai&quot;: ai cũng có thể gửi yêu cầu mà không
+                    cần phải xác thực; hệ quả là mỗi người có thể gửi phản hồi nhiều lần.
+                    &quot;Người đã xác thực&quot;: bất kỳ ai (có trong danh sách tổng
+                    &quot;Người được khảo sát&quot;) đã được xác thực thành công thì
+                    đều có quyền gửi phản hồi. &quot;Người trong danh sách&quot;: chỉ những
+                    người được chỉ định trong danh sách người khảo sát của cuộc khảo sát
+                    mới có quyền gửi phản hồi."
+                required="true"
+                default=""
+        >
+            <option value="">- Quyền gửi phản hồi -</option>
+        </field>
+    </fieldset>
+
+    <fieldset name="permissions">
+        <field
+                name="asset_id"
+                type="hidden"
+                filter="unset"
+        />
+
+        <field
+                name="rules"
+                type="rules"
+                label="JGLOBAL_ACTION_PERMISSIONS_LABEL"
+                class="inputbox"
+                validate="rules"
+                filter="rules"
+                component="com_survey"
+                section="campaign"
+        />
+    </fieldset>
+
+    <fieldset name="metadata">
+        <field
+                name="created"
+                type="calendar"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+                format="%Y-%m-%d %H:%M:%S"
+                readonly="true"
+        />
+
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="modified"
+                type="calendar"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+                readonly="true"
+                format="%Y-%m-%d %H:%M:%S"
+        />
+
+        <field
+                name="modified_by"
+                type="user"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+    </fieldset>
+</form>

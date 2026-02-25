@@ -1,11 +1,11 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 defined('_JEXEC') or die();
 
-class CohortModel extends EqaAdminModel {
+class CohortModel extends AdminModel {
 	public function addLearners(int $cohortId, array $learnerIds): void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();

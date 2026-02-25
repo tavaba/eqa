@@ -1,6 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Interface;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 class ExamroomInfo extends ObjectInfo

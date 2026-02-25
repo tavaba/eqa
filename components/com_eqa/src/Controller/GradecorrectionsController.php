@@ -4,14 +4,13 @@ defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
-use Joomla\CMS\Factory;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-class GradecorrectionsController extends EqaAdminController
+class GradecorrectionsController extends AdminController
 {
 	public function download()
 	{
@@ -23,7 +22,7 @@ class GradecorrectionsController extends EqaAdminController
 				throw new Exception("Bạn không có quyền truy cập vào mục này");
 
 			//Create an instance of the backend model
-			$mvcFactory = GeneralHelper::getMVCFactory();
+			$mvcFactory = ComponentHelper::getMVCFactory();
 			$model = $mvcFactory->createModel('gradecorrections', 'Administrator');
 			$items = $model->getAllItems();
 			if(empty($items))

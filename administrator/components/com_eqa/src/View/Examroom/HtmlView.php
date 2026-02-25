@@ -5,16 +5,16 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutData;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
+use Kma\Library\Kma\View\ListLayoutData;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Field\ExamineeanomalyField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 
-class HtmlView extends EqaItemHtmlView {
+class HtmlView extends ItemHtmlView {
     protected $examroom;
 	protected $examineeAnomalies;
 	protected $anomalyField;
@@ -28,7 +28,7 @@ class HtmlView extends EqaItemHtmlView {
         $this->toolbarOption->taskCancel = true;
 
         //Prepare model
-        $factory = GeneralHelper::getMVCFactory();
+        $factory = ComponentHelper::getMVCFactory();
         $model = $factory->createModel('examroomexaminees');
         $this->setModel($model,true);
         $model->setState('filter.examroom_id',$examroomId);   //Để dùng trong $model->getsListQuery()
@@ -37,7 +37,7 @@ class HtmlView extends EqaItemHtmlView {
         $this->examroom = DatabaseHelper::getExamroomInfo($examroomId);
 
         //List layout data
-        $this->listLayoutData = new EqaListLayoutData();
+        $this->listLayoutData = new ListLayoutData();
         $this->loadCommonListLayoutData($this->listLayoutData, $model);
         $this->listLayoutData->formActionParams = [
             'view' => 'examroom',
@@ -63,38 +63,38 @@ class HtmlView extends EqaItemHtmlView {
 
 
         //List Item Fields
-        $this->listLayoutItemFields = new EqaListLayoutItemFields();
+        $this->listLayoutItemFields = new ListLayoutItemFields();
         $fields = $this->listLayoutItemFields;      //Just shorten the name
-        $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $fields->check = EqaListLayoutItemFields::defaultFieldCheck();
+        $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $fields->check = ListLayoutItemFields::defaultFieldCheck();
 
-        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('examinee_code','COM_EQA_EXAMINEE_CODE_ABBR', true, false, 'text-center');
-        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('learner_code','COM_EQA_LEARNER_CODE', true, false, 'text-center');
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldLastname();
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldFirstname();
-        $f = new EqaListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT_ABBR', true, false, 'text-center');
+        $fields->customFieldset1[] = new ListLayoutItemFieldOption('examinee_code','COM_EQA_EXAMINEE_CODE_ABBR', true, false, 'text-center');
+        $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_code','COM_EQA_LEARNER_CODE', true, false, 'text-center');
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
+        $f = new ListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT_ABBR', true, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_EXAM_ATTEMPT');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM1');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM2');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_ALLOWED_TO_TAKE_EXAM');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('mark_final', 'COM_EQA_MARK_FINALEXAM_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('mark_final', 'COM_EQA_MARK_FINALEXAM_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MARK_FINALEXAM');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('module_mark', 'COM_EQA_MODULE_MARK_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('module_mark', 'COM_EQA_MODULE_MARK_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_MARK');
         $fields->customFieldset1[] = $f;
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('module_base4_mark', 'Hệ 4', false, false, 'text-center');
-	    $f = new EqaListLayoutItemFieldOption('module_grade', 'COM_EQA_MODULE_GRADE_ABBR', false, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('module_base4_mark', 'Hệ 4', false, false, 'text-center');
+	    $f = new ListLayoutItemFieldOption('module_grade', 'COM_EQA_MODULE_GRADE_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_GRADE');
         $fields->customFieldset1[] = $f;
 

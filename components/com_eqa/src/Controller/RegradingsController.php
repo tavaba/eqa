@@ -5,13 +5,13 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-class RegradingsController extends EqaAdminController
+class RegradingsController extends AdminController
 {
 	public function downloadRegradingFee(): void
 	{
@@ -31,7 +31,7 @@ class RegradingsController extends EqaAdminController
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
 			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
-			$mvcFactory = GeneralHelper::getMVCFactory();
+			$mvcFactory = ComponentHelper::getMVCFactory();
 			$model = $mvcFactory->createModel('Regradings', 'Administrator');
 			$examseasonId = $model->getSelectedExamseasonId();
 			if(empty($examseasonId))

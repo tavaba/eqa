@@ -5,7 +5,8 @@ use Exception;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Helper\NumberHelper;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -14,7 +15,7 @@ use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 
 defined('_JEXEC') or die();
 
-class ExamroomModel extends EqaAdminModel {
+class ExamroomModel extends AdminModel {
 	public function getExaminees(int $examroomId)
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -336,7 +337,7 @@ class ExamroomModel extends EqaAdminModel {
 			foreach ($examinees as $examinee){
 				$code = $examinee->code;
 				$learnerCode = $examinee->learnerCode;
-				$mark = GeneralHelper::toFloat($examinee->value, $EXAM_MARK_DECIMAL_PLACES);
+				$mark = NumberHelper::toFloat($examinee->value, $EXAM_MARK_DECIMAL_PLACES);
 				$description = $examinee->description;
 
 				//Kiểm tra tính hợp lệ của cột 'điểm'

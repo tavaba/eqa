@@ -6,7 +6,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -14,7 +14,7 @@ use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-class ExamsController extends EqaAdminController {
+class ExamsController extends AdminController {
 
 	/**
 	 * We override the parent method because we want to redirect to

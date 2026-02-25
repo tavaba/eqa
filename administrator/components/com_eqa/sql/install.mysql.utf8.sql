@@ -1,23 +1,24 @@
-/*
- * COM_EQA version 1.1.9
+/**
+ * Version 2.0.0
  */
-CREATE TABLE `#__eqa_buildings`(
+
+CREATE TABLE IF NOT EXISTS `#__eqa_buildings`(
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(255) NOT NULL COMMENT 'Ký hiệu tòa nhà. Ví dụ: TA1, TB1...',
 	`description` TEXT,
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
 	UNIQUE(`code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Các tòa nhà trong Học viện';
 
-CREATE TABLE `#__eqa_rooms`(
+CREATE TABLE IF NOT EXISTS `#__eqa_rooms`(
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(255) NOT NULL COMMENT 'Ký hiệu phòng. Ví dụ: 104, 401-TA2...',
 	`building_id` INT NOT NULL,
@@ -28,9 +29,9 @@ CREATE TABLE `#__eqa_rooms`(
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -39,7 +40,7 @@ CREATE TABLE `#__eqa_rooms`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Phòng học (vật lý)';
 
-CREATE TABLE `#__eqa_units` (
+CREATE TABLE IF NOT EXISTS `#__eqa_units` (
     `id` INT AUTO_INCREMENT,
 	`parent_id` INT NOT NULL DEFAULT 0 COMMENT 'Đơn vị cấp trên; 0 nếu trực thuộc Học viện',
 	`code` VARCHAR(255) NOT NULL COMMENT 'Ký hiệu, ví dụ: K.ATTT, BM.ATGDDT',
@@ -49,16 +50,16 @@ CREATE TABLE `#__eqa_units` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
 	UNIQUE(`code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Cơ quan, đơn vị trong Học viện (chỉ 2 cấp!!!)';
 
-CREATE TABLE `#__eqa_employees` (
+CREATE TABLE IF NOT EXISTS `#__eqa_employees` (
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(255) DEFAULT NULL COMMENT 'Mã cán bộ, nhân viên',
 	`lastname` VARCHAR(255) NOT NULL COMMENT 'Họ Đệm',
@@ -70,9 +71,9 @@ CREATE TABLE `#__eqa_employees` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -82,7 +83,7 @@ CREATE TABLE `#__eqa_employees` (
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default CHARSET = utf8mb4 COMMENT 'Cán bộ, giảng viên, nhân viên (Không quản lý tài khoản đăng nhập)';
 
-CREATE TABLE `#__eqa_specialities`(
+CREATE TABLE IF NOT EXISTS `#__eqa_specialities`(
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(255) NOT NULL COMMENT 'Ký hiệu',
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên ngành đào tạo',
@@ -90,15 +91,15 @@ CREATE TABLE `#__eqa_specialities`(
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Ngành đào tạo';
 
-CREATE TABLE `#__eqa_programs`(
+CREATE TABLE IF NOT EXISTS `#__eqa_programs`(
     `id` INT AUTO_INCREMENT,
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên của chương trình đào tạo',
 	`spec_id` INT NOT NULL COMMENT 'FK: Ngành đào tạo',
@@ -111,9 +112,9 @@ CREATE TABLE `#__eqa_programs`(
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -122,7 +123,7 @@ CREATE TABLE `#__eqa_programs`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Chương trình đào tạo';
 
-CREATE TABLE `#__eqa_courses` (
+CREATE TABLE IF NOT EXISTS `#__eqa_courses` (
     `id` INT AUTO_INCREMENT,
 	`prog_id` INT NOT NULL COMMENT 'FK: Chương trình ĐT',
 	`code` VARCHAR(255) NOT NULL COMMENT 'Ký hiệu. Ví dụ: AT20',
@@ -131,9 +132,9 @@ CREATE TABLE `#__eqa_courses` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -143,7 +144,7 @@ CREATE TABLE `#__eqa_courses` (
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Khóa đào tạo';
 
-CREATE TABLE `#__eqa_groups` (
+CREATE TABLE IF NOT EXISTS `#__eqa_groups` (
     `id` INT AUTO_INCREMENT,
 	`course_id` INT COMMENT 'FK: Khóa đào tạo. NULL với lớp ngắn hạn...',
 	`code` VARCHAR(255) NOT NULL COMMENT 'Tên lớp. Ví dụ: AT20A',
@@ -153,9 +154,9 @@ CREATE TABLE `#__eqa_groups` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -171,7 +172,7 @@ CREATE TABLE `#__eqa_groups` (
 		ON DELETE RESTRICT		
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Lớp quản lý hành chính';
 
-CREATE TABLE `#__eqa_learners` (
+CREATE TABLE IF NOT EXISTS `#__eqa_learners` (
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(255) NOT NULL COMMENT 'Mã HVSV. Ví dụ: AT010101',
 	`lastname` VARCHAR(255) NOT NULL COMMENT 'Họ Đệm',
@@ -182,9 +183,9 @@ CREATE TABLE `#__eqa_learners` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -194,23 +195,23 @@ CREATE TABLE `#__eqa_learners` (
 	UNIQUE (`code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Học viên, sinh viên (Không quản lý tài khoản đăng nhập)';
 
-CREATE TABLE `#__eqa_cohorts` (
+CREATE TABLE IF NOT EXISTS `#__eqa_cohorts` (
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(20) NOT NULL COMMENT 'Ký hiệu nhóm. Ví dụ: H30L',
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên nhóm: H30 Lào',
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
 	UNIQUE(`code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Nhóm HVSV';
 
-CREATE TABLE `#__eqa_cohort_learner` (
+CREATE TABLE IF NOT EXISTS `#__eqa_cohort_learner` (
     `cohort_id` INT  NOT NULL,
     `learner_id` INT  NOT NULL,
 	PRIMARY KEY (`cohort_id`,`learner_id`),
@@ -222,7 +223,7 @@ CREATE TABLE `#__eqa_cohort_learner` (
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4;
 
-CREATE TABLE `#__eqa_subjects` (
+CREATE TABLE IF NOT EXISTS `#__eqa_subjects` (
     `id` INT AUTO_INCREMENT,
 	`code` VARCHAR(255) NOT NULL COMMENT 'Mã môn học',
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên môn học',
@@ -243,9 +244,9 @@ CREATE TABLE `#__eqa_subjects` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -255,7 +256,7 @@ CREATE TABLE `#__eqa_subjects` (
 	UNIQUE(`code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Môn học';
 
-CREATE TABLE `#__eqa_academicyears` (
+CREATE TABLE IF NOT EXISTS `#__eqa_academicyears` (
     `id` INT AUTO_INCREMENT,
 	`code` CHAR(9) NOT NULL COMMENT 'Năm học. Ví dụ: 2023-2024',
 	`description` TEXT,
@@ -263,16 +264,16 @@ CREATE TABLE `#__eqa_academicyears` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
 	UNIQUE(`code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Cán bộ, giảng viên, nhân viên (Không quản lý tài khoản đăng nhập)';
 
-CREATE TABLE `#__eqa_classes` (
+CREATE TABLE IF NOT EXISTS `#__eqa_classes` (
     `id` INT AUTO_INCREMENT,
 	`coursegroup` VARCHAR(255) COMMENT 'Đối tượng người học',
 	`code` CHAR(40) COMMENT 'Mã lớp học phần',
@@ -296,9 +297,9 @@ CREATE TABLE `#__eqa_classes` (
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -314,7 +315,7 @@ CREATE TABLE `#__eqa_classes` (
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Các lớp học phần' ;
 
-CREATE TABLE `#__eqa_stimulations`(
+CREATE TABLE IF NOT EXISTS `#__eqa_stimulations`(
     `id` INT AUTO_INCREMENT,
     `subject_id` INT NOT NULL COMMENT 'FK: Môn học',
 	`learner_id` INT NOT NULL COMMENT 'FK: Người học',
@@ -323,9 +324,9 @@ CREATE TABLE `#__eqa_stimulations`(
 	`reason` TEXT NOT NULL COMMENT 'Lý do khuyến khích',
 	`used` BOOLEAN NOT NULL DEFAULT FALSE,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -338,7 +339,8 @@ CREATE TABLE `#__eqa_stimulations`(
 	CONSTRAINT unique_subject_learner UNIQUE(`subject_id`, `learner_id`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Chế độ khuyến khích';
 
-CREATE TABLE `#__eqa_class_learner` (
+CREATE TABLE IF NOT EXISTS `#__eqa_class_learner` (
+    `id` INT AUTO_INCREMENT,
     `class_id` INT NOT NULL,
 	`learner_id` INT NOT NULL,
 	`pam1` FLOAT COMMENT 'Điểm quá trình TP1',
@@ -348,6 +350,11 @@ CREATE TABLE `#__eqa_class_learner` (
 	`ntaken` TINYINT NOT NULL DEFAULT 0 COMMENT 'Số lượt đã thi',
 	`expired` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Hết lượt thi',
 	`description` VARCHAR(255),
+	`created_at` DATETIME,
+	`created_by` INT,
+	`updated_at` DATETIME,
+	`updated_by` INT,
+    PRIMARY KEY (`id`),
 	UNIQUE(`class_id`,`learner_id`),
 	CONSTRAINT fk_eqa_class_learner_class FOREIGN KEY(`class_id`)
 		REFERENCES `#__eqa_classes`(`id`)
@@ -357,7 +364,7 @@ CREATE TABLE `#__eqa_class_learner` (
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'HVSV các lớp học phần' ;
 
-CREATE TABLE `#__eqa_examseasons`(
+CREATE TABLE IF NOT EXISTS `#__eqa_examseasons`(
     `id` INT AUTO_INCREMENT,
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên đợt thi',
 	`academicyear_id` INT NOT NULL COMMENT 'Khóa ngoại: Năm học',
@@ -375,9 +382,9 @@ CREATE TABLE `#__eqa_examseasons`(
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -386,7 +393,7 @@ CREATE TABLE `#__eqa_examseasons`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Đợt/kỳ thi';
 
-CREATE TABLE `#__eqa_examsessions`(
+CREATE TABLE IF NOT EXISTS `#__eqa_examsessions`(
     `id` INT AUTO_INCREMENT,
 	`examseason_id` INT NOT NULL COMMENT 'Khóa ngoại: Đợt/kỳ thi',
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên ca thi',
@@ -398,9 +405,9 @@ CREATE TABLE `#__eqa_examsessions`(
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -409,7 +416,7 @@ CREATE TABLE `#__eqa_examsessions`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Ca thi';
 
-CREATE TABLE `#__eqa_exams`(
+CREATE TABLE IF NOT EXISTS `#__eqa_exams`(
     `id` INT AUTO_INCREMENT,
 	`subject_id` INT NOT NULL COMMENT 'Khóa ngoại: môn học',
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên môn thi',
@@ -433,9 +440,9 @@ CREATE TABLE `#__eqa_exams`(
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -453,7 +460,7 @@ CREATE TABLE `#__eqa_exams`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Môn (bài) thi';
 
-CREATE TABLE `#__eqa_examrooms`(
+CREATE TABLE IF NOT EXISTS `#__eqa_examrooms`(
     `id` INT AUTO_INCREMENT,
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên phòng thi',
 	`room_id` INT NOT NULL COMMENT 'Khóa ngoại: Phòng học (địa điểm thi)',
@@ -471,9 +478,9 @@ CREATE TABLE `#__eqa_examrooms`(
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
 	`ordering` INT NOT NULL DEFAULT 0,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
@@ -487,7 +494,7 @@ CREATE TABLE `#__eqa_examrooms`(
 		ON UPDATE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Phòng thi (vật lý và logic)';
 
-CREATE TABLE `#__eqa_exam_learner`(
+CREATE TABLE IF NOT EXISTS `#__eqa_exam_learner`(
     `exam_id` INT NOT NULL COMMENT 'Khóa ngoại: môn thi',
 	`learner_id` INT NOT NULL COMMENT 'Khóa ngoại: học viên, sinh viên',
 	`class_id` INT COMMENT 'Khóa ngoại: lớp học phần',
@@ -507,9 +514,9 @@ CREATE TABLE `#__eqa_exam_learner`(
 	`conclusion` TINYINT COMMENT 'Kết luận (qua, làm lại bài thi, phải thi lại, phải học lại...); định nghĩa bằng constants',
 	`description` TEXT,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	UNIQUE (`exam_id`,`learner_id`),
 	UNIQUE (`exam_id`,`code`),
 	CONSTRAINT fk_eqa_exam_learner_exam FOREIGN KEY (`exam_id`)
@@ -529,7 +536,7 @@ CREATE TABLE `#__eqa_exam_learner`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Kết quả thi của thí sinh';
 
-CREATE TABLE `#__eqa_packages`(
+CREATE TABLE IF NOT EXISTS `#__eqa_packages`(
     `id` INT AUTO_INCREMENT,
 	`number` INT NOT NULL COMMENT 'Số hiệu túi (trong phạm vi 1 môn thi)',
     `examiner1_id` INT COMMENT 'Khóa ngoại: CBChT 1',
@@ -542,9 +549,9 @@ CREATE TABLE `#__eqa_packages`(
 	`finishdate` DATE COMMENT 'Ngày chấm xong (bàn giao điểm)',
 	`description` TEXT,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
 	PRIMARY KEY (`id`),
@@ -556,7 +563,7 @@ CREATE TABLE `#__eqa_packages`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Túi bài thi viết';
 
-CREATE TABLE `#__eqa_papers`(
+CREATE TABLE IF NOT EXISTS `#__eqa_papers`(
     `exam_id` INT NOT NULL COMMENT 'FK: môn thi',
 	`learner_id` INT NOT NULL COMMENT 'FK: thí sinh',
 	`nsheet` INT NOT NULL DEFAULT 0 COMMENT 'Số tờ giấy thi',
@@ -575,7 +582,7 @@ CREATE TABLE `#__eqa_papers`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Bài thi viết';
 
-CREATE TABLE `#__eqa_regradings`(
+CREATE TABLE IF NOT EXISTS `#__eqa_regradings`(
     `id` INT AUTO_INCREMENT,
     `exam_id` INT NOT NULL COMMENT 'FK: mã môn thi',
 	`learner_id` INT NOT NULL COMMENT 'FK: thí sinh',
@@ -604,7 +611,7 @@ CREATE TABLE `#__eqa_regradings`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Phúc khảo bài thi';
 
-CREATE TABLE `#__eqa_gradecorrections`(
+CREATE TABLE IF NOT EXISTS `#__eqa_gradecorrections`(
     `id` INT AUTO_INCREMENT,
     `exam_id` INT NOT NULL COMMENT 'FK: mã môn thi',
 	`learner_id` INT NOT NULL COMMENT 'FK: thí sinh',
@@ -618,7 +625,7 @@ CREATE TABLE `#__eqa_gradecorrections`(
 	`reviewer_id` INT DEFAULT NULL COMMENT 'Người xử lý',
 	`changed`	BOOLEAN COMMENT 'Có thay đổi điểm sau xử lý yêu cầu hay không',
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	`checked_out` INT DEFAULT NULL,
 	`checked_out_time` DATETIME DEFAULT NULL,
 	PRIMARY KEY (`id`),
@@ -634,7 +641,7 @@ CREATE TABLE `#__eqa_gradecorrections`(
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Đính chính điểm thi';
 
 
-CREATE TABLE `#__eqa_mmproductions`(
+CREATE TABLE IF NOT EXISTS `#__eqa_mmproductions`(
     `id` INT AUTO_INCREMENT,
     `exam_id` INT NOT NULL COMMENT 'FK: mã môn thi',
 	`examiner_id` INT NOT NULL COMMENT 'FK: CBChT',
@@ -649,7 +656,7 @@ CREATE TABLE `#__eqa_mmproductions`(
 		ON DELETE RESTRICT
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Machine Marking Productions';
 
-CREATE TABLE `#__eqa_conducts`(
+CREATE TABLE IF NOT EXISTS `#__eqa_conducts`(
     `id` 						INT AUTO_INCREMENT,
     `learner_id`				INT NOT NULL,
 	`academicyear_id` 			INT NOT NULL,
@@ -660,6 +667,7 @@ CREATE TABLE `#__eqa_conducts`(
 	`retake_count`				INT DEFAULT 0	COMMENT	'Số môn học lại',                
 	`award_count`				INT DEFAULT 0	COMMENT	'Số lần được khen thưởng',                
 	`disciplinary_action_count`	INT DEFAULT 0	COMMENT	'Số lần bị xử lý kỷ luật',   
+	`total_credits`				FLOAT 			COMMENT 'Tổng số tín chỉ',
 	`academic_score` 			REAL 			COMMENT 'Điểm học tập trung bình',
 	`academic_rating`			TINYINT 		COMMENT 'Phân loại học tập',
 	`conduct_score` 			REAL 			COMMENT 'Điểm rèn luyện bằng số',
@@ -667,9 +675,9 @@ CREATE TABLE `#__eqa_conducts`(
 	`note`						VARCHAR(255),
 	`description`				TEXT,
 	`created_at` DATETIME,
-	`created_by` VARCHAR(255),
+	`created_by` INT,
 	`updated_at` DATETIME,
-	`updated_by` VARCHAR(255),
+	`updated_by` INT,
 	PRIMARY KEY (`id`),
 	CONSTRAINT fk_eqa_conducts_learner FOREIGN KEY (`learner_id`)
 		REFERENCES `#__eqa_learners`(`id`)
@@ -680,3 +688,18 @@ CREATE TABLE `#__eqa_conducts`(
 	INDEX idx_eqa_conducts_term(`term`),
 	UNIQUE(`learner_id`,`academicyear_id`,`term`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Đánh giá rèn luyện';
+
+CREATE TABLE IF NOT EXISTS `#__eqa_secondattempts`(
+    `id` 				INT AUTO_INCREMENT,
+	`class_id`			INT NOT NULL,
+	`learner_id`		INT NOT NULL,
+	`last_exam_id`		INT NOT NULL,
+	`last_conclusion`	INT,
+	`payment_required`	BOOLEAN NOT NULL,
+	`payment_completed`	BOOLEAN,
+	`payment_code`		CHAR(8),
+	PRIMARY KEY (`id`),
+	INDEX idx_eqa_secondattempts_learner(`learner_id`),
+	UNIQUE(`class_id`, `learner_id`),
+	UNIQUE(`payment_code`)
+) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Danh sách thi lần 2';

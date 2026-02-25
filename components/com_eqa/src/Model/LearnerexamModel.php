@@ -6,12 +6,12 @@ use DateTime;
 use Joomla\CMS\Date\Date;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
-class LearnerexamModel extends EqaAdminModel{
+class LearnerexamModel extends AdminModel{
 	public function RequestRegrading(int $examId, string $learnerCode): void
 	{
 		$app = Factory::getApplication();

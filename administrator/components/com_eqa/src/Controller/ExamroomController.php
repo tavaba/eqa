@@ -3,11 +3,11 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 
 defined('_JEXEC') or die();
 
-class ExamroomController extends  EqaFormController {
+class ExamroomController extends  FormController {
     public function removeExaminees(): void
     {
         $this->checkToken();

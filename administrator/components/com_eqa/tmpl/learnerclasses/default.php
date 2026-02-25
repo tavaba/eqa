@@ -1,6 +1,6 @@
 <?php
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
 
 if(isset($this->learner))
@@ -10,5 +10,9 @@ if(isset($this->learner))
 	echo '<div>', htmlspecialchars($text), '</div>';
 }
 
-$view = ViewHelper::castToEqaItemsHtmlView($this);
-ViewHelper::printItemsDefaultLayout($view->getLayoutData(), $view->getListLayoutItemFields());
+//Preprocessing
+$layoutData = $this->getLayoutData();
+$getListLayoutItemFields = $this->getListLayoutItemFields();
+
+//Output
+ViewHelper::printItemsDefaultLayout($layoutData, $getListLayoutItemFields);

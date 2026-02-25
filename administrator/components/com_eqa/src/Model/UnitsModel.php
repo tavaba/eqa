@@ -1,9 +1,9 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Library\Kma\Model\ListModel;
 
-class UnitsModel extends EqaListModel{
+class UnitsModel extends ListModel{
     public function getListQuery()
     {
         $query =  parent::getListQuery();

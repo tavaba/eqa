@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+
+        <field
+                name="name"
+                type="text"
+                label="Tên nhóm"
+                class="form-control"
+                required="true"
+                validate="assetName"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="type"
+                type="respondentgrouptype"
+                label="Phân loại"
+                class="form-control"
+                required="true"
+                description="Việc phân loại này nhằm mục đích lọc dữ liệu về sau để dễ dàng tìm thấy nhóm khảo sát
+                             mong muốn (khi xác định người được khảo sát cho một cuộc khảo sát)"
+        >
+                <option value="">- Phân loại -</option>
+        </field>
+
+        <field
+                name="description"
+                type="textarea"
+                label="Mô tả"
+                class="form-control"
+        />
+
+        <field
+                name="published"
+                type="radio"
+                default="1"
+                label="Kích hoạt"
+                class="btn-group btn-group-yesno"
+        >
+        <option value="0">JNO</option>
+        <option value="1">JYES</option>
+        </field>
+    </fieldset>
+
+    <fieldset name="permissions">
+        <field
+                name="asset_id"
+                type="hidden"
+                filter="unset"
+        />
+
+        <field
+                name="rules"
+                type="rules"
+                label="JGLOBAL_ACTION_PERMISSIONS_LABEL"
+                class="inputbox"
+                validate="rules"
+                filter="rules"
+                component="com_survey"
+                section="respondentgroup"
+        />
+    </fieldset>
+
+    <fieldset name="metadata">
+        <field
+                name="created"
+                type="calendar"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+                size="22"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+        />
+
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="modified"
+                type="calendar"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+                size="22"
+                readonly="true"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+        />
+
+        <field
+                name="modified_by"
+                type="user"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+    </fieldset>
+</form>

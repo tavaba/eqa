@@ -5,11 +5,11 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  * Usage: Your view must include a code fragment like below:
  *        //Load asset
- *        $this->wam->useScript('com_eqa.dependent_lists');
+ *        $this->wa->useScript('com_eqa.dependent_lists');
  *
  *        //Init dependent lists
  *        DependentListsHelper::setup2Level(
- *            $this->wam,
+ *            $this->wa,
  *            'jform',
  *            'class_id',
  *            'learner_id',

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field
+                name="topic_id"
+                type="topic"
+                label="Chủ đề khảo sát"
+                class="select2-basic"
+                onchange="this.form.submit();"
+        >
+            <option value="">- Chủ đề khảo sát -</option>
+        </field>
+        <field
+                name="published"
+                type="list"
+                label="Trạng thái"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Trạng thái -</option>
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+        </field>
+    </fields>
+    <fields name="list">
+        <!-- This hidden field is required for the ordering feature to work -->
+        <field
+                name="fullordering"
+                type="hidden"
+                value="null null"
+        />
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+    </fields>
+
+</form>

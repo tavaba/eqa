@@ -5,9 +5,8 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
-use Kma\Component\Eqa\Administrator\Field\TermField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 
 class LearnerclassesModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -61,7 +60,7 @@ class LearnerclassesModel extends ListModel {
 		if(is_numeric($academicyearId))
 			$query->where('b.academicyear_id='.$academicyearId);
 		$term = $this->getState('filter.term');
-	    if(is_numeric($term) && $term!=DatetimeHelper::TERM_NONE)
+	    if(is_numeric($term) && $term!=TermHelper::TERM_NONE)
 		    $query->where('b.term='.$term);
 
         return $query;

@@ -2,26 +2,16 @@
 
 namespace Kma\Component\Eqa\Administrator\Helper;
 
-use Joomla\CMS\Factory;
-use Joomla\Database\DatabaseDriver;
+use Joomla\CMS\Application\ApplicationHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Interface\GradeCorrectionInfo;
 use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
+use Kma\Library\Kma\Helper\DatabaseHelper as DatabaseHelperBase;
 
-abstract class DatabaseHelper
+abstract class DatabaseHelper extends DatabaseHelperBase
 {
-    /**
-     * Casting kết quả của get('DatabaseDriver') thành DatabaseInterface
-     * @return DatabaseDriver
-     * @since 1.0
-     */
-	static public function getDatabaseDriver(): DatabaseDriver
-	{
-		return Factory::getContainer()->get(DatabaseDriver::class);
-	}
-
 	static public function getLearnerAdmissionYear(int $learnerId): int|null
 	{
 		$db = self::getDatabaseDriver();

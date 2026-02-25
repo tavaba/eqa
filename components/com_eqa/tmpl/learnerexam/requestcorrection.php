@@ -1,9 +1,9 @@
 <?php
 
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 ToolbarHelper::title('Yêu cầu đính chính điểm');
@@ -36,4 +36,4 @@ $hiddenFields = [
 	'task' => 'learnerexam.RequestCorrection',
 	'exam_id' => $examInfo->id
 ];
-ViewHelper::printForm($this->form, 'requestcorrection', $action, $hiddenFields, true);
+ViewHelper::printForm($this->form, 'requestcorrection', $hiddenFields, false,'','adminForm','adminForm',true);

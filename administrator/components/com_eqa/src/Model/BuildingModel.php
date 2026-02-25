@@ -1,8 +1,8 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 
 defined('_JEXEC') or die();
 
-class BuildingModel extends EqaAdminModel {
+class BuildingModel extends AdminModel {
 }

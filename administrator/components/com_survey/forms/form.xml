@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="id"
+                type="hidden"
+        />
+        <field
+                name="title"
+                type="text"
+                label="Tên phiếu"
+                required="true"
+                validate="assetname"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="description"
+                type="textarea"
+                label="Mô tả"
+        />
+        <field
+                name="model"
+                type="textarea"
+                label="Cấu trúc JSON"
+                default="{}"
+                required="true"
+                description="Không nên nhập trực tiếp nội dung ở đây. Khi tạo mới một FORM, hãy để nội dung này
+                là một JSON rỗng, tức là {}. Sau đó, sử dụng công cụ chuyên biệt để thực hiện tạo/sửa phiếu.
+                Cụ thể, trong giao diện Quản lý danh sách phiếu khảo sát, hãy tìm đến phiếu này, nhấn chuột vào
+                nội dung JSON để chỉnh sửa"
+                validate="json"
+                addruleprefix="Kma\Component\Survey\Administrator\Rule"
+        />
+        <field
+                name="topic_ids"
+                type="topic"
+                multiple="true"
+                class="select2-basic"
+                label="Chủ đề khảo sát"
+                description="Mỗi phiếu có thể bao gồm nhiều chủ đề khác nhau (giữ Ctrl để chọn đồng thời nhiều mục).
+                Có thể hiểu &quot;Chủ đề&quot; như những tags.
+                Việc xác định các tags này sẽ giúp nhận biết khảo sát nào đáp ứng yêu cầu nào của kiểm định chất lượng.
+                Ví dụ, phiếu khảo sát CB-GV-NV hàng năm có thể gồm đánh giá sự hài lòng của CB-GV-NV về các chủ đề:
+                Công tác cán bộ, Cơ sở vật chất, Nghiên cứu khoa học, Phục vụ cộng đồng...
+                Nếu không tìm thấy tag mong muốn, hãy liên hệ Admin để được bổ sung."
+                required="true"
+        />
+        <field
+                name="published"
+                type="radio"
+                default="1"
+                label="Kích hoạt"
+                class="btn-group btn-group-yesno"
+        >
+        <option value="0">JNO</option>
+        <option value="1">JYES</option>
+        </field>
+    </fieldset>
+
+    <fieldset name="permissions">
+        <field
+                name="asset_id"
+                type="hidden"
+                filter="unset"
+        />
+
+        <field
+                name="rules"
+                type="rules"
+                label="JGLOBAL_ACTION_PERMISSIONS_LABEL"
+                class="inputbox"
+                validate="rules"
+                filter="rules"
+                component="com_survey"
+                section="form"
+        />
+    </fieldset>
+
+    <fieldset name="metadata">
+        <field
+                name="created"
+                type="calendar"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+                size="22"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+        />
+
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="modified"
+                type="calendar"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+                size="22"
+                readonly="true"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+        />
+
+        <field
+                name="modified_by"
+                type="user"
+                class="readonly"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+    </fieldset>
+</form>

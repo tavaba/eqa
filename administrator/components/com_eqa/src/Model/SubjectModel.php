@@ -1,10 +1,10 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 
 defined('_JEXEC') or die();
 
-class SubjectModel extends EqaAdminModel{
+class SubjectModel extends AdminModel{
     public function prepareTable($table)
     {
         parent::prepareTable($table);

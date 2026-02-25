@@ -7,9 +7,11 @@ use Collator;
 use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Component\Eqa\Administrator\Helper\TermHelper;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -17,13 +19,11 @@ use Kma\Component\Eqa\Administrator\Helper\RatingHelper;
 use Kma\Component\Eqa\Administrator\Model\ConductModel;
 use Kma\Component\Eqa\Administrator\Model\ConductsModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
-use Kma\Library\Kma\Helper\ComponentHelper;
-use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use stdClass;
 
-class ConductsController extends EqaAdminController {
+class ConductsController extends AdminController {
 	private function isValidBase4Mark($value):bool
 	{
 		if (!is_numeric($value))
@@ -261,7 +261,7 @@ class ConductsController extends EqaAdminController {
 					/**
 					 * @var LearnerModel $learnerModel
 					 */
-					$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
+					$learnerModel = ComponentHelper::getMVCFactory()->createModel('Learner');
 					$learner = $learnerModel->getItem($learnerId);
 					$msg = sprintf('Lỗi tính điểm TB cho %s (%s). Hãy đảm bảo HVSV đã có kết quả thi ở Học kỳ %d Năm học %s',
 						implode(' ', [$learner->lastname, $learner->firstname]),
@@ -380,8 +380,8 @@ class ConductsController extends EqaAdminController {
 
 			//Let user download the spreadsheet
 			$fileName = 'Phân loại HVSV từng lớp. '. $academicyear;
-			if($termCode != DatetimeHelper::TERM_NONE)
-				$fileName .= '. ' . DatetimeHelper::decodeTerm($termCode);
+			if($termCode != TermHelper::TERM_NONE)
+				$fileName .= '. ' . TermHelper::decodeTerm($termCode);
 			$fileName .= '.xlsx';
 			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 			jexit();
@@ -449,8 +449,8 @@ class ConductsController extends EqaAdminController {
 
 			//Let user download the spreadsheet
 			$fileName = 'Phân loại HVSV từng khóa. '. $academicyear;
-			if($termCode != DatetimeHelper::TERM_NONE)
-				$fileName .= '. ' . DatetimeHelper::decodeTerm($termCode);
+			if($termCode != TermHelper::TERM_NONE)
+				$fileName .= '. ' . TermHelper::decodeTerm($termCode);
 			$fileName .= '.xlsx';
 			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 			jexit();

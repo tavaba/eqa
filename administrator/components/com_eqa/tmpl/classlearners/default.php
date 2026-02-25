@@ -3,7 +3,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 $class = $this->class;
 if(!empty($class)){
     echo Text::_('COM_EQA_CLASS_CODE') . ': ' . $class->code . '<br/>';
@@ -15,5 +15,4 @@ if(!empty($class)){
     echo '<br/>';
 }
 
-$view = ViewHelper::castToEqaItemsHtmlView($this);
-ViewHelper::printItemsDefaultLayout($view->getLayoutData(), $view->getListLayoutItemFields());
+ViewHelper::printItemsDefaultLayout($this->getLayoutData(), $this->getListLayoutItemFields());

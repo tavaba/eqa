@@ -4,7 +4,7 @@ use Exception;
 use JComponentHelper;
 use Joomla\CMS\Language\Text;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -15,7 +15,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 defined('_JEXEC') or die();
 
-class PaperexamController extends  EqaFormController {
+class PaperexamController extends  FormController {
 	public function mask()
 	{
 		//Check token

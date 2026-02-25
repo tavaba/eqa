@@ -3,11 +3,11 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 
 defined('_JEXEC') or die();
 
-class ExamsessionController extends  EqaFormController {
+class ExamsessionController extends  FormController {
     public function addBatch()
     {
         $context = "$this->option.addbatch.$this->context";

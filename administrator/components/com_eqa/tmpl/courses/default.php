@@ -1,7 +1,7 @@
 <?php
 defined('_JEXEC') or die();
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 //Preprocessing
 if(!empty($this->layoutData->items)){

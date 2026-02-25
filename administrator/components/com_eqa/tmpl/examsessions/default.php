@@ -1,6 +1,6 @@
 <?php
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 $examseason = $this->examseason;
 if(empty($examseason)){
     echo 'Đang hiển thị danh sách ca thi của mọi kỳ thi<br/>';

@@ -2,9 +2,9 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 
-class ExamsessionemployeesController extends EqaAdminController {
+class ExamsessionemployeesController extends AdminController {
 	public function save(string $task='save')
 	{
 		//Check token

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+            name="search"
+            type="text"
+            label="JSEARCH_FILTER"
+        />
+        <field
+                name="academicyear"
+                type="academicyear"
+                label="Năm học"
+                onchange="this.form.submit();"
+        />
+        <field
+                name="term"
+                type="term"
+                label="Học kỳ"
+                onchange="this.form.submit();"
+        />
+    </fields>
+    <fields name="list">
+        <!-- This hidden field is required for the ordering feature to work -->
+        <field
+                name="fullordering"
+                type="hidden"
+                value="null null"
+        />
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+    </fields>
+</form>

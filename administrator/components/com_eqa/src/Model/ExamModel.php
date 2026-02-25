@@ -5,7 +5,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseDriver;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -14,7 +14,7 @@ use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 
 defined('_JEXEC') or die();
 
-class ExamModel extends EqaAdminModel{
+class ExamModel extends AdminModel{
 	public function prepareTable($table)
 	{
 		if(empty($table->questiondeadline))

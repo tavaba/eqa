@@ -1,13 +1,13 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use RuntimeException;
 
 defined('_JEXEC') or die();
 
-class LearnerModel extends EqaAdminModel{
+class LearnerModel extends AdminModel{
 
     /*
      * Rewrite 'delete' method to decrement the group size sequentially.
@@ -23,7 +23,6 @@ class LearnerModel extends EqaAdminModel{
             // Loop through each primary key (student ID)
             foreach ($pks as $pk) {
                 $learner = $this->getItem($pk);
-                $learner = GeneralHelper::castToCmsObject($learner);
                 $groupId = $learner->group_id;
 
                 // Decrement the size of the group
@@ -68,7 +67,6 @@ class LearnerModel extends EqaAdminModel{
             // Perform the save operation
             $isNew = empty($data['id']);
             $item = $this->getItem($data['id']);
-            $item = GeneralHelper::castToCmsObject($item);
             $previousGroupId = $isNew ? null : $item->group_id;
             $result = parent::save($data);
 

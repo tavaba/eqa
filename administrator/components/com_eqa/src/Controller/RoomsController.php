@@ -2,8 +2,8 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 
-class RoomsController extends EqaAdminController
+class RoomsController extends AdminController
 {
 }

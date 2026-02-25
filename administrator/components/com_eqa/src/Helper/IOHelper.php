@@ -6,14 +6,12 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Collator;
 use Exception;
 use JComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\Http\Response;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Interface\PackageInfo;
-use Kma\Component\Eqa\Administrator\Interface\Regradingrequest;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
 use PhpOffice\PhpSpreadsheet\Chart\DataSeries;
@@ -38,117 +36,11 @@ use PhpOffice\PhpWord\IOFactory as WordIOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Shared\Converter;
 use PhpOffice\PhpWord\SimpleType\Jc;
-use PhpOffice\PhpWord\Style\Image;
-use PhpOffice\PhpWord\Style\Paragraph;
 use PhpOffice\PhpWord\Style\Tab;
-use Symfony\Component\HttpClient\Response\ResponseStream;
+use Kma\Library\Kma\Helper\IOHelper as BaseIOHelper;
 
-abstract class IOHelper
+abstract class IOHelper extends BaseIOHelper
 {
-	protected const INCH = 73;
-	protected const PAGE_WIDTH_A4 = 8.267;  //inch
-	static public function sanitizeSheetTitle(string $title, int $maxLenth=31): string
-	{
-		//The title max length is 31 characters according to Excel specification.
-		if($maxLenth>31)
-			$maxLenth = 31;
-
-		// Remove invalid characters
-		$title = preg_replace('/[:\\\\\/?*\[\]]/', '_', $title);
-
-		// Trim leading/trailing whitespace or quotes
-		$title = trim($title, " \t\n\r\0\x0B'");
-
-		// Limit length to 31 characters (Excel max)
-		$title = mb_substr($title, 0, $maxLenth);
-
-		//Trim trailing whitespace again
-		return rtrim($title);
-	}
-	static public function loadSpreadsheet(string $fileName): Spreadsheet
-	{
-		try
-		{
-			$reader = new Xls();                                        //Try to open as .XLS first
-			return $reader->load($fileName);
-		}
-		catch (\PhpOffice\PhpSpreadsheet\Exception $e){
-			unset($e);
-			$reader = ExcelIOFactory::createReader('Xlsx');  //Then try to open as .XLSX if failed
-			return $reader->load($fileName);
-		}
-	}
-	static public function sendHttpXlsx(Spreadsheet $spreadsheet, string $fileName, bool $includeCharts=false): void
-	{
-		// Sanitize the file name
-		$fileName = preg_replace('/[\\\\\/:*?"<>|]/u', '_', $fileName);
-		$fileName = mb_substr(trim($fileName), 0, 255);
-
-		// Create a temporary file
-		$tmpDir = JPATH_SITE . '/tmp';  // or use \Joomla\CMS\Factory::getApplication()->get('tmp_path')
-		$tmpFile = tempnam($tmpDir, 'xlsx_');
-
-		// Save the spreadsheet to temp file
-		$writer = new Xlsx($spreadsheet);
-		if ($includeCharts) {
-			$writer->setIncludeCharts(true);
-		}
-		$writer->save($tmpFile);
-
-		// Clear any previous output
-		while (ob_get_level()) {
-			ob_end_clean();
-		}
-
-		// Send headers
-		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		header('Content-Disposition: attachment; filename="' . basename($fileName) . '"; filename*=UTF-8\'\'' . rawurlencode($fileName));
-		header('Cache-Control: max-age=0');
-		header('Expires: 0');
-		header('Content-Length: ' . filesize($tmpFile));
-
-		// Output the file content
-		readfile($tmpFile);
-
-		// Delete the temp file
-		unlink($tmpFile);
-	}
-	static public function sendHttpDocx(PhpWord $phpWord, string $fileName): void
-	{
-		// Sanitize the file name
-		$fileName = preg_replace('/[\\\\\/:*?"<>|]/u', '_', $fileName);
-		$fileName = mb_substr(trim($fileName), 0, 255);
-
-		// Create a temporary file
-		$tmpDir = JPATH_SITE . '/tmp';  // or use \Joomla\CMS\Factory::getApplication()->get('tmp_path')
-		$tmpFile = tempnam($tmpDir, 'docx_');
-
-		// Save the spreadsheet to temp file
-		$writer = WordIOFactory::createWriter($phpWord, 'Word2007');
-		$writer->save($tmpFile);
-
-		// Clear any previous output
-		while (ob_get_level()) {
-			ob_end_clean();
-		}
-
-		// Send headers
-		header('Content-Description: File Transfer');
-		header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-		header('Content-Disposition: attachment; filename="' . basename($fileName) . '"; filename*=UTF-8\'\'' . rawurlencode($fileName));
-		header('Cache-Control: max-age=0');
-		header('Expires: 0');
-//		header('Cache-Control: must-revalidate');
-//		header('Pragma: public');
-		header('Content-Length: ' . filesize($tmpFile));
-
-		// Output the file content
-		readfile($tmpFile);
-
-		// Delete the temp file
-		unlink($tmpFile);
-	}
-
 	/**
 	 * Xuất bảng điểm quá trình. Đồng thời có thể sử dụng để xuất file rỗng để giảng viên
 	 * điền điểm quá trình. Tương thích với mẫu xuất từ hệ thống quản lý đào tạo.
@@ -1170,7 +1062,7 @@ abstract class IOHelper
 		$sheet->getPageMargins()->setHeader(0.3);
 		$sheet->getPageMargins()->setFooter(0.3);
 
-		$remainWidth = self::PAGE_WIDTH_A4 - 0.45 - 0.45 - 0.5;
+		$remainWidth = self::PAGE_WIDTH_A4_IN_INCH - 0.45 - 0.45 - 0.5;
 		$averageColumnWidth = $remainWidth/$COLS;
 		for($i=1; $i<=$COLS; $i++)
 		{
@@ -2578,8 +2470,8 @@ abstract class IOHelper
 		 */
 		$row++;
 		$subTitle = 'Năm học '.$academicyear;
-		if($termCode != DatetimeHelper::TERM_NONE)
-			$subTitle .= ' - ' . DatetimeHelper::decodeTerm($termCode);
+		if($termCode != TermHelper::TERM_NONE)
+			$subTitle .= ' - ' . TermHelper::decodeTerm($termCode);
 		$subTitle .= " (Năm thứ {$studyYear})";
 		$sheet->getCell('A'.$row)->setValue($subTitle);
 		$sheet->mergeCells([1,$row, $COLS, $row]);
@@ -2858,127 +2750,6 @@ abstract class IOHelper
 
 	}
 
-	static private function phpWordDefineCommonStyles(PhpWord $phpWord): void
-	{
-
-		//1. Font styles
-		$phpWord->setDefaultFontSize(14);
-		$phpWord->setDefaultFontName('Times New Roman');
-		$phpWord->addFontStyle('Bold', ['bold' => true]);
-		$phpWord->addFontStyle('Italic', ['italic' => true]);
-		$phpWord->addFontStyle('ItalicBold', ['italic' => true, 'bold' => true]);
-		$phpWord->addFontStyle('BoldUnderlined', ['bold' => true, 'underline'=>'single']);
-		$phpWord->addFontStyle('ItalicUnderlined', ['italic' => true, 'underline'=>'single']);
-		$phpWord->addFontStyle('ItalicBoldUnderlined', ['italic' => true, 'bold' => true, 'underline'=>'single']);
-
-		//Title styles
-		$phpWord->addTitleStyle(1,
-			[
-				'bold' => true,
-				'size'=>14
-			],
-			[
-				'alignment'=> Jc::START,
-				'pageBreakBefore' => true,
-				'keepNext'=>true,
-				'keepLines'=>true
-			]
-		);
-
-
-		//2. Paragraph styles
-		$phpWord->addParagraphStyle('Normal', [
-			'alignment'=> Jc::BOTH,
-			'firstLine'=>709,  //1.25 cm
-			'lineHeight' => 1.15,
-			'spaceBefore' => 0,
-			'spaceAfter'  => 0,
-		]);
-		$phpWord->addParagraphStyle('Center', [
-			'alignment'=> Jc::CENTER,
-			'firstLine' => 0,
-			'baseOn'=>'Normal'
-		]);
-		$phpWord->addParagraphStyle('Left', [
-			'alignment'=> Jc::START,
-			'baseOn'=>'Normal'
-		]);
-		$phpWord->addParagraphStyle('Right', [
-			'alignment'=> Jc::END,
-			'baseOn'=>'Normal'
-		]);
-		$phpWord->addParagraphStyle('Title', [
-			'alignment'=> Jc::CENTER,
-			'firstLine' => 0,
-			'spaceBefore' => 240,
-			'spaceAfter'  => 120,
-		]);
-		$phpWord->addParagraphStyle('TitleWithoutSpaceAfter', [
-			'alignment'=> Jc::CENTER,
-			'firstLine' => 0,
-			'spaceBefore' => 240,
-			'spaceAfter'  => 0
-		]);
-		$phpWord->addParagraphStyle('Subtitle', [
-			'alignment'=> Jc::CENTER,
-			'firstLine' => 0,
-			'spaceAfter' => Converter::pointToTwip(6),
-			'baseOn'=>'Normal'
-		]);
-
-		//3. Headings
-		$phpWord->addParagraphStyle('HeadingLevel1', [
-			'outlineLevel'     => 1,
-			'alignment'=> Jc::START,
-			'pageBreakBefore' => true,
-			'baseOn' => 'Heading1'
-		]);
-		$phpWord->addParagraphStyle('HeadingLevel1WithoutPageBreak', [
-			'baseOn' => 'HeadingLevel1',
-			'pageBreakBefore' => false
-		]);
-		$phpWord->addParagraphStyle('HeadingLevel2', [
-			'outlineLevel'     => 2,
-			'alignment'=> Jc::BOTH,
-			'keepNext'         => true,
-			'keepLines'        => true,
-			'spaceBefore' => Converter::pointToTwip(6),
-			'spaceAfter'  => Converter::pointToTwip(3),
-		]);
-
-
-		//4. Other paragraph styles
-		$phpWord->addParagraphStyle('Blockquote', [
-				'alignment'   => Jc::BOTH,
-				'indentation' => array(
-					'left'  => Converter::cmToTwip(1.0), // 1.0 cm left indent
-					'right' => Converter::cmToTwip(1.0)  // 1.0 cm right indent
-				),
-				'spaceBefore' => Converter::pointToTwip(12),
-				'spaceAfter'  => Converter::pointToTwip(12)
-			]);
-		$phpWord->addParagraphStyle('DotLine', [
-			'lineHeight' => 2.0,
-			'tabs' => [
-				new Tab(
-					Tab::TAB_STOP_RIGHT,
-					9072,               //16 cm
-					Tab::TAB_LEADER_DOT
-				)
-			],
-			'baseOn'=>'Normal'
-		]);
-	}
-	static private function phpWordAddCommonSection(PhpWord $phpWord): Section
-	{
-		$sectionStyle = [
-			'marginTop'    => 1134,  // 2 cm
-			'marginRight'  => 1134,  // 2 cm
-			'marginBottom' => 1134,  // 2 cm
-			'marginLeft'   => 1701,  // 3 cm
-		];
-		return $phpWord->addSection($sectionStyle);
-	}
 	static public function writeGradeCorrectionForm(PhpWord $phpWord, $request)
 	{
 
@@ -3247,246 +3018,6 @@ abstract class IOHelper
 				$table->addCell()->addText($description);
 			}
 		}
-	}
-	static public function testPhpWord(PhpWord $phpWord)
-	{
-	}
-	static public function fixerFixNextAttemptLimitation(Worksheet $sheet, ExamInfo $examInfo, array $examResult)
-	{
-		// Set page margins (values are in inches)
-		$sheet->getPageMargins()->setTop(0.5);
-		$sheet->getPageMargins()->setBottom(0.5);
-		$sheet->getPageMargins()->setLeft(0.25);
-		$sheet->getPageMargins()->setRight(0.25);
-		$sheet->getPageMargins()->setHeader(0.3);
-		$sheet->getPageMargins()->setFooter(0.3);
-
-		$headers = ['STT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Lớp', 'TP1', 'TP2', 'ORIG', 'FINAL', 'HP', 'Chữ', 'Bất thường', 'Lần'];
-		$widths =  [6,      11,         18,       8,     8,     6,     6,    6,      6,       6,     6,   20,             6];
-		$COLS = sizeof($headers);
-
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
-		}
-
-		//Init
-		$row=0;
-
-		//Thông tin cơ quan
-		$row++;
-		$midCol = 3;
-		$organizationName = mb_strtoupper(ConfigHelper::getOrganization());
-		$sheet->setCellValue([1,$row], $organizationName);
-		$sheet->mergeCells([1,$row, $midCol, $row]);
-		$sheet->setCellValue([$midCol+1, $row], 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM');
-		$sheet->mergeCells([$midCol+1, $row, $COLS, $row]);
-
-		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
-		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		$row++;
-		$unitName = mb_strtoupper(ConfigHelper::getExaminationUnit());
-		$sheet->setCellValue([1, $row], $unitName);
-		$sheet->mergeCells([1,$row, $midCol, $row]);
-		$sheet->setCellValue([$midCol+1, $row], 'Độc lập - Tự do - Hạnh phúc');
-		$sheet->mergeCells([$midCol+1,$row, $COLS, $row]);
-
-		$cellStyle = $sheet->getStyle([1,$row, $COLS, $row]);
-		$cellStyle->getFont()->setBold(true);
-		$cellStyle->getFont()->setUnderline(true);
-		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Title và Subtitle
-		$row  = 4;  //Theo đúng mẫu
-		$subTitle = Text::sprintf('HỌC KỲ %d - NĂM HỌC %s', $examInfo->term, $examInfo->academicyear);
-		$sheet->setCellValue([1, $row], "KẾT QUẢ ĐÁNH GIÁ HỌC PHẦN");
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-		$sheet->setCellValue([1, $row+1], $subTitle);
-		$sheet->mergeCells([1,$row+1, $COLS, $row+1]);
-		$style = $sheet->getStyle([1, $row, $COLS, $row+1]);
-		$style->getFont()->setBold(true);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Thông tin môn thi
-		$row = 6; //Theo đúng mẫu
-		$sheet->setCellValue([1, $row], 'Học phần:');
-		$sheet->setCellValue([3, $row], $examInfo->name);
-		$sheet->getStyle([2,$row])->getFont()->setBold(true);
-		$sheet->setCellValue([7, $row], 'Số TC:');
-		$sheet->setCellValue([8, $row], $examInfo->credits);
-		$sheet->setCellValue([9, $row], 'Mã học phần: ' . $examInfo->code);
-
-		//Dòng heading
-		$row=12;    //Theo đúng mẫu
-		$headingRow = $row;
-		foreach ($headers as $index=>$header)
-		{
-			$sheet->setCellValue([$index+1, $headingRow], $header);
-		}
-		$style = $sheet->getStyle([1,$headingRow, $COLS, $headingRow]);
-		$style->getFont()->setBold(true);
-
-		//Các dòng dữ liệu
-		$seq=0;
-		foreach ($examResult as $item)
-		{
-			$seq++;
-			$row++;
-			$data = [
-				$seq,
-				$item->learner_code,
-				$item->lastname,
-				$item->firstname,
-				$item->group,
-				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam1),
-				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam2),
-				($item->anomaly==ExamHelper::EXAM_ANOMALY_DELAY || $item->anomaly==ExamHelper::EXAM_ANOMALY_ABSENT) ? 'K' : $item->mark_orig,
-				($item->anomaly==ExamHelper::EXAM_ANOMALY_DELAY || $item->anomaly==ExamHelper::EXAM_ANOMALY_ABSENT) ? 'K' : $item->mark_final,
-				$item->module_mark,
-				$item->module_grade,
-				ExamHelper::getAnomaly($item->anomaly),
-				$item->attempt
-			];
-			foreach ($data as $index=>$value)
-			{
-				$sheet->setCellValue([$index+1, $row], $value);
-			}
-		}
-
-		//Kẻ bảng và căn lề
-		$style = $sheet->getStyle([1, $headingRow, $COLS, $row]);
-		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-		$style = $sheet->getStyle([1, $headingRow, 2, $row]);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-		$style = $sheet->getStyle([5, $headingRow, $COLS, $row]);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Phông chữ
-		$style = $sheet->getStyle($sheet->calculateWorksheetDimension());
-		$style->getFont()->setName('Times New Roman');
-		$style = $sheet->getStyle([9, $headingRow+1, 9, $row]);
-		$style->getFont()->setBold(true);
-
-	}
-	static public function fixerExportAbsentOrBanButHasMark(Worksheet $sheet, ExamInfo $examInfo, array $items)
-	{
-		$headers = ['STT', 'Mã HVSV', 'Họ đệm', 'Tên', 'KK',  'ORIG', 'FINAL', 'Bất thường'];
-		$widths =  [6,      11,         18,       8,    20,     6,    6,        20,];
-		$COLS = sizeof($headers);
-
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
-		}
-
-		//Dòng heading
-		$row=1;    //Theo đúng mẫu
-		$sheet->setCellValue([1, $row], 'Môn thi: ' . htmlspecialchars($examInfo->name));
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		$row++;
-		$headingRow = $row;
-		foreach ($headers as $index=>$header)
-		{
-			$sheet->setCellValue([$index+1, $headingRow], $header);
-		}
-		$style = $sheet->getStyle([1,$headingRow, $COLS, $headingRow]);
-		$style->getFont()->setBold(true);
-
-		//Các dòng dữ liệu
-		$seq=0;
-		foreach ($items as $item)
-		{
-			$seq++;
-			$row++;
-			$data = [
-				$seq,
-				$item->code,
-				$item->lastname,
-				$item->firstname,
-				$item->stimulType ? StimulationHelper::getStimulationType($item->stimulType) : '',
-				$item->origMark,
-				$item->finalMark,
-				ExamHelper::getAnomaly($item->anomaly),
-			];
-			foreach ($data as $index=>$value)
-			{
-				$sheet->setCellValue([$index+1, $row], $value);
-			}
-		}
-
-		//Kẻ bảng
-		$style = $sheet->getStyle([1, $headingRow, $COLS, $row]);
-		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-
-		//Phông chữ
-		$style = $sheet->getStyle($sheet->calculateWorksheetDimension());
-		$style->getFont()->setName('Times New Roman');
-		$style = $sheet->getStyle([9, $headingRow+1, 9, $row]);
-		$style->getFont()->setBold(true);
-	}
-	static public function fixerExportDebtorButHasMark(Worksheet $sheet, ExamInfo $examInfo, array $items)
-	{
-		$headers = ['STT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Lần', 'KK', 'Debtor',  'ORIG', 'FINAL', 'Bất thường'];
-		$widths =  [6,      11,         18,       8,    6,     20,     8,        6,    6,        20,];
-		$COLS = sizeof($headers);
-
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
-		}
-
-		//Dòng heading
-		$row=1;    //Theo đúng mẫu
-		$sheet->setCellValue([1, $row], 'Môn thi: ' . htmlspecialchars($examInfo->name));
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-
-		$row++;
-		$headingRow = $row;
-		foreach ($headers as $index=>$header)
-		{
-			$sheet->setCellValue([$index+1, $headingRow], $header);
-		}
-		$style = $sheet->getStyle([1,$headingRow, $COLS, $headingRow]);
-		$style->getFont()->setBold(true);
-
-		//Các dòng dữ liệu
-		$seq=0;
-		foreach ($items as $item)
-		{
-			$seq++;
-			$row++;
-			$data = [
-				$seq,
-				$item->code,
-				$item->lastname,
-				$item->firstname,
-				$item->attempt,
-				$item->stimulType ? StimulationHelper::getStimulationType($item->stimulType) : '',
-				$item->debtor ? 'Nợ' : '',
-				$item->origMark,
-				$item->finalMark,
-				ExamHelper::getAnomaly($item->anomaly),
-			];
-			foreach ($data as $index=>$value)
-			{
-				$sheet->setCellValue([$index+1, $row], $value);
-			}
-		}
-
-		//Kẻ bảng
-		$style = $sheet->getStyle([1, $headingRow, $COLS, $row]);
-		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-
-		//Phông chữ
-		$style = $sheet->getStyle($sheet->calculateWorksheetDimension());
-		$style->getFont()->setName('Times New Roman');
-		$style = $sheet->getStyle([9, $headingRow+1, 9, $row]);
-		$style->getFont()->setBold(true);
 	}
 }
 

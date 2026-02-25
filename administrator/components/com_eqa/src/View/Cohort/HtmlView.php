@@ -4,12 +4,12 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
-use Kma\Component\Eqa\Administrator\Helper\DependentListsHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
+use Kma\Library\Kma\Helper\DependentListsHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemHtmlView {
+class HtmlView extends ItemHtmlView {
 
 	protected function prepareDataForLayoutAddlearners()
 	{
@@ -29,11 +29,11 @@ class HtmlView extends EqaItemHtmlView {
 		$this->form = FormHelper::getBackendForm('com_eqa.cohort.addlearners','addcohortlearners.xml', ['control'=>'jform']);
 
 		//Load asset
-		$this->wam->useScript('com_eqa.dependent_lists');
+		$this->wa->useScript('com_eqa.dependent_lists');
 
 		//Init dependent lists
 		DependentListsHelper::setup2Level(
-			$this->wam,
+			$this->wa,
 			'jform',
 			'group_id',
 			'learner_ids',

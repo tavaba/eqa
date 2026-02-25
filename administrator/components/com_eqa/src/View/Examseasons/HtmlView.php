@@ -4,39 +4,40 @@ defined('_JEXEC') or die();
 
 use DateTime;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
 
     protected function configureItemFieldsForLayoutDefault():void{
-        $option = new EqaListLayoutItemFields();
+        $option = new ListLayoutItemFields();
 
-		$option->id = EqaListLayoutItemFields::defaultFieldId();
-        $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+		$option->id = ListLayoutItemFields::defaultFieldId();
+        $option->check = ListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('academicyear', 'COM_EQA_ACADEMICYEAR', false, false,'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('term', 'COM_EQA_TERM', false, false,'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('type', 'COM_EQA_GENERAL_EXAMSEASON_TYPE', false, false);
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT', false, false, 'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'COM_EQA_EXAMSEASON_NAME', false, true);
-        $field = new EqaListLayoutItemFieldOption('nexam', 'COM_EQA_EXAM',true,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('academicyear', 'COM_EQA_ACADEMICYEAR', false, false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('term', 'COM_EQA_TERM', false, false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('type', 'COM_EQA_GENERAL_EXAMSEASON_TYPE', false, false);
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT', false, false, 'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('name', 'COM_EQA_EXAMSEASON_NAME', false, true);
+        $field = new ListLayoutItemFieldOption('nexam', 'COM_EQA_EXAM',true,false,'text-center');
         $field->urlFormatString = 'index.php?option=com_eqa&view=examseasonexams&examseason_id=%d';
         $option->customFieldset1[] = $field;
-        $field = new EqaListLayoutItemFieldOption('nexamsession', 'COM_EQA_EXAMSESSION',true,false,'text-center');
+        $field = new ListLayoutItemFieldOption('nexamsession', 'COM_EQA_EXAMSESSION',true,false,'text-center');
         $field->urlFormatString = 'index.php?option=com_eqa&view=examsessions&filter[examseason_id]=%d';
         $option->customFieldset1[] = $field;
-	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('nentry', 'Lượt thi', false, false, 'text-end');
-	    $field = new EqaListLayoutItemFieldOption('ppaa_req_enabled', 'Phúc khảo',false,false,'text-center');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('nentry', 'Lượt thi', false, false, 'text-end');
+	    $field = new ListLayoutItemFieldOption('ppaa_req_enabled', 'Phúc khảo',false,false,'text-center');
+		$field->printRaw = true;
 		$field->altField='ppaa_req_deadline';
 	    $option->customFieldset1[] = $field;
-        $option->default = EqaListLayoutItemFields::defaultFieldDefault();
-        $option->customFieldset2[] = new EqaListLayoutItemFieldOption('completed','COM_EQA_COMPLETED',false,false,'text-center');
+        $option->default = ListLayoutItemFields::defaultFieldDefault();
+        $option->customFieldset2[] = new ListLayoutItemFieldOption('completed','COM_EQA_COMPLETED',false,false,'text-center');
 
         //Set the option
         $this->itemFields = $option;

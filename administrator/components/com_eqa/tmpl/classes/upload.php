@@ -1,13 +1,11 @@
 <?php
+
+use Kma\Library\Kma\Helper\ViewHelper;
+
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
 
 //Preprocessing
-$form = $this->uploadForm;
-$form->setFieldAttribute('term','default',2);
-
 $samplePath = 'media/com_eqa/xlsx/sample_classes.xls';
 $sampleUrl = JUri::root().$samplePath;
 ?>
@@ -38,4 +36,4 @@ $sampleUrl = JUri::root().$samplePath;
 <div></div>
 <hr/>
 <?php
-ViewHelper::printItemsUploadForm($this);
+ViewHelper::printUploadForm($this->form);

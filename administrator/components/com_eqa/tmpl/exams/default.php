@@ -2,7 +2,7 @@
 defined('_JEXEC') or die();
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 if(!empty($this->examseason)){
     echo 'Kỳ thi: <b>'. htmlentities($this->examseason->name) . '</b><br/>';
     echo '(Học kỳ '.$this->examseason->term.'. Năm học '. $this->examseason->academicyear.')';

@@ -7,19 +7,17 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
-use Kma\Component\Eqa\Administrator\Model\LearnerModel;
 use Kma\Component\Eqa\Administrator\Model\RegradingModel;
-use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-class RegradingsController extends EqaAdminController {
+class RegradingsController extends AdminController {
 	/**
 	 * This method allow the exam organizer to create a new regrading request for
 	 * some learners in one exam.
@@ -77,7 +75,7 @@ class RegradingsController extends EqaAdminController {
 			 * 3. Load Exam Model and check where can add PPAA requests
 			 * @var ExamModel $examModel
 			 */
-			$examModel = GeneralHelper::getMVCFactory()->createModel('Exam');
+			$examModel = ComponentHelper::getMVCFactory()->createModel('Exam');
 			if(!$examModel->canRequestPpaa($examId))
 				throw new Exception('Không thể tạo yêu cầu phúc khảo đối với môn thi.
 				Hãy kiểm tra xem đã mở phúc khảo kỳ thi hay chưa, thời hạn phúc khảo đã qua

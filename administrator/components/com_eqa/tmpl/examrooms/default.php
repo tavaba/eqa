@@ -1,5 +1,4 @@
 <?php
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
-$view = ViewHelper::castToEqaItemsHtmlView($this);
-ViewHelper::printItemsDefaultLayout($view->getLayoutData(), $view->getListLayoutItemFields());
+use Kma\Library\Kma\Helper\ViewHelper;
+ViewHelper::printItemsDefaultLayout($this->getLayoutData(), $this->getListLayoutItemFields());

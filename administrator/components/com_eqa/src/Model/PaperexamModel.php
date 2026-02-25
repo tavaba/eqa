@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
@@ -11,7 +11,7 @@ use Kma\Component\Eqa\Administrator\Interface\PackageInfo;
 
 defined('_JEXEC') or die();
 
-class PaperexamModel extends EqaAdminModel{
+class PaperexamModel extends AdminModel{
 	public function mask(int $examId, $maskStart, $maskInterval, $packageDefaultSize, $packageMinSize): bool
 	{
 		$app = Factory::getApplication();

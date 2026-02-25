@@ -6,58 +6,58 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView {
+class HtmlView extends ItemsHtmlView {
     protected $exam;
     protected function configureItemFieldsForLayoutDefault():void{
-        $this->itemFields = new EqaListLayoutItemFields();
+        $this->itemFields = new ListLayoutItemFields();
         $fields = $this->itemFields;      //Just shorten the name
-        $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $fields->check = EqaListLayoutItemFields::defaultFieldCheck();
+        $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $fields->check = ListLayoutItemFields::defaultFieldCheck();
 
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('code','COM_EQA_EXAMINEE_CODE_ABBR', true, false, 'text-center');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('learner_code','COM_EQA_LEARNER_CODE', true, false, 'text-center');
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldLastname();
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldFirstname();
-        $f = new EqaListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT_ABBR', true, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('code','COM_EQA_EXAMINEE_CODE_ABBR', true, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_code','COM_EQA_LEARNER_CODE', true, false, 'text-center');
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
+        $f = new ListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT_ABBR', true, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_EXAM_ATTEMPT');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM1');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM2');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_ALLOWED_TO_TAKE_EXAM');
         $fields->customFieldset1[] = $f;
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('debtor','COM_EQA_DEBT',true,false,'text-center');
-		$f =new EqaListLayoutItemFieldOption('stimulation', 'KK', true, false, 'text-center');
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('debtor','COM_EQA_DEBT',true,false,'text-center');
+		$f =new ListLayoutItemFieldOption('stimulation', 'KK', true, false, 'text-center');
 		$f->titleDesc = 'Chế độ khuyến khích (nếu có)';
 	    $fields->customFieldset1[] = $f;
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('anomaly', 'Bất thường');
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('mark_orig', 'Thi', false, false, 'text-center');
-	    $f = new EqaListLayoutItemFieldOption('mark_final', 'COM_EQA_MARK_FINALEXAM_ABBR', false, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('anomaly', 'Bất thường');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('mark_orig', 'Thi', false, false, 'text-center');
+	    $f = new ListLayoutItemFieldOption('mark_final', 'COM_EQA_MARK_FINALEXAM_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MARK_FINALEXAM');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('module_mark', 'COM_EQA_MODULE_MARK_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('module_mark', 'COM_EQA_MODULE_MARK_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_MARK');
         $fields->customFieldset1[] = $f;
-	    $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('module_base4_mark', 'Hệ 4', false, false, 'text-center');
-	    $f = new EqaListLayoutItemFieldOption('module_grade', 'COM_EQA_MODULE_GRADE_ABBR', false, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('module_base4_mark', 'Hệ 4', false, false, 'text-center');
+	    $f = new ListLayoutItemFieldOption('module_grade', 'COM_EQA_MODULE_GRADE_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_GRADE');
         $fields->customFieldset1[] = $f;
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('conclusion', 'Kết luận');
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('conclusion', 'Kết luận');
     }
     protected function prepareDataForLayoutDefault(): void
     {

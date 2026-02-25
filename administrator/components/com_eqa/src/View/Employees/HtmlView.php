@@ -2,32 +2,32 @@
 namespace Kma\Component\Eqa\Administrator\View\Employees;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
     protected function configureItemFieldsForLayoutDefault():void{
-        $option = new EqaListLayoutItemFields();
+        $option = new ListLayoutItemFields();
 
-        $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+        $option->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $option->check = ListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
-        $field = new EqaListLayoutItemFieldOption('unit_code','COM_EQA_GENERAL_UNIT',true,false);
+        $field = new ListLayoutItemFieldOption('unit_code','COM_EQA_GENERAL_UNIT',true,false);
         $field->cssClass = 'text-center';
         $field->altField='unit_name';
         $option->customFieldset1[] = $field;
-        $field = new EqaListLayoutItemFieldOption('code','COM_EQA_GENERAL_CODE_EMPLOYEE',true,true);
+        $field = new ListLayoutItemFieldOption('code','COM_EQA_GENERAL_CODE_EMPLOYEE',true,true);
         $field->cssClass = 'text-center';
         $option->customFieldset1[] = $field;
-        $option->customFieldset1[] = EqaListLayoutItemFields::defaultFieldLastname();
-        $option->customFieldset1[] = EqaListLayoutItemFields::defaultFieldFirstname();
-        $option->customFieldset1[] = EqaListLayoutItemFields::defaultFieldEmail();
-        $option->customFieldset1[] = EqaListLayoutItemFields::defaultFieldMobile();
+        $option->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
+        $option->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
+        $option->customFieldset1[] = ListLayoutItemFields::defaultFieldEmail();
+        $option->customFieldset1[] = ListLayoutItemFields::defaultFieldMobile();
 
-        $option->published = EqaListLayoutItemFields::defaultFieldPublished();
+        $option->published = ListLayoutItemFields::defaultFieldPublished();
 
         //Set the option
         $this->itemFields = $option;

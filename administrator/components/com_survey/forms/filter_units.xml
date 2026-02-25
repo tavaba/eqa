@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+        <field  name="type"
+                type="respondentunittype"
+                label="Phân loại"
+                onchange="this.form.submit();"
+        >
+            <option value="">-Phân loại-</option>
+        </field>
+    </fields>
+    <fields name="list">
+        <!-- This hidden field is required for the ordering feature to work -->
+        <field
+                name="fullordering"
+                type="hidden"
+                value="null null"
+        />
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+    </fields>
+
+</form>

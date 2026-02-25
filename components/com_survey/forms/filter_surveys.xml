@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field
+            name="search"
+            type="text"
+            label="JSEARCH_FILTER"
+        />
+        <field
+                name="is_over"
+                type="list"
+                label="Quá hạn"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Hạn khảo sát -</option>
+            <option value="-1">Chưa bắt đầu</option>
+            <option value="0">Đang diễn ra</option>
+            <option value="1">Đã qua</option>
+        </field>
+    </fields>
+    <fields name="list">
+        <field
+                name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();" />
+    </fields>
+</form>

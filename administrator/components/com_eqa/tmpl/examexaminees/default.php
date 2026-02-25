@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 
 $exam = ExamInfo::cast($this->exam);
@@ -51,5 +51,4 @@ $exam = ExamInfo::cast($this->exam);
     </div>
 <?php
 
-$view = ViewHelper::castToEqaItemsHtmlView($this);
-ViewHelper::printItemsDefaultLayout($view->getLayoutData(), $view->getListLayoutItemFields());
+ViewHelper::printItemsDefaultLayout($this->getLayoutData(), $this->getListLayoutItemFields());

@@ -3,15 +3,15 @@ namespace Kma\Component\Eqa\Administrator\View\Exam; //The namespace must end wi
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
+use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 defined('_JEXEC') or die();
 
-class HtmlView extends EqaItemHtmlView{
+class HtmlView extends ItemHtmlView{
     protected object $exam;
 	protected function prepareDataForLayoutAddexaminees()
 	{
@@ -50,7 +50,7 @@ class HtmlView extends EqaItemHtmlView{
 		$this->exam = DatabaseHelper::getExamInfo($examId);
 
 		//Form
-		$model = EqaAdminModel::cast($this->getModel());
+		$model = AdminModel::cast($this->getModel());
 		$this->form = $model->getCustomForm('com_eqa.examrooms','examrooms');
 
 	}
@@ -67,7 +67,7 @@ class HtmlView extends EqaItemHtmlView{
 		$this->exam = DatabaseHelper::getExamInfo($examId);
 
 		//Form
-		$model = EqaAdminModel::cast($this->getModel());
+		$model = AdminModel::cast($this->getModel());
 		$this->form = $model->getCustomForm('com_eqa.distribution2','distribution2');
 
 	}

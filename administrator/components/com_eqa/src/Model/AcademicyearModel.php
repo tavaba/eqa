@@ -1,9 +1,8 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Joomla\CMS\Factory;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 
 defined('_JEXEC') or die();
 
-class AcademicyearModel extends EqaAdminModel {
+class AcademicyearModel extends AdminModel {
 }

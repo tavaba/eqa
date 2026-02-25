@@ -4,42 +4,42 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView {
+class HtmlView extends ItemsHtmlView {
     protected $class;
     protected function configureItemFieldsForLayoutDefault():void{
         $fields = $this->itemFields;      //Just shorten the name
-        $fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $fields->check = EqaListLayoutItemFields::defaultFieldCheck();
-        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('code','COM_EQA_LEARNER_CODE',true,false,'text-center');
-        $fields->customFieldset1[] = new EqaListLayoutItemFieldOption('group', 'COM_EQA_GROUP',true,false,'text-center');
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldLastname();
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldFirstname();
-        $f = new EqaListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', false, false, 'text-center');
+        $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $fields->check = ListLayoutItemFields::defaultFieldCheck();
+        $fields->customFieldset1[] = new ListLayoutItemFieldOption('code','COM_EQA_LEARNER_CODE',true,false,'text-center');
+        $fields->customFieldset1[] = new ListLayoutItemFieldOption('group', 'COM_EQA_GROUP',true,false,'text-center');
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
+        $f = new ListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', false, false, 'text-center');
         $f->titleDesc = Text::_('COM_EQA_PAM1');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
         $f->titleDesc = Text::_('COM_EQA_PAM2');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
         $f->titleDesc = Text::_('COM_EQA_PAM');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');
         $f->titleDesc = Text::_('COM_EQA_ALLOWED_TO_TAKE_EXAM');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('ntaken','COM_EQA_NTAKEN',true,false,'text-center');
+        $f = new ListLayoutItemFieldOption('ntaken','COM_EQA_NTAKEN',true,false,'text-center');
         $f->titleDesc = Text::_('COM_EQA_NTAKEN_ALT');
         $fields->customFieldset1[] = $f;
-        $f = new EqaListLayoutItemFieldOption('expired','COM_EQA_EXPIRED',true,false,'text-center');
+        $f = new ListLayoutItemFieldOption('expired','COM_EQA_EXPIRED',true,false,'text-center');
         $f->titleDesc = Text::_('COM_EQA_EXPIRED_ALT');
         $fields->customFieldset1[] = $f;
-        $fields->customFieldset1[] = EqaListLayoutItemFields::defaultFieldDescription();
+        $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldDescription();
     }
     protected function prepareDataForLayoutDefault(): void
     {

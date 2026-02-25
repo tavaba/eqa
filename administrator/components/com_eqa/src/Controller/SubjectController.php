@@ -3,13 +3,13 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Component\Eqa\Administrator\Model\StimulationsModel;
 
-class SubjectController extends  EqaFormController {
+class SubjectController extends  FormController {
 	public function stimulate()
 	{
 		//Redirect in any case

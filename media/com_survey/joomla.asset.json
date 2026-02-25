@@ -1,0 +1,105 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "com_survey",
+  "version": "4.0.0",
+  "description": "KMA Examination and Quality  Assuarance",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "com_survey.script",
+      "type": "script",
+      "uri": "com_survey/script.js",
+      "dependencies": ["select2.script"],
+      "version": "1.0.2",
+      "attributes": {
+        "defer": true,
+        "async": false
+      }
+    },
+	{
+      "name": "com_survey.style",
+      "type": "style",
+      "uri": "com_survey/style.css"
+	},
+    {
+      "name": "select2.style",
+      "type": "style",
+      "uri":"https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css",
+      "version": "4.0.13"
+    },
+    {
+      "name": "select2.script",
+      "type": "script",
+      "dependencies": ["jquery"],
+      "uri": "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js",
+      "version": "4.0.13"
+    },
+    {
+      "name": "plotly",
+      "type": "script",
+      "uri": "https://unpkg.com/plotly.js-dist-min/plotly.min.js"
+    },
+    {
+      "name": "surveyjs.core.style",
+      "type": "style",
+      "uri": "https://unpkg.com/survey-core/survey-core.min.css"
+    },
+    {
+      "name": "surveyjs.core",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-core/survey.core.min.js"
+    },
+    {
+      "name": "surveyjs.ui",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-js-ui/survey-js-ui.min.js",
+      "dependencies": ["surveyjs.core","surveyjs.survey.i18n"]
+    },
+    {
+      "name": "surveyjs.creator.core.style",
+      "type": "style",
+      "uri": "https://unpkg.com/survey-creator-core/survey-creator-core.min.css"
+    },
+    {
+      "name": "surveyjs.creator.core",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-creator-core/survey-creator-core.min.js",
+      "dependencies": ["surveyjs.core","surveyjs.ui"]
+    },
+    {
+      "name": "surveyjs.creator",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-creator-js/survey-creator-js.min.js",
+      "dependencies": ["surveyjs.creator.core", "surveyjs.survey.i18n", "surveyjs.creator.i18n"]
+    },
+    {
+      "name": "surveyjs.analytics",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-analytics@2.3.8/survey.analytics.min.js",
+      "dependencies": ["surveyjs.core", "surveyjs.ui", "plotly"]
+    },
+    {
+      "name": "surveyjs.analytics.style",
+      "type": "style",
+      "uri": "https://unpkg.com/survey-analytics@2.3.8/survey.analytics.min.css"
+    },
+    {
+      "name": "surveyjs.survey.i18n",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-core@2.3.8/survey.i18n.min.js",
+      "dependencies": ["surveyjs.core"]
+    },
+    {
+      "name": "surveyjs.creator.i18n",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-creator-core/survey-creator-core.i18n.min.js",
+      "dependencies": ["surveyjs.core"]
+    },
+    {
+      "name": "surveyjs.survey.theme.index",
+      "type": "script",
+      "uri": "https://unpkg.com/survey-core/themes/index.min.js",
+      "dependencies": ["surveyjs.core"]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Danh sách khảo sát" option="Optionxxxx">
+        <message>
+            <![CDATA[Hiển thị danh sách các các cuộc khảo sát mà người dùng có thể tham gia, hoặc đã hoàn thành.]]>
+        </message>
+    </layout>
+
+    <!-- Add fields to the parameters object for the layout. -->
+    <fields name="params">
+        <fieldset name="request" label="COM_MENUS_BASIC_FIELDSET_LABEL">
+
+        </fieldset>
+
+        <!-- Add fields to the parameters object for the layout. -->
+
+        <!-- Scroll. -->
+        <fieldset name="basic">
+
+        </fieldset>
+
+        <!-- Advanced options. -->
+        <fieldset name="advanced">
+
+        </fieldset>
+    </fields>
+</metadata>

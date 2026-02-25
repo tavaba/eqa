@@ -2,8 +2,7 @@
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 //Preprocessing
 $samplePath = 'media/com_eqa/xlsx/sample_class.xls';

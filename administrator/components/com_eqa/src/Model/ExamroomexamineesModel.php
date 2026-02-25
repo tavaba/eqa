@@ -4,8 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\CMS\MVC\Model\ListModel;
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Library\Kma\Model\ListModel;
 
 class ExamroomexamineesModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -13,7 +12,7 @@ class ExamroomexamineesModel extends ListModel {
         $config['filter_fields']=array('examinee_code', 'learner_code','firstname','lastname','attempt','allow', 'conclusion');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'examinee_code', $direction = 'asc')
+    protected function populateState($ordering = 'examinee_code', $direction = 'asc'): void
     {
         parent::populateState($ordering, $direction);
     }

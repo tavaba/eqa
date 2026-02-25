@@ -4,36 +4,36 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Toolbar\Toolbar;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 
-class HtmlView extends EqaItemsHtmlView{
+class HtmlView extends ItemsHtmlView{
 	protected $examseason;
 	protected $learner;
 	protected $errorMessage;
 	protected function configureItemFieldsForLayoutDefault():void{
-		$option = new EqaListLayoutItemFields();
+		$option = new ListLayoutItemFields();
 
 		//Các trường thông tin
-		$option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-		$option->check = EqaListLayoutItemFields::defaultFieldCheck();
+		$option->sequence = ListLayoutItemFields::defaultFieldSequence();
+		$option->check = ListLayoutItemFields::defaultFieldCheck();
 		$option->customFieldset1 = array();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('academicyear', 'Năm học', true, false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('term', 'Học kỳ', true, false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'Môn thi', true);
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('attempt', 'Lần', false,false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('pam1', 'TP1', false,false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('pam2', 'TP2', false,false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('pam', 'ĐQT', false,false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('finalMark', 'Điểm thi', false,false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('moduleMark', 'Điểm HP', false,false, 'text-center');
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('moduleGrade', 'Điểm chữ', false,false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('academicyear', 'Năm học', true, false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('term', 'Học kỳ', true, false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('name', 'Môn thi', true);
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('attempt', 'Lần', false,false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('pam1', 'TP1', false,false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('pam2', 'TP2', false,false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('pam', 'ĐQT', false,false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('finalMark', 'Điểm thi', false,false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('moduleMark', 'Điểm HP', false,false, 'text-center');
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('moduleGrade', 'Điểm chữ', false,false, 'text-center');
 
 		$this->itemFields = $option;
 	}
@@ -43,7 +43,7 @@ class HtmlView extends EqaItemsHtmlView{
 			$app = Factory::getApplication();
 
 			//Set a model from the backend
-			$mvcFactory = GeneralHelper::getMVCFactory();
+			$mvcFactory = ComponentHelper::getMVCFactory();
 			$model = $mvcFactory->createModel('Learnerexams','Administrator');
 			$this->setModel($model,true);
 

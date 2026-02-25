@@ -5,10 +5,10 @@ defined('_JEXEC') or die();
 use JFactory;
 use Joomla\CMS\Factory;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemHtmlView {
+class HtmlView extends ItemHtmlView {
 	protected $itemId;
 	protected function prepareDataForLayoutReject()
 	{

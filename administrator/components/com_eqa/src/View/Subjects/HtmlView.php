@@ -3,38 +3,38 @@ namespace Kma\Component\Eqa\Administrator\View\Subjects;    //The namespace must
 defined('_JEXEC') or die();
 
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
     protected function configureItemFieldsForLayoutDefault():void{
-        $option = new EqaListLayoutItemFields();
+        $option = new ListLayoutItemFields();
 
-        $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+        $option->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $option->check = ListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
-        $field = new EqaListLayoutItemFieldOption('department_code', 'COM_EQA_GENERAL_SUBJECT_DEPARTMENT',true,false);
+        $field = new ListLayoutItemFieldOption('department_code', 'COM_EQA_GENERAL_SUBJECT_DEPARTMENT',true,false);
         $field->cssClass = 'text-center';
         $option->customFieldset1[] = $field;
-        $field = new EqaListLayoutItemFieldOption('code','COM_EQA_GENERAL_SUBJECT_CODE', true, true);
+        $field = new ListLayoutItemFieldOption('code','COM_EQA_GENERAL_SUBJECT_CODE', true, true);
         $field->cssClass = 'text-center';
         $option->customFieldset1[] = $field;
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('name', 'COM_EQA_GENERAL_SUBJECT_NAME');
-	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
-	    $option->customFieldset1[] = new EqaListLayoutItemFieldOption('credits','Số TC',true,false,'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);
-        $field = new EqaListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('name', 'COM_EQA_GENERAL_SUBJECT_NAME');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('credits','Số TC',true,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);
+        $field = new ListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
         $field->cssClass = 'text-center';
         $option->customFieldset1[] = $field;
 
-        $option->published = EqaListLayoutItemFields::defaultFieldPublished();
+        $option->published = ListLayoutItemFields::defaultFieldPublished();
 
         //Set the option
         $this->itemFields = $option;

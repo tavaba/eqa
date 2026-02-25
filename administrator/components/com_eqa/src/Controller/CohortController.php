@@ -3,11 +3,11 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 
 defined('_JEXEC') or die();
 
-class CohortController extends  EqaFormController {
+class CohortController extends  FormController {
 	public function addLearners(): void
 	{
 		try

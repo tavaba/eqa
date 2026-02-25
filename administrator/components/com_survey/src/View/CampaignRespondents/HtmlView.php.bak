@@ -1,0 +1,166 @@
+<?php
+namespace Kma\Component\Survey\Administrator\View\CampaignRespondents;
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\Factory;
+use Joomla\CMS\Router\Route;
+use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
+use Kma\Component\Survey\Administrator\Model\CampaignModel;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\ToolbarHelper;
+use Kma\Library\Kma\Service\ProgressBar;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
+
+class HtmlView extends ItemsHtmlView
+{
+    protected function configureItemFieldsForLayoutDefault(): void
+    {
+        /*
+         * $this-item has been load in the 'prepareDataForLayoutDefault()' method
+         * before this method is called
+         */
+        $campaign = $this->item;
+        $performanceMode = $campaign->performance_mode;
+
+        $model = $this->getModel();
+        $isPersonList = $model->getState('filter.is_person');
+
+        $option = new ListLayoutItemFields();
+
+        $option->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $option->check = ListLayoutItemFields::defaultFieldCheck();
+
+        $option->customFieldset1 = array();
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('code', 'Mã',true,false,'text-center');
+        if($isPersonList)
+        {
+            $option->customFieldset1[] = new ListLayoutItemFieldOption('lastname', 'Họ đệm');
+            $option->customFieldset1[] = new ListLayoutItemFieldOption('firstname', 'Tên', true);
+        }
+        else
+        {
+            $option->customFieldset1[] = new ListLayoutItemFieldOption('name', 'Tên gọi');
+        }
+
+        switch ($performanceMode)
+        {
+            case SurveyHelper::PERFORMANCE_SLOW:
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countSurveys', 'Số khảo sát', true, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countResponded', 'Số phản hồi', true, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('progress', 'Tiến độ', true, false, 'text-center');
+                break;
+            case SurveyHelper::PERFORMANCE_FAST:
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countSurveys', 'Số khảo sát', true, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countResponded', 'Số phản hồi', true, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('progress', 'Tiến độ', false, false, 'text-center');
+                break;
+            case SurveyHelper::PERFORMANCE_FASTER:
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countSurveys', 'Số khảo sát', false, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countResponded', 'Số phản hồi', true, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('progress', 'Tiến độ', false, false, 'text-center');
+                break;
+            case SurveyHelper::PERFORMANCE_FASTEST:
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countSurveys', 'Số khảo sát', false, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('countResponded', 'Số phản hồi', false, false, 'text-center');
+                $option->customFieldset1[] = new ListLayoutItemFieldOption('progress', 'Tiến độ', false, false, 'text-center');
+                break;
+            default:
+                die('Tham số Hiệu năng giám sát không hợp lệ');
+        }
+
+        $f = new ListLayoutItemFieldOption('progressBar', '');
+        $f->printRaw = true;
+        $f->columnCssClasses = 'w-25';
+        $option->customFieldset1[] = $f;
+
+        //Set the option
+        $this->itemFields = $option;
+    }
+    protected function prepareDataForLayoutDefault(): void
+    {
+        //Prepare the model
+        $campaignId = Factory::getApplication()->input->getInt('campaign_id');
+        if(empty($campaignId))
+            die('Invalid request');
+        $model = $this->getModel();
+        $model->setState('filter.campaign_id',$campaignId);
+
+        /**
+         * Get campaign item
+         * @var CampaignModel $itemModel
+         */
+        $itemModel = ComponentHelper::getMVCFactory()->createModel('Campaign');
+        $this->item = $itemModel->getItem($campaignId);
+        if(empty($this->item))
+            die('Invalid request');
+
+        //Check access permission
+        if(!$itemModel->canMonitor($this->item))
+            die('Bạn không có quyền truy cập trang này');
+
+        //Prepare data for layout
+        parent::prepareDataForLayoutDefault();
+
+        //Data preprocessing
+        $isPersonList = $model->getState('filter.is_person');
+        if(!empty($this->layoutData->items))
+        {
+            $performanceMode = $this->item->performance_mode;
+
+            //Call model to calculate counting values
+            if($performanceMode != SurveyHelper::PERFORMANCE_SLOW)
+            {
+                $respondentIds = [];
+                foreach ($this->layoutData->items as $item){
+                    $respondentIds[] = $item->id;
+                }
+                $respondentsInfo = $itemModel->getRespondentsInfo($campaignId, $respondentIds);
+
+                foreach ($this->layoutData->items as &$item)
+                {
+                    $id = $item->id;
+                    switch ($performanceMode)
+                    {
+                        case SurveyHelper::PERFORMANCE_FASTEST:
+                            $item->countSurveys = $respondentsInfo[$id]['count_surveys'];
+                            $item->countResponded = $respondentsInfo[$id]['count_responses'];
+                            $item->progress = $item->countSurveys>0 ? ($item->countResponded*100)/$item->countSurveys : 0;
+                            break;
+                        case SurveyHelper::PERFORMANCE_FASTER:
+                            $item->countSurveys = $respondentsInfo[$id]['count_surveys'];
+                            $item->progress = $item->countSurveys>0 ? ($item->countResponded*100)/$item->countSurveys : 0;
+                            break;
+                        case SurveyHelper::PERFORMANCE_FAST:
+                            $item->progress = $item->countSurveys>0 ? ($item->countResponded*100)/$item->countSurveys : 0;
+                            break;
+                    }
+                }
+
+            }
+
+            $progressBarService = new ProgressBar();
+            foreach ($this->layoutData->items as &$item)
+            {
+                if(!$isPersonList && $item->isPerson)
+                    $item->name = implode(' ',[$item->lastname,$item->firstname]);
+                $item->progressBar = $progressBarService->render(round($item->progress),$item->countResponded);
+                $item->progress = round($item->progress).'%';
+            }
+        }
+
+        //Add action params to keep URL parameters when click on actions
+        $this->layoutData->formActionParams = [
+            'view' => 'campaignrespondents',
+            'campaign_id'=>$campaignId,
+        ];
+    }
+    protected function addToolbarForLayoutDefault(): void
+    {
+        ToolbarHelper::title('Người tham gia khảo sát');
+        ToolbarHelper::appendGoHome();
+        ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_survey&view=campaigns'), 'JTOOLBAR_CLOSE');
+    }
+}

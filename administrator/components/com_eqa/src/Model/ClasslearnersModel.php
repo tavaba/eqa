@@ -2,22 +2,14 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
-use Exception;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class ClasslearnersModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('code','firstname','lastname', 'pam', 'allowed', 'ntaken', 'expired');
         parent::__construct($config, $factory);
-    }
-    protected function populateState($ordering = 'code', $direction = 'asc')
-    {
-        parent::populateState($ordering, $direction);
     }
 	public function getListQuery()
 	{

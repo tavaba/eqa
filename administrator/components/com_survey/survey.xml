@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" method="upgrade">
+    <name>COM_SURVEY</name>
+    <author>Nguyễn Tuấn Anh</author>
+    <creationDate>2025-10-07</creationDate>
+    <copyright>Copyright (C) 2025 Academy of Cryptography Techniques. All rights reserved.</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <authorEmail>nomail@noserver.com</authorEmail>
+    <version>1.0.1</version>
+    <description>COM_SURVEY_DESCRIPTION</description>
+    <namespace path="src">Kma\Component\Survey</namespace>
+
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+        </sql>
+    </install>
+
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+        </sql>
+    </uninstall>
+
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+        </schemas>
+    </update>
+
+
+	<!-- Front end -->
+    <files folder="site">
+ 		<folder>forms</folder>
+		<folder>language</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+    </files>
+
+	<!-- Backend -->
+    <administration>
+        <menu img="class:component">COM_SURVEY</menu>
+        <submenu>
+            <menu link="option=com_survey&amp;view=dashboard">Trang chủ</menu>
+        </submenu>
+        <files folder="admin">
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>
+            <folder>forms</folder>
+			<folder>language</folder>
+            <folder>services</folder>
+ 			<folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+        </files>
+    </administration>
+
+	<media destination="com_survey" folder="media" >
+		<filename>joomla.asset.json</filename>
+		<folder>js</folder>
+		<folder>css</folder>
+		<folder>images</folder>
+	</media>
+	
+	<scriptfile>script.php</scriptfile>
+
+	
+	<!--
+    <changelogurl>https://example.com/changelog.xml</changelogurl>
+    <updateservers>
+        <server type="extension" priority="1" name="Survey Component Update Site">
+            https://example.com/update.xml
+        </server>
+    </updateservers>
+	-->
+</extension>

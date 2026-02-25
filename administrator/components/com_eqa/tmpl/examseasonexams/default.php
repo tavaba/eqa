@@ -2,7 +2,7 @@
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ViewHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 $examseason = $this->item;
 if(!empty($examseason)){
     echo 'Kỳ thi: <b>'. htmlentities($examseason->name) . '</b><br/>';

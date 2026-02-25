@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+        <field
+                name="examseason_id"
+                type="examseason"
+                label="Kỳ thi"
+                description="Hãy chọn một kỳ thi. Toàn bộ thí sinh tham dự kỳ thi này sẽ được
+                thêm vào danh sách khảo sát."
+                required="true"
+        />
+    </fieldset>
+</form>

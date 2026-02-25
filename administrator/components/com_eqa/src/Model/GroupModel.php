@@ -1,11 +1,11 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminModel;
+use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 defined('_JEXEC') or die();
 
-class GroupModel extends EqaAdminModel {
+class GroupModel extends AdminModel {
     public function prepareTable($table): void
     {
         $table->size=null;  //Không cho phép cập nhật trực tiếp sĩ số

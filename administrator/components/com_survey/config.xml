@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<fields name="params" addfieldprefix="Kma\Component\Survey\Administrator\Field">
+		<fieldset
+				name="general"
+				label="COM_SURVEY_CONFIG_GENERAL_LABEL"
+		>
+			<field
+					name="parent_organization"
+					type="text"
+					default="Ban Cơ yếu Chính phủ"
+					label="Cơ quan cấp trên"
+			/>
+			<field
+					name="organization"
+					type="text"
+					default="Học viện Kỹ thuật mật mã"
+					label="Cơ quan"
+			/>
+			<field
+					name="city"
+					type="text"
+					default="Hà Nội"
+					label="Thành phố"
+			/>
+		</fieldset>
+	</fields>
+	<fieldset
+		name="permissions"
+		label="JCONFIG_PERMISSIONS_LABEL"
+		description="JCONFIG_PERMISSIONS_DESC"
+	>
+		<field
+			name="rules"
+			type="rules"
+			label="JCONFIG_PERMISSIONS_LABEL"
+			validate="rules"
+			filter="rules"
+			component="com_survey"
+			section="component"
+		/>
+	</fieldset>
+</config>

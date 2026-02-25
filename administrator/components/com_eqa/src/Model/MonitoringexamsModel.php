@@ -3,16 +3,15 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Library\Kma\Model\ListModel;
 
-class MonitoringexamsModel extends EqaListModel{
+class MonitoringexamsModel extends ListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('name', 'nexaminee', 'nexamroom', 'npaper', 'nnopaper', 'npackage');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'id', $direction = 'desc')
+    protected function populateState($ordering = 'id', $direction = 'desc'): void
     {
         parent::populateState($ordering, $direction);
     }

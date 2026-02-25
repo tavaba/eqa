@@ -1,6 +1,4 @@
-/*
- * COM_EQA version 1.2.1
- */
+DROP TABLE IF EXISTS `#__eqa_secondattempts`;
 DROP TABLE IF EXISTS `#__eqa_conducts`;
 DROP TABLE IF EXISTS `#__eqa_mmproductions`;
 DROP TABLE IF EXISTS `#__eqa_class_learner`;

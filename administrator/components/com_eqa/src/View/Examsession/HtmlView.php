@@ -3,10 +3,10 @@ namespace Kma\Component\Eqa\Administrator\View\Examsession; //The namespace must
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemHtmlView;
+use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemHtmlView {
+class HtmlView extends ItemHtmlView {
     protected function prepareDataForLayoutAddbatch()
     {
         $model = $this->getModel();

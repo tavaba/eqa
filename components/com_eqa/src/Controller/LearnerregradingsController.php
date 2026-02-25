@@ -4,11 +4,9 @@ defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
-use Kma\Component\Eqa\Administrator\Helper\IOHelper;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Kma\Library\Kma\Controller\AdminController;
 
-class LearnerregradingsController extends EqaAdminController
+class LearnerregradingsController extends AdminController
 {
 	public function getModel($name = '', $prefix = '', $config = [])
 	{

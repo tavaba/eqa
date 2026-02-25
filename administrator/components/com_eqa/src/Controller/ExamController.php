@@ -9,15 +9,17 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaFormController;
+use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
+use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -29,7 +31,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
-class ExamController extends  EqaFormController
+class ExamController extends  FormController
 {
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSWebApplicationInterface $app = null, ?Input $input = null, ?FormFactoryInterface $formFactory = null)
 	{
@@ -762,7 +764,7 @@ class ExamController extends  EqaFormController
 			 * @var LearnerModel $learnerModel
 			 */
 			$examModel = $this->getModel();
-			$learnerModel = GeneralHelper::getMVCFactory()->createModel('Learner');
+			$learnerModel = ComponentHelper::getMVCFactory()->createModel('Learner');
 			foreach ($paidIds as $paidId)
 			{
 				$ok = $examModel->setDebt($examId, $paidId, $value);
@@ -875,7 +877,7 @@ class ExamController extends  EqaFormController
 				return;
 			}
 			else
-				$examinee->mark = GeneralHelper::toFloat($mark, $examMarkPrecision);
+				$examinee->mark = NumberHelper::toFloat($mark, $examMarkPrecision);
 			$examinee->description = $dataRow[$colwDescription];
 			$examinees[] = $examinee;
 		}

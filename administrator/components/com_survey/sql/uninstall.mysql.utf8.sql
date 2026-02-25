@@ -1,0 +1,17 @@
+DROP TABLE IF EXISTS `#__survey_classes`;
+DROP TABLE IF EXISTS `#__survey_survey_respondent_archived`;
+DROP TABLE IF EXISTS `#__survey_survey_respondent`;
+DROP TABLE IF EXISTS `#__survey_responses_archived`;
+DROP TABLE IF EXISTS `#__survey_responses`;
+DROP TABLE IF EXISTS `#__survey_surveys`;
+DROP TABLE IF EXISTS `#__survey_form_topic`;
+DROP TABLE IF EXISTS `#__survey_forms`;
+DROP TABLE IF EXISTS `#__survey_topics`;
+DROP TABLE IF EXISTS `#__survey_campaigns`;
+DROP TABLE IF EXISTS `#__survey_respondentgroup_respondent`;
+DROP TABLE IF EXISTS `#__survey_respondentgroups`;
+DROP TABLE IF EXISTS `#__survey_respondents`;
+DROP TABLE IF EXISTS `#__survey_units`;
+DROP TABLE IF EXISTS `#__survey_tokens`;
+DROP TABLE IF EXISTS `#__survey_logs`;
+DROP TABLE IF EXISTS `#__survey_campaign_respondent`;

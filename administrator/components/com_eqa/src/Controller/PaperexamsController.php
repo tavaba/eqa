@@ -8,16 +8,17 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
+use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 
-class PaperexamsController extends EqaAdminController {
+class PaperexamsController extends AdminController {
 	public function uploadMarkByMask()
 	{
 		$fileFormField = 'excelfile';
@@ -132,8 +133,8 @@ class PaperexamsController extends EqaAdminController {
 					if(empty($mask))
 						break;
 					$mark = $sheet->getCell([$col+1, $row])->getValue();
-					$mark = GeneralHelper::toFloat($mark, $examMarkPrecision);
-					if (!GeneralHelper::isInteger($mask) || $mark === false)
+					$mark = NumberHelper::toFloat($mark, $examMarkPrecision);
+					if (!NumberHelper::isInteger($mask) || $mark === false)
 					{
 						$invalidData = true;
 						break;

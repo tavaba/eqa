@@ -3,8 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\CMS\MVC\Model\ListModel;
-use Kma\Component\Eqa\Administrator\Base\EqaListModel;
+use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class ExamexamineesModel extends ListModel {
@@ -13,7 +12,7 @@ class ExamexamineesModel extends ListModel {
         $config['filter_fields']=array('code','learner_code','firstname','lastname', 'stimulation','attempt','allowed', 'debtor', 'conclusion');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'firstname', $direction = 'asc')
+    protected function populateState($ordering = 'firstname', $direction = 'asc'): void
     {
         parent::populateState($ordering, $direction);
     }

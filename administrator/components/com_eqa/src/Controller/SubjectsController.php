@@ -5,13 +5,14 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Library\Kma\Helper\NumberHelper;
 
-class SubjectsController extends EqaAdminController{
+class SubjectsController extends AdminController{
 	public function import(): void
 	{
 		$redirectUrl = JRoute::_('index.php?option=com_eqa&view=subjects', false);
@@ -72,7 +73,7 @@ class SubjectsController extends EqaAdminController{
 					default => throw new Exception(Text::sprintf('Dòng %d: Bậc học "%s" không hợp lệ', $r+1, htmlspecialchars($degreeAbbr))),
 				};
 
-				$creditNumber = GeneralHelper::toFloat(trim($row[$colIndex++]));
+				$creditNumber = NumberHelper::toFloat(trim($row[$colIndex++]));
 				if($creditNumber===false)
 				{
 					$msg = Text::sprintf('Dòng %d: Số tín chỉ "%s" không hợp lệ', $r+1, htmlspecialchars($creditNumber));
@@ -89,7 +90,7 @@ class SubjectsController extends EqaAdminController{
 				$testBankYear = trim($row[$colIndex++]);
 				if(empty($testBankYear))
 					$testBankYear = null;
-				else if(GeneralHelper::isInteger($testBankYear))
+				else if(NumberHelper::isInteger($testBankYear))
 					$testBankYear = (int)$testBankYear;
 				else{
 					$msg = Text::sprintf('Dòng %d: Năm đề thi "%s" không hợp lệ', $r+1, htmlspecialchars($testBankYear));

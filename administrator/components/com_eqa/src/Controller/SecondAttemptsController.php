@@ -4,11 +4,11 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Router\Route;
-use Kma\Component\Eqa\Administrator\Base\EqaAdminController;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 
-class SecondAttemptsController extends EqaAdminController {
+class SecondAttemptsController extends AdminController {
 	public function refresh():void
 	{
 		try

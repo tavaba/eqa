@@ -15,10 +15,6 @@ class CohortlearnersModel extends ListModel {
         $config['filter_fields']=array('code','firstname','lastname');
         parent::__construct($config, $factory);
     }
-    protected function populateState($ordering = 'code', $direction = 'asc')
-    {
-        parent::populateState($ordering, $direction);
-    }
 	public function getListQuery()
 	{
 		//Get cohort id

@@ -4,43 +4,43 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 use JRoute;
-use Kma\Component\Eqa\Administrator\Base\EqaItemAction;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\View\ItemAction;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
     protected function configureItemFieldsForLayoutDefault():void{
-        $option = new EqaListLayoutItemFields();
+        $option = new ListLayoutItemFields();
 
-        $option->sequence = EqaListLayoutItemFields::defaultFieldSequence();
-        $option->check = EqaListLayoutItemFields::defaultFieldCheck();
+        $option->sequence = ListLayoutItemFields::defaultFieldSequence();
+        $option->check = ListLayoutItemFields::defaultFieldCheck();
 
         $option->customFieldset1 = array();
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('admissionyear','COM_EQA_COURSE_ADMISSION_YEAR',true,false,'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('course', 'COM_EQA_GENERAL_COURSE', true, false, 'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('group', 'COM_EQA_GENERAL_EDUGROUP', true, false, 'text-center');
-        $option->customFieldset1[] = new EqaListLayoutItemFieldOption('code', 'COM_EQA_GENERAL_CODE_LEARNER', true,true,'text-center');
-        $option->customFieldset1[] = EqaListLayoutItemFields::defaultFieldLastname();
-        $option->customFieldset1[] = EqaListLayoutItemFields::defaultFieldFirstname();
-		$option->customFieldset1[] = new EqaListLayoutItemFieldOption('debtor','COM_EQA_DEBT', false,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('admissionyear','COM_EQA_COURSE_ADMISSION_YEAR',true,false,'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('course', 'COM_EQA_GENERAL_COURSE', true, false, 'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('group', 'COM_EQA_GENERAL_EDUGROUP', true, false, 'text-center');
+        $option->customFieldset1[] = new ListLayoutItemFieldOption('code', 'COM_EQA_GENERAL_CODE_LEARNER', true,true,'text-center');
+        $option->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
+        $option->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
+		$option->customFieldset1[] = new ListLayoutItemFieldOption('debtor','COM_EQA_DEBT', false,false,'text-center');
 
-        $option->published = EqaListLayoutItemFields::defaultFieldPublished();
+        $option->published = ListLayoutItemFields::defaultFieldPublished();
 
 		//Actions on item
 	    $option->actions = [];
-		$actionViewClasses = new EqaItemAction();
+		$actionViewClasses = new ItemAction();
 		$actionViewClasses->icon = 'users';
 		$actionViewClasses->text = 'Danh sách các lớp học phần';
-		$actionViewClasses->urlFormatStringForItemId = JRoute::_('index.php?option=com_eqa&view=learnerclasses&learner_id=%d');
+		$actionViewClasses->urlFormatString = JRoute::_('index.php?option=com_eqa&view=learnerclasses&learner_id=%d');
 		$option->actions[] = $actionViewClasses;
-	    $actionViewClasses = new EqaItemAction();
+	    $actionViewClasses = new ItemAction();
 	    $actionViewClasses->icon = 'puzzle';
 	    $actionViewClasses->text = 'Danh sách môn thi';
-	    $actionViewClasses->urlFormatStringForItemId = JRoute::_('index.php?option=com_eqa&view=learnerexams&learner_id=%d');
+	    $actionViewClasses->urlFormatString = JRoute::_('index.php?option=com_eqa&view=learnerexams&learner_id=%d');
 	    $option->actions[] = $actionViewClasses;
 
         //Set the option
@@ -80,4 +80,15 @@ class HtmlView extends EqaItemsHtmlView
 		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','learners.addDebtors',false,null, true);
 		ToolbarHelper::cancel('learner.cancel');
 	}
+	protected function prepareDataForLayoutUpload(): void
+	{
+		$this->form = FormHelper::getBackendForm('com_eqa.upload.learners','upload_learners.xml', array());
+	}
+	protected function addToolbarForLayoutUpload(): void
+	{
+		ToolbarHelper::title('Nhập HVSV');
+		ToolbarHelper::appendButton(['core.create','eqa.create.class'],'save','JTOOLBAR_SAVE','learners.import',false,null,true);
+		ToolbarHelper::cancel('learner.cancel');
+	}
+
 }

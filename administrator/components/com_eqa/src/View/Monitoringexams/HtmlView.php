@@ -3,36 +3,36 @@ namespace Kma\Component\Eqa\Administrator\View\Monitoringexams; //The namespace 
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\EqaItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFieldOption;
-use Kma\Component\Eqa\Administrator\Base\EqaListLayoutItemFields;
+use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
+use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\FormHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
-class HtmlView extends EqaItemsHtmlView
+class HtmlView extends ItemsHtmlView
 {
 	protected $examseason;
 	protected function configureItemFieldsForLayoutDefault():void{
-		$fields = new EqaListLayoutItemFields();
-		$fields->sequence = EqaListLayoutItemFields::defaultFieldSequence();
+		$fields = new ListLayoutItemFields();
+		$fields->sequence = ListLayoutItemFields::defaultFieldSequence();
 
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('name','COM_EQA_EXAM',true);
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('testtype','Hình thức thi',true);
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('testdate','Ngày thi',true);
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('requirequestions','Ra đề',false,false,'text-center');
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('questiondate', 'Giao đề');
-		$f = new EqaListLayoutItemFieldOption('nexamroom', 'COM_EQA_EXAMROOM',true,false,'text-center');
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('name','COM_EQA_EXAM',true);
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('testtype','Hình thức thi',true);
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('testdate','Ngày thi',true);
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('requirequestions','Ra đề',false,false,'text-center');
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('questiondate', 'Giao đề');
+		$f = new ListLayoutItemFieldOption('nexamroom', 'COM_EQA_EXAMROOM',true,false,'text-center');
 		$f->urlFormatString = 'index.php?option=com_eqa&view=examrooms&filter[exam_id]=%d';
 		$fields->customFieldset1[] = $f;
 
-		$f = new EqaListLayoutItemFieldOption('nexaminee','COM_EQA_EXAMINEE',true,false,'text-center');
+		$f = new ListLayoutItemFieldOption('nexaminee','COM_EQA_EXAMINEE',true,false,'text-center');
 		$f->urlFormatString = 'index.php?option=com_eqa&view=examexaminees&exam_id=%d';
 		$fields->customFieldset1[] = $f;
 
-		$fields->customFieldset1[] = new EqaListLayoutItemFieldOption('status', 'Tiến độ',true);
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('status', 'Tiến độ',true);
 
 		//Set the option
 		$this->itemFields = $fields;

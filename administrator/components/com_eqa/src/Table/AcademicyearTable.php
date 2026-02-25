@@ -1,6 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Table;
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Base\EqaTable;
-class AcademicyearTable extends EqaTable{
+use Kma\Component\Eqa\Administrator\Base\Table;
+
+class AcademicyearTable extends Table{
 }
