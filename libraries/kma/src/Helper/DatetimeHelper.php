@@ -361,13 +361,55 @@ abstract class DatetimeHelper
 		// Check if it's Saturday (6) or Sunday (7)
 		return $dayOfWeek >= 6;
 	}
-    public static function isTimeOver(string $timestamp):bool
+    public static function isTimeOver_bak(string $timestamp):bool
     {
         $hanoiTimezone = 'Asia/Ho_Chi_Minh';
         $inputTime = new Date($timestamp, $hanoiTimezone);
         $currentTime = new Date('now');
         return $inputTime < $currentTime;
     }
+
+	/**
+	 * @param   string  $timestamp A date/time string that can be parsed by DateTime, representing the time to compare against the current time.
+	 * @param   bool    $isUTC Indicates whether the input timestamp is in UTC. If true, the method will compare it against the current UTC time. If false, it will determine the timezone of the input timestamp and compare it against the current time in that timezone.
+	 * @param   string  $timezone An optional timezone identifier (e.g. 'Asia/Ho_Chi_Minh') to specify the timezone of the input timestamp if $isUTC is false. If not provided, the method will attempt to detect the timezone according to the value of $useOSTimezone.
+	 * @param   bool    $useOSTimezone When $isUTC is false and $timezone is not provided, this parameter determines whether to detect the timezone from the operating system's configuration (if true) or to use the timezone configured in PHP (if false). Default is true.
+	 *
+	 * @return bool Returns true if the input timestamp is in the past compared to the current time (i.e., the time has passed), or false if it is in the future or exactly the same as the current time.
+	 *
+	 * @throws \DateInvalidTimeZoneException
+	 * @throws \DateMalformedStringException
+	 * @since 1.0.0
+	 */
+	public static function isTimeOver(
+		string $timestamp,
+		bool   $isUTC          = true,
+		string $timezone       = '',
+		bool   $useOSTimezone  = true
+	): bool {
+		if ($isUTC) {
+			// $timestamp là UTC → so sánh thẳng với thời gian UTC hiện tại
+			$inputDt = new DateTime($timestamp, new DateTimeZone('UTC'));
+			$nowDt   = new DateTime('now',      new DateTimeZone('UTC'));
+		} else {
+			// Xác định timezone của $timestamp
+			if ($timezone !== '') {
+				// Timezone được chỉ định rõ
+				$tz = new DateTimeZone($timezone);
+			} elseif ($useOSTimezone) {
+				// Lấy timezone từ hệ điều hành (dùng hàm getOsTimezone() đã viết ở trên)
+				$tz = new DateTimeZone(self::getOsTimezone());
+			} else {
+				// Lấy timezone từ cấu hình PHP
+				$tz = new DateTimeZone(date_default_timezone_get());
+			}
+
+			$inputDt = new DateTime($timestamp, $tz);
+			$nowDt   = new DateTime('now',      $tz);
+		}
+
+		return $inputDt < $nowDt;
+	}
 
     /**
      * Converts Vietnamese day of week to English day of week
