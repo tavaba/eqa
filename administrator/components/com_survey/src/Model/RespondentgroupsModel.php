@@ -2,10 +2,7 @@
 namespace Kma\Component\Survey\Administrator\Model;
 defined('_JEXEC') or die();
 
-use Exception;
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Model\ListModel;
 
 class RespondentgroupsModel extends ListModel

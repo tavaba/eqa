@@ -2,15 +2,8 @@
 namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
-use DateTime;
 use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Date\Date;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
-use Matrix\Exception;
-use phpseclib3\Crypt\DH\Parameters;
 
 abstract class ConfigHelper{
 	private static bool $uninitialized = true;

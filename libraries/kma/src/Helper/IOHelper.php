@@ -169,6 +169,36 @@ abstract class IOHelper
         ];
         return $phpWord->addSection($sectionStyle);
     }
+	/**
+	 * Sanitize text for safe insertion into Word document.
+	 * Removes or escapes special characters that may cause Word file corruption.
+	 *
+	 * @param string $text The text to sanitize
+	 * @return string The sanitized text
+	 * @since 1.0.0
+	 */
+	public static function sanitizeTextForWord(string $text): string
+	{
+		// Remove null bytes
+		$text = str_replace("\0", '', $text);
+
+		// Remove control characters except common whitespace (tab, newline, carriage return)
+		$text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text);
+
+		// Replace vertical tab and form feed with space
+		$text = str_replace(["\v", "\f"], ' ', $text);
+
+		// Normalize line breaks to \n
+		$text = str_replace(["\r\n", "\r"], "\n", $text);
+
+		// Escape XML special characters
+		$text = htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+
+		// Trim whitespace
+		$text = trim($text);
+
+		return $text;
+	}
     public static function sendHttpXlsx(Spreadsheet $spreadsheet, string $fileName, bool $includeCharts=false): void
     {
         // Sanitize the file name

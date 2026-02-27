@@ -3,8 +3,6 @@ namespace Kma\Component\Survey\Administrator\Rule;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Form\FormRule;
-use Joomla\Registry\Registry;
-use Joomla\CMS\Form\Form;
 class AssetNameRule extends FormRule
 {
     /**

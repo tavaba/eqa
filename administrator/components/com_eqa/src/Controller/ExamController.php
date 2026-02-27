@@ -15,18 +15,11 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
 use Kma\Library\Kma\Helper\NumberHelper;
-use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Color;
-use PhpOffice\PhpSpreadsheet\Style\Font;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';

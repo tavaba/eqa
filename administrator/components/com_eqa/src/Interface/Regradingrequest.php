@@ -1,6 +1,5 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Interface;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 defined('_JEXEC') or die();
 class Regradingrequest extends ObjectInfo

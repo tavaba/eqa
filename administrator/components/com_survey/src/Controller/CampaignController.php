@@ -10,7 +10,6 @@ use Kma\Component\Survey\Administrator\Model\ClassModel;
 use Kma\Component\Survey\Administrator\Model\RespondentgroupModel;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
 use Kma\Library\Kma\Controller\FormController;
-use stdClass;
 
 
 class CampaignController extends  FormController {
@@ -277,12 +276,14 @@ class CampaignController extends  FormController {
 
             //Set a message and redirect back to list view
             $countCreated = count($surveysToCreate);
+			/*
             if($countSmallSize>0)
                 $this->app->enqueueMessage("Bỏ quả {$countSmallSize} lớp có sĩ số nhỏ hơn mức tối thiểu");
             if($skipLateClasses && $countLate>0)
                 $this->app->enqueueMessage("Bỏ qua {$countLate} lớp kết thúc muộn");
             if($skipExistingSurveys && $countExisting>0)
                 $this->app->enqueueMessage("Bỏ qua {$countExisting} lớp đã được tạo cuộc khảo sát");
+			*/
             if($countCreated>0)
                 $this->app->enqueueMessage("Đã tạo mới cuộc khảo sát cho {$countCreated} lớp học phần",'success');
             else

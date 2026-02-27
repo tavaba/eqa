@@ -4,8 +4,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Object\CMSObject;
 use Kma\Library\Kma\Model\AdminModel;
-use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 
 defined('_JEXEC') or die();
 

@@ -2,9 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
-use Matrix\Exception;
-
 abstract class EmployeeHelper{
     protected static array $employees;
     protected static array $employeeMap;

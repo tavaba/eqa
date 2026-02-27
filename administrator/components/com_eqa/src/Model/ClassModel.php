@@ -1,9 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Collator;
 use Exception;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;

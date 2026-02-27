@@ -4,7 +4,6 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
 
 /**
  * Supports an HTML select list of education degrees

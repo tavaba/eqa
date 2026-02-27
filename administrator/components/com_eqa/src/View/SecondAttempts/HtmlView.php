@@ -5,9 +5,6 @@ defined('_JEXEC') or die();
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView

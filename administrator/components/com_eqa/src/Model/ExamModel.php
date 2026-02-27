@@ -6,7 +6,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseDriver;
 use Kma\Library\Kma\Model\AdminModel;
-use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\RoomHelper;

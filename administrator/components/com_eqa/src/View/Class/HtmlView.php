@@ -3,14 +3,12 @@ namespace Kma\Component\Eqa\Administrator\View\Class; //The namespace must end w
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use JRoute;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Library\Kma\View\ListLayoutData;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\ClassModel;
-use SimpleXMLElement;
 
 defined('_JEXEC') or die();
 
@@ -72,8 +70,8 @@ class HtmlView extends ItemHtmlView {
         //Data
         $model = $this->getModel();
         $classId = Factory::getApplication()->input->getInt('class_id');
-        $this->form = $model->getCustomForm('com_eqa.addlearners','addlearners',[]);
         $this->class = $model->getItem($classId);
+	    $this->form = FormHelper::getBackendForm('com_eqa.addlearners','addlearners.xml');
     }
 
     protected function addToolbarForLayoutAddlearners() : void

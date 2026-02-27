@@ -3,9 +3,7 @@ namespace Kma\Component\Survey\Administrator\View\Classes;
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\User\User;
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
-use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Administrator\Model\ClassesModel;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;

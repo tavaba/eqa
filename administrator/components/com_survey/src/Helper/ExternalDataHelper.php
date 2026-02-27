@@ -2,7 +2,6 @@
 
 namespace Kma\Component\Survey\Administrator\Helper;
 
-use DateTime;
 use Exception;
 use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Log\Log;
@@ -136,6 +135,7 @@ abstract class ExternalDataHelper
      * Get list of student classes (administrative classes)
      *
      * @return array|false Student class data or false on failure
+     * @since 1.0
      */
     public static function getStudentClasses()
     {

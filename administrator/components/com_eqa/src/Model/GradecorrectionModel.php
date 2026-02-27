@@ -8,7 +8,6 @@ use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
-use function Symfony\Component\String\b;
 
 defined('_JEXEC') or die();
 

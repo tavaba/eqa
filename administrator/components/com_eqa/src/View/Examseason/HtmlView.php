@@ -76,16 +76,16 @@ class HtmlView extends ItemHtmlView {
 
 		$itemFields->customFieldset1 = array();
 		$field = new ListLayoutItemFieldOption('department_code', 'COM_EQA_GENERAL_SUBJECT_DEPARTMENT',true,false);
-		$field->cssClass = 'text-center';
+		$field->cellCssClasses = 'text-center';
 		$itemFields->customFieldset1[] = $field;
 		$field = new ListLayoutItemFieldOption('code','COM_EQA_GENERAL_SUBJECT_CODE', true, false);
-		$field->cssClass = 'text-center';
+		$field->cellCssClasses = 'text-center';
 		$itemFields->customFieldset1[] = $field;
 		$itemFields->customFieldset1[] = new ListLayoutItemFieldOption('name', 'COM_EQA_GENERAL_SUBJECT_NAME');
 		$itemFields->customFieldset1[] = new ListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
 		$itemFields->customFieldset1[] = new ListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);
 		$field = new ListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
-		$field->cssClass = 'text-center';
+		$field->cellCssClasses = 'text-center';
 		$itemFields->customFieldset1[] = $field;
 		$itemFields->published = ListLayoutItemFields::defaultFieldPublished();
 	}

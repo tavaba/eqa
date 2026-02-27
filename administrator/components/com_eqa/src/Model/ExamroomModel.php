@@ -1,8 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use CBOR\TextStringObject;
 use Exception;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Library\Kma\Helper\NumberHelper;
@@ -10,7 +8,6 @@ use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 
 defined('_JEXEC') or die();

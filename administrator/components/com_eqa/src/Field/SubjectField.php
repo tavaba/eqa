@@ -2,13 +2,9 @@
 namespace Kma\Component\Eqa\Administrator\Field;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Field\GroupedlistField;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
-use Kma\Component\Eqa\Administrator\Helper\UnitHelper;
+
 class SubjectField extends ListField
 {
     protected $type = 'subject';

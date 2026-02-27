@@ -6,7 +6,6 @@ use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Library\Kma\Helper\DatabaseHelper;
 
 class RespondentGroupMemberUnitField extends ListField

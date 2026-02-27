@@ -16,11 +16,11 @@ class HtmlView extends ItemsHtmlView
 
         $option->customFieldset1 = array();
         $field = new ListLayoutItemFieldOption('unit_code','COM_EQA_GENERAL_UNIT',true,false);
-        $field->cssClass = 'text-center';
+        $field->cellCssClasses = 'text-center';
         $field->altField='unit_name';
         $option->customFieldset1[] = $field;
         $field = new ListLayoutItemFieldOption('code','COM_EQA_GENERAL_CODE_EMPLOYEE',true,true);
-        $field->cssClass = 'text-center';
+        $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();

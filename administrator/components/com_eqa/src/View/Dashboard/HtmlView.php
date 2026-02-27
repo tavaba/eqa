@@ -6,7 +6,6 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 
 /**

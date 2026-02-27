@@ -1,10 +1,8 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
-use Kma\Library\Kma\Model\AdminModel;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;

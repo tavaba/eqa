@@ -2,7 +2,6 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
-use Joomla\CMS\Session\Session;
 
 defined('_JEXEC') or die;
 $respondentToken = $this->token;

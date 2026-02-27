@@ -2,12 +2,8 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
-use Exception;
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class CohortlearnersModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)

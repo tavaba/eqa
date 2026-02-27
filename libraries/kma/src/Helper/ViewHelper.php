@@ -90,7 +90,7 @@ abstract class ViewHelper
 
     protected static function printItemsTableFieldHead(ListLayoutItemFieldOption $field, string $listOderingField, string $listOrderingDirection):void
     {
-        echo '<th class="text-center" title="'. Text::_($field->titleDesc) .'">';
+	    echo '<th class="'.$field->getColumnCssClasses().'" title="'. Text::_($field->titleDesc) .'">';
         if($field->sortable){
             echo HTMLHelper::_('grid.sort',
                 $field->title,
@@ -106,8 +106,8 @@ abstract class ViewHelper
     protected static function printItemsTableFieldValue($item, ListLayoutItemFieldOption $field, $editUrl):void {
         //Print the opening tag
         $openingTag = '<td';
-        if(!empty($field->cssClass))
-            $openingTag .= ' class="'.$field->cssClass.'"';
+        if(!empty($field->cellCssClasses))
+            $openingTag .= ' class="'.$field->cellCssClasses.'"';
         if(!empty($field->altField))
         {
             $alt = $field->altField;
@@ -166,9 +166,9 @@ abstract class ViewHelper
         //First standard fields
         if(isset($itemFields->sequence)){
             $field = $itemFields->sequence;
-            if(empty($field->cssClass))
-                $field->cssClass = 'text-center';
-            echo '<td class="' . $field->cssClass . '">';
+            if(empty($field->cellCssClasses))
+                $field->cellCssClasses = 'text-center';
+            echo '<td class="' . $field->cellCssClasses . '">';
             if(isset($layoutData->pagination))
                 echo $layoutData->pagination->limitstart + $itemIndex + 1;
             else
@@ -177,15 +177,15 @@ abstract class ViewHelper
         }
         if(isset($itemFields->id)) {
             $field = $itemFields->id;
-            if(empty($field->cssClass))
-                $field->cssClass = 'text-center';
+            if(empty($field->cellCssClasses))
+                $field->cellCssClasses = 'text-center';
             self::printItemsTableFieldValue($item, $field, $editUrl);
         }
         if(isset($itemFields->check)){
             $field = $itemFields->check;
-            if(empty($field->cssClass))
-                $field->cssClass = 'text-center';
-            echo '<td class="' . $field->cssClass . '">';
+            if(empty($field->cellCssClasses))
+                $field->cellCssClasses = 'text-center';
+            echo '<td class="' . $field->cellCssClasses . '">';
             echo HTMLHelper::_('grid.id',$itemIndex,$item->id);
             echo '</td>';
         }
@@ -202,9 +202,9 @@ abstract class ViewHelper
         //Next standard fields: Default, Status, Ordering
         if(isset($itemFields->default)){
             $field = $itemFields->default;
-            if(empty($field->cssClass))
-                $field->cssClass = 'text-center';
-            echo '<td class="' . $field->cssClass . '">';
+            if(empty($field->cellCssClasses))
+                $field->cellCssClasses = 'text-center';
+            echo '<td class="' . $field->cellCssClasses . '">';
             if(empty($item->optionIgnoreToggleDefaultButton))
             {
                 if($item->default)
@@ -219,9 +219,9 @@ abstract class ViewHelper
 
         if(isset($itemFields->order)){
             $field = $itemFields->order;
-            if(empty($field->cssClass))
-                $field->cssClass = 'text-center';
-            echo '<td class="' . $field->cssClass . '">';
+            if(empty($field->cellCssClasses))
+                $field->cellCssClasses = 'text-center';
+            echo '<td class="' . $field->cellCssClasses . '">';
             if($layoutData->sortByOrder){
                 if($layoutData->listOrderingDirection=='asc'){
                     echo '<span>'.$layoutData->pagination->orderUpIcon($itemIndex, true, $layoutData->taskPrefixItems.'.orderup', 'JLIB_HTML_MOVE_UP',true);
@@ -239,9 +239,9 @@ abstract class ViewHelper
 
         if(isset($itemFields->published)){
             $field = $itemFields->published;
-            if(empty($field->cssClass))
-                $field->cssClass = 'text-center';
-            echo '<td class="' . $field->cssClass . '">';
+            if(empty($field->cellCssClasses))
+                $field->cellCssClasses = 'text-center';
+            echo '<td class="' . $field->cellCssClasses . '">';
             $taskprefix = $layoutData->taskPrefixItems.'.';
             echo HTMLHelper::_('jgrid.published',$item->published, $itemIndex, $taskprefix);
             echo '</td>';

@@ -94,7 +94,7 @@ class ApiHelper
                 
                 // Handle the specific API response structure
                 if (isset($responseData['Success']) && $responseData['Success'] === true) {
-                    if (isset($responseData['Data']) && !empty($responseData['Data'])) {
+                    if (!empty($responseData['Data'])) {
                         // The token is in the 'Data' field (JWT format)
                         self::$bearerToken = $responseData['Data'];
                         

@@ -6,7 +6,6 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
-use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Administrator\Model\CampaignModel;
 use Kma\Component\Survey\Administrator\Model\CampaignRespondentsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;

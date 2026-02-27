@@ -7,7 +7,6 @@ use Kma\Component\Survey\Administrator\Base\ItemHtmlView;
 use Kma\Component\Survey\Administrator\Model\CampaignModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
-use Kma\Library\Kma\Model\AdminModel;
 use Kma\Library\Kma\View\ListLayoutData;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;

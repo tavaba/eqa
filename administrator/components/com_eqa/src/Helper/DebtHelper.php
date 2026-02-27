@@ -2,11 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
-use Matrix\Exception;
-
 abstract class DebtHelper{
     public const DEBTOR_PENALTY_NONE = 0;
     public const DEBTOR_PENALTY_REVOKE_ONE_TURN = 1;

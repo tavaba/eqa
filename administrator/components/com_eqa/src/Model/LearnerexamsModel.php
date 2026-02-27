@@ -2,7 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;

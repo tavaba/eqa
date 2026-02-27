@@ -8,9 +8,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
 use Kma\Library\Kma\Controller\AdminController;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
-use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
 use Kma\Component\Eqa\Administrator\Model\ExamseasonsModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 

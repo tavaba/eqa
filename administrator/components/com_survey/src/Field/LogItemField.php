@@ -3,11 +3,7 @@ namespace Kma\Component\Survey\Administrator\Field;
 defined('_JEXEC') or die();
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Survey\Administrator\Enum\AssetType;
 use Kma\Component\Survey\Administrator\Enum\EntityType;
-use Kma\Component\Survey\Administrator\Helper\AssetHelper;
-use Kma\Component\Survey\Administrator\Helper\LogHelper;
-use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 
 class LogItemField extends ListField
 {

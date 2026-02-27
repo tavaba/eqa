@@ -3,11 +3,8 @@ namespace Kma\Component\Eqa\Administrator\Field;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\GroupedlistField;
-use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\UnitHelper;
 
 class EmployeeField extends GroupedlistField
 {

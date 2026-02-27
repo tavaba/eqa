@@ -2,9 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Model\ExamModel;
 
 abstract class ExamHelper{
     public const TEST_TYPE_UNKNOWN=0;

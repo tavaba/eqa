@@ -9,7 +9,6 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView

@@ -4,11 +4,8 @@ namespace Kma\Component\Survey\Administrator\View\Logs;
 defined('_JEXEC') or die;
 
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
-use Kma\Component\Survey\Administrator\Enum\AssetType;
 use Kma\Component\Survey\Administrator\Enum\EntityType;
-use Kma\Component\Survey\Administrator\Helper\AssetHelper;
 use Kma\Component\Survey\Administrator\Helper\LogHelper;
-use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;

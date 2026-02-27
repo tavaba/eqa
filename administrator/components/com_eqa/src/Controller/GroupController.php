@@ -3,7 +3,6 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 use Exception;
 use Joomla\CMS\Response\JsonResponse;
 use Kma\Library\Kma\Controller\FormController;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Model\GroupModel;
 
 defined('_JEXEC') or die();

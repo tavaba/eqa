@@ -5,7 +5,6 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 /**
  * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html

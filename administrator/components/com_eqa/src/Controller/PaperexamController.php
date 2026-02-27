@@ -1,7 +1,5 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
-use Exception;
-use JComponentHelper;
 use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Library\Kma\Controller\FormController;
@@ -9,7 +7,6 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 require_once JPATH_ROOT.'/vendor/autoload.php';
 

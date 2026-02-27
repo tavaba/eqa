@@ -15,7 +15,7 @@ class HtmlView extends ItemsHtmlView {
 
         $option->customFieldset1 = array();
         $field = new ListLayoutItemFieldOption('code', 'COM_EQA_GENERAL_CODE', false, true);
-        $field->cssClass = 'text-center';
+        $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('name','COM_EQA_GENERAL_UNIT');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('type','COM_EQA_GENERAL_UNIT_TYPE');

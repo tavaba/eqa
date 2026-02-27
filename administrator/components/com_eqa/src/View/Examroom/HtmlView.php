@@ -7,6 +7,7 @@ use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\View\ListLayoutData;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -122,13 +123,7 @@ class HtmlView extends ItemHtmlView {
         //Determine the exam id and get the exam
         $examroomId = $app->input->getInt('examroom_id');
         $this->examroom = DatabaseHelper::getExamroomInfo($examroomId);
-
-        //Load form
-        $name = 'com_eqa.addexamroomexaminees';
-        $source = 'addexamroomexaminees';
-        $model = $this->getModel();
-        $this->form = $model->getCustomForm($name,$source,[]);
-
+	    $this->form = FormHelper::getBackendForm('com_eqa.addexamroomexaminees','addexamroomexaminees.xml');
     }
     protected function addToolbarForLayoutAddexaminees() : void
     {

@@ -4,10 +4,8 @@ defined('_JEXEC') or die('');
 use Exception;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Helper\ExternalDataHelper;
-use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Component\Survey\Administrator\Model\RespondentsModel;
 use Kma\Library\Kma\Controller\AdminController;
-use Kma\Library\Kma\Helper\DatetimeHelper;
 
 
 class RespondentsController extends AdminController

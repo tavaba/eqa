@@ -1,8 +1,6 @@
 <?php
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;

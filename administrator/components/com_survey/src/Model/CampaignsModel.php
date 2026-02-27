@@ -99,8 +99,8 @@ class CampaignsModel extends ListModel
         if($state=='')
             $query->whereIn($db->quoteName('c.state'),
                 [
-	                StateHelper::STATE_PUBLISHED,
-	                StateHelper::STATE_UNPUBLISHED
+                    StateHelper::STATE_PUBLISHED,
+                    StateHelper::STATE_UNPUBLISHED
                 ]);
         elseif (is_numeric($state))
             $query->where($db->quoteName('c.state') . ' = ' . (int)$state);

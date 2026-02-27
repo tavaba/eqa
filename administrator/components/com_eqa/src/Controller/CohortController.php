@@ -1,7 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Exception;
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\FormController;
 

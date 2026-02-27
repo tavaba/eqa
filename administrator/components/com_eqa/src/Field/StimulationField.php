@@ -4,7 +4,6 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 
 class StimulationField extends ListField

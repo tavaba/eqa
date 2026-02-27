@@ -5,18 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use JFactory;
 use Joomla\CMS\Access\Access;
-use Joomla\CMS\Date\Date;
-use Joomla\CMS\Document\Document;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Form;
-use Joomla\CMS\MVC\Factory\MVCFactory;
-use Joomla\CMS\MVC\Model\BaseDatabaseModel;
-use Joomla\CMS\Toolbar\ContainerAwareToolbarFactory;
-use Joomla\CMS\Toolbar\Toolbar;
-use Joomla\CMS\Toolbar\ToolbarFactoryInterface;
-use Joomla\Database\DatabaseDriver;
-use Joomla\Database\DatabaseInterface;
-use stdClass;
 
 abstract class GeneralHelper{
     /**

@@ -2,15 +2,8 @@
 namespace Kma\Component\Eqa\Administrator\View\Regradingresult; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
-use Kma\Library\Kma\View\ListLayoutItemFieldOption;
-use Kma\Library\Kma\View\ListLayoutItemFields;
-use Kma\Component\Eqa\Administrator\Field\ExamsessionemployeeField;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 

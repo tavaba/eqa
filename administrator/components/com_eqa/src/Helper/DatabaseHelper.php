@@ -2,7 +2,6 @@
 
 namespace Kma\Component\Eqa\Administrator\Helper;
 
-use Joomla\CMS\Application\ApplicationHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;

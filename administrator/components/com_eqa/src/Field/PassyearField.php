@@ -5,7 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
+
 class PassyearField extends ListField
 {
     protected $type = 'passyear';

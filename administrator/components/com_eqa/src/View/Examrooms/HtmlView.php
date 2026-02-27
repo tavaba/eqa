@@ -68,11 +68,11 @@ class HtmlView extends ItemsHtmlView {
 	    ToolbarHelper::appendButton(null,'warning','COM_EQA_ANOMALY','examroom.editAnomaly',true,'btn btn-danger');
     }
 
-	protected function prepareDataForLayoutImport()
+	protected function prepareDataForLayoutImport(): void
 	{
 		$this->form = FormHelper::getBackendForm('com_eqa.examroomreport', 'upload_examroomreport.xml',[]);
 	}
-	protected function addToolbarForLayoutImport()
+	protected function addToolbarForLayoutImport(): void
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_LOAD_EXAMROOM_REPORT'));
 		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','examrooms.import',false,null,true);

@@ -16,13 +16,13 @@ class HtmlView extends ItemsHtmlView {
         $option->customFieldset1 = array();
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldCode();
         $field = new ListLayoutItemFieldOption('building', 'COM_EQA_GENERAL_BUILDING', true, false);
-        $field->cssClass = 'text-center';
+        $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
         $field = new ListLayoutItemFieldOption('capacity', 'COM_EQA_GENERAL_ROOM_CAPACITY', true, false);
-        $field->cssClass = 'text-center';
+        $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
         $field = new ListLayoutItemFieldOption('type', 'COM_EQA_GENERAL_ROOM_TYPE', true, false);
-        $field->cssClass = 'text-center';
+        $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
 
         $option->published = ListLayoutItemFields::defaultFieldPublished();

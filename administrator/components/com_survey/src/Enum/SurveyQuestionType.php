@@ -1,7 +1,6 @@
 <?php
 
 namespace Kma\Component\Survey\Administrator\Enum;
-use Exception;
 
 final class SurveyQuestionType
 {

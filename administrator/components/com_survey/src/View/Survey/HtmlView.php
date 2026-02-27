@@ -102,7 +102,7 @@ class HtmlView extends ItemHtmlView
         $this->item = $this->getModel()->getItem($surveyId);
         if (empty($this->item))
             die('Invalid request');
-        $this->form = FormHelper::getBackendForm('com_survey','com_survey.survey.add_examinees','add_examinees.xml',[]);
+        $this->form = FormHelper::getBackendForm('com_survey.survey.add_examinees','add_examinees.xml',[]);
     }
     protected function addToolbarForLayoutAddExaminees(): void
     {

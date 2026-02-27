@@ -1,6 +1,5 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Library\Kma\Model\AdminModel;

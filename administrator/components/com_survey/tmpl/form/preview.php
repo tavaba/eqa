@@ -9,8 +9,6 @@
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
-
 // Get the form item
 $item = $this->item;
 $surveyModel = !empty($item->model) ? $item->model : '{}';

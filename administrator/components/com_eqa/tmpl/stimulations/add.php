@@ -1,9 +1,6 @@
 <?php
 
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
-use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');

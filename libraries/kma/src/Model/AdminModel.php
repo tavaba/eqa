@@ -12,6 +12,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\AdminModel as BaseAdminModel;
 use Joomla\CMS\User\User;
 use Kma\Library\Kma\Table\Table;
+use RuntimeException;
 use stdClass;
 
 /**

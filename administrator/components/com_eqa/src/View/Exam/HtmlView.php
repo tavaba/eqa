@@ -3,7 +3,6 @@ namespace Kma\Component\Eqa\Administrator\View\Exam; //The namespace must end wi
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\FormHelper;
@@ -29,12 +28,7 @@ class HtmlView extends ItemHtmlView{
 		$this->toolbarOption->clearAllTask();
 		$this->toolbarOption->title = Text::_('COM_EQA_EXAMINEES_OF_EXAM');
 		$this->toolbarOption->taskCancel = true;
-
-		//Load form
-		$name = 'com_eqa.addexamexaminees';
-		$source = 'addexamexaminees';
-		$model = $this->getModel();
-		$this->form = $model->getCustomForm($name,$source,[]);
+		$this->form = FormHelper::getBackendForm('com_eqa.addexamexaminees','addexamexaminees.xml');
 	}
 	protected function addToolbarForLayoutAddexaminees() : void
 	{
@@ -48,11 +42,7 @@ class HtmlView extends ItemHtmlView{
 	protected function prepareDataForLayoutDistribute(){
 		$examId = Factory::getApplication()->input->getInt('exam_id');
 		$this->exam = DatabaseHelper::getExamInfo($examId);
-
-		//Form
-		$model = AdminModel::cast($this->getModel());
-		$this->form = $model->getCustomForm('com_eqa.examrooms','examrooms');
-
+		$this->form = FormHelper::getBackendForm('com_eqa.examrooms','examrooms.xml');
 	}
 	protected function addToolbarForLayoutDistribute():void
 	{
@@ -65,11 +55,7 @@ class HtmlView extends ItemHtmlView{
 	protected function prepareDataForLayoutDistribute2(){
 		$examId = Factory::getApplication()->input->getInt('exam_id');
 		$this->exam = DatabaseHelper::getExamInfo($examId);
-
-		//Form
-		$model = AdminModel::cast($this->getModel());
-		$this->form = $model->getCustomForm('com_eqa.distribution2','distribution2');
-
+		$this->form = FormHelper::getBackendForm('com_eqa.distribution2','distribution2.xml');
 	}
 	protected function addToolbarForLayoutDistribute2():void
 	{

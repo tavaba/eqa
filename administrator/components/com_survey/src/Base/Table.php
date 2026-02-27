@@ -61,10 +61,10 @@ abstract class Table extends Base
         $targetName = $this->itemName;
         $resultCode = $result ? LogHelper::RESULT_SUCCESS : LogHelper::RESULT_FAIL;
         $action = match ($state){
-	        StateHelper::STATE_UNPUBLISHED => LogHelper::ACTION_UNPUBLISH,
-	        StateHelper::STATE_PUBLISHED => LogHelper::ACTION_PUBLISH,
-	        StateHelper::STATE_ARCHIVED => LogHelper::ACTION_ARCHIVE,
-	        StateHelper::STATE_TRASHED => LogHelper::ACTION_TRASH
+            StateHelper::STATE_UNPUBLISHED => LogHelper::ACTION_UNPUBLISH,
+            StateHelper::STATE_PUBLISHED => LogHelper::ACTION_PUBLISH,
+            StateHelper::STATE_ARCHIVED => LogHelper::ACTION_ARCHIVE,
+            StateHelper::STATE_TRASHED => LogHelper::ACTION_TRASH
         };
         LogHelper::Add($action, $targetName, $itemId, $resultCode,$data,$userId);
 

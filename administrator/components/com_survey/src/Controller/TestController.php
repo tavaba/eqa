@@ -3,10 +3,7 @@
 namespace Kma\Component\Survey\Administrator\Controller;
 
 use Joomla\CMS\MVC\Controller\AdminController;
-use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Helper\ApiHelper;
-use Kma\Component\Survey\Administrator\Helper\ExternalDataHelper;
-use Kma\Library\Kma\Helper\DatetimeHelper;
 
 class TestController extends AdminController
 {

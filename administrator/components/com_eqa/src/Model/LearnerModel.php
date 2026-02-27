@@ -2,8 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Kma\Library\Kma\Model\AdminModel;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
-use RuntimeException;
 
 defined('_JEXEC') or die();
 

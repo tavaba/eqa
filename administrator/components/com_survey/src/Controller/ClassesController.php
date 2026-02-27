@@ -7,7 +7,6 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Helper\ExternalDataHelper;
 use Kma\Component\Survey\Administrator\Model\ClassesModel;
 use Kma\Component\Survey\Administrator\Model\ClassModel;
-use Kma\Component\Survey\Administrator\Model\RespondentsModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 

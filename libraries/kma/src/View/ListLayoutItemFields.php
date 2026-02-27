@@ -38,28 +38,28 @@ class ListLayoutItemFields
 
     //Some methods to get default popular fields
     public static function defaultFieldSequence(): ListLayoutItemFieldOption{
-        $field = new ListLayoutItemFieldOption('', '#');
-        $field->cssClass = 'text-center';
+        $field                 = new ListLayoutItemFieldOption('', '#');
+        $field->cellCssClasses = 'text-center';
         return $field;
     }
     public static function defaultFieldId(): ListLayoutItemFieldOption{
-        $field = new ListLayoutItemFieldOption('id', 'ID',true,false);
-        $field->cssClass = 'text-center';
+        $field                 = new ListLayoutItemFieldOption('id', 'ID',true,false);
+        $field->cellCssClasses = 'text-center';
         return $field;
     }
     public static function defaultFieldCheck(): ListLayoutItemFieldOption{
-        $field = new ListLayoutItemFieldOption('', '');
-        $field->cssClass = 'text-center';
+        $field                 = new ListLayoutItemFieldOption('', '');
+        $field->cellCssClasses = 'text-center';
         return $field;
     }
     public static function defaultFieldDefault(): ListLayoutItemFieldOption{
-        $field = new ListLayoutItemFieldOption('default', 'JDEFAULT',true,false);
-        $field->cssClass = 'text-center';
+        $field                 = new ListLayoutItemFieldOption('default', 'JDEFAULT',true,false);
+        $field->cellCssClasses = 'text-center';
         return $field;
     }
     public static function defaultFieldPublished(): ListLayoutItemFieldOption{
-        $field = new ListLayoutItemFieldOption('published', 'JSTATUS',true,false);
-        $field->cssClass = 'text-center';
+        $field                 = new ListLayoutItemFieldOption('published', 'JSTATUS',true,false);
+        $field->cellCssClasses = 'text-center';
         return $field;
     }
     public static function defaultFieldDescription(): ListLayoutItemFieldOption{
@@ -71,7 +71,7 @@ class ListLayoutItemFields
     public static function defaultFieldDelete(string $urlFormatString): ListLayoutItemFieldOption{
         $field = new ListLayoutItemFieldOption('', '');
         $field->urlFormatString = $urlFormatString;
-        $field->cssClass = 'text-center';
+        $field->cellCssClasses = 'text-center';
         return $field;
     }
 

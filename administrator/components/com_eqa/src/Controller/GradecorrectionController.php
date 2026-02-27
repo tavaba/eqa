@@ -7,12 +7,6 @@ use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpWord\PhpWord;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\SimpleType\Jc;
-use PhpOffice\PhpWord\Style\Paragraph;
-use PhpOffice\PhpWord\Shared\Html;
-use PhpOffice\PhpWord\Settings;
-use PhpOffice\PhpWord\Style\Tab;
 
 defined('_JEXEC') or die();
 

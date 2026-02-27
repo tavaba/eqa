@@ -4,11 +4,8 @@ defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
-use Joomla\CMS\Language\Text;
 use JRoute;
-use JSession;
 use Kma\Library\Kma\Controller\AdminController;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 

@@ -2,11 +2,9 @@
 namespace Kma\Component\Eqa\Administrator\Field;
 defined('_JEXEC') or die();
 
-use Collator;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Eqa\Administrator\Helper\UnitHelper;
 
 class ExamclassField extends ListField
 {

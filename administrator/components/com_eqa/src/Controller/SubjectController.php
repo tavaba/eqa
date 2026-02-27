@@ -6,8 +6,6 @@ use Joomla\CMS\Language\Text;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
-use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
-use Kma\Component\Eqa\Administrator\Model\StimulationsModel;
 
 class SubjectController extends  FormController {
 	public function stimulate()

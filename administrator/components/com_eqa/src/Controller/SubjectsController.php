@@ -8,7 +8,6 @@ use JRoute;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 

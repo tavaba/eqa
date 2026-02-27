@@ -2,7 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Interface;
 use DateTime;
 use DateTimeZone;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 defined('_JEXEC') or die();
 class ExamseasonInfo

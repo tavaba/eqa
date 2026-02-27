@@ -3,7 +3,6 @@ namespace Kma\Component\Eqa\Administrator\View\Learnerexams; //The namespace mus
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;

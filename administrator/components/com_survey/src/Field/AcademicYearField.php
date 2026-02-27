@@ -3,8 +3,6 @@ namespace Kma\Component\Survey\Administrator\Field;
 defined('_JEXEC') or die();
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Survey\Administrator\Helper\LogHelper;
-use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
 class AcademicYearField extends ListField

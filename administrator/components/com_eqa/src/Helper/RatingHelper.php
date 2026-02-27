@@ -2,11 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
-use Joomla\Database\DatabaseInterface;
-use Matrix\Exception;
-
 abstract class RatingHelper{
 	public const EXCELLENT      = 90;
 	public const VERY_GOOD      = 80;

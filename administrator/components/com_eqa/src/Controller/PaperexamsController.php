@@ -4,15 +4,12 @@ defined('_JEXEC') or die();
 require JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use JRoute;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;

@@ -2,7 +2,6 @@
 namespace Kma\Component\Survey\Administrator\Helper;
 use Exception;
 use Joomla\CMS\Factory;
-use Kma\Component\Survey\Administrator\Enum\AssetType;
 use Kma\Component\Survey\Administrator\Enum\EntityType;
 use Kma\Library\Kma\Helper\DatabaseHelper;
 

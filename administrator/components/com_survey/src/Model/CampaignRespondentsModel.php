@@ -4,7 +4,6 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatabaseHelper;
 use Kma\Library\Kma\Model\ListModel;

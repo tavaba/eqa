@@ -1,7 +1,6 @@
 <?php
 namespace Kma\Component\Survey\Administrator\View\Form;
 
-use Joomla\CMS\Factory;
 use Kma\Component\Survey\Administrator\Base\ItemHtmlView;
 use Kma\Component\Survey\Administrator\Model\FormModel;
 use Kma\Library\Kma\Helper\ToolbarHelper;

@@ -5,11 +5,8 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\User\User;
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
-use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Component\Survey\Administrator\Model\FormModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
-use Kma\Library\Kma\Helper\ToolbarHelper;
-use Kma\Library\Kma\Helper\ViewHelper;
 use Kma\Library\Kma\View\ItemAction;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;

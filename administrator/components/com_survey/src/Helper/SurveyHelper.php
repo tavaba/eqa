@@ -1,6 +1,5 @@
 <?php
 namespace Kma\Component\Survey\Administrator\Helper;
-use Joomla\CMS\Language\Text;
 use Kma\Library\Kma\Helper\StringHelper;
 
 defined('_JEXEC') or die();

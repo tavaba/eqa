@@ -1,9 +1,7 @@
 <?php
 
 namespace Kma\Component\Eqa\Administrator\Helper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Toolbar\Toolbar;
-use Joomla\CMS\Toolbar\ToolbarFactoryInterface;
 use JRoute;
 
 defined('_JEXEC') or die();

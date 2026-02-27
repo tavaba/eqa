@@ -17,7 +17,18 @@ class ListLayoutItemFieldOption
      * @since 1.0.0
      */
     public string $titleDesc;
-    public string $cssClass;       //CSS class to format value cell
+
+	/**
+	 * @var string CSS classes to apply to this column
+	 * @since 1.0.0
+	 */
+	public string $columnCssClasses;
+
+	/**
+	 * @var string CSS classes to apply to every cell of this column
+	 * @since 1.0.0
+	 */
+    public string $cellCssClasses;
 
     /**
      * @var string A field of the current item that provides additional information about this field.
@@ -72,7 +83,7 @@ class ListLayoutItemFieldOption
         $this->title = $title;
         $this->sortable = $sort;
         $this->hasEditUrl = $edit;
-        $this->cssClass = $class;
+        $this->cellCssClasses = $class;
         $this->urlFormatString = '';
         $this->urlFormatStringField = 'id';
         $this->titleDesc = '';
@@ -82,4 +93,11 @@ class ListLayoutItemFieldOption
         $this->showLinkConditionField = '';
         $this->showLinkConditionValue = true;
     }
+
+	public function getColumnCssClasses(): string
+	{
+		if(!empty($this->columnCssClasses))
+			return $this->columnCssClasses;
+		return 'text-center';
+	}
 }
