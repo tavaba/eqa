@@ -234,6 +234,7 @@ CREATE TABLE IF NOT EXISTS `#__eqa_subjects` (
 	`finaltesttype` INT NOT NULL COMMENT 'Hình thức thi mặc định cho thi kết thúc học phần (định nghĩa bằng constants)',
 	`finaltestduration` INT COMMENT 'Thời gian làm bài thi, tính bằng phút',
 	`finaltestweight` REAL NOT NULL COMMENT 'Trọng số điểm thi kết thúc học phần',
+	`allowed_rooms` TEXT NULL DEFAULT NULL COMMENT 'JSON: danh sách ID phòng được phép sử dụng; NULL = không giới hạn; ghi đè allowed_rooms của subject',
 	`testbankyear` INT COMMENT 'Năm xây dựng ngân hàng cho hình thức thi mặc định (nếu có)',
 	`alltestbanks` TEXT COMMENT 'JSON String (hoặc NULL) thể hiện các ngân hàng đang có {type:, year:} ngoài ngân hàng mặc định (nếu có)',
 	`allmarkelements` TEXT COMMENT 'JSON String thể hiện các thành phần đánh giá quá trình {name:, weight:}',
@@ -420,8 +421,10 @@ CREATE TABLE IF NOT EXISTS `#__eqa_exams`(
     `id` INT AUTO_INCREMENT,
 	`subject_id` INT NOT NULL COMMENT 'Khóa ngoại: môn học',
 	`name` VARCHAR(255) NOT NULL COMMENT 'Tên môn thi',
+	`code` VARCHAR(50) NOT NULL COMMENT 'Mã môn thi (copy từ mã môn học); bắt buộc; duy nhất trong một kỳ thi',
 	`examseason_id` INT NOT NULL COMMENT 'Khóa ngoại: Kỳ thi',
 	`is_pass_fail` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Môn điều kiện, không tính điểm (copy từ subject)',
+	`allowed_rooms` TEXT NULL DEFAULT NULL COMMENT 'JSON: danh sách ID phòng được phép sử dụng; NULL = không giới hạn; ghi đè allowed_rooms của subject',
 	`testtype` INT NOT NULL COMMENT 'Hình thức thi như finaltesttype trong bảng `subjects`',
 	`duration` INT COMMENT 'Thời gian làm bài thi, tính bằng phút (copy từ subjects)',
 	`kmonitor` REAL NOT NULL DEFAULT 1.0 COMMENT 'Hệ số tính sản lượng coi thi (copy từ subjects)',
@@ -434,7 +437,6 @@ CREATE TABLE IF NOT EXISTS `#__eqa_exams`(
 	`questionauthor_id` INT COMMENT 'Khóa ngoại: người ra đề thi (nếu có)',
 	`nquestion` INT COMMENT 'Số lượng đề thi để tính sản lượng (nếu có)',
 	`nexaminee` INT NOT NULL COMMENT 'Số lượng thí sinh',
-	`statistic` TEXT COMMENT 'JSON: số liệu thống kê môn thi',
 	`anomaly` TEXT COMMENT 'Bất thường môn thi',
 	`description` TEXT,
 	`published` BOOLEAN NOT NULL DEFAULT TRUE,
@@ -457,7 +459,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_exams`(
 		ON DELETE RESTRICT,
 	CONSTRAINT fk_eqa_exams_questionauthor FOREIGN KEY(`questionauthor_id`)
 		REFERENCES `#__eqa_employees`(`id`)
-		ON DELETE RESTRICT
+		ON DELETE RESTRICT,
+	UNIQUE INDEX `uq_eqa_exams_season_code` (`examseason_id`, `code`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Môn (bài) thi';
 
 CREATE TABLE IF NOT EXISTS `#__eqa_examrooms`(

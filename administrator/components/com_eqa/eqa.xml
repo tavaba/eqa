@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <extension type="component" method="upgrade">
     <name>COM_EQA</name>
-	<version>2.0.0</version>
+	<version>2.0.1</version>
     <author>Nguyễn Tuấn Anh</author>
     <creationDate>2026-02-22</creationDate>
     <description>COM_EQA_DESC</description>

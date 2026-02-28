@@ -17,6 +17,16 @@
  *   - username không tìm thấy (user đã bị xóa) → gán FALLBACK_USER_ID (= 0)
  *   - NULL → giữ nguyên NULL
  *
+ * Migration v2.0.1
+ * ----------------
+ * Các thay đổi schema so với v2.0.0:
+ *
+ *   #__eqa_subjects : Thêm `allowed_rooms` TEXT NULL — danh sách phòng được phép tổ chức thi
+ *   #__eqa_exams    : Xóa `statistic`
+ *                     Thêm `code` VARCHAR(50) NOT NULL — mã môn thi (duy nhất trong kỳ thi)
+ *                     Thêm `allowed_rooms` TEXT NULL — ghi đè allowed_rooms của subject
+ *                     Thêm UNIQUE INDEX (examseason_id, code)
+ *
  * Yêu cầu: Joomla 5.0+, PHP 8.1+, MySQL 8.0+
  *
  * Cách hoạt động:
@@ -79,7 +89,7 @@ class Com_EqaInstallerScript extends InstallerScript
         'administrator/components/com_eqa',
         'components/com_eqa',
     ];
-	
+
     // =========================================================================
     // Joomla Installer Hooks
     // =========================================================================
@@ -104,11 +114,32 @@ class Com_EqaInstallerScript extends InstallerScript
 
     /**
      * Chạy sau khi Joomla copy file mới lên server (lệnh Update).
+     *
+     * Điều phối các migration theo version đã cài.
+     * Mỗi migration chỉ chạy khi version đang cài nhỏ hơn version tương ứng.
      */
     public function update($parent): bool
     {
-            return $this->runMigration200();
+        $installedVersion = $this->getInstalledVersion();
+
+        if (version_compare($installedVersion, '2.0.0', '<')) {
+            if (!$this->runMigration200()) {
+                return false;
+            }
+        }
+
+        if (version_compare($installedVersion, '2.0.1', '<')) {
+            if (!$this->runMigration201()) {
+                return false;
+            }
+        }
+
+        return true;
     }
+
+    // =========================================================================
+    // Dọn dẹp thư mục cũ
+    // =========================================================================
 
     /**
      * Xóa sạch nội dung bên trong từng thư mục trong COMPONENT_DIRS.
@@ -152,7 +183,6 @@ class Com_EqaInstallerScript extends InstallerScript
             );
         }
 
-        // Báo cáo tổng kết
         if ($failed === 0) {
             $this->logInfo("Dọn dẹp thư mục cũ hoàn tất: đã xóa {$deleted} item.");
         } else {
@@ -256,7 +286,6 @@ class Com_EqaInstallerScript extends InstallerScript
                     'Migration 2.0.0: Hoàn tất với ' . count($errors) . ' lỗi. '
                     . 'Kiểm tra Joomla error log để biết chi tiết.'
                 );
-                // Trả về true để installer không rollback các bảng đã migrate thành công.
                 return true;
             }
 
@@ -273,7 +302,316 @@ class Com_EqaInstallerScript extends InstallerScript
     }
 
     // =========================================================================
-    // Detect bảng qua INFORMATION_SCHEMA
+    // Migration 2.0.1
+    // =========================================================================
+
+    /**
+     * Thực hiện migration từ v2.0.0 lên v2.0.1.
+     *
+     * Các thay đổi schema (SQL thuần đã chạy qua sql/updates/mysql/2.0.1.sql):
+     *   - #__eqa_subjects : đã có cột `allowed_rooms` TEXT NULL
+     *   - #__eqa_exams    : đã xóa `statistic`, đã có cột `code` VARCHAR(50) DEFAULT '',
+     *                       đã có cột `allowed_rooms` TEXT NULL
+     *
+     * Nhiệm vụ của method này (không thể làm bằng SQL thuần trong schema update):
+     *   1. Populate cột `code` của #__eqa_exams từ mã môn học tương ứng.
+     *   2. Xử lý các môn thi mồ côi (subject_id không hợp lệ) → code = 'EXAM_{id}'.
+     *   3. Giải quyết xung đột unique (examseason_id, code) bằng cách thêm hậu tố _2, _3, ...
+     *   4. Enforce NOT NULL (MODIFY COLUMN bỏ DEFAULT '').
+     *   5. Thêm UNIQUE INDEX (examseason_id, code).
+     *
+     * Idempotent: Kiểm tra trạng thái cột/constraint trước khi thực hiện từng bước.
+     *
+     * @return bool true nếu thành công (kể cả khi có cảnh báo), false nếu lỗi nghiêm trọng.
+     */
+    private function runMigration201(): bool
+    {
+        $db = Factory::getDbo();
+
+        try {
+            $this->logInfo('Migration 2.0.1: Bắt đầu...');
+
+            $examsTable    = $db->replacePrefix('#__eqa_exams');
+            $subjectsTable = $db->replacePrefix('#__eqa_subjects');
+
+            // =================================================================
+            // Bước 1: Kiểm tra cột `code` có tồn tại không
+            // =================================================================
+            $existingCols = $this->getExistingColumnNames($db, $examsTable);
+
+            if (!in_array('code', $existingCols, true)) {
+                $this->logError(
+                    'Migration 2.0.1: Cột `code` không tồn tại trong bảng `'
+                    . $examsTable . '`. '
+                    . 'Hãy đảm bảo file sql/updates/mysql/2.0.1.sql đã được thực thi.'
+                );
+                return false;
+            }
+
+            // =================================================================
+            // Bước 2: Populate cột `code` cho các bản ghi còn rỗng
+            // =================================================================
+            $this->logInfo('Migration 2.0.1: Đang populate cột `code` cho #__eqa_exams...');
+
+            $rows = $db->setQuery(
+                "SELECT e.id            AS exam_id,
+                        e.examseason_id,
+                        s.code          AS subject_code
+                 FROM `{$examsTable}` e
+                 LEFT JOIN `{$subjectsTable}` s ON s.id = e.subject_id
+                 WHERE e.code = ''
+                 ORDER BY e.examseason_id, e.id"
+            )->loadObjectList();
+
+            if (empty($rows)) {
+                $this->logInfo('Migration 2.0.1: Không có bản ghi nào cần populate `code`.');
+            } else {
+                $this->logInfo(
+                    'Migration 2.0.1: Tìm thấy ' . count($rows) . ' môn thi cần populate `code`.'
+                );
+
+                // Xây dựng bảng tra cứu các code đã tồn tại theo examseason_id
+                // (bao gồm cả các bản ghi đã có code, để tránh trùng lặp)
+                $existingCodes = $this->loadExistingExamCodes($db, $examsTable);
+
+                $countPopulated    = 0;
+                $countOrphaned     = 0;
+                $countDeduplicated = 0;
+
+                foreach ($rows as $row) {
+                    $examId      = (int) $row->exam_id;
+                    $seasonId    = (int) $row->examseason_id;
+                    $subjectCode = $row->subject_code; // NULL nếu subject_id không hợp lệ
+
+                    // Xác định code gốc
+                    if (empty($subjectCode)) {
+                        // Môn thi mồ côi: subject_id không còn hợp lệ trong DB
+                        $baseCode = 'EXAM_' . $examId;
+                        $countOrphaned++;
+                        $this->logWarning(
+                            "Migration 2.0.1: Môn thi id={$examId} không tìm thấy môn học "
+                            . "tương ứng. Đặt code='{$baseCode}'."
+                        );
+                    } else {
+                        $baseCode = $subjectCode;
+                    }
+
+                    // Giải quyết xung đột unique (examseason_id, code)
+                    $finalCode = $this->resolveUniqueCode($baseCode, $seasonId, $existingCodes);
+
+                    if ($finalCode !== $baseCode) {
+                        $countDeduplicated++;
+                        $this->logWarning(
+                            "Migration 2.0.1: Xung đột code '{$baseCode}' trong kỳ thi "
+                            . "id={$seasonId}. Môn thi id={$examId} được đổi thành '{$finalCode}'."
+                        );
+                    }
+
+                    // Ghi vào database
+                    $db->setQuery(
+                        "UPDATE `{$examsTable}`
+                         SET `code` = " . $db->quote($finalCode) . "
+                         WHERE `id` = {$examId}"
+                    )->execute();
+
+                    // Đánh dấu code này đã được dùng trong bảng tra cứu nội bộ
+                    $existingCodes[$seasonId][$finalCode] = true;
+                    $countPopulated++;
+                }
+
+                $this->logInfo(
+                    "Migration 2.0.1: Đã populate {$countPopulated} bản ghi"
+                    . ($countOrphaned > 0 ? ", {$countOrphaned} môn thi mồ côi" : '')
+                    . ($countDeduplicated > 0 ? ", {$countDeduplicated} code bị đổi tên do trùng lặp" : '')
+                    . '.'
+                );
+            }
+
+            // =================================================================
+            // Bước 3: Enforce NOT NULL cho cột `code`
+            // Kiểm tra chắc chắn không còn bản ghi nào rỗng/NULL trước khi ALTER
+            // =================================================================
+            $this->logInfo('Migration 2.0.1: Kiểm tra và enforce NOT NULL cho cột `code`...');
+
+            $emptyCount = (int) $db->setQuery(
+                "SELECT COUNT(*)
+                 FROM `{$examsTable}`
+                 WHERE `code` = '' OR `code` IS NULL"
+            )->loadResult();
+
+            if ($emptyCount > 0) {
+                $this->logError(
+                    "Migration 2.0.1: Vẫn còn {$emptyCount} bản ghi có code rỗng/NULL. "
+                    . 'Không thể enforce NOT NULL. Kiểm tra dữ liệu và chạy lại.'
+                );
+                return false;
+            }
+
+            // Kiểm tra cột hiện tại: nếu đã là NOT NULL và không có DEFAULT thì bỏ qua
+            $colInfo = $db->setQuery(
+                "SELECT COLUMN_DEFAULT, IS_NULLABLE
+                 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME   = " . $db->quote($examsTable) . "
+                   AND COLUMN_NAME  = 'code'"
+            )->loadObject();
+
+            $needsModify = ($colInfo === null)
+                || ($colInfo->IS_NULLABLE === 'YES')
+                || ($colInfo->COLUMN_DEFAULT !== null);
+
+            if ($needsModify) {
+                $db->setQuery(
+                    "ALTER TABLE `{$examsTable}`
+                     MODIFY COLUMN `code` VARCHAR(50) NOT NULL
+                         COMMENT 'Mã môn thi (copy từ mã môn học); bắt buộc; duy nhất trong một kỳ thi'"
+                )->execute();
+                $this->logInfo('Migration 2.0.1: Đã enforce NOT NULL cho cột `code`.');
+            } else {
+                $this->logInfo('Migration 2.0.1: Cột `code` đã là NOT NULL không DEFAULT, bỏ qua MODIFY.');
+            }
+
+            // =================================================================
+            // Bước 4: Thêm UNIQUE INDEX (examseason_id, code)
+            // =================================================================
+            $this->logInfo('Migration 2.0.1: Kiểm tra và thêm UNIQUE INDEX (examseason_id, code)...');
+
+            $constraintExists = $this->uniqueConstraintExists(
+                $db,
+                $examsTable,
+                ['examseason_id', 'code']
+            );
+
+            if (!$constraintExists) {
+                $db->setQuery(
+                    "ALTER TABLE `{$examsTable}`
+                     ADD UNIQUE INDEX `uq_eqa_exams_season_code` (`examseason_id`, `code`)"
+                )->execute();
+                $this->logInfo('Migration 2.0.1: Đã thêm UNIQUE INDEX `uq_eqa_exams_season_code`.');
+            } else {
+                $this->logInfo('Migration 2.0.1: UNIQUE INDEX đã tồn tại, bỏ qua.');
+            }
+
+            $this->logInfo('Migration 2.0.1: Hoàn tất thành công!');
+            return true;
+
+        } catch (\Throwable $e) {
+            $msg = 'Migration 2.0.1 thất bại nghiêm trọng: ' . $e->getMessage();
+            Log::add("com_eqa: {$msg}", Log::ERROR, 'com_eqa');
+            $this->logError($msg);
+            return false;
+        }
+    }
+
+    /**
+     * Tải toàn bộ các code đã tồn tại trong #__eqa_exams,
+     * nhóm theo examseason_id, để hỗ trợ kiểm tra xung đột khi populate.
+     *
+     * Chỉ lấy các bản ghi có code không rỗng (đã được populate từ trước).
+     *
+     * @param  string $examsTable Tên bảng đầy đủ (đã replace prefix)
+     * @return array<int, array<string, true>> Map: seasonId → [code => true, ...]
+     */
+    private function loadExistingExamCodes(
+        \Joomla\Database\DatabaseInterface $db,
+        string $examsTable
+    ): array {
+        $rows = $db->setQuery(
+            "SELECT `examseason_id`, `code`
+             FROM `{$examsTable}`
+             WHERE `code` != '' AND `code` IS NOT NULL"
+        )->loadObjectList();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $seasonId              = (int) $row->examseason_id;
+            $map[$seasonId][$row->code] = true;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Giải quyết xung đột code trong phạm vi một kỳ thi (examseason_id).
+     *
+     * Thuật toán: Thử $baseCode trước; nếu đã tồn tại thì thử {baseCode}_2,
+     * {baseCode}_3, ... cho đến khi tìm được code chưa xuất hiện.
+     * Giới hạn an toàn tại suffix 9999 để tránh vòng lặp vô hạn.
+     *
+     * @param  string                          $baseCode      Code gốc (từ mã môn học hoặc fallback)
+     * @param  int                             $seasonId      ID kỳ thi
+     * @param  array<int, array<string, true>> $existingCodes Bảng tra cứu hiện tại (chỉ đọc)
+     * @return string Code cuối cùng (đảm bảo chưa tồn tại trong $existingCodes)
+     */
+    private function resolveUniqueCode(
+        string $baseCode,
+        int $seasonId,
+        array $existingCodes
+    ): string {
+        $candidate = $baseCode;
+        $suffix    = 2;
+
+        while (isset($existingCodes[$seasonId][$candidate])) {
+            if ($suffix > 9999) {
+                // Fallback cực kỳ hiếm gặp: thêm chuỗi ngẫu nhiên
+                $candidate = $baseCode . '_' . substr(uniqid('', false), -6);
+                break;
+            }
+
+            $candidate = $baseCode . '_' . $suffix;
+            $suffix++;
+        }
+
+        return $candidate;
+    }
+
+    /**
+     * Kiểm tra xem đã tồn tại UNIQUE index bao phủ chính xác tập cột $columns chưa.
+     *
+     * So sánh theo tập hợp (không phân biệt thứ tự cột trong index).
+     *
+     * @param  string   $tableName Tên bảng đầy đủ (đã replace prefix)
+     * @param  string[] $columns   Danh sách tên cột cần kiểm tra
+     * @return bool
+     */
+    private function uniqueConstraintExists(
+        \Joomla\Database\DatabaseInterface $db,
+        string $tableName,
+        array $columns
+    ): bool {
+        $dbName = $db->setQuery('SELECT DATABASE()')->loadResult();
+
+        $rows = $db->setQuery(
+            "SELECT INDEX_NAME, COLUMN_NAME
+             FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = " . $db->quote($dbName) . "
+               AND TABLE_NAME   = " . $db->quote($tableName) . "
+               AND NON_UNIQUE   = 0
+               AND INDEX_NAME  != 'PRIMARY'"
+        )->loadObjectList();
+
+        // Nhóm các cột theo tên index
+        $indexMap = [];
+        foreach ($rows as $row) {
+            $indexMap[$row->INDEX_NAME][] = $row->COLUMN_NAME;
+        }
+
+        // So sánh tập cột (không phân biệt thứ tự)
+        $targetSet = $columns;
+        sort($targetSet);
+
+        foreach ($indexMap as $indexCols) {
+            sort($indexCols);
+            if ($indexCols === $targetSet) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // =========================================================================
+    // Detect bảng qua INFORMATION_SCHEMA (dùng cho migration 2.0.0)
     // =========================================================================
 
     /**
@@ -294,31 +632,24 @@ class Com_EqaInstallerScript extends InstallerScript
         $qDbName     = $db->quote($dbName);
         $qTableLike  = $db->quote($tablePrefix . '%');
 
-        // Detect bảng còn cột created_by hoặc updated_by kiểu VARCHAR
-        // (cột đã là INT hoặc đã đổi tên sẽ không xuất hiện)
-        // HOẶC còn cột updated_at (chưa đổi tên thành modified_at)
-        $sql = "
-            SELECT DISTINCT t.TABLE_NAME
-            FROM information_schema.TABLES t
-            INNER JOIN information_schema.COLUMNS c
-                ON c.TABLE_SCHEMA = t.TABLE_SCHEMA
-               AND c.TABLE_NAME   = t.TABLE_NAME
+        $rows = $db->setQuery(
+            "SELECT DISTINCT c.TABLE_NAME
+             FROM information_schema.COLUMNS c
+             WHERE c.TABLE_SCHEMA = {$qDbName}
+               AND c.TABLE_NAME LIKE {$qTableLike}
                AND (
-                     (c.COLUMN_NAME IN ('created_by', 'updated_by')
-                      AND c.DATA_TYPE IN ('char', 'varchar', 'tinytext', 'text'))
-                     OR
-                     c.COLUMN_NAME = 'updated_at'
+                   (c.COLUMN_NAME = 'created_by' AND c.DATA_TYPE IN ('char','varchar','tinytext','text'))
+                   OR (c.COLUMN_NAME = 'updated_at' AND c.DATA_TYPE IN ('datetime','timestamp','date'))
+                   OR (c.COLUMN_NAME = 'updated_by' AND c.DATA_TYPE IN ('char','varchar','tinytext','text'))
                )
-            WHERE t.TABLE_SCHEMA = {$qDbName}
-              AND t.TABLE_NAME   LIKE {$qTableLike}
-            ORDER BY t.TABLE_NAME
-        ";
+             ORDER BY c.TABLE_NAME"
+        )->loadColumn();
 
-        return $db->setQuery($sql)->loadColumn() ?? [];
+        return $rows ?? [];
     }
 
     // =========================================================================
-    // Build bảng tra cứu username → user ID
+    // Build bảng tra cứu username → user ID (dùng cho migration 2.0.0)
     // =========================================================================
 
     /**
@@ -368,7 +699,7 @@ class Com_EqaInstallerScript extends InstallerScript
     }
 
     // =========================================================================
-    // Migrate một bảng
+    // Migrate một bảng (dùng cho migration 2.0.0)
     // =========================================================================
 
     /**
@@ -439,7 +770,7 @@ class Com_EqaInstallerScript extends InstallerScript
         string $newCol,
         array $userMap
     ): void {
-        $tmpCol       = $newCol . '_mig_tmp';
+        $tmpCol = $newCol . '_mig_tmp';
         $existingCols = $this->getExistingColumnNames($db, $tableName);
 
         // --- Bước 1: Thêm cột INT tạm DEFAULT NULL (idempotent) ---
@@ -452,7 +783,6 @@ class Com_EqaInstallerScript extends InstallerScript
 
         // --- Bước 2a: Điền user ID cho username tìm thấy trong #__users ---
         if (!empty($userMap)) {
-            // Nhóm username theo user ID để giảm số câu UPDATE (WHERE IN)
             $idToUsernames = [];
             foreach ($userMap as $username => $userId) {
                 $idToUsernames[(int) $userId][] = $username;
@@ -471,8 +801,6 @@ class Com_EqaInstallerScript extends InstallerScript
         }
 
         // --- Bước 2b: Gán FALLBACK_USER_ID cho username không tìm thấy ---
-        // Điều kiện: oldCol không NULL và không rỗng, nhưng tmpCol vẫn còn NULL
-        // (tức là không khớp bất kỳ username nào đã biết ở bước 2a)
         $db->setQuery(
             "UPDATE `{$tableName}`
              SET `{$tmpCol}` = " . self::FALLBACK_USER_ID . "
@@ -480,8 +808,6 @@ class Com_EqaInstallerScript extends InstallerScript
                AND `{$oldCol}` IS NOT NULL
                AND `{$oldCol}` != ''"
         )->execute();
-
-        // Lưu ý: Các dòng có oldCol IS NULL hoặc oldCol = '' → tmpCol vẫn NULL → đúng yêu cầu.
 
         // --- Bước 3: DROP cột cũ + RENAME cột tạm → tên mới (một lệnh ALTER) ---
         $db->setQuery(

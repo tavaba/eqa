@@ -77,6 +77,16 @@
                 required='true'
         />
         <field
+                name="allowed_rooms"
+                type="room"
+                multiple="true"
+                label="Phòng thi được phép sử dụng"
+                description="Danh sách phòng được phép sử dụng khi tổ chức thi môn này.
+                Giữ Ctrl (Windows) hoặc Command (Mac) để chọn nhiều phòng.
+                Để trống nếu không muốn giới hạn phòng thi (tất cả các phòng đều có thể sử dụng)."
+                class="select2-basic"
+        />
+        <field
                 name="pmarks"
                 type="textarea"
                 label="COM_EQA_FORM_SUBJECT_PMARKS_LABEL"

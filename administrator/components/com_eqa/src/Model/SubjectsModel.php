@@ -23,8 +23,8 @@ class SubjectsModel extends ListModel{
         $db = $this->getDatabase();
         $query =  $db->getQuery(true);
         $columns = $db->quoteName(
-            array('a.id','b.code','b.name','a.code', 'a.name','a.degree', 'a.credits', 'a.finaltesttype', 'a.testbankyear', 'a.published', 'a.ordering'),
-            array('id','department_code','department_name','code','name','degree','credits', 'finaltesttype','testbankyear', 'published',  'ordering')
+            array('a.id','b.code','b.name','a.code', 'a.name','a.degree', 'a.credits', 'a.finaltesttype', 'a.testbankyear', 'a.allowed_rooms', 'a.published', 'a.ordering'),
+            array('id','department_code','department_name','code','name','degree','credits', 'finaltesttype','testbankyear', 'allowed_rooms', 'published',  'ordering')
         );
         $query->from('#__eqa_subjects AS a')
             ->leftJoin('#__eqa_units AS b','a.unit_id = b.id')

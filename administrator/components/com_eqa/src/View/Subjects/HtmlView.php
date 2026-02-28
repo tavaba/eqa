@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Service\RoomService;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
@@ -34,6 +35,16 @@ class HtmlView extends ItemsHtmlView
         $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
 
+	    // Cột "Phòng thi": danh sách mã đầy đủ các phòng được phép tổ chức thi,
+	    // phân tách bởi ", ". Hiển thị chuỗi rỗng khi không giới hạn (NULL).
+	    // Giá trị được populate trong prepareDataForLayoutDefault().
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption(
+		    'allowed_rooms_display',
+		    'Phòng thi',
+		    false,
+		    false
+	    );
+
         $option->published = ListLayoutItemFields::defaultFieldPublished();
 
         //Set the option
@@ -43,10 +54,20 @@ class HtmlView extends ItemsHtmlView
     {
         parent::prepareDataForLayoutDefault();
 
+	    // Khởi tạo một lần ngoài vòng lặp.
+	    // RoomService tự lazy-load dữ liệu phòng khi cần, tránh truy vấn DB lặp lại.
+	    $roomService = new RoomService();
+
         if(!empty($this->layoutData->items)) {
             foreach ($this->layoutData->items as $item) {
                 $item->finaltesttype = ExamHelper::getTestType($item->finaltesttype);
                 $item->degree = CourseHelper::Degree($item->degree);
+
+	            // Populate cột phòng thi
+	            $item->allowed_rooms_display = $this->buildAllowedRoomsDisplay(
+		            $item->allowed_rooms ?? null,
+		            $roomService
+	            );
             }
         }
     }
@@ -65,5 +86,51 @@ class HtmlView extends ItemsHtmlView
 		ToolbarHelper::title('Nhập thông tin môn học');
 		ToolbarHelper::appendUpload('subjects.import');
 		ToolbarHelper::cancel('subjects.cancel');
+	}
+
+	// =========================================================================
+	// Helper
+	// =========================================================================
+
+	/**
+	 * Chuyển đổi giá trị `allowed_rooms` thành chuỗi hiển thị.
+	 *
+	 * Chấp nhận cả 3 dạng đầu vào:
+	 *   - JSON string  "[1,3,7]"  → decode, sau đó tra cứu từng ID
+	 *   - array        [1, 3, 7]  → tra cứu trực tiếp (đã decode ở Model)
+	 *   - null / ""               → trả về "" (không giới hạn phòng)
+	 *
+	 * Room ID không tìm thấy trong RoomService (đã bị xóa khỏi DB) bị bỏ qua.
+	 *
+	 * @param  string|array|null $allowedRooms Giá trị thô của cột `allowed_rooms`.
+	 * @param  RoomService       $roomService  Service tra cứu thông tin phòng.
+	 * @return string Chuỗi mã phòng đầy đủ phân tách bởi ", "; "" nếu trống/NULL.
+	 */
+	private function buildAllowedRoomsDisplay(
+		string|array|null $allowedRooms,
+		RoomService $roomService
+	): string {
+		if (is_string($allowedRooms) && $allowedRooms !== '') {
+			$roomIds = json_decode($allowedRooms, true) ?? [];
+		} elseif (is_array($allowedRooms)) {
+			$roomIds = $allowedRooms;
+		} else {
+			return '';
+		}
+
+		if (empty($roomIds)) {
+			return '';
+		}
+
+		$fullCodes = [];
+
+		foreach ($roomIds as $roomId) {
+			$code = $roomService->getFullCode((int) $roomId);
+			if ($code !== '') {
+				$fullCodes[] = $code;
+			}
+		}
+
+		return implode(', ', $fullCodes);
 	}
 }
