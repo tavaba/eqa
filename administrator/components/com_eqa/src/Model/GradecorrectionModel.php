@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use JFactory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -363,7 +364,7 @@ class GradecorrectionModel extends AdminModel {
 			->set($db->quoteName('module_mark') . '=' . $moduleMark)
 			->set($db->quoteName('module_base4_mark') . '=' . $moduleBase4Mark)
 			->set($db->quoteName('module_grade') . '=' . $db->quote($moduleGrade))
-			->set($db->quoteName('conclusion') . '=' . $conclusion)
+			->set($db->quoteName('conclusion') . '=' . $conclusion->value)
 			->where('exam_id=' . $examinee->examId)
 			->where('learner_id=' . $examinee->learnerId);
 		$db->setQuery($query);
@@ -372,10 +373,10 @@ class GradecorrectionModel extends AdminModel {
 
 		//7.3.3 Nếu sau phúc khảo 'conclusion' có thay đổi thì cần cập nhận thông tin
 		//      về quyền thi tiếp vào bảng #__eqa_class_learner
-		if($examinee->conclusion == $conclusion)
+		if($examinee->conclusion == $conclusion->value)
 			return;
 
-		if($conclusion == ExamHelper::CONCLUSION_PASSED || $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED)
+		if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
 			$expired=1;
 		else
 			$expired=0;

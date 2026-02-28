@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -510,7 +511,7 @@ class PaperexamModel extends AdminModel{
 						'module_mark = ' . $moduleMark,
 						'module_base4_mark = ' . $moduleBase4Mark,
 						'module_grade = ' . $db->quote($moduleGrade),
-						'conclusion = ' . $conclusion
+						'conclusion = ' . $conclusion->value
 					])
 					->where('exam_id=' . $examId . ' AND learner_id=' . $learnerId);
 				$db->setQuery($query);
@@ -524,7 +525,7 @@ class PaperexamModel extends AdminModel{
 				if($anomaly!=ExamHelper::EXAM_ANOMALY_REDO && $anomaly!=ExamHelper::EXAM_ANOMALY_DELAY)
 					$ntaken = $attempt;
 				$expired = 0;
-				if($conclusion == ExamHelper::CONCLUSION_PASSED || $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED)
+				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
 					$expired=1;
 				$query = $db->getQuery(true)
 					->update('#__eqa_class_learner')
@@ -546,7 +547,7 @@ class PaperexamModel extends AdminModel{
 				//d) Ghi nhận chế độ khuyến khích đã được sử dụng
 				//Nếu SV được cộng điểm, kết quả đánh giá học phần là "ĐẠT" thì ghi nhận
 				//chế độ khuyến khích của SV đã được sử dụng
-				if($stimulationType==StimulationHelper::TYPE_ADD && $conclusion == ExamHelper::CONCLUSION_PASSED)
+				if($stimulationType==StimulationHelper::TYPE_ADD && $conclusion == Conclusion::Passed)
 				{
 					$query = $db->getQuery(true)
 						->update('#__eqa_stimulations')

@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -1018,7 +1019,7 @@ class ExamseasonModel extends AdminModel{
 			$stat[$examId]['total']++;
 			if(!is_null($moduleMark))
 			{
-				if($conclusion == ExamHelper::CONCLUSION_PASSED)
+				if($conclusion == Conclusion::Passed->value)
 				{
 					$stat[$examId]['passed']++;
 					$stat[$examId]['sum_passed'] += $moduleMark;

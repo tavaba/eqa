@@ -7,6 +7,7 @@ use Collator;
 use Exception;
 use JComponentHelper;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
@@ -2274,7 +2275,7 @@ abstract class IOHelper extends BaseIOHelper
 				$item->term,
 				$item->academicyear,
 				(string) $item->ntaken,
-				ExamHelper::getConclusion($item->conclusion)
+				Conclusion::from($item->conclusion)->getLabel()
 			];
 		}
 		$sheet->fromArray($data, '', 'A'.$row);

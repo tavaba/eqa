@@ -7,6 +7,7 @@ use Collator;
 use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -97,7 +98,7 @@ class ConductsController extends AdminController {
 	{
 		$count = 0;
 		foreach ($exams as $exam)
-			if($exam->conclusion == ExamHelper::CONCLUSION_FAILED)
+			if($exam->conclusion == Conclusion::Failed->value)
 				++$count;
 		return $count;
 	}
@@ -105,7 +106,7 @@ class ConductsController extends AdminController {
 	{
 		$count = 0;
 		foreach ($exams as $exam)
-			if($exam->conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED)
+			if($exam->conclusion == Conclusion::FailedAndExpired->value)
 				++$count;
 		return $count;
 	}

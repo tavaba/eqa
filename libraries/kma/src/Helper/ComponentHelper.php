@@ -7,6 +7,8 @@ use Joomla\CMS\Access\Access;
 use Joomla\CMS\Document\Document;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactory;
+use Joomla\CMS\Component\ComponentHelper as JoomlaComponentHelper;
+use Joomla\Registry\Registry;
 
 abstract class ComponentHelper
 {
@@ -38,6 +40,13 @@ abstract class ComponentHelper
             return $matches[1];
         return '';
     }
+
+	public static function getParams(?string $componentName=null): Registry
+	{
+		if(is_null($componentName))
+			$componentName = self::getName();
+		return JoomlaComponentHelper::getParams($componentName);
+	}
 
     /**
      * Lấy danh sách tât cả các actions và thực hiện kiểm tra quyền

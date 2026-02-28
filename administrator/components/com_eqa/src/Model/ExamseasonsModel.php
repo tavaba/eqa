@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -130,7 +131,7 @@ class ExamseasonsModel extends ListModel{
 			->leftJoin('#__eqa_classes AS d', 'd.id=a.class_id')
 			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id')
 			->leftJoin('#__eqa_academicyears AS f', 'f.id=d.academicyear_id')
-			->where('a.conclusion IN (' . implode(',', [ExamHelper::CONCLUSION_FAILED, ExamHelper::CONCLUSION_DEFERRED]) . ')')
+			->where('a.conclusion IN (' . implode(',', [Conclusion::Failed->value, Conclusion::Deferred->value]) . ')')
 			->where('b.expired=0')
 			// Add condition to keep only records with maximum exam_id per (code, subject_id)
 			// (maximum exam_id means last exam for given subject)
@@ -143,7 +144,7 @@ class ExamseasonsModel extends ListModel{
             LEFT JOIN #__eqa_subjects AS e2 ON e2.id=d2.subject_id
             WHERE c2.code = c.code 
             AND e2.id = e.id
-            AND a2.conclusion IN (' . implode(',', [ExamHelper::CONCLUSION_FAILED, ExamHelper::CONCLUSION_DEFERRED]) . ')
+            AND a2.conclusion IN (' . implode(',', [Conclusion::Failed->value, Conclusion::Deferred->value]) . ')
             AND b2.expired=0
         )');
 

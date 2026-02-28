@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 
 /**
  * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
@@ -25,7 +25,7 @@ class ConclusionField extends ListField
         $options = parent::getOptions();
 	    $options[] = HTMLHelper::_('select.option', 0, 'Chưa có kết luận');
 	    $options[] = HTMLHelper::_('select.option', 1, 'Đã có kết luận');
-        foreach (ExamHelper::getConclusions() as $code=>$text)
+        foreach (Conclusion::getOptions() as $code=> $text)
         {
             $options[] = HTMLHelper::_('select.option', $code, $text);
         }

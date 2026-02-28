@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Factory;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -65,7 +66,7 @@ class HtmlView extends ItemsHtmlView {
 				$item->isDebtor = $item->isDebtor ? 'Có' : '';
 				$item->ppaa = ExamHelper::getPostPrimaryAssessmentAction($item->ppaa);
 				$item->anomaly = ExamHelper::getAnomaly($item->anomaly);
-				$item->conclusion = $item->conclusion ? ExamHelper::getConclusion($item->conclusion) : '';
+				$item->conclusion = $item->conclusion ? Conclusion::from($item->conclusion)->getLabel() : '';
 			}
 		}
 

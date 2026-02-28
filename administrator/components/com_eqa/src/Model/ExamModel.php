@@ -5,6 +5,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseDriver;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -411,7 +412,7 @@ class ExamModel extends AdminModel{
 			->update('#__eqa_exam_learner')
 			->set([
 				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY,
-				'conclusion=' . ExamHelper::CONCLUSION_DEFERRED
+				'conclusion=' . Conclusion::Deferred->value
 			])
 			->where([
 				'exam_id=' . $examId,
@@ -1018,7 +1019,7 @@ class ExamModel extends AdminModel{
 			$stimulationId = $examinee['stimulation_id'];
 			$stimulationValue = $examinee['stimulation_value'];
 			$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
-			$conclusion = ExamHelper::CONCLUSION_PASSED;
+			$conclusion = Conclusion::Passed;
 			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $stimulationValue, $stimulationValue, $attempt, $admissionYear);
 			$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 			$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
@@ -1030,7 +1031,7 @@ class ExamModel extends AdminModel{
 					'mark_final=' . $stimulationValue,
 					'module_mark=' . $moduleMark,
 					'module_base4_mark=' . $moduleBase4Mark,
-					'conclusion=' . $conclusion,
+					'conclusion=' . $conclusion->value,
 					'module_grade=' . $db->quote($moduleGrade)
 				])
 				->where([
@@ -1102,7 +1103,7 @@ class ExamModel extends AdminModel{
 			$stimulationId = $examinee['stimulation_id'];
 			$stimulationValue = $examinee['stimulation_value'];
 			$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
-			$conclusion = ExamHelper::CONCLUSION_PASSED;
+			$conclusion = Conclusion::Passed;
 			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $stimulationValue, $attempt, $admissionYear);
 			$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
 			$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
@@ -1114,7 +1115,7 @@ class ExamModel extends AdminModel{
 					'mark_final=' . $stimulationValue,
 					'module_mark=' . $moduleMark,
 					'module_base4_mark=' . $moduleBase4Mark,
-					'conclusion=' . $conclusion,
+					'conclusion=' . $conclusion->value,
 					'module_grade=' . $db->quote($moduleGrade)
 				])
 				->where([
@@ -1682,7 +1683,7 @@ class ExamModel extends AdminModel{
 					'module_mark=' . $moduleMark,
 					'module_base4_mark=' . $moduleBase4Mark,
 					'module_grade='. $db->quote($moduleGrade),
-					'conclusion='.$conclusion
+					'conclusion='.$conclusion->value
 				])
 				->where([
 					'exam_id='.$examId,
@@ -1694,7 +1695,7 @@ class ExamModel extends AdminModel{
 			}
 
 			//2. Update status in class_learner table
-			$expired = $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED ? 1 : 0;
+			$expired = $conclusion == Conclusion::FailedAndExpired ? 1 : 0;
 			$query = $db->getQuery(true)
 				->update('#__eqa_class_learner')
 				->set([
@@ -1722,7 +1723,7 @@ class ExamModel extends AdminModel{
 				'module_mark=NULL',
 				'module_base4_mark=NULL',
 				'module_grade=' . $db->quote('I'),
-				'conclusion=' . ExamHelper::CONCLUSION_DEFERRED
+				'conclusion=' . Conclusion::Deferred->value
 			])
 			->where([
 				'exam_id='.$examId,
@@ -1871,7 +1872,7 @@ class ExamModel extends AdminModel{
 						'module_mark = ' . $moduleMark,
 						'module_base4_mark = ' . $moduleBase4Mark,
 						'module_grade = ' . $db->quote($moduleGrade),
-						'conclusion = ' . $conclusion,
+						'conclusion = ' . $conclusion->value,
 						'description = ' . $description
 					])
 					->where('exam_id=' . $examId . ' AND learner_id=' . $learnerId);
@@ -1886,7 +1887,7 @@ class ExamModel extends AdminModel{
 				if(!in_array($anomaly, [ExamHelper::EXAM_ANOMALY_DELAY, ExamHelper::EXAM_ANOMALY_REDO]))
 					$ntaken = $attempt;
 				$expired = 0;
-				if($conclusion == ExamHelper::CONCLUSION_PASSED || $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED)
+				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
 					$expired=1;
 				$query = $db->getQuery(true)
 					->update('#__eqa_class_learner')
@@ -1908,7 +1909,7 @@ class ExamModel extends AdminModel{
 				//d) Ghi nhận chế độ khuyến khích đã được sử dụng
 				//Nếu SV được cộng điểm, kết quả đánh giá học phần là "ĐẠT" thì ghi nhận
 				//chế độ khuyến khích của SV đã được sử dụng
-				if($stimulationType==StimulationHelper::TYPE_ADD && $conclusion == ExamHelper::CONCLUSION_PASSED)
+				if($stimulationType==StimulationHelper::TYPE_ADD && $conclusion == Conclusion::Passed)
 				{
 					$query = $db->getQuery(true)
 						->update('#__eqa_stimulations')

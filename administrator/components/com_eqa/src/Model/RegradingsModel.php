@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -551,7 +552,7 @@ class RegradingsModel extends ListModel
 			->set($db->quoteName('module_mark') . '=' . $moduleMark)
 			->set($db->quoteName('module_base4_mark') . '=' . $moduleBase4Mark)
 			->set($db->quoteName('module_grade') . '=' . $db->quote($moduleGrade))
-			->set($db->quoteName('conclusion') . '=' . $conclusion)
+			->set($db->quoteName('conclusion') . '=' . $conclusion->value)
 			->where('exam_id=' . $examId)
 			->where('learner_id=' . $learnerId);
 		$db->setQuery($query);
@@ -560,10 +561,10 @@ class RegradingsModel extends ListModel
 
 		//5. Nếu sau phúc khảo 'conclusion' có thay đổi thì cần cập nhận thông tin vào bảng #__eqa_class_learner
 		//   Mà cụ thể là thông tin về quyền thi tiếp. Các thông tin khác không thể thay đổi vì phúc khảo.
-		if($oldConclusion == $conclusion)
+		if($oldConclusion == $conclusion->value)
 			return;
 
-		if($conclusion == ExamHelper::CONCLUSION_PASSED || $conclusion == ExamHelper::CONCLUSION_FAILED_EXPIRED)
+		if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
 			$expired=1;
 		else
 			$expired=0;

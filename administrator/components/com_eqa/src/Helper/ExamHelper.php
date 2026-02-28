@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 
 abstract class ExamHelper{
     public const TEST_TYPE_UNKNOWN=0;
@@ -56,11 +57,6 @@ abstract class ExamHelper{
 	public const EXAM_PPAA_STATUS_REQUIRE_INFO=25;
 	public const EXAM_PPAA_STATUS_REJECTED=30;
 	public const EXAM_PPAA_STATUS_DONE=40;
-
-	public const CONCLUSION_PASSED = 10;            //Qua môn, hết lượt thi
-	public const CONCLUSION_FAILED = 20;            //Không qua môn, thi lại
-	public const CONCLUSION_FAILED_EXPIRED = 21;    //Không qua môn, hết lượt thi
-	public const CONCLUSION_DEFERRED = 30;          //Bảo lưu lượt thi
 
 	public const SECOND_ATTEMPT_LIMIT_NONE = 0;
 	public const SECOND_ATTEMPT_LIMIT_EXAM = 1;
@@ -358,26 +354,6 @@ abstract class ExamHelper{
 		return $limits;
 	}
 
-	static public function getConclusion(int $conclusionCode)
-	{
-		return match ($conclusionCode)
-		{
-			self::CONCLUSION_PASSED => 'Đạt',
-			self::CONCLUSION_FAILED => 'Không đạt',
-			self::CONCLUSION_FAILED_EXPIRED => 'Học lại',
-			self::CONCLUSION_DEFERRED => 'Bảo lưu'
-		};
-	}
-	static public function getConclusions()
-	{
-		$conclusions = array();
-		$conclusions[self::CONCLUSION_PASSED] = self::getConclusion(self::CONCLUSION_PASSED);
-		$conclusions[self::CONCLUSION_FAILED] = self::getConclusion(self::CONCLUSION_FAILED);
-		$conclusions[self::CONCLUSION_FAILED_EXPIRED] = self::getConclusion(self::CONCLUSION_FAILED_EXPIRED);
-		$conclusions[self::CONCLUSION_DEFERRED] = self::getConclusion(self::CONCLUSION_DEFERRED);
-		return $conclusions;
-	}
-
 	static public function decodeMarkConstituent(int $constituent):string|null
 	{
 		return match ($constituent){
@@ -562,11 +538,11 @@ abstract class ExamHelper{
 		return 0;
 	}
 
-	static public function calculateModuleGrade(float $moduleMark, int $conclusion)
+	static public function calculateModuleGrade(float $moduleMark, Conclusion $conclusion): string
 	{
-		if($conclusion == ExamHelper::CONCLUSION_DEFERRED)
+		if($conclusion == Conclusion::Deferred)
 			return 'I';
-		if($conclusion == self::CONCLUSION_FAILED || $conclusion == self::CONCLUSION_FAILED_EXPIRED)
+		if($conclusion == Conclusion::Failed || $conclusion == Conclusion::FailedAndExpired)
 			return 'F';
 
 		if($moduleMark <= 4.7)
@@ -603,13 +579,13 @@ abstract class ExamHelper{
 		if(!empty($learner->pam) && $learner->pam<0)
 			$learner->pam = self::specialMarkToText($learner->pam);
 	}
-	static public function conclude($moduleMark, $finalExamMark, $anomaly, $attempt)
+	static public function conclude($moduleMark, $finalExamMark, $anomaly, $attempt): Conclusion
 	{
 		if($anomaly == ExamHelper::EXAM_ANOMALY_BAN)
-			return self::CONCLUSION_FAILED_EXPIRED;
+			return Conclusion::FailedAndExpired;
 
 		if($anomaly == self::EXAM_ANOMALY_DELAY || $anomaly == self::EXAM_ANOMALY_REDO)
-			return self::CONCLUSION_DEFERRED;
+			return Conclusion::Deferred;
 
 		//TODO: Tính toán ngưỡng khác nhau cho Đại học và Cao học
 		//      Đưa ngưỡng điểm tổng vào cấu hình
@@ -620,11 +596,11 @@ abstract class ExamHelper{
 		{
 			$maxAttempts = ConfigHelper::getMaxExamAttempts();
 			if($attempt>=$maxAttempts)
-				return self::CONCLUSION_FAILED_EXPIRED;
-			return self::CONCLUSION_FAILED;
+				return Conclusion::FailedAndExpired;
+			return Conclusion::Failed;
 		}
 
-		return self::CONCLUSION_PASSED;
+		return Conclusion::Passed;
 	}
 
 	static public function isValidMark($value):bool
