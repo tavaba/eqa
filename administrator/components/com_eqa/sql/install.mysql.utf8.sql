@@ -697,6 +697,7 @@ CREATE TABLE IF NOT EXISTS `#__eqa_secondattempts`(
 	`class_id`			INT NOT NULL,
 	`learner_id`		INT NOT NULL,
 	`last_exam_id`		INT NOT NULL,
+    `last_attempt`      INT NOT NULL,
 	`last_conclusion`	INT,
 	`payment_required`	BOOLEAN NOT NULL,
 	`payment_completed`	BOOLEAN,
@@ -705,4 +706,4 @@ CREATE TABLE IF NOT EXISTS `#__eqa_secondattempts`(
 	INDEX idx_eqa_secondattempts_learner(`learner_id`),
 	UNIQUE(`class_id`, `learner_id`),
 	UNIQUE(`payment_code`)
-) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Danh sách thi lần 2';
+) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Danh sách thi lần hai';
