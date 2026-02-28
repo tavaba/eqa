@@ -26,7 +26,64 @@ class ExamModel extends AdminModel{
 			$table->questionauthor_id=null;
 		if(empty($table->nquestion))
 			$table->nquestion=null;
+		if (empty($table->allowed_rooms)) {
+			$table->allowed_rooms = null;
+		}
 	}
+
+	/**
+	 * Ghi đè để encode allowed_rooms trước khi lưu
+	 *
+	 * @param   array  $data  Form data
+	 *
+	 * @return  bool
+	 * @since   2.0.1
+	 */
+	public function save($data): bool
+	{
+		// Encode allowed_rooms: array → JSON string; rỗng → null (xử lý trong prepareTable)
+		if (isset($data['allowed_rooms'])) {
+			if (is_array($data['allowed_rooms'])) {
+				$filteredIds = array_filter(array_map('intval', $data['allowed_rooms']));
+				$filteredIds = array_values(array_unique($filteredIds));
+				$data['allowed_rooms'] = !empty($filteredIds)
+					? json_encode($filteredIds, JSON_UNESCAPED_UNICODE)
+					: null;
+			} elseif (empty($data['allowed_rooms'])) {
+				$data['allowed_rooms'] = null;
+			}
+		}
+
+		return parent::save($data);
+	}
+
+	/**
+	 * Ghi đè để parse allowed_rooms
+	 *
+	 * @param   mixed  $pk  Primary key
+	 *
+	 * @return  \stdClass|bool
+	 * @since   2.0.1
+	 */
+	public function getItem($pk = null): bool|\stdClass
+	{
+		$item = parent::getItem($pk);
+
+		if ($item === false) {
+			return false;
+		}
+
+		// Parse allowed_rooms từ JSON string sang array để RoomField (multiple=true) hoạt động
+		if (!empty($item->allowed_rooms)) {
+			$decoded = json_decode($item->allowed_rooms, true);
+			$item->allowed_rooms = is_array($decoded) ? $decoded : [];
+		} else {
+			$item->allowed_rooms = [];
+		}
+
+		return $item;
+	}
+
 	/**
 	 * Add examinees into an exam. This must search for 'ntaken', 'expired'.
 	 * This also calls updateDebt() and updateStimulation() after adding.

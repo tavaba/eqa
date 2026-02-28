@@ -9,9 +9,9 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -927,5 +927,94 @@ class ExamController extends  FormController
 		}
 		echo new JsonResponse($data);
 		jexit();
+	}
+	/**
+	 * Returns JSON data of a subject for auto-filling the exam edit form.
+	 *
+	 * Expected response shape:
+	 * {
+	 *   "code":          "TOAN1",
+	 *   "name":          "Toán cao cấp 1",
+	 *   "allowed_rooms": [1, 3, 7],   // or null when subject has no restriction
+	 *   "is_pass_fail":  0,
+	 *   "testtype":      "written",
+	 *   "duration":      90,
+	 *   "kmonitor":      1.0,
+	 *   "kassess":       1.0,
+	 *   "usetestbank":   1            // 1 nếu testbankyear != NULL, 0 nếu NULL
+	 * }
+	 *
+	 * URL: index.php?option=com_eqa&task=exam.getJsonSubjectInfo&subject_id=X
+	 *
+	 * @return void
+	 * @since  1.3.0
+	 */
+	public function getJsonSubjectInfo(): void
+	{
+		try {
+			// 1. Retrieve and validate subject id
+			$subjectId = $this->input->getInt('subject_id');
+			if (empty($subjectId)) {
+				throw new \Exception('Subject ID not provided.');
+			}
+
+			// 2. Query the subject record — only the fields we need
+			$db    = DatabaseHelper::getDatabaseDriver();
+			$query = $db->getQuery(true)
+				->select(
+					$db->quoteName([
+						'code',
+						'name',
+						'allowed_rooms',
+						'is_pass_fail',
+						'finaltesttype',
+						'finaltestduration',
+						'kmonitor',
+						'kassess',
+						'testbankyear',
+					])
+				)
+				->from($db->quoteName('#__eqa_subjects'))
+				->where($db->quoteName('id')        . ' = ' . (int) $subjectId)
+				->where($db->quoteName('published') . ' = 1');
+			$db->setQuery($query);
+			$subject = $db->loadObject();
+
+			if (empty($subject)) {
+				throw new \Exception('Subject not found.');
+			}
+
+			// 3. Parse allowed_rooms: stored as JSON string or NULL in DB
+			$allowedRooms = null;
+			if (!empty($subject->allowed_rooms)) {
+				$decoded      = json_decode($subject->allowed_rooms, true);
+				$allowedRooms = is_array($decoded) ? $decoded : null;
+			}
+
+			// 4. Derive usetestbank from testbankyear
+			//    testbankyear != NULL  →  usetestbank = 1
+			//    testbankyear IS NULL  →  usetestbank = 0
+			$useTestbank = ($subject->testbankyear !== null) ? 1 : 0;
+
+			// 5. Build response payload
+			$data = [
+				'code'          => $subject->code,
+				'name'          => $subject->name,
+				'allowed_rooms' => $allowedRooms,
+				'is_pass_fail'  => (int) $subject->is_pass_fail,
+				'testtype'      => $subject->finaltesttype,
+				'duration'      => (int) $subject->finaltestduration,
+				'kmonitor'      => (float) $subject->kmonitor,
+				'kassess'       => (float) $subject->kassess,
+				'usetestbank'   => $useTestbank,
+			];
+
+			$this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
+			echo new JsonResponse($data);
+		} catch (\Exception $e) {
+			echo new JsonResponse(null, $e->getMessage(), true);
+		}
+
+		$this->app->close();
 	}
 }

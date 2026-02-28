@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <form>
-    <fieldset name="exam" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+    <fieldset name="exam"
+              addfieldprefix="Kma\Component\Eqa\Administrator\Field"
+              addruleprefix="Kma\Library\Kma\Rule">
         <field
                 name="id"
                 type="hidden"
@@ -22,12 +24,33 @@
             <option value="">COM_EQA_SUBJECT_REQUEST</option>
         </field>
         <field
+                name="code"
+                type="text"
+                label="Mã môn thi"
+                description="Mặc định là mã môn học, nhưng có thể sửa lại nếu cần. Mã môn thi phải duy nhất trong một mùa thi."
+                required="true"
+                validate="ExamCode"
+                hint="Ví dụ: TOAN1, CLC1ATATAT2"
+        />
+        <field
                 name="name"
                 type="text"
                 label="COM_EQA_EXAM_NAME"
-                description="COM_EQA_EXAM_NAME_DESC"
+                description="Mặc định là tên môn học, nhưng có thể sửa lại nếu cần."
                 required="true"
         />
+        <field
+                name="allowed_rooms"
+                type="room"
+                multiple="true"
+                label="Phòng thi được phép sử dụng"
+                description="Danh sách phòng được phép sử dụng khi tổ chức thi môn này.
+                Giữ Ctrl (Windows) hoặc Command (Mac) để chọn nhiều phòng.
+                Để trống nếu không muốn giới hạn phòng thi (tất cả các phòng đều có thể sử dụng)."
+                class="select2-basic"
+        >
+            <option value="">-Phòng thi được phép sử dụng-</option>
+        </field>
         <field  name="is_pass_fail"
                 type="radio"
                 required="true"
@@ -90,10 +113,11 @@
         <field
                 name="usetestbank"
                 type="radio"
-                label="COM_EQA_USETESTBANK"
-                default="0"
                 required="true"
-                class="btn-group btn-group-yesno">
+                default="0"
+                label="COM_EQA_USETESTBANK"
+                class="btn-group btn-group-yesno"
+        >
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
@@ -101,56 +125,40 @@
                 name="questiondeadline"
                 type="calendar"
                 showtime="false"
-                singleheader="true"
-                label="COM_EQA_QUESTIONDEADLINE"
-                description="COM_EQA_QUESTIONDEADLINE_DESC"
+                label="COM_EQA_EXAM_QUESTION_DEADLINE"
                 translateformat="true"
         />
         <field
                 name="questiondate"
                 type="calendar"
                 showtime="false"
-                singleheader="true"
-                label="COM_EQA_QUESTIONDATE"
-                description="COM_EQA_QUESTIONDATE_DESC"
+                label="COM_EQA_EXAM_QUESTION_DATE"
                 translateformat="true"
         />
-        <field  name="questionsender_id"
+        <field
+                name="questionsender_id"
                 type="employee"
-                label="COM_EQA_QUESTIONSENDER"
+                class="select2-basic"
+                label="Người giao đề"
         >
-            <option value="">COM_EQA_QUESTIONSENDER_REQUEST</option>
+            <option value="">- Người giao đề -</option>
         </field>
-        <field  name="questionauthor_id"
+        <field
+                name="questionauthor_id"
                 type="employee"
-                label="COM_EQA_QUESTIONAUTHOR"
+                class="select2-basic"
+                label="Người ra đề"
         >
-            <option value="">COM_EQA_QUESTIONAUTHOR_REQUEST</option>
+            <option value="">- Người ra đề -</option>
         </field>
-        <field  name="nquestion"
+        <field
+                name="nquestion"
                 type="number"
-                default=""
+                label="Số lượng đề"
+                default="1"
                 min="1"
                 step="1"
-                label="COM_EQA_QUESTIONCOUNT"
-                description="COM_EQA_QUESTIONCOUNT_DESC"
         />
-        <field  name="statistic"
-                type="text"
-                readonly="true"
-                default="To be replaced by a subform"
-                label="COM_EQA_STATISTIC"
-                description="COM_EQA_EXAM_STATISTIC_DESC"
-        />
-        <field  name="anomaly"
-                type="textarea"
-                label="COM_EQA_ANOMALY"
-                description="COM_EQA_EXAM_ANOMALY_DESC"
-                />
-        <field  name="description"
-                type="textarea"
-                label="COM_EQA_DESCRIPTION"
-                />
         <field
                 name="created_by"
                 type="user"
