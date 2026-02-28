@@ -3,6 +3,8 @@
  * @package     Com_Eqa
  * @subpackage  Installation Script
  *
+ * Thứ tự thực thi của Joomla là: preflight() → copy file → update() → chạy SQL → postflight()
+ *
  * Migration v2.0.0
  * ----------------
  * Các thay đổi schema so với v1.x:
@@ -113,10 +115,13 @@ class Com_EqaInstallerScript extends InstallerScript
     }
 
     /**
-     * Chạy sau khi Joomla copy file mới lên server (lệnh Update).
+     * Chạy sau khi Joomla copy file mới lên server NHƯNG TRƯỚC KHI chạy SQL update.
      *
-     * Điều phối các migration theo version đã cài.
-     * Mỗi migration chỉ chạy khi version đang cài nhỏ hơn version tương ứng.
+     * Chỉ dùng cho các migration không phụ thuộc vào SQL update (ví dụ: migration 2.0.0
+     * thực hiện bằng PHP thuần, không cần file .sql chạy trước).
+     *
+     * LƯU Ý: Các migration cần SQL chạy trước (ví dụ: tạo cột mới rồi mới populate dữ liệu)
+     * phải được đặt trong postflight(), không phải ở đây.
      */
     public function update($parent): bool
     {
@@ -128,10 +133,36 @@ class Com_EqaInstallerScript extends InstallerScript
             }
         }
 
-        if (version_compare($installedVersion, '2.0.1', '<')) {
-            if (!$this->runMigration201()) {
-                return false;
-            }
+        return true;
+    }
+
+    /**
+     * Chạy SAU KHI Joomla đã thực thi xong toàn bộ file SQL update.
+     *
+     * Đây là nơi đúng để thực hiện các migration cần dữ liệu/cấu trúc từ SQL update:
+     * ví dụ populate dữ liệu vào cột vừa được tạo bởi file .sql.
+     *
+     * @param  string $type   Loại action: 'install' | 'update' | 'discover_install'
+     * @param  object $parent Installer object
+     * @return bool
+     */
+    public function postflight(string $type, $parent): bool
+    {
+        // Chỉ chạy khi là update (không chạy khi install lần đầu)
+        if ($type !== 'update') {
+            return true;
+        }
+
+        // LƯU Ý: Không dùng getInstalledVersion() ở đây vì khi postflight() chạy,
+        // Joomla đã cập nhật manifest_cache với version MỚI → version check sẽ
+        // luôn trả về false và migration không bao giờ được gọi.
+        //
+        // Thay vào đó, mỗi runMigrationXXX() tự kiểm tra idempotent bên trong:
+        //   - Kiểm tra cột đã tồn tại chưa (bước 1)
+        //   - Chỉ populate các bản ghi còn rỗng (WHERE code = '')
+        // → An toàn khi gọi lại nhiều lần.
+        if (!$this->runMigration201()) {
+            return false;
         }
 
         return true;
