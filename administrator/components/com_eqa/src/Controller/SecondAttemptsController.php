@@ -9,35 +9,44 @@ use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 
 class SecondAttemptsController extends AdminController {
-	public function refresh():void
+	/**
+	 * Làm mới danh sách thí sinh thi lần hai.
+	 *
+	 * Phương thức này thực hiện việc đồng bộ bảng #__eqa_secondattempts với
+	 * dữ liệu hiện tại: loại bỏ các trường hợp không còn hợp lệ và bổ sung
+	 * các trường hợp mới, đồng thời bảo toàn thông tin đóng phí đã có.
+	 *
+	 * @return void
+	 * @since 2.0.2
+	 */
+	public function refresh(): void
 	{
-		try
-		{
-			//Check for request forgeries.
+		try {
+			// Kiểm tra token chống CSRF
 			$this->checkToken();
 
-			//Check rights and if not authorised return to home page.
-			if(!$this->app->getIdentity()->authorise('core.edit',$this->option))
+			// Kiểm tra quyền
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
 				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+			}
 
-			/**
-			 * Call model to refresh the list of second attempts
-			 * @var $model SecondAttemptsModel
-			 */
-			$model = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
-			$countRemoved = $model->cleanup();
-			$countAdded = $model->load();
+			/** @var SecondAttemptsModel $model */
+			$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+			$result = $model->refresh();
 
-			//Set a success message
-			$msg = sprintf('Thành công! Có %d trường hợp được thêm mới', $countAdded);
-			$this->setMessage($msg,'success');
-		}
-		catch (Exception $e)
-		{
+			$msg = sprintf(
+				'Làm mới thành công! Đã xóa %d trường hợp lỗi thời, thêm mới %d trường hợp.',
+				$result['removed'],
+				$result['added']
+			);
+			$this->setMessage($msg, 'success');
+
+		} catch (Exception $e) {
 			$this->setMessage($e->getMessage(), 'error');
 		}
 
-		//Redirect to the list view in any case.
-		$this->setRedirect(Route::_('index.php?option=com_eqa&view=secondattempts',false));
+		$this->setRedirect(
+			Route::_('index.php?option=com_eqa&view=secondattempts', false)
+		);
 	}
 }

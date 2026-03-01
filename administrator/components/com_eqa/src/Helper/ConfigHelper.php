@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Registry\Registry;
+use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 
 abstract class ConfigHelper{
@@ -124,17 +125,33 @@ abstract class ConfigHelper{
 			self::init();
 		return self::$params->get('params.kweekend_monitoring');
 	}
-	public static function getRegradingFeeMode(): int
+	public static function getRegradingFeeMode(): FeeMode
 	{
 		if(self::$uninitialized)
 			self::init();
-		return self::$params->get('params.regrading_fee_mode', ExamHelper::REGRADING_FEE_MODE_BY_WORK);
+		$value = self::$params->get('params.regrading_fee_mode', FeeMode::PerExam->value);
+		return FeeMode::from($value);
 	}
 	public static function getRegradingFeeRate(): float
 	{
 		if(self::$uninitialized)
 			self::init();
 		return self::$params->get('params.regrading_fee_rate', 30000);
+	}
+
+	public static function getSecondAttemptFeeMode(): FeeMode
+	{
+		if(self::$uninitialized)
+			self::init();
+		$value = self::$params->get('params.second_attempt_fee_mode', FeeMode::PerExam->value);
+		return FeeMode::from($value);
+	}
+
+	public static function getSecondAttemptFeeRate(): float
+	{
+		if (self::$uninitialized)
+			self::init();
+		return self::$params->get('params.second_attempt_fee_rate', 90000);
 	}
 }
 

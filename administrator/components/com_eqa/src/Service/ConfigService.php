@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Registry\Registry;
+use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
@@ -252,9 +253,10 @@ class ConfigService
 	 * @return  int
 	 * @since   2.1.0
 	 */
-	public function getRegradingFeeMode(): int
+	public function getRegradingFeeMode(): FeeMode
 	{
-		return (int) $this->params->get('params.regrading_fee_mode', ExamHelper::REGRADING_FEE_MODE_BY_WORK);
+		$value = (int) $this->params->get('params.regrading_fee_mode', FeeMode::PerExam->value);
+		return FeeMode::from($value);
 	}
 
 	/**

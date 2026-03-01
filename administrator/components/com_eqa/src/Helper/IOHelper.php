@@ -8,6 +8,7 @@ use Exception;
 use JComponentHelper;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
@@ -1841,7 +1842,7 @@ abstract class IOHelper extends BaseIOHelper
 			foreach ($learnersInACourse as $item)
 			{
 				$seq++;
-				$fee = $regradingFeeMode==ExamHelper::REGRADING_FEE_MODE_BY_WORK ? $regradingFeeRate*sizeof($item['exams']): $regradingFeeRate*$item['credits'];
+				$fee = $regradingFeeMode==FeeMode::PerExam ? $regradingFeeRate*sizeof($item['exams']): $regradingFeeRate*$item['credits'];
 				$totalFee += $fee;
 				$data[] = [
 					$seq,

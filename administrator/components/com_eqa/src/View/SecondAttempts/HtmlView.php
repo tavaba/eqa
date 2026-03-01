@@ -19,7 +19,9 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1 = array();
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('class_id','class_id');
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('learner_id','learner_id');
-	    $option->customFieldset1[] = new ListLayoutItemFieldOption('paid','paid');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('payment_required','Phí');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('payment_code','Mã thanh toán');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('payment_completed','Đã thanh toán');
 
         //Set the option
         $this->itemFields = $option;

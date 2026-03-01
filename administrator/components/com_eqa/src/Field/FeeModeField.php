@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 /**
@@ -11,9 +12,9 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
  * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
  * @since  1.6
  */
-class RegradingfeemodeField extends ListField
+class FeeModeField extends ListField
 {
-    protected $type = 'regradingfeemode';
+    protected $type = 'feemode';
 
     /**
      * Method to get a list of options for a list input.
@@ -25,7 +26,7 @@ class RegradingfeemodeField extends ListField
     protected function getOptions()
     {
         $options = parent::getOptions();
-        foreach (ExamHelper::getRegradingFeeModes() as $code=>$text)
+        foreach (FeeMode::getOptions() as $code=>$text)
         {
             $options[] = HTMLHelper::_('select.option', $code, $text);
         }

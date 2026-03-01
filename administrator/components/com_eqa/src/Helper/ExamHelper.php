@@ -56,25 +56,6 @@ abstract class ExamHelper{
 	public const MARK_CONSTITUENT_FINAL_EXAM=100;
 	public const MARK_CONSTITUENT_ALL=120;
 
-	public const REGRADING_FEE_MODE_BY_WORK=10;
-	public const REGRADING_FEE_MODE_BY_CREDIT=20;
-
-	static public function decodeRegradingFeeMode(int $code): string|null
-	{
-		return match ($code){
-			self::REGRADING_FEE_MODE_BY_WORK => 'Tính theo bài thi',
-			self::REGRADING_FEE_MODE_BY_CREDIT => 'Tính theo số tín chỉ',
-			default => null
-		};
-	}
-	static public function getRegradingFeeModes(): array
-	{
-		return [
-			self::REGRADING_FEE_MODE_BY_WORK => self::decodeRegradingFeeMode(self::REGRADING_FEE_MODE_BY_WORK),
-			self::REGRADING_FEE_MODE_BY_CREDIT => self::decodeRegradingFeeMode(self::REGRADING_FEE_MODE_BY_CREDIT)
-		];
-	}
-
 	static public function markToText($mark):string
 	{
 		if(is_null($mark))
