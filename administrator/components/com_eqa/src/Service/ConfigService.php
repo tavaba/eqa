@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Registry\Registry;
+use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 /**
@@ -134,15 +135,15 @@ class ConfigService
 	}
 
 	/**
-	 * Trả về kiểu giới hạn điểm thi lần 2.
-	 * Giá trị tương ứng với các hằng số SECOND_ATTEMPT_LIMIT_* của ExamHelper.
+	 * Chế độ giới hạn điểm thi lần 2.
 	 *
-	 * @return  int
+	 * @return  SecondAttemptMarkLimitMode
 	 * @since   2.1.0
 	 */
-	public function getSecondAttemptLimit(): int
+	public function getSecondAttemptMarkLimitMode(): SecondAttemptMarkLimitMode
 	{
-		return (int) $this->params->get('params.second_attempt_limit', ExamHelper::SECOND_ATTEMPT_LIMIT_EXAM);
+		$value = (int) $this->params->get('params.second_attempt_limit', SecondAttemptMarkLimitMode::OnExamMark->value);
+		return SecondAttemptMarkLimitMode::from($value);
 	}
 
 	/**

@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 
 abstract class ExamHelper{
@@ -44,10 +45,6 @@ abstract class ExamHelper{
 	public const EXAM_PPAA_STATUS_REQUIRE_INFO=25;
 	public const EXAM_PPAA_STATUS_REJECTED=30;
 	public const EXAM_PPAA_STATUS_DONE=40;
-
-	public const SECOND_ATTEMPT_LIMIT_NONE = 0;
-	public const SECOND_ATTEMPT_LIMIT_EXAM = 1;
-	public const SECOND_ATTEMPT_LIMIT_MODULE=2;
 
 	public const SPECIAL_MARK_N25=-25;
 	public const SPECIAL_MARK_N100=-100;
@@ -221,24 +218,6 @@ abstract class ExamHelper{
         return $ppaa;
     }
 
-	static public function getSecondAttemptLimit($code){
-		return match ($code)
-		{
-			self::SECOND_ATTEMPT_LIMIT_NONE => Text::_('Không giới hạn'),
-			self::SECOND_ATTEMPT_LIMIT_EXAM => Text::_('Giới hạn điểm thi KTHP bằng 6.9'),
-			self::SECOND_ATTEMPT_LIMIT_MODULE => Text::_('Giới hạn điểm học phần bằng 6.9'),
-			default => false
-		};
-	}
-
-	static public function getSecondAttemptLimits(){
-		$limits = array();
-		$limits[self::SECOND_ATTEMPT_LIMIT_NONE] = self::getSecondAttemptLimit(self::SECOND_ATTEMPT_LIMIT_NONE);
-		$limits[self::SECOND_ATTEMPT_LIMIT_EXAM] = self::getSecondAttemptLimit(self::SECOND_ATTEMPT_LIMIT_EXAM);
-		$limits[self::SECOND_ATTEMPT_LIMIT_MODULE] = self::getSecondAttemptLimit(self::SECOND_ATTEMPT_LIMIT_MODULE);
-		return $limits;
-	}
-
 	static public function decodeMarkConstituent(int $constituent):string|null
 	{
 		return match ($constituent){
@@ -387,7 +366,8 @@ abstract class ExamHelper{
 			$finalMark = min([10, $finalMark+$addValue]);
 
 		//Giới hạn điểm thi lần 2
-		if($attempt>1 && $admissionYear>=2021 && ConfigHelper::getSecondAttemptLimit()==self::SECOND_ATTEMPT_LIMIT_EXAM)
+		$limitMode = ConfigHelper::getSecondAttemptMarkLimitMode();
+		if($attempt>1 && $admissionYear>=2021 && $limitMode==SecondAttemptMarkLimitMode::OnExamMark)
 			$finalMark = min([$finalMark, 6.9]);
 
 		return $finalMark;
@@ -395,10 +375,10 @@ abstract class ExamHelper{
 	static public function calculateModuleMark(int $subjectId, float $pam, float $examMark, int $attempt, int $admissionYear)
 	{
 		$precision = ConfigHelper::getModuleMarkPrecision();
-		$limit = ConfigHelper::getSecondAttemptLimit();
+		$limit = ConfigHelper::getSecondAttemptMarkLimitMode();
 		$moduleMark = 0.3*$pam + 0.7*$examMark;
 		$moduleMark = round($moduleMark, $precision);
-		if($attempt>1 && $admissionYear>=2021 && $limit==self::SECOND_ATTEMPT_LIMIT_MODULE)
+		if($attempt>1 && $admissionYear>=2021 && $limit==SecondAttemptMarkLimitMode::OnModuleMark)
 			$moduleMark = min([$moduleMark, 6.9]);
 		return $moduleMark;
 	}

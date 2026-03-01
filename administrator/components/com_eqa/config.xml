@@ -38,7 +38,7 @@
 			/>
 			<field
 					name="second_attempt_limit"
-					type="secondattemptlimit"
+					type="secondattemptmarklimitmode"
 					default="1"
 					label="Giới hạn điểm thi lần 2"
 			/>
@@ -54,7 +54,6 @@
 					required="true"
 					label="Xử lý HVSV nợ học phí"
 			>
-				<option value=""></option>
 			</field>
 			<field
 					name="examinee_mask_start"
@@ -148,7 +147,6 @@
 					label="Cách tính phí phúc khảo"
 					required="true"
 			>
-				<option value=""></option>
 			</field>
 			<field
 					name="regrading_fee_rate"

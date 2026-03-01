@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 /**
@@ -11,14 +12,14 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
  * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
  * @since  1.6
  */
-class SecondattemptlimitField extends ListField
+class SecondAttemptMarkLimitModeField extends ListField
 {
-    protected $type = 'secondattemptlimit';
+    protected $type = 'secondattemptmarklimitmode';
 
 	protected function getOptions()
     {
         $options = parent::getOptions();
-        foreach (ExamHelper::getSecondAttemptLimits() as $code=>$text)
+        foreach (SecondAttemptMarkLimitMode::getOptions() as $code=>$text)
         {
             $options[] = HTMLHelper::_('select.option', $code, $text);
         }

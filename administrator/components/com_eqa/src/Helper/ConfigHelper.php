@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Registry\Registry;
+use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 
 abstract class ConfigHelper{
 	private static bool $uninitialized = true;
@@ -62,11 +63,12 @@ abstract class ConfigHelper{
 			self::init();
 		return self::$params->get('params.precision_module', 1);
 	}
-	public static function getSecondAttemptLimit(): int
+	public static function getSecondAttemptMarkLimitMode(): SecondAttemptMarkLimitMode
 	{
 		if(self::$uninitialized)
 			self::init();
-		return self::$params->get('params.second_attempt_limit', ExamHelper::SECOND_ATTEMPT_LIMIT_EXAM);
+		$value = self::$params->get('params.second_attempt_limit', SecondAttemptMarkLimitMode::OnExamMark->value);
+		return SecondAttemptMarkLimitMode::from($value);
 	}
 	public static function getExamineeCodeStart(): int
 	{
