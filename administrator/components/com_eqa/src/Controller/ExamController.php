@@ -9,6 +9,7 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
@@ -566,7 +567,8 @@ class ExamController extends  FormController
 		$exam = DatabaseHelper::getExamInfo($examId);
 
 		//Nếu không phải thi trắc nghiệm thì bỏ
-		if($exam->testtype != ExamHelper::TEST_TYPE_MACHINE_OBJECTIVE && $exam->testtype!=ExamHelper::TEST_TYPE_MACHINE_HYBRID && $exam->testtype!=ExamHelper::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE)
+		$testType = TestType::from($exam->testtype);
+		if($testType != TestType::MachineObjective && $testType!=TestType::MachineHybrid && $testType!=TestType::ComboObjectiveAndPractice)
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_NOT_MACHINE_TEST'), 'error');
 			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false));

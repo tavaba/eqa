@@ -6,6 +6,7 @@ use DateTime;
 use Joomla\CMS\Date\Date;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
@@ -60,7 +61,7 @@ class LearnerexamModel extends AdminModel{
 			return;
 		}
 
-		if(!in_array($exam->testtype, [ExamHelper::TEST_TYPE_PAPER, ExamHelper::TEST_TYPE_MACHINE_HYBRID]))
+		if(!in_array($exam->testtype, [TestType::Paper->value, TestType::MachineHybrid->value]))
 		{
 			$msg = Text::sprintf('Môn <b>%s</b>: Chỉ có thể yêu cầu phúc khảo môn thi tự luận',
 				htmlspecialchars($exam->name));

@@ -4,6 +4,7 @@ use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -265,7 +266,7 @@ class RegradingsModel extends ListModel
 			->leftJoin('#__eqa_papers AS e', 'e.exam_id=a.exam_id AND e.learner_id=a.learner_id')
 			->leftJoin('#__eqa_packages AS f', 'f.id=e.package_id')
 			->where('b.examseason_id='.$examseasonId)
-			->where('b.testtype='.ExamHelper::TEST_TYPE_PAPER);
+			->where('b.testtype='.TestType::Paper->value);
 		if($onlyAccepted)
 			$query->where('a.status=' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED);
 		$db->setQuery($query);
@@ -306,7 +307,7 @@ class RegradingsModel extends ListModel
 			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
 			->leftJoin('#__eqa_exam_learner AS d', '(d.exam_id=a.exam_id AND d.learner_id=a.learner_id)')
 			->where('b.examseason_id='.$examseasonId)
-			->where('b.testtype='.ExamHelper::TEST_TYPE_MACHINE_HYBRID);
+			->where('b.testtype='.TestType::MachineHybrid->value);
 		if($onlyAccepted)
 			$query->where('a.status=' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED);
 		$db->setQuery($query);

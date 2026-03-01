@@ -4,6 +4,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -25,7 +26,7 @@ class PaperexamModel extends AdminModel{
 			$app->enqueueMessage('Môn thi không hợp lệ','error');
 			return false;
 		}
-		if($exam->testtype != ExamHelper::TEST_TYPE_PAPER)
+		if($exam->testtype != TestType::Paper->value)
 		{
 			$app->enqueueMessage('Đây không phải môn thi viết nên không thể làm phách','error');
 			return false;

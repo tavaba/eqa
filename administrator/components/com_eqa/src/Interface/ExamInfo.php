@@ -1,5 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Interface;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 defined('_JEXEC') or die();
@@ -39,7 +40,7 @@ class ExamInfo extends ObjectInfo
 
 		$html = '';
         $html .= 'Môn thi: <b>' .  htmlentities($this->name) . '</b>';
-		$html .= '&nbsp;&nbsp;&nbsp;&nbsp; Hình thức thi: ' . ExamHelper::getTestType($this->testtype) . '<br/>';
+		$html .= '&nbsp;&nbsp;&nbsp;&nbsp; Hình thức thi: ' . TestType::from($this->testtype)->getLabel() . '<br/>';
 		$html .= 'Kỳ thi: ' . $this->examseason .'<br/>';
 		$html .= '(Học kỳ ' . $this->term . 'Năm học ' . $this->academicyear;
 		if($basicInfomationOnly)

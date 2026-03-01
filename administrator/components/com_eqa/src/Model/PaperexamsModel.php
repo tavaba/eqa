@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
@@ -40,7 +41,7 @@ class PaperexamsModel extends ListModel{
 	        ->select('('. $subQueryNPackage . ') AS npackage')
 	        ->select('('. $subQueryNPaper . ') AS npaper')
 	        ->select('('. $subQueryNNoPaper . ') AS nnopaper')
-	        ->where('testtype='.ExamHelper::TEST_TYPE_PAPER);
+	        ->where('testtype='.TestType::Paper->value);
 
         //Filtering
         $search = $this->getState('filter.search');

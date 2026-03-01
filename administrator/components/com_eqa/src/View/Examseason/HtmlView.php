@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Library\Kma\View\ListLayoutData;
@@ -61,7 +62,7 @@ class HtmlView extends ItemHtmlView {
 		//Preprocess the layout data
 		if(!empty($this->listLayoutData->items)) {
 			foreach ($this->listLayoutData->items as $item) {
-				$item->finaltesttype = ExamHelper::getTestType($item->finaltesttype);
+				$item->finaltesttype = TestType::from($item->finaltesttype)->getLabel();
 				$item->degree = CourseHelper::Degree($item->degree);
 			}
 		}

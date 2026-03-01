@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -54,15 +55,15 @@ class HtmlView extends ItemsHtmlView
 			foreach ($this->layoutData->items as $item) {
 
 				if($item->usetestbank>0	|| in_array($item->testtype, [
-						ExamHelper::TEST_TYPE_PRACTICE,
-						ExamHelper::TEST_TYPE_PROJECT,
-						ExamHelper::TEST_TYPE_THESIS]))
+						TestType::Practice->value,
+						TestType::Project->value,
+						TestType::Thesis->value]))
 					$item->requirequestions = null;
 				else
 					$item->requirequestions = Text::_('JYES');
 
 				//Must be done AFTER 'requirequestions
-				$item->testtype = ExamHelper::getTestType($item->testtype);
+				$item->testtype = TestType::from($item->testtype)->getLabel();
 
 				//Test date
 				$examTestTime = DatabaseHelper::getExamTestTime($item->id);

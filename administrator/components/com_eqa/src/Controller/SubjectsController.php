@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -80,7 +81,7 @@ class SubjectsController extends AdminController{
 				}
 
 				$testtypeText = trim($row[$colIndex++]);
-				$testType = ExamHelper::getTestTypeCode($testtypeText);
+				$testType = TestType::tryFromText($testtypeText);
 				if(is_null($testType)){
 					$msg = Text::sprintf('Dòng %d: Hình thức thi "%s" không hợp lệ', $r+1, htmlspecialchars($testtypeText));
 					throw new Exception($msg);
@@ -103,7 +104,7 @@ class SubjectsController extends AdminController{
 					'subject_name'=>$subjectName,
 					'degree'=>$degree,
 					'credit_hours'=>$creditNumber,
-					'final_test_type'=>$testType,
+					'final_test_type'=>$testType->value,
 					'test_bank_year'=>$testBankYear,
 				];
 			}

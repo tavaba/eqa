@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use JRoute;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Service\RoomService;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -60,7 +61,7 @@ class HtmlView extends ItemsHtmlView
 
         if(!empty($this->layoutData->items)) {
             foreach ($this->layoutData->items as $item) {
-                $item->finaltesttype = ExamHelper::getTestType($item->finaltesttype);
+                $item->finaltesttype = TestType::from($item->finaltesttype)->getLabel();
                 $item->degree = CourseHelper::Degree($item->degree);
 
 	            // Populate cột phòng thi

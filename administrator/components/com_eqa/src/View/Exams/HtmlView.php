@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -56,7 +57,7 @@ class HtmlView extends ItemsHtmlView
             $examIds = array_map(function ($item){return $item->id;},$this->layoutData->items);
             foreach ($this->layoutData->items as $item) {
                 //1. Testtype code --> Testtype string
-                $item->testtype = ExamHelper::getTestType($item->testtype);
+                $item->testtype = TestType::from($item->testtype)->getLabel();
 
                 //2. Ngân hàng câu hỏi: boolean --> Yes/No
                 if($item->usetestbank)

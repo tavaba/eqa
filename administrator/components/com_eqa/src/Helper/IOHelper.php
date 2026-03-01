@@ -8,6 +8,7 @@ use Exception;
 use JComponentHelper;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
@@ -307,6 +308,7 @@ abstract class IOHelper extends BaseIOHelper
 
 		//Create information rows - Part 2
 		$fontSize=12;
+		$testType = TestType::from($examroom->testtype);
 		$row++;
 		$value = new RichText();
 		$part = $value->createTextRun('Môn thi: ');
@@ -323,7 +325,7 @@ abstract class IOHelper extends BaseIOHelper
 		$sheet->mergeCells([1, $row, 3, $row]);
 
 		$value = 'Hình thức thi: ';
-		$value .= ExamHelper::getTestType($examroom->testtype);
+		$value .= $testType->getLabel();
 		$sheet->setCellValue([4, $row], $value);
 		$sheet->mergeCells([4, $row, 6, $row]);
 
@@ -360,7 +362,7 @@ abstract class IOHelper extends BaseIOHelper
 		//Create table heading row
 		$headers = [
 			'STT', 'SBD', 'Mã HVSV', 'Họ đệm', 'Tên', 'Lớp', 'Mã đề',
-			$examroom->testtype == ExamHelper::TEST_TYPE_PAPER ? 'Số tờ' : 'Điểm',
+			$testType == TestType::Paper ? 'Số tờ' : 'Điểm',
 			'Ký tên', 'Ghi chú'
 		];
 		$sheet->setCellValue('A12', 'STT');
@@ -370,7 +372,7 @@ abstract class IOHelper extends BaseIOHelper
 		$sheet->setCellValue('E12', 'Tên');
 		$sheet->setCellValue('F12', 'Lớp');
 		$sheet->setCellValue('G12', 'Mã đề');
-		if($examroom->testtype == ExamHelper::TEST_TYPE_PAPER)
+		if($testType == TestType::Paper )
 			$sheet->setCellValue('H12', 'Số tờ');
 		else
 			$sheet->setCellValue('H12', 'Điểm');
@@ -404,7 +406,7 @@ abstract class IOHelper extends BaseIOHelper
 
 
 		//Create the ending rows
-		if($examroom->testtype == ExamHelper::TEST_TYPE_PAPER)
+		if($testType == TestType::Paper)
 		{
 			$row++;
 			$sheet->mergeCells('A' . $row . ':D' . $row);
@@ -420,12 +422,12 @@ abstract class IOHelper extends BaseIOHelper
 		$sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
 		$row++;
-		switch ($examroom->testtype){
-			case ExamHelper::TEST_TYPE_PROJECT:
-			case ExamHelper::TEST_TYPE_THESIS:
-			case ExamHelper::TEST_TYPE_PRACTICE:
-			case ExamHelper::TEST_TYPE_COMBO_OBJECTIVE_PRACTICE:
-			case ExamHelper::TEST_TYPE_DIALOG:
+		switch ($testType){
+			case TestType::Project:
+			case TestType::Thesis:
+			case TestType::Practice:
+			case TestType::ComboObjectiveAndPractice:
+			case TestType::Dialogue:
 				$signer1 = 'CBCTChT thứ nhất';
 				$signer2 = 'CBCTChT thứ hai';
 				break;
@@ -513,7 +515,7 @@ abstract class IOHelper extends BaseIOHelper
 
 		$sheet->mergeCells('A8:D8');
 		$value = 'Hình thức thi: ';
-		$value .= ExamHelper::getTestType($exam->testtype);
+		$value .= TestType::from($exam->testtype)->getLabel();
 		$sheet->setCellValue('A8', $value);
 		$sheet->mergeCells('E8:J8');
 		$value = 'Thời gian làm bài: ';
@@ -1622,7 +1624,7 @@ abstract class IOHelper extends BaseIOHelper
 			$data = [
 				$seq,
 				$item['name'],
-				ExamHelper::getTestType($item['testtype']),
+				TestType::from($item['testtype'])->getLabel(),
 				$item['total'],
 				$item['passed'],
 				$item['total']>0 ? round($item['passed']*100/$item['total']) : null,
@@ -1679,7 +1681,7 @@ abstract class IOHelper extends BaseIOHelper
 			$data = [
 				$seq,
 				$examName,
-				ExamHelper::getTestType($item['testtype']),
+				TestType::from($item['testtype'])->getLabel(),
 				$examineeCount,
 			];
 			foreach ($grades as $grade)
@@ -2296,7 +2298,7 @@ abstract class IOHelper extends BaseIOHelper
 				$exams[$item->subjectId] = [
 					'code' => $item->subjectCode,
 					'name' => $item->subjectName,
-					'type' => $item->testType?ExamHelper::getTestType($item->testType):null,
+					'type' => $item->testType?TestType::from($item->testType)->getLabel():null,
 					'duration' => $item->testDuration,
 					'count' => 1
 				];

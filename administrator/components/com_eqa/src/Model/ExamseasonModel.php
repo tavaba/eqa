@@ -4,6 +4,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -1094,12 +1095,13 @@ class ExamseasonModel extends AdminModel{
 		$otherExamIds = [];
 		foreach ($exams as $id => $exam)
 		{
-			switch ($exam['testtype']){
-				case ExamHelper::TEST_TYPE_MACHINE_OBJECTIVE:
-				case ExamHelper::TEST_TYPE_MACHINE_HYBRID:
+			$testType = TestType::from($exam['testtype']);
+			switch ($testType){
+				case TestType::MachineObjective:
+				case TestType::MachineHybrid:
 					$machineExamIds[] = $id;
 					break;
-				case ExamHelper::TEST_TYPE_PAPER:
+				case TestType::Paper:
 					$paperExamIds[] = $id;
 					break;
 				default:
@@ -1135,11 +1137,11 @@ class ExamseasonModel extends AdminModel{
 		{
 			switch ($item)
 			{
-				case ExamHelper::TEST_TYPE_MACHINE_OBJECTIVE:
-				case ExamHelper::TEST_TYPE_MACHINE_HYBRID:
+				case TestType::MachineObjective->value:
+				case TestType::MachineHybrid->value:
 					$countMachine++;
 					break;
-				case ExamHelper::TEST_TYPE_PAPER:
+				case TestType::Paper->value:
 					$countPaper++;
 					break;
 				default:

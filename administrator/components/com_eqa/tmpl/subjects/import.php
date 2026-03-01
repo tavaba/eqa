@@ -1,6 +1,7 @@
 <?php
 defined('_JEXEC') or die();
 
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 
@@ -31,11 +32,9 @@ $sampleUrl = JUri::root().$samplePath;
                                     nhưng phải chính xác đến từng ký tự như sau:
                                     <ul>
                                         <?php
-                                        $testTypes = ExamHelper::getTestTypes();
-                                        foreach ($testTypes as $code => $text)
+                                        foreach (TestType::cases() as $case)
                                         {
-                                            $abbr = ExamHelper::getTestTypeAbbr($code);
-                                            echo '<li>'.$abbr.': '.$text.'</li>';
+                                            echo '<li>'.$case->getLabelAbbr().': '.$case->getLabel().'</li>';
                                         }
                                         ?>
                                     </ul>

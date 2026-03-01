@@ -1,6 +1,7 @@
 <?php
 defined('_JEXEC') or die();
 
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
@@ -37,7 +38,7 @@ $exam = ExamInfo::cast($this->exam);
         </div>
     </div>
     <div>
-        Môn thi: <b><?php echo htmlentities($exam->name); ?></b>&nbsp;&nbsp;&nbsp;&nbsp; Hình thức thi: <?php echo ExamHelper::getTestType($exam->testtype);?><br/>
+        Môn thi: <b><?php echo htmlentities($exam->name); ?></b>&nbsp;&nbsp;&nbsp;&nbsp; Hình thức thi: <?php echo TestType::from($exam->testtype)->getLabel();?><br/>
         Kỳ thi: <?php echo $exam->examseason;?> <br/>
         (Học kỳ <?php echo $exam->term;?>. Năm học <?php echo $exam->academicyear;?>)<br/>
         Tổng số thí sinh: <?php echo $exam->countTotal;?><br/>

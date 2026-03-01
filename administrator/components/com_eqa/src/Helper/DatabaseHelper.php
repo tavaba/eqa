@@ -2,6 +2,7 @@
 
 namespace Kma\Component\Eqa\Administrator\Helper;
 
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
@@ -213,7 +214,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$exam->countToTake = $db->loadResult();
 
 		//Nếu là thi viết thì đếm số lượng thí sinh đã có thông tin về bài thi
-		if($exam->testtype == ExamHelper::TEST_TYPE_PAPER)
+		if($exam->testtype == TestType::Paper->value)
 		{
 			$query = $db->getQuery(true)
 				->select('COUNT(1)')
@@ -886,7 +887,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 	{
 		$db = self::getDatabaseDriver();
 		$db->setQuery('SELECT testtype FROM #__eqa_exams WHERE id='.$examId);
-		return ExamHelper::TEST_TYPE_PAPER == $db->loadResult();
+		return TestType::Paper->value == $db->loadResult();
 	}
 	static public function isPaperExamWithMaskingDone(int $examId):bool
 	{

@@ -6,6 +6,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -229,7 +230,7 @@ class ExamroomsController extends AdminController {
 				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countToTake);
 				$app->enqueueMessage($msg );
 			}
-			if($exam->testtype==ExamHelper::TEST_TYPE_PAPER )
+			if($exam->testtype==TestType::Paper->value )
 			{
 				if ($exam->countHavePaperInfo == $exam->countToTake)
 				{

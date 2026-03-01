@@ -2,6 +2,7 @@
 defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Field\EmployeeField;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
@@ -18,7 +19,7 @@ if(empty($exam)){
 else
 {
 	echo 'Môn thi: <b>', htmlspecialchars($exam->name), '</b><br/>';
-	echo 'Hình thức thi: ', ExamHelper::getTestType($exam->testtype),'<br/>';
+	echo 'Hình thức thi: ', TestType::from($exam->testtype)->getLabel(),'<br/>';
 }
 if(empty($packages)){
 	echo 'Không có thông tin túi bài thi. Hãy thực hiện việc đánh phách, dồn túi!';
@@ -35,9 +36,11 @@ else
 	?>
 	<table class="table table-hover">
 		<thead>
-		<th>Túi bài thi</th>
-		<th>CBChT 1</th>
-		<th>CBChT 2</th>
+            <tr>
+                <th>Túi bài thi</th>
+                <th>CBChT 1</th>
+                <th>CBChT 2</th>
+            </tr>
 		</thead>
 		<tbody>
 		<?php
