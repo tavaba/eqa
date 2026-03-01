@@ -1,4 +1,84 @@
 <?php
+
+/**
+ * Template mặc định cho view SecondAttempts.
+ *
+ * Hiển thị:
+ *   1. Bảng thống kê tổng hợp (statistics)
+ *   2. Danh sách thí sinh thi lần hai (qua ViewHelper::printItemsDefaultLayout)
+ */
+
 defined('_JEXEC') or die();
+
 use Kma\Library\Kma\Helper\ViewHelper;
+
+/** @var \Kma\Component\Eqa\Administrator\View\SecondAttempts\HtmlView $this */
+$stats = $this->statistics;
+?>
+
+<!-- =========================================================
+     Thống kê tổng hợp
+     ========================================================= -->
+<div class="row g-2 mb-3">
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-secondary h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-3 fw-bold text-secondary"><?php echo $stats->totalLearners; ?></div>
+                <div class="small text-muted">Người học</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-primary h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-3 fw-bold text-primary"><?php echo $stats->totalAttempts; ?></div>
+                <div class="small text-muted">Tổng số lượt</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-success h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-3 fw-bold text-success"><?php echo $stats->totalFree; ?></div>
+                <div class="small text-muted">Không cần nộp phí</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-warning h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-3 fw-bold text-warning"><?php echo $stats->totalRequired; ?></div>
+                <div class="small text-muted">Phải nộp phí</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-danger h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-3 fw-bold text-danger"><?php echo $stats->totalRequired - $stats->totalPaid; ?></div>
+                <div class="small text-muted">Chưa nộp phí</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-info h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-3 fw-bold text-info"><?php echo $stats->totalPaid; ?></div>
+                <div class="small text-muted">Đã nộp phí</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- =========================================================
+     Danh sách
+     ========================================================= -->
+<?php
 ViewHelper::printItemsDefaultLayout($this->layoutData, $this->itemFields);

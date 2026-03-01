@@ -12,5 +12,7 @@ abstract class ItemsHtmlView extends Base
         //Load scripts and styles
         $this->wa->useScript('select2.script');
         $this->wa->useStyle('select2.style');
+	    $this->wa->useScript('com_eqa.script');
+	    $this->wa->useStyle('com_eqa.style');
     }
 }

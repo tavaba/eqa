@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form bộ lọc cho view SecondAttempts.
+    Các trường lọc:
+      - search           : tìm kiếm trong mã HVSV, họ tên, mã/tên môn học
+      - academicyear_id  : năm học (custom field type="academicyear")
+      - term             : học kỳ (custom field type="term")
+      - payment_required : có phí / không có phí
+      - payment_completed: đã nộp phí / chưa nộp phí
+-->
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field
+            name="search"
+            type="text"
+            label="JSEARCH_FILTER"
+            hint="Mã HVSV, Họ tên, Mã/Tên môn học"
+            class="js-stools-search-string"
+        />
+
+        <field
+                name="subject_id"
+                type="subject"
+                default=""
+                class="select2-basic"
+                label="COM_EQA_FORM_CLASSES_FILTER_SUBJECT_LABEL"
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_CLASSES_FILTER_SUBJECT_MSG</option>
+        </field>
+        <field
+            name="academicyear_id"
+            type="academicyear"
+            label="Năm học"
+            default=""
+            onchange="this.form.submit();"
+        >
+            <option value="">- Năm học -</option>
+        </field>
+
+        <field
+            name="term"
+            type="term"
+            label="Học kỳ"
+            default=""
+            onchange="this.form.submit();"
+        />
+
+        <field
+            name="payment_required"
+            type="list"
+            label="Có phí"
+            default=""
+            onchange="this.form.submit();"
+        >
+            <option value="">- Có phí -</option>
+            <option value="0">Không cần nộp phí</option>
+            <option value="1">Phải nộp phí</option>
+        </field>
+
+        <field
+            name="payment_completed"
+            type="list"
+            label="Đã nộp phí"
+            default=""
+            onchange="this.form.submit();"
+        >
+            <option value="">- Đã nộp phí -</option>
+            <option value="0">Chưa nộp phí</option>
+            <option value="1">Đã nộp phí</option>
+        </field>
+
+    </fields>
+
+    <fields name="list">
+
+        <field
+            name="fullordering"
+            type="hidden"
+            value=""
+        />
+
+        <field
+            name="limit"
+            type="limitbox"
+            label="JGLOBAL_LIST_LIMIT"
+            onchange="this.form.submit();"
+        />
+
+    </fields>
+
+</form>

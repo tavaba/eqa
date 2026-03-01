@@ -12,27 +12,212 @@ use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class SecondAttemptsModel extends ListModel{
-    public function __construct($config = [], ?MVCFactoryInterface $factory = null)
-    {
-        $config['filter_fields']=array('id');
-        parent::__construct($config, $factory);
-    }
-    protected function populateState($ordering = 'id', $direction = 'desc'): void
-    {
-        parent::populateState($ordering, $direction);
-    }
-    public function getListQuery()
-    {
-        $db = $this->getDatabase();
-        $query =  $db->getQuery(true)
-            ->from('#__eqa_secondattempts')
-            ->select('*');
-        $orderingCol = $query->db->escape($this->getState('list.ordering','id'));
-        $orderingDir = $query->db->escape($this->getState('list.direction','desc'));
-        $query->order($db->quoteName($orderingCol).' '.$orderingDir);
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
+	{
+		$config['filter_fields'] = [
+			'id', 'learner_code', 'academicyear', 'term',
+			'payment_required', 'payment_completed',
+		];
+		parent::__construct($config, $factory);
+	}
 
-        return $query;
-    }
+	protected function populateState($ordering = 'id', $direction = 'desc'): void
+	{
+		parent::populateState($ordering, $direction);
+	}
+
+	/**
+	 * Xây dựng câu truy vấn danh sách thí sinh thi lần hai, kết hợp JOIN để lấy
+	 * thông tin người học, lớp học phần, môn học và năm học.
+	 *
+	 * Các bảng tham gia:
+	 *   sa → #__eqa_secondattempts  (bảng chính)
+	 *   lr → #__eqa_learners        (thông tin người học)
+	 *   cl → #__eqa_classes         (lớp học phần: academicyear_id, term)
+	 *   ay → #__eqa_academicyears   (mã năm học)
+	 *   ex → #__eqa_exams           (môn thi, để xác định subject_id)
+	 *   su → #__eqa_subjects        (mã và tên môn học)
+	 *
+	 * @return \Joomla\Database\QueryInterface
+	 * @since 2.0.1
+	 */
+	public function getListQuery()
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		$columns = $db->quoteName(
+			[
+				'sa.id',
+				'sa.class_id',
+				'sa.learner_id',
+				'sa.last_exam_id',
+				'sa.last_attempt',
+				'sa.last_conclusion',
+				'sa.payment_required',
+				'sa.payment_completed',
+				'sa.payment_code',
+				'lr.code',
+				'lr.lastname',
+				'lr.firstname',
+				'su.code',
+				'su.name',
+				'ay.code',
+				'cl.term',
+			],
+			[
+				'id',
+				'class_id',
+				'learner_id',
+				'last_exam_id',
+				'last_attempt',
+				'last_conclusion',
+				'payment_required',
+				'payment_completed',
+				'payment_code',
+				'learner_code',
+				'learner_lastname',
+				'learner_firstname',
+				'subject_code',
+				'subject_name',
+				'academicyear',
+				'term',
+			]
+		);
+
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('sa.learner_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_classes', 'cl') .
+				' ON ' . $db->quoteName('cl.id') . ' = ' . $db->quoteName('sa.class_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_academicyears', 'ay') .
+				' ON ' . $db->quoteName('ay.id') . ' = ' . $db->quoteName('cl.academicyear_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_exams', 'ex') .
+				' ON ' . $db->quoteName('ex.id') . ' = ' . $db->quoteName('sa.last_exam_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_subjects', 'su') .
+				' ON ' . $db->quoteName('su.id') . ' = ' . $db->quoteName('ex.subject_id')
+			);
+
+		// --- Filtering ---
+
+		$search = $this->getState('filter.search');
+		if (!empty($search)) {
+			$like = $db->quote('%' . trim($search) . '%');
+			$query->where(
+				'(' .
+				$db->quoteName('lr.code') . ' LIKE ' . $like .
+				' OR CONCAT(' . $db->quoteName('lr.lastname') . ', \' \', ' . $db->quoteName('lr.firstname') . ') LIKE ' . $like .
+				' OR ' . $db->quoteName('su.code') . ' LIKE ' . $like .
+				' OR ' . $db->quoteName('su.name') . ' LIKE ' . $like .
+				')'
+			);
+		}
+
+		$subjectId = $this->getState('filter.subject_id');
+		if (is_numeric($subjectId)) {
+			$query->where($db->quoteName('su.id') . ' = ' . (int) $subjectId);
+		}
+
+		$academicyearId = $this->getState('filter.academicyear_id');
+		if (is_numeric($academicyearId)) {
+			$query->where($db->quoteName('cl.academicyear_id') . ' = ' . (int) $academicyearId);
+		}
+
+		$term = $this->getState('filter.term');
+		if (is_numeric($term)) {
+			$query->where($db->quoteName('cl.term') . ' = ' . (int) $term);
+		}
+
+		$paymentRequired = $this->getState('filter.payment_required');
+		if (is_numeric($paymentRequired)) {
+			$query->where($db->quoteName('sa.payment_required') . ' = ' . (int) $paymentRequired);
+		}
+
+		$paymentCompleted = $this->getState('filter.payment_completed');
+		if (is_numeric($paymentCompleted)) {
+			// filter này chỉ có nghĩa với các bản ghi có payment_required = TRUE
+			$query->where($db->quoteName('sa.payment_required') . ' = 1');
+			$query->where($db->quoteName('sa.payment_completed') . ' = ' . (int) $paymentCompleted);
+		}
+
+		// --- Ordering ---
+		$orderingCol = $db->escape($this->getState('list.ordering', 'id'));
+		$orderingDir = $db->escape($this->getState('list.direction', 'desc'));
+		$query->order($db->quoteName($orderingCol) . ' ' . $orderingDir);
+
+		return $query;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getStoreId($id = '')
+	{
+		$id .= ':' . $this->getState('filter.search');
+		$id .= ':' . $this->getState('filter.academicyear_id');
+		$id .= ':' . $this->getState('filter.term');
+		$id .= ':' . $this->getState('filter.payment_required');
+		$id .= ':' . $this->getState('filter.payment_completed');
+		return parent::getStoreId($id);
+	}
+
+	// =========================================================================
+	// Thống kê
+	// =========================================================================
+
+	/**
+	 * Trả về số liệu thống kê tổng hợp của bảng #__eqa_secondattempts.
+	 *
+	 * Luôn tính trên toàn bộ bảng (không bị ảnh hưởng bởi bộ lọc hiện tại)
+	 * để phản ánh đúng tổng quan tình hình.
+	 *
+	 * @return object{totalLearners:int, totalAttempts:int, totalFree:int, totalRequired:int, totalPaid:int}
+	 * @throws Exception
+	 * @since 2.0.2
+	 */
+	public function getStatistics(): object
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		$query = $db->getQuery(true)
+			->select([
+				'COUNT(DISTINCT ' . $db->quoteName('learner_id') . ')' .
+				' AS ' . $db->quoteName('totalLearners'),
+				'COUNT(1)' .
+				' AS ' . $db->quoteName('totalAttempts'),
+				'SUM(CASE WHEN ' . $db->quoteName('payment_required') . ' = 0 THEN 1 ELSE 0 END)' .
+				' AS ' . $db->quoteName('totalFree'),
+				'SUM(CASE WHEN ' . $db->quoteName('payment_required') . ' = 1 THEN 1 ELSE 0 END)' .
+				' AS ' . $db->quoteName('totalRequired'),
+				'SUM(CASE WHEN ' . $db->quoteName('payment_required') . ' = 1' .
+				' AND ' . $db->quoteName('payment_completed') . ' = 1 THEN 1 ELSE 0 END)' .
+				' AS ' . $db->quoteName('totalPaid'),
+			])
+			->from($db->quoteName('#__eqa_secondattempts'));
+
+		$db->setQuery($query);
+		$result = $db->loadObject();
+
+		// Đảm bảo luôn là int (bảng rỗng → loadObject() trả về null trong từng cột)
+		$result->totalLearners = (int) $result->totalLearners;
+		$result->totalAttempts = (int) $result->totalAttempts;
+		$result->totalFree     = (int) $result->totalFree;
+		$result->totalRequired = (int) $result->totalRequired;
+		$result->totalPaid     = (int) $result->totalPaid;
+
+		return $result;
+	}
+
 
 	// =========================================================================
 	// Chức năng "Làm mới"
