@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Thi lại">
+        <help key="JHELP_MENUS_MENU_ITEM_LEARNERRETAKE"/>
+        <message>
+            <![CDATA[Hiển thị danh sách các môn học cần thi lại (thi lần hai) của HVSV khi đăng nhập vào website, kèm thông tin điểm số và hướng dẫn nộp lệ phí qua QR code VietQR.]]>
+        </message>
+    </layout>
+
+    <fields name="params">
+        <fieldset name="request" label="COM_MENUS_BASIC_FIELDSET_LABEL">
+        </fieldset>
+        <fieldset name="basic">
+        </fieldset>
+        <fieldset name="advanced">
+        </fieldset>
+    </fields>
+</metadata>

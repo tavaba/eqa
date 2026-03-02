@@ -137,10 +137,31 @@
 			/>
 		</fieldset>
 		<fieldset
-			name="ppaa"
-			label="Phúc khảo"
-			description="Cấu hình các tham số liên quan đến phúc khảo, đính chính, chấm kiểm tra"
+			name="fee"
+			label="Phí, lệ phí"
+			description="Cấu hình các tham số liên quan đến phí, lệ phí"
 		>
+			<field
+					name="benificiary_bank_napas_code"
+					type="banknapascode"
+					label="Ngân hàng người nhận tiền"
+					default="970422"
+					required="true"
+			/>
+			<field
+					name="benificiary_bank_account"
+					type="text"
+					label="Số tài khoản người nhận tiền"
+					default="0944646746"
+					required="true"
+			/>
+			<field
+					name="benificiary_name"
+					type="text"
+					label="Người nhận"
+					default="Triệu Thị Yến"
+					required="true"
+			/>
 			<field
 					name="regrading_fee_mode"
 					type="feemode"

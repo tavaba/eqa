@@ -36,7 +36,7 @@
 
             <field
                     name="bank"
-                    type="bank"
+                    type="banknapascode"
                     label="Ngân hàng người thu phí"
                     required="true"
                     default="970422"

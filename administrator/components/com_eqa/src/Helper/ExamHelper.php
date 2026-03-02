@@ -6,8 +6,10 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
+use Kma\Component\Eqa\Administrator\Service\ConfigService;
 
 abstract class ExamHelper{
+	private static ConfigService $configService;
     public const EXAM_TYPE_OTHER = 0;                   //Thi khác
     public const EXAM_TYPE_SUBJECT_FINAL_TEST = 1;      //Thi kết thúc học phần
     public const EXAM_TYPE_CERTIFICATION = 2;           //Thi sát hạch (đầu vào, đầu ra,...)

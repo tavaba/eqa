@@ -247,6 +247,31 @@ class ConfigService
 	}
 
 	/**
+	 * Trả về mã NAPAS của ngân hàng của tài khoản thụ hưởng (benificiary) dùng để nhận các khoản phí, lệ phí.
+	 * @return string|null
+	 *
+	 * @since 2.0.1
+	 */
+	public function getBenificiaryBankNapasCode(): string|null
+	{
+		return $this->params->get('params.benificiary_bank_napas_code');
+	}
+
+	/**
+	 * Trả về số tài khoản của tài khoản thụ hưởng (benificiary) dùng để nhận các khoản phí, lệ phí.
+	 * @return string|null
+	 *
+	 * @since 2.0.1
+	 */
+	public function getBenificiaryBankAccount(): string|null
+	{
+		return $this->params->get('params.benificiary_bank_account');
+	}
+
+
+
+
+	/**
 	 * Trả về chế độ tính phí phúc khảo (regrading).
 	 * Giá trị tương ứng với các hằng số REGRADING_FEE_MODE_* của ExamHelper.
 	 *
@@ -268,5 +293,16 @@ class ConfigService
 	public function getRegradingFeeRate(): float
 	{
 		return (float) $this->params->get('params.regrading_fee_rate', 30000);
+	}
+
+	public function getSecondAttemptFeeMode(): FeeMode
+	{
+		$value = (int) $this->params->get('params.second_attempt_fee_mode', FeeMode::PerExam->value);
+		return FeeMode::from($value);
+	}
+
+	public function getSecondAttemptFeeRate(): float
+	{
+		return (float) $this->params->get('params.second_attempt_fee_rate', 90000);
 	}
 }

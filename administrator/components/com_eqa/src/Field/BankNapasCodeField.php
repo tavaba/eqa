@@ -10,9 +10,9 @@ use Joomla\CMS\HTML\HTMLHelper;
  * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
  * @since  1.6
  */
-class BankField extends ListField
+class BankNapasCodeField extends ListField
 {
-    protected $type = 'bank';
+    protected $type = 'banknapascode';
 	protected array $napas_banks = [
 		970499 => 'Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam (Agribank)',
 		970489 => 'Ngân hàng TMCP Công thương Việt Nam (Vietinbank)',
