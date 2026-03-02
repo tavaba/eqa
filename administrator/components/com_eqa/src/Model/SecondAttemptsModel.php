@@ -549,4 +549,121 @@ class SecondAttemptsModel extends ListModel{
 
 		return $code;
 	}
+	// =========================================================================
+	// Chức năng cập nhật trạng thái thanh toán
+	// =========================================================================
+
+	/**
+	 * Đánh dấu "Đã nộp phí" cho các bản ghi được chọn.
+	 *
+	 * Chỉ áp dụng với các bản ghi có payment_required = TRUE và payment_completed = FALSE.
+	 * Các bản ghi khác trong danh sách $ids bị bỏ qua (không phát sinh lỗi).
+	 *
+	 * @param  int[]  $ids  Danh sách id bản ghi trong #__eqa_secondattempts.
+	 * @return array{
+	 *     changed: int,
+	 *     skipped: int,
+	 *     changedLearnerCodes: string[]
+	 * }
+	 * @throws Exception
+	 * @since 2.0.2
+	 */
+	public function setPaymentCompleted(array $ids): array
+	{
+		return $this->updatePaymentStatus($ids, true);
+	}
+
+	/**
+	 * Đánh dấu "Chưa nộp phí" cho các bản ghi được chọn.
+	 *
+	 * Chỉ áp dụng với các bản ghi có payment_required = TRUE và payment_completed = TRUE.
+	 * Các bản ghi khác trong danh sách $ids bị bỏ qua (không phát sinh lỗi).
+	 *
+	 * @param  int[]  $ids  Danh sách id bản ghi trong #__eqa_secondattempts.
+	 * @return array{
+	 *     changed: int,
+	 *     skipped: int,
+	 *     changedLearnerCodes: string[]
+	 * }
+	 * @throws Exception
+	 * @since 2.0.2
+	 */
+	public function setPaymentIncomplete(array $ids): array
+	{
+		return $this->updatePaymentStatus($ids, false);
+	}
+
+	/**
+	 * Cập nhật trạng thái payment_completed cho danh sách bản ghi.
+	 *
+	 * Logic:
+	 *   - Đọc toàn bộ các bản ghi có id trong $ids kèm learner code.
+	 *   - Với mỗi bản ghi, kiểm tra điều kiện áp dụng:
+	 *       payment_required = TRUE  VÀ  payment_completed ≠ $targetValue
+	 *   - Những bản ghi đủ điều kiện → UPDATE, thu thập learner_code.
+	 *   - Những bản ghi không đủ điều kiện → đếm vào $skipped.
+	 *
+	 * @param  int[]  $ids          Danh sách id.
+	 * @param  bool   $targetValue  TRUE = Đã nộp phí; FALSE = Chưa nộp phí.
+	 * @return array{changed: int, skipped: int, changedLearnerCodes: string[]}
+	 * @throws Exception
+	 * @since 2.0.2
+	 */
+	private function updatePaymentStatus(array $ids, bool $targetValue): array
+	{
+		if (empty($ids)) {
+			return ['changed' => 0, 'skipped' => 0, 'changedLearnerCodes' => []];
+		}
+
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		// Đọc thông tin cần thiết của các bản ghi được chọn, kèm learner code
+		$idList = implode(',', array_map('intval', $ids));
+		$query  = $db->getQuery(true)
+			->select([
+				$db->quoteName('sa.id'),
+				$db->quoteName('sa.payment_required'),
+				$db->quoteName('sa.payment_completed'),
+				$db->quoteName('lr.code', 'learner_code'),
+			])
+			->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('sa.learner_id')
+			)
+			->where($db->quoteName('sa.id') . ' IN (' . $idList . ')');
+		$db->setQuery($query);
+		$records = $db->loadObjectList();
+
+		$eligibleIds        = [];
+		$changedLearnerCodes = [];
+		$skipped            = 0;
+
+		foreach ($records as $record) {
+			// Điều kiện áp dụng: phải đóng phí VÀ trạng thái chưa ở giá trị đích
+			if ($record->payment_required && (bool) $record->payment_completed !== $targetValue) {
+				$eligibleIds[]         = (int) $record->id;
+				$changedLearnerCodes[] = $record->learner_code ?? '';
+			} else {
+				$skipped++;
+			}
+		}
+
+		if (!empty($eligibleIds)) {
+			$eligibleIdList = implode(',', $eligibleIds);
+			$newValue       = $targetValue ? 1 : 0;
+			$db->setQuery(
+				'UPDATE ' . $db->quoteName('#__eqa_secondattempts') .
+				' SET ' . $db->quoteName('payment_completed') . ' = ' . $newValue .
+				' WHERE ' . $db->quoteName('id') . ' IN (' . $eligibleIdList . ')'
+			);
+			$db->execute();
+		}
+
+		return [
+			'changed'             => count($eligibleIds),
+			'skipped'             => $skipped,
+			'changedLearnerCodes' => $changedLearnerCodes,
+		];
+	}
 }

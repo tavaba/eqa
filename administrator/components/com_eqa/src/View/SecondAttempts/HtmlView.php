@@ -98,5 +98,27 @@ class HtmlView extends ItemsHtmlView
         $msg = 'Làm mới danh sách: loại bỏ các trường hợp không còn hợp lệ và bổ sung các trường hợp mới';
         ToolbarHelper::appendConfirmButton('core.create', $msg, 'loop', 'Làm mới', 'secondattempts.refresh', false, null);
 		ToolbarHelper::deleteList('Bạn có chắc muốn xóa các bản ghi đã chọn? Hành động này không thể hoàn tác.', 'secondattempts.delete', 'Xóa');
+
+	    // Nút "Đã nộp phí": đánh dấu các mục đã chọn là đã nộp phí (cần confirm)
+	    ToolbarHelper::appendConfirmButton(
+		    'core.edit',
+		    'Xác nhận các trường hợp được chọn ĐÃ NỘP PHÍ?',
+		    'check',
+		    'Đã nộp phí',
+		    'secondattempts.markPaymentCompleted',
+		    true,
+		    'btn btn-success'
+	    );
+
+	    // Nút "Chưa nộp phí": thu hồi trạng thái đã nộp phí của các mục đã chọn
+	    ToolbarHelper::appendConfirmButton(
+		    'core.edit',
+			'Xác nhận các trường hợp đã chọn là CHƯA NỘP PHÍ?',
+		    'minus-circle',
+		    'Chưa nộp phí',
+		    'secondattempts.markPaymentIncomplete',
+		    true,
+		    'btn btn-warning'
+	    );
     }
 }
