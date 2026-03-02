@@ -36,7 +36,7 @@ class StimulationModel extends BaseDatabaseModel {
 		$columns = $db->quoteName(array('subject_id', 'learner_id', 'type', 'value', 'reason', 'created_at', 'created_by'));
 		$stimulReason = $db->quote($stimulReason);
 		$createdAt = $db->quote($timeStamp);
-		$createdBy = $db->quote($username);
+		$createdBy = $app->getIdentity()->id;
 		$tupes = [];
 		foreach ($learnerIds as $learnerId)
 		{

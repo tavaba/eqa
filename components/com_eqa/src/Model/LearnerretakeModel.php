@@ -6,18 +6,18 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\MVC\Model\BaseModel;
-use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Service\ConfigService;
 
 /**
  * Model front-end cho chức năng "Thi lại".
  *
  * Lấy danh sách môn thi lần hai của người học từ #__eqa_secondattempts,
- * kết hợp JOIN để lấy thông tin điểm số và môn học, đồng thời tính
- * lệ phí thi lại theo cấu hình.
+ * kết hợp JOIN để lấy thông tin điểm số và môn học.
  *
- * @since 2.1.0
+ * Số tiền lệ phí (`payment_amount`) được đọc trực tiếp từ bảng
+ * #__eqa_secondattempts — đã được tính và lưu khi tạo bản ghi (không tính lại).
+ *
+ * @since 2.0.2
  */
 class LearnerretakeModel extends BaseModel
 {
@@ -34,11 +34,11 @@ class LearnerretakeModel extends BaseModel
      *   el   → #__eqa_exam_learner    (điểm thi, điểm HP, kết luận)
      *   ay   → #__eqa_academicyears   (mã năm học, để hiển thị)
      *
-     * @param  string  $learnerCode  Mã người học.
-     * @return object[]  Danh sách bản ghi, mỗi bản ghi đã có thêm trường:
-     *                   feeAmount (float), feeLabel (string).
+     * @param  string   $learnerCode  Mã người học.
+     * @return object[]               Danh sách bản ghi, mỗi bản ghi đã có thêm trường:
+     *                                feeAmount (float), feeLabel (string).
      * @throws Exception
-     * @since  2.1.0
+     * @since  2.0.2
      */
     public function getRetakeList(string $learnerCode): array
     {
@@ -52,7 +52,7 @@ class LearnerretakeModel extends BaseModel
                 'sa.last_exam_id',
                 'sa.last_attempt',
                 'sa.last_conclusion',
-                'sa.payment_required',
+                'sa.payment_amount',
                 'sa.payment_completed',
                 'sa.payment_code',
                 'su.code',
@@ -74,7 +74,7 @@ class LearnerretakeModel extends BaseModel
                 'last_exam_id',
                 'last_attempt',
                 'last_conclusion',
-                'payment_required',
+                'payment_amount',
                 'payment_completed',
                 'payment_code',
                 'subject_code',
@@ -141,39 +141,17 @@ class LearnerretakeModel extends BaseModel
             return [];
         }
 
-        // Tính lệ phí cho từng bản ghi
-        $config  = new ConfigService();
-        $feeMode = $config->getSecondAttemptFeeMode();
-        $feeRate = $config->getSecondAttemptFeeRate();
-
+        // Gán feeAmount và feeLabel từ payment_amount đã lưu trong DB.
+        // Không tính lại — giá trị đã được xác định khi tạo bản ghi và
+        // khi migration 2.0.2 chạy, đảm bảo nhất quán với dữ liệu thanh toán.
         foreach ($items as $item) {
-            if (!$item->payment_required) {
-                $item->feeAmount = 0.0;
-                $item->feeLabel  = 'Miễn phí';
-            } else {
-                $item->feeAmount = $this->calculateFee($feeMode, $feeRate, (int) ($item->credits ?? 0));
-                $item->feeLabel  = number_format($item->feeAmount, 0, ',', '.') . ' đ';
-            }
+            $amount          = (float) ($item->payment_amount ?? 0.0);
+            $item->feeAmount = $amount;
+            $item->feeLabel  = $amount > 0
+                ? number_format($amount, 0, ',', '.') . ' đ'
+                : 'Miễn phí';
         }
 
         return $items;
-    }
-
-    /**
-     * Tính lệ phí thi lại theo fee mode và fee rate.
-     *
-     * @param  FeeMode  $feeMode   Chế độ tính phí.
-     * @param  float    $feeRate   Mức phí cơ bản (VNĐ/môn hoặc VNĐ/tín chỉ).
-     * @param  int      $credits   Số tín chỉ của môn học.
-     * @return float               Số tiền lệ phí (VNĐ).
-     * @since  2.1.0
-     */
-    private function calculateFee(FeeMode $feeMode, float $feeRate, int $credits): float
-    {
-        return match ($feeMode) {
-            FeeMode::Free      => 0.0,
-            FeeMode::PerExam   => $feeRate,
-            FeeMode::PerCredit => $feeRate * max(1, $credits),
-        };
     }
 }

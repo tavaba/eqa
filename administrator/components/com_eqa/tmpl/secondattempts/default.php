@@ -14,6 +14,15 @@ use Kma\Library\Kma\Helper\ViewHelper;
 
 /** @var \Kma\Component\Eqa\Administrator\View\SecondAttempts\HtmlView $this */
 $stats = $this->statistics;
+
+/**
+ * Định dạng số tiền VNĐ, ví dụ: 1.234.000 đ
+ *
+ * @param  float  $amount
+ * @return string
+ */
+$formatMoney = static fn(float $amount): string =>
+    number_format($amount, 0, ',', '.') . ' đ';
 ?>
 
 <!-- =========================================================
@@ -71,6 +80,24 @@ $stats = $this->statistics;
             <div class="card-body py-2 px-1">
                 <div class="fs-3 fw-bold text-info"><?php echo $stats->totalPaid; ?></div>
                 <div class="small text-muted">Đã nộp phí</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-warning h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-5 fw-bold text-warning"><?php echo $formatMoney($stats->totalFeeAmount); ?></div>
+                <div class="small text-muted">Tổng phí</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-success h-100">
+            <div class="card-body py-2 px-1">
+                <div class="fs-5 fw-bold text-success"><?php echo $formatMoney($stats->totalCollectedAmount); ?></div>
+                <div class="small text-muted">Đã thu</div>
             </div>
         </div>
     </div>

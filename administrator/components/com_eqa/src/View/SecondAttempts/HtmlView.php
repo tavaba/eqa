@@ -42,7 +42,7 @@ class HtmlView extends ItemsHtmlView
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('last_attempt', 'Đã thi', false, false, 'text-center');
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('conclusion_label', 'Kết luận', false, false, 'text-center');
 
-        $f = new ListLayoutItemFieldOption('payment_required_label', 'Có phí', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('payment_amount_label', 'Phí', false, false, 'text-center');
 		$f->printRaw = true; // Để in HTML badge
         $option->customFieldset1[] = $f;
 
@@ -70,16 +70,22 @@ class HtmlView extends ItemsHtmlView
         if (!empty($this->layoutData->items)) {
             foreach ($this->layoutData->items as $item) {
                 // Nhãn kết luận từ Enum
-                $conclusion            = Conclusion::from((int) $item->last_conclusion);
+                $conclusion             = Conclusion::from((int) $item->last_conclusion);
                 $item->conclusion_label = $conclusion->getLabel();
 
-                // Nhãn "Có phí"
-                $item->payment_required_label = $item->payment_required
-                    ? '<span class="badge bg-warning text-dark">Có phí</span>'
-                    : '<span class="badge bg-secondary">Không</span>';
+                // Nhãn "Lệ phí": hiển thị số tiền hoặc "Miễn phí"
+                $amount = (float) $item->payment_amount;
+                if ($amount <= 0) {
+                    $item->payment_amount_label = '<span class="badge bg-secondary">Miễn phí</span>';
+                } else {
+                    $item->payment_amount_label =
+                        '<span class="badge bg-warning text-dark">'
+                        . number_format($amount, 0, ',', '.') . ' đ'
+                        . '</span>';
+                }
 
                 // Biểu tượng "Đã nộp phí" — theo chuẩn Joomla
-                if (!$item->payment_required) {
+                if ($amount <= 0) {
                     // Không cần đóng phí → để trống
                     $item->payment_completed_html = '';
                 } else {
@@ -98,7 +104,7 @@ class HtmlView extends ItemsHtmlView
         $msg = 'Làm mới danh sách: loại bỏ các trường hợp không còn hợp lệ và bổ sung các trường hợp mới';
         ToolbarHelper::appendConfirmButton('core.create', $msg, 'loop', 'Làm mới', 'secondattempts.refresh', false, null);
 
-	//	ToolbarHelper::deleteList('Bạn có chắc muốn xóa các bản ghi đã chọn? Hành động này không thể hoàn tác.', 'secondattempts.delete', 'Xóa');
+		//ToolbarHelper::deleteList('Bạn có chắc muốn xóa các bản ghi đã chọn? Hành động này không thể hoàn tác.', 'secondattempts.delete', 'Xóa');
 
 	    // Nút "Đã nộp phí": đánh dấu các mục đã chọn là đã nộp phí (cần confirm)
 	    ToolbarHelper::appendConfirmButton(

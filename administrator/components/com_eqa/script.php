@@ -29,6 +29,18 @@
  *                     Thêm `allowed_rooms` TEXT NULL — ghi đè allowed_rooms của subject
  *                     Thêm UNIQUE INDEX (examseason_id, code)
  *
+ * Migration v2.0.2
+ * ----------------
+ * Các thay đổi schema so với v2.0.1:
+ *
+ *   #__eqa_secondattempts : Xóa cột `payment_required` BOOLEAN
+ *                           Thêm cột `payment_amount` DOUBLE NOT NULL DEFAULT 0
+ *
+ * Quy tắc chuyển đổi dữ liệu:
+ *   - payment_required = 0 (FALSE) → payment_amount = 0.0
+ *   - payment_required = 1 (TRUE)  → payment_amount = calculateFee(feeMode, feeRate, credits)
+ *     trong đó credits lấy từ #__eqa_subjects qua JOIN #__eqa_exams
+ *
  * Yêu cầu: Joomla 5.0+, PHP 8.1+, MySQL 8.0+
  *
  * Cách hoạt động:
@@ -73,6 +85,16 @@ class Com_EqaInstallerScript extends InstallerScript
     private const COMPONENT_PREFIX = 'eqa_';
 
     /**
+     * Version đang cài trước khi update, được đọc trong preflight() khi
+     * manifest_cache vẫn còn chứa version cũ.
+     *
+     * postflight() dùng giá trị này để quyết định migration nào cần chạy,
+     * vì lúc postflight() thực thi Joomla đã ghi version mới vào manifest_cache
+     * khiến getInstalledVersion() luôn trả về version mới.
+     */
+    private string $previousVersion = '0.0.0';
+
+    /**
      * User ID gán cho username không tồn tại trong #__users
      * (user đã bị xóa hoặc dữ liệu không hợp lệ).
      * NULL vẫn giữ nguyên NULL — chỉ áp dụng cho giá trị không NULL, không rỗng.
@@ -108,6 +130,13 @@ class Com_EqaInstallerScript extends InstallerScript
     public function preflight($type, $parent): bool
     {
         if ($type === 'update') {
+            // Đọc version cũ TRƯỚC KHI Joomla copy file mới.
+            // Đây là thời điểm duy nhất manifest_cache còn chứa version cũ.
+            // postflight() sẽ dùng $this->previousVersion để quyết định
+            // migration nào cần chạy.
+            $this->previousVersion = $this->getInstalledVersion();
+            $this->logInfo("Phiên bản hiện tại (trước khi update): {$this->previousVersion}");
+
             $this->clearComponentDirs();
         }
 
@@ -125,9 +154,10 @@ class Com_EqaInstallerScript extends InstallerScript
      */
     public function update($parent): bool
     {
-        $installedVersion = $this->getInstalledVersion();
-
-        if (version_compare($installedVersion, '2.0.0', '<')) {
+        // $this->previousVersion đã được đọc trong preflight() → dùng lại ở đây.
+        // update() chạy trước khi SQL thực thi nên getInstalledVersion() cũng
+        // còn đúng tại thời điểm này, nhưng dùng previousVersion cho nhất quán.
+        if (version_compare($this->previousVersion, '2.0.0', '<')) {
             if (!$this->runMigration200()) {
                 return false;
             }
@@ -153,16 +183,21 @@ class Com_EqaInstallerScript extends InstallerScript
             return true;
         }
 
-        // LƯU Ý: Không dùng getInstalledVersion() ở đây vì khi postflight() chạy,
-        // Joomla đã cập nhật manifest_cache với version MỚI → version check sẽ
-        // luôn trả về false và migration không bao giờ được gọi.
+        // $this->previousVersion được đọc trong preflight() khi manifest_cache
+        // vẫn còn version cũ. Dùng nó để gọi đúng migration cần thiết.
         //
-        // Thay vào đó, mỗi runMigrationXXX() tự kiểm tra idempotent bên trong:
-        //   - Kiểm tra cột đã tồn tại chưa (bước 1)
-        //   - Chỉ populate các bản ghi còn rỗng (WHERE code = '')
-        // → An toàn khi gọi lại nhiều lần.
-        if (!$this->runMigration201()) {
-            return false;
+        // Lưu ý: Không dùng getInstalledVersion() ở đây vì khi postflight() chạy,
+        // Joomla đã ghi version MỚI vào manifest_cache → luôn trả về version mới.
+        if (version_compare($this->previousVersion, '2.0.1', '<')) {
+            if (!$this->runMigration201()) {
+                return false;
+            }
+        }
+
+        if (version_compare($this->previousVersion, '2.0.2', '<')) {
+            if (!$this->runMigration202()) {
+                return false;
+            }
         }
 
         return true;
@@ -639,6 +674,234 @@ class Com_EqaInstallerScript extends InstallerScript
         }
 
         return false;
+    }
+
+    // =========================================================================
+    // Migration 2.0.2
+    // =========================================================================
+
+    /**
+     * Thực hiện migration từ v2.0.1 lên v2.0.2.
+     *
+     * Thay đổi schema (cột `payment_amount` đã được tạo bởi 2.0.2.sql):
+     *   #__eqa_secondattempts:
+     *     - Cột `payment_amount` DOUBLE NOT NULL DEFAULT 0 (đã tồn tại sau khi SQL chạy)
+     *     - Cột `payment_required` BOOLEAN (vẫn còn, sẽ bị xóa ở cuối method này)
+     *
+     * Nhiệm vụ của method này:
+     *   1. Kiểm tra idempotent: nếu `payment_required` không còn → đã migrate, bỏ qua.
+     *   2. Kiểm tra `payment_amount` đã tồn tại (do SQL chạy trước postflight).
+     *   3. Đọc cấu hình fee mode và fee rate từ component params.
+     *   4. Đọc toàn bộ bản ghi có payment_required = 1, kèm số tín chỉ môn học.
+     *   5. Tính payment_amount theo công thức:
+     *        - FeeMode::Free (0)      → 0.0
+     *        - FeeMode::PerExam (10)  → feeRate
+     *        - FeeMode::PerCredit (20)→ feeRate * max(1, credits)
+     *   6. Batch UPDATE theo nhóm credits đồng nhất (tối ưu số lần truy vấn).
+     *   7. Xóa cột `payment_required`.
+     *
+     * Idempotent: Kiểm tra sự tồn tại của cột `payment_required` ở bước 1.
+     *
+     * @return bool true nếu thành công, false nếu lỗi nghiêm trọng.
+     */
+    private function runMigration202(): bool
+    {
+        $db = Factory::getDbo();
+
+        try {
+            $this->logInfo('Migration 2.0.2: Bắt đầu...');
+
+            $saTable       = $db->replacePrefix('#__eqa_secondattempts');
+            $examsTable    = $db->replacePrefix('#__eqa_exams');
+            $subjectsTable = $db->replacePrefix('#__eqa_subjects');
+
+            // =================================================================
+            // Bước 1: Kiểm tra idempotent
+            // Nếu `payment_required` không còn → migration đã chạy rồi, bỏ qua.
+            // =================================================================
+            $existingCols = $this->getExistingColumnNames($db, $saTable);
+
+            if (!in_array('payment_required', $existingCols, true)) {
+                $this->logInfo(
+                    'Migration 2.0.2: Cột `payment_required` không tồn tại → '
+                    . 'migration đã được thực hiện trước đó, bỏ qua.'
+                );
+                return true;
+            }
+
+            // =================================================================
+            // Bước 2: Kiểm tra `payment_amount` đã được tạo bởi file SQL chưa
+            // =================================================================
+            if (!in_array('payment_amount', $existingCols, true)) {
+                $this->logError(
+                    'Migration 2.0.2: Cột `payment_amount` không tồn tại trong bảng `'
+                    . $saTable . '`. '
+                    . 'Hãy đảm bảo file sql/updates/mysql/2.0.2.sql đã được thực thi.'
+                );
+                return false;
+            }
+
+            // =================================================================
+            // Bước 3: Đọc cấu hình fee mode và fee rate
+            // =================================================================
+            [$feeMode, $feeRate] = $this->loadSecondAttemptFeeConfig($db);
+
+            $this->logInfo(
+                sprintf(
+                    'Migration 2.0.2: fee_mode=%d, fee_rate=%.2f',
+                    $feeMode,
+                    $feeRate
+                )
+            );
+
+            // =================================================================
+            // Bước 4: Xử lý các bản ghi có payment_required = 1
+            // =================================================================
+
+            // Trường hợp đặc biệt: FeeMode::Free (0) → tất cả payment_amount = 0,
+            // không cần đọc dữ liệu chi tiết, chỉ cần đảm bảo cột = 0 (đã là DEFAULT 0).
+            if ($feeMode === 0) {
+                $this->logInfo(
+                    'Migration 2.0.2: fee_mode = Free → tất cả payment_amount giữ nguyên = 0.'
+                );
+            } else {
+                // Đọc các bản ghi cần tính phí, kèm credits của môn học
+                $rows = $db->setQuery(
+                    "SELECT sa.id,
+                            COALESCE(su.credits, 0) AS credits
+                     FROM `{$saTable}` sa
+                     LEFT JOIN `{$examsTable}` ex ON ex.id = sa.last_exam_id
+                     LEFT JOIN `{$subjectsTable}` su ON su.id = ex.subject_id
+                     WHERE sa.payment_required = 1"
+                )->loadObjectList();
+
+                if (empty($rows)) {
+                    $this->logInfo(
+                        'Migration 2.0.2: Không có bản ghi nào có payment_required = 1.'
+                    );
+                } else {
+                    $this->logInfo(
+                        'Migration 2.0.2: Tìm thấy ' . count($rows)
+                        . ' bản ghi có payment_required = 1, đang tính payment_amount...'
+                    );
+
+                    // =============================================================
+                    // Bước 5: Tính payment_amount và nhóm theo giá trị đồng nhất
+                    // để batch UPDATE (giảm số lần truy vấn DB)
+                    // =============================================================
+
+                    // Map: payment_amount (float, dùng string key) → [id, id, ...]
+                    $amountToIds = [];
+
+                    foreach ($rows as $row) {
+                        $credits       = (int) $row->credits;
+                        $paymentAmount = $this->calculateSecondAttemptFee($feeMode, $feeRate, $credits);
+
+                        // Dùng number_format để tạo key nhất quán, tránh lỗi float precision
+                        $amountKey = number_format($paymentAmount, 4, '.', '');
+                        $amountToIds[$amountKey][] = (int) $row->id;
+                    }
+
+                    // =============================================================
+                    // Bước 6: Batch UPDATE theo nhóm payment_amount đồng nhất
+                    // =============================================================
+                    $totalUpdated = 0;
+
+                    foreach ($amountToIds as $amountKey => $ids) {
+                        $amount  = (float) $amountKey;
+                        $idList  = implode(', ', $ids);
+
+                        $db->setQuery(
+                            "UPDATE `{$saTable}`
+                             SET `payment_amount` = {$amount}
+                             WHERE `id` IN ({$idList})"
+                        )->execute();
+
+                        $totalUpdated += count($ids);
+                    }
+
+                    $this->logInfo(
+                        "Migration 2.0.2: Đã cập nhật payment_amount cho {$totalUpdated} bản ghi "
+                        . 'trong ' . count($amountToIds) . ' nhóm phí.'
+                    );
+                }
+            }
+
+            // =================================================================
+            // Bước 7: Xóa cột `payment_required`
+            // =================================================================
+            $this->logInfo('Migration 2.0.2: Đang xóa cột `payment_required`...');
+
+            $db->setQuery(
+                "ALTER TABLE `{$saTable}` DROP COLUMN `payment_required`"
+            )->execute();
+
+            $this->logInfo('Migration 2.0.2: Đã xóa cột `payment_required`.');
+            $this->logInfo('Migration 2.0.2: Hoàn tất thành công!');
+            return true;
+
+        } catch (\Throwable $e) {
+            $msg = 'Migration 2.0.2 thất bại nghiêm trọng: ' . $e->getMessage();
+            Log::add("com_eqa: {$msg}", Log::ERROR, 'com_eqa');
+            $this->logError($msg);
+            return false;
+        }
+    }
+
+    /**
+     * Đọc cấu hình second attempt fee từ #__extensions (component params).
+     *
+     * Trả về mảng 2 phần tử: [feeMode (int), feeRate (float)].
+     * Giá trị mặc định: PerExam (10), 90000 VNĐ — khớp với ConfigHelper/ConfigService.
+     *
+     * Lưu ý: Không dùng ConfigHelper hay ConfigService trực tiếp trong script installer
+     * vì các class đó phụ thuộc vào autoloader của component, chưa chắc đã sẵn sàng
+     * khi postflight() chạy. Thay vào đó, đọc thẳng từ #__extensions.
+     *
+     * @return array{int, float} [feeMode, feeRate]
+     */
+    private function loadSecondAttemptFeeConfig(\Joomla\Database\DatabaseInterface $db): array
+    {
+        $extensionsTable = $db->replacePrefix('#__extensions');
+
+        $paramsJson = $db->setQuery(
+            "SELECT `params`
+             FROM `{$extensionsTable}`
+             WHERE `element` = 'com_eqa'
+               AND `type`    = 'component'
+             LIMIT 1"
+        )->loadResult();
+
+        $params   = json_decode($paramsJson ?? '{}', true);
+        $feeMode  = (int) ($params['params']['second_attempt_fee_mode'] ?? 10); // default: PerExam
+        $feeRate  = (float) ($params['params']['second_attempt_fee_rate'] ?? 90000.0);
+
+        return [$feeMode, $feeRate];
+    }
+
+    /**
+     * Tính số tiền lệ phí thi lần hai cho một bản ghi.
+     *
+     * Ánh xạ fee mode (int) với enum FeeMode:
+     *   0  = Free      → 0.0
+     *   10 = PerExam   → feeRate
+     *   20 = PerCredit → feeRate * max(1, credits)
+     *
+     * Dùng int thay vì enum FeeMode vì script.php không load autoloader component.
+     *
+     * @param  int   $feeMode  Giá trị int của FeeMode enum (0 | 10 | 20).
+     * @param  float $feeRate  Mức phí cơ bản (VNĐ/môn hoặc VNĐ/tín chỉ).
+     * @param  int   $credits  Số tín chỉ của môn học (0 nếu không xác định).
+     * @return float           Số tiền lệ phí (VNĐ).
+     */
+    private function calculateSecondAttemptFee(int $feeMode, float $feeRate, int $credits): float
+    {
+        return match ($feeMode) {
+            0  => 0.0,                            // FeeMode::Free
+            10 => $feeRate,                       // FeeMode::PerExam
+            20 => $feeRate * max(1, $credits),    // FeeMode::PerCredit
+            default => $feeRate,                  // Fallback an toàn
+        };
     }
 
     // =========================================================================

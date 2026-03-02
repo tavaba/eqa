@@ -1,5 +1,7 @@
 /**
- * Version 2.0.0
+ * Version 2.0.2
+ * Bảng #__eqa_secondattempts
+ *		Thay cột payment_required (boolean) bằng cột payment_amount (float)
  */
 
 CREATE TABLE IF NOT EXISTS `#__eqa_buildings`(
@@ -699,7 +701,7 @@ CREATE TABLE IF NOT EXISTS `#__eqa_secondattempts`(
 	`last_exam_id`		INT NOT NULL,
     `last_attempt`      INT NOT NULL,
 	`last_conclusion`	INT,
-	`payment_required`	BOOLEAN NOT NULL,
+	`payment_amount`	FLOAT NOT NULL,
 	`payment_completed`	BOOLEAN,
 	`payment_code`		CHAR(8),
 	PRIMARY KEY (`id`),

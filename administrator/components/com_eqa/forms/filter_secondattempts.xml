@@ -5,7 +5,7 @@
       - search           : tìm kiếm trong mã HVSV, họ tên, mã/tên môn học
       - academicyear_id  : năm học (custom field type="academicyear")
       - term             : học kỳ (custom field type="term")
-      - payment_required : có phí / không có phí
+      - has_fee          : có phí / miễn phí (dựa trên payment_amount > 0)
       - payment_completed: đã nộp phí / chưa nộp phí
 -->
 <form>
@@ -20,15 +20,16 @@
         />
 
         <field
-                name="subject_id"
-                type="subject"
-                default=""
-                class="select2-basic"
-                label="COM_EQA_FORM_CLASSES_FILTER_SUBJECT_LABEL"
-                onchange="this.form.submit();"
+            name="subject_id"
+            type="subject"
+            default=""
+            class="select2-basic"
+            label="COM_EQA_FORM_CLASSES_FILTER_SUBJECT_LABEL"
+            onchange="this.form.submit();"
         >
             <option value="">COM_EQA_FORM_CLASSES_FILTER_SUBJECT_MSG</option>
         </field>
+
         <field
             name="academicyear_id"
             type="academicyear"
@@ -48,15 +49,15 @@
         />
 
         <field
-            name="payment_required"
+            name="has_fee"
             type="list"
-            label="Có phí"
+            label="Lệ phí"
             default=""
             onchange="this.form.submit();"
         >
-            <option value="">- Có phí -</option>
-            <option value="0">Không cần nộp phí</option>
-            <option value="1">Phải nộp phí</option>
+            <option value="">- Lệ phí -</option>
+            <option value="0">Miễn phí</option>
+            <option value="1">Có phí</option>
         </field>
 
         <field

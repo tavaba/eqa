@@ -107,8 +107,9 @@ foreach ($this->items as $index => $item) {
         </thead>
         <tbody>
         <?php foreach ($itemsData as $i => $data):
-            $item    = $data['item'];
-            $modalId = $data['modalId'];
+            $item      = $data['item'];
+            $modalId   = $data['modalId'];
+            $hasFee    = (float) $item->payment_amount > 0;
         ?>
             <tr>
                 <td class="text-center"><?php echo $i + 1; ?></td>
@@ -145,8 +146,9 @@ foreach ($this->items as $index => $item) {
                     <?php echo htmlspecialchars($item->conclusionLabel ?? '—'); ?>
                 </td>
 
+                <!-- Cột Lệ phí -->
                 <td class="text-center">
-                    <?php if (!$item->payment_required): ?>
+                    <?php if (!$hasFee): ?>
                         <span class="text-success fw-semibold">Miễn phí</span>
                     <?php else: ?>
                         <span class="text-danger fw-semibold">
@@ -157,7 +159,7 @@ foreach ($this->items as $index => $item) {
 
                 <!-- Cột Nộp phí: chỉ chứa nút hoặc icon, KHÔNG chứa modal -->
                 <td class="text-center">
-                    <?php if (!$item->payment_required || $item->payment_completed): ?>
+                    <?php if (!$hasFee || $item->payment_completed): ?>
                         <?php echo HTMLHelper::_('jgrid.published', 1, 0, '', false); ?>
                     <?php else: ?>
                         <button
@@ -187,8 +189,8 @@ foreach ($this->items as $index => $item) {
     $modalId = $data['modalId'];
     $qrUrl   = $data['qrUrl'];
 
-    // Chỉ render modal cho trường hợp cần nộp phí mà chưa nộp
-    if (!$item->payment_required || $item->payment_completed) {
+    // Chỉ render modal cho trường hợp có phí mà chưa nộp
+    if ((float) $item->payment_amount <= 0 || $item->payment_completed) {
         continue;
     }
 ?>
