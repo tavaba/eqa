@@ -7,12 +7,83 @@
         </message>
     </layout>
 
-    <fields name="params">
-        <fieldset name="request" label="COM_MENUS_BASIC_FIELDSET_LABEL">
-        </fieldset>
-        <fieldset name="basic">
-        </fieldset>
-        <fieldset name="advanced">
+    <fields name="params" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <fieldset name="options" label="JOPTIONS">
+
+            <field
+                name="napas_code"
+                type="banknapascode"
+                label="Ngân hàng người nhận tiền"
+                description="Chọn ngân hàng của tài khoản nhận phí thi lại."
+                default="970422"
+                required="true"
+            />
+
+            <field
+                name="account_number"
+                type="text"
+                label="Số tài khoản người nhận tiền"
+                description="Số tài khoản ngân hàng nhận phí thi lại. Kiểm tra kỹ trước khi lưu."
+                default="0944646746"
+                required="true"
+            />
+
+            <field
+                name="recipient_name"
+                type="text"
+                label="Tên người nhận tiền"
+                description="Tên chủ tài khoản nhận phí thi lại (hiển thị trong QR code và hướng dẫn)."
+                default="Triệu Thị Yến"
+                required="true"
+            />
+
+            <!--
+                open_from, deadline: người quản trị nhập theo giờ địa phương (local OS time).
+                Giá trị được lưu trong params JSON của menu item dưới dạng local time string.
+                Việc chuyển đổi sang UTC để so sánh được thực hiện trong HtmlView.
+                Để trống nếu không muốn giới hạn thời gian nộp phí.
+            -->
+            <field
+                    name="open_from"
+                    type="calendar"
+                    label="Thời điểm bắt đầu nộp phí"
+                    description="Trước thời điểm này, nút 'Nộp phí' sẽ bị ẩn và thay bằng thông báo 'Chưa bắt đầu'. Nhập theo giờ địa phương. Để trống nếu cho phép nộp phí ngay lập tức."
+                    default=""
+                    required="false"
+                    format="%Y-%m-%d %H:%M:%S"
+                    filter="raw"
+                    showtime="true"
+                    timeformat="24"
+                    todaybutton="true"
+                    singleheader="true"
+            />
+            <field
+                name="deadline"
+                type="calendar"
+                label="Hạn chót nộp phí"
+                description="Thời điểm hết hạn nộp phí thi lại. Sau thời điểm này, nút 'Nộp phí' sẽ bị ẩn và thay bằng thông báo 'Quá hạn'. Nhập theo giờ địa phương. Để trống nếu không giới hạn thời gian."
+                default=""
+                required="false"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="raw"
+                showtime="true"
+                timeformat="24"
+                todaybutton="true"
+                singleheader="true"
+            />
+
+            <field
+                    name="payment_gate_open"
+                    type="radio"
+                    label="Mở cổng thu phí"
+                    description="Chọn 'Không' để tạm dừng thu phí. Khi tạm dừng, nút 'Nộp phí' bị thay bằng thông báo 'Tạm dừng thu'."
+                    default="1"
+                    required="true"
+                    class="btn-group btn-group-yesno"
+            >
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
         </fieldset>
     </fields>
 </metadata>

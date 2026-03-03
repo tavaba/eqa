@@ -11,8 +11,8 @@ use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Service\ConfigService;
 use Kma\Component\Eqa\Site\Model\LearnerretakeModel;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 /**
  * View front-end cho chức năng "Thi lại".
@@ -20,32 +20,122 @@ use Kma\Component\Eqa\Site\Model\LearnerretakeModel;
  * Hiển thị danh sách các môn thi lại (thi lần hai) của người học đang
  * đăng nhập, kèm thông tin điểm số, lệ phí và QR code thanh toán VietQR.
  *
- * @since 2.1.0
+ * Thông tin tài khoản nhận phí (NAPAS code, số tài khoản, tên người nhận)
+ * và hạn chót nộp phí (deadline) được đọc từ params của menu item hiện tại
+ * thay vì từ ConfigService toàn cục, cho phép mỗi menu item cấu hình riêng.
+ *
+ * @since 2.0.2
  */
 class HtmlView extends BaseHtmlView
 {
-    /** @var string|null  Mã người học đang đăng nhập; null nếu không phải người học. */
+	/**
+	 * @var string|null  Mã người học đang đăng nhập; null nếu không phải người học.
+	 * @since 2.0.3
+	 */
     protected ?string $learnerCode = null;
 
-    /** @var object|null  Thông tin người học (LearnerInfo). */
+	/**
+	 * @var object|null  Thông tin người học (LearnerInfo).
+	 * @since 2.0.3
+	 */
     protected ?object $learner = null;
 
-    /** @var object[]  Danh sách môn thi lại (đã tính phí, kết luận). */
+	/**
+	 * @var object[]  Danh sách môn thi lại (đã tính phí, kết luận).
+	 * @since 2.0.3
+	 */
     protected array $items = [];
 
-    /** @var string|null  Thông báo lỗi (nếu có). */
+	/**
+	 * @var string|null  Thông báo lỗi (nếu có).
+	 * @since 2.0.3
+	 */
     protected ?string $errorMessage = null;
 
-    // Thông tin VietQR — được truyền sang template
-    /** @var string  Mã Napas của ngân hàng nhận. */
+    // ── Thông tin VietQR — đọc từ params menu item ──────────────────────────
+
+	/**
+	 * @var string  Mã NAPAS của ngân hàng nhận.
+	 * @since 2.0.3
+	 */
     protected string $bankNapasCode = '';
 
-    /** @var string  Số tài khoản nhận. */
+	/**
+	 * @var string  Số tài khoản nhận.
+	 * @since 2.0.3
+	 */
     protected string $bankAccount = '';
 
+	/**
+	 * @var string  Tên người nhận tiền.
+	 * @since 2.0.3
+	 */
+    protected string $recipientName = '';
+
+    // ── Thông tin deadline ──────────────────────────────────────────────────
+	/**
+	 * Thời điểm bắt đầu thu phí dạng UTC.
+	 * Null nếu menu item không cấu hình open_from.
+	 *
+	 * @var string|null
+	 * @since 2.0.3
+	 */
+	protected ?string $openFromUtc = null;
+
+	/**
+	 * Thời điểm bắt đầu thu phí dạng local time (để hiển thị).
+	 * Null nếu menu item không cấu hình open_from.
+	 *
+	 * @var string|null
+	 * @since 2.0.3
+	 */
+	protected ?string $openFromLocal = null;
+
+	/**
+	 * Cờ cho biết hiện tại chưa đến thời điểm bắt đầu thu phí.
+	 * False nếu đã qua thời điểm bắt đầu hoặc không cấu hình open_from.
+	 *
+	 * @var bool
+	 * @since 2.0.3
+	 */
+	protected bool $isBeforeOpenFrom = false;
+
     /**
-     * {@inheritdoc}
+     * Hạn chót nộp phí dạng UTC (để so sánh với thời gian hiện tại).
+     * Null nếu menu item không cấu hình deadline.
+     *
+     * @var string|null
+     * @since 2.0.3
      */
+    protected ?string $deadlineUtc = null;
+
+    /**
+     * Hạn chót nộp phí dạng local time (để hiển thị cho người học).
+     * Null nếu menu item không cấu hình deadline.
+     *
+     * @var string|null
+     * @since 2.0.3
+     */
+    protected ?string $deadlineLocal = null;
+
+    /**
+     * Cờ cho biết hiện tại đã quá hạn chót nộp phí hay chưa.
+     * False nếu chưa quá hạn hoặc không cấu hình deadline.
+     *
+     * @var bool
+     * @since 2.0.3
+     */
+    protected bool $isDeadlinePassed = false;
+
+	/**
+	 * Cờ cho biết cổng thu phí có đang mở không.
+	 * True theo mặc định (mở), False khi admin tắt cổng thu phí.
+	 *
+	 * @var bool
+	 * @since 2.0.3
+	 */
+	protected bool $paymentGateOpen = true;
+
     public function display($tpl = null): void
     {
         $this->prepareData();
@@ -57,7 +147,7 @@ class HtmlView extends BaseHtmlView
      * Chuẩn bị toàn bộ dữ liệu cần thiết cho template.
      *
      * @return void
-     * @since 2.1.0
+     * @since 2.0.2
      */
     private function prepareData(): void
     {
@@ -88,10 +178,8 @@ class HtmlView extends BaseHtmlView
                 }
             }
 
-            // 5. Đọc thông tin VietQR từ cấu hình
-            $config              = new ConfigService();
-            $this->bankNapasCode = $config->getBenificiaryBankNapasCode();
-            $this->bankAccount   = $config->getBenificiaryBankAccount();
+            // 5. Đọc cấu hình từ params của menu item hiện tại
+            $this->loadMenuItemParams();
 
         } catch (Exception $e) {
             $this->errorMessage = $e->getMessage();
@@ -99,10 +187,78 @@ class HtmlView extends BaseHtmlView
     }
 
     /**
+     * Đọc các tham số cấu hình từ params của menu item đang active.
+     *
+     * Thay thế cách cũ dùng ConfigService() để lấy thông tin tài khoản nhận phí,
+     * cho phép mỗi menu item "Thi lại" có cấu hình tài khoản và deadline riêng.
+     *
+     * Xử lý deadline:
+     *   - Người quản trị nhập deadline theo giờ địa phương (local OS time) trong form menu.
+     *   - Giá trị được lưu trong params JSON dưới dạng local time string.
+     *   - Tại đây ta dùng DatetimeHelper::toUtc() để chuyển sang UTC và lưu vào
+     *     $this->deadlineUtc để so sánh chính xác bất kể timezone máy chủ.
+     *   - Đồng thời dùng DatetimeHelper::fromUtc() để tạo $this->deadlineLocal
+     *     hiển thị ngược lại cho người học theo giờ địa phương.
+     *
+     * @return void
+     * @throws Exception
+     * @since 2.0.2
+     */
+    private function loadMenuItemParams(): void
+    {
+        $menuItem = Factory::getApplication()->getMenu()->getActive();
+
+        if ($menuItem === null) {
+            return;
+        }
+
+        $params = $menuItem->getParams();
+
+        // ── Thông tin tài khoản nhận phí ────────────────────────────────────
+        $this->bankNapasCode = (string) ($params->get('napas_code', ''));
+        $this->bankAccount   = (string) ($params->get('account_number', ''));
+        $this->recipientName = (string) ($params->get('recipient_name', ''));
+
+        // ── Xử lý deadline ──────────────────────────────────────────────────
+        $deadlineRaw = trim((string) $params->get('deadline', ''));
+
+        if ($deadlineRaw === '') {
+            // Không cấu hình deadline → không giới hạn thời gian nộp phí
+            return;
+        }
+
+        // Người dùng nhập deadline theo local time (OS timezone).
+        // Chuyển sang UTC để so sánh nhất quán với đồng hồ máy chủ.
+        $this->deadlineUtc = DatetimeHelper::toUtc($deadlineRaw);
+
+        // Chuyển UTC ngược lại sang local time để hiển thị cho người học.
+        // (Đảm bảo hiển thị đúng dù máy chủ có thể chạy ở timezone khác.)
+        $this->deadlineLocal = DatetimeHelper::fromUtc($this->deadlineUtc);
+
+        // Kiểm tra đã quá hạn chưa: isTimeOver() nhận UTC và so sánh với UTC hiện tại.
+        $this->isDeadlinePassed = DatetimeHelper::isTimeOver($this->deadlineUtc, true);
+
+		// ── Xử lý open_from (thời điểm bắt đầu thu phí) ────────────────────────
+	    $openFromRaw = trim((string) $params->get('open_from', ''));
+
+	    if ($openFromRaw !== '') {
+		    // Người dùng nhập theo local time → chuyển sang UTC để so sánh.
+		    $this->openFromUtc   = DatetimeHelper::toUtc($openFromRaw);
+		    $this->openFromLocal = DatetimeHelper::fromUtc($this->openFromUtc);
+
+		    // isTimeOver trả về true khi thời điểm đó đã QUA → chưa đến = NOT isTimeOver
+		    $this->isBeforeOpenFrom = !DatetimeHelper::isTimeOver($this->openFromUtc, true);
+	    }
+
+		// ── Trạng thái cổng thu phí ─────────────────────────────────────────────
+	    $this->paymentGateOpen = (bool) $params->get('payment_gate_open', 1);
+	}
+
+    /**
      * Thiết lập toolbar front-end.
      *
      * @return void
-     * @since 2.1.0
+     * @since 2.0.2
      */
     private function addToolbar(): void
     {

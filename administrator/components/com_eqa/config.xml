@@ -142,42 +142,23 @@
 			description="Cấu hình các tham số liên quan đến phí, lệ phí"
 		>
 			<field
-					name="benificiary_bank_napas_code"
-					type="banknapascode"
-					label="Ngân hàng người nhận tiền"
-					default="970422"
-					required="true"
-			/>
-			<field
-					name="benificiary_bank_account"
-					type="text"
-					label="Số tài khoản người nhận tiền"
-					default="0944646746"
-					required="true"
-			/>
-			<field
-					name="benificiary_name"
-					type="text"
-					label="Người nhận"
-					default="Triệu Thị Yến"
-					required="true"
-			/>
-			<field
 					name="regrading_fee_mode"
 					type="feemode"
+					default="10"
 					label="Cách tính phí phúc khảo"
 					required="true"
-			>
-			</field>
+			/>
 			<field
 					name="regrading_fee_rate"
 					type="number"
+					default="30000"
 					label="Mức phí phúc khảo (VNĐ)"
 					required="true"
 			/>
 			<field
 					name="second_attempt_fee_mode"
 					type="feemode"
+					default="10"
 					label="Cách tính phí thi lần 2"
 					required="true"
 			>
@@ -185,6 +166,7 @@
 			<field
 					name="second_attempt_fee_rate"
 					type="number"
+					default="90000"
 					label="Mức phí thi lần 2 (VNĐ)"
 					required="true"
 			/>

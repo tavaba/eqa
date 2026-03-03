@@ -8,16 +8,19 @@
  *   TUYỆT ĐỐI KHÔNG đặt bên trong <td>. Đặt <div> trong <td> là HTML
  *   không hợp lệ — trình duyệt tự đẩy chúng ra ngoài <table> khi parse,
  *   làm sai lệch id trong DOM và Bootstrap không tìm được target khi click.
+ *
+ * @since 2.2.0
  */
 
 defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Site\View\Learnerretake\HtmlView;
 
 // Đảm bảo Bootstrap JS được load (cần thiết cho modal data-bs-toggle)
 HTMLHelper::_('bootstrap.framework');
 
-/** @var \Kma\Component\Eqa\Site\View\Learnerretake\HtmlView $this */
+/** @var HtmlView $this */
 
 // ─── Trường hợp 1: Không phải người học ───────────────────────────────────────
 if ($this->learnerCode === null): ?>
@@ -67,6 +70,17 @@ foreach ($this->items as $index => $item) {
         'qrUrl'   => $qrUrl,
     ];
 }
+
+// Định dạng deadline để hiển thị (dd/mm/yyyy hh:mm)
+$deadlineDisplay = null;
+if ($this->deadlineLocal !== null) {
+    try {
+        $dt              = new DateTime($this->deadlineLocal);
+        $deadlineDisplay = $dt->format('H:i, d/m/Y');
+    } catch (Exception $e) {
+        $deadlineDisplay = htmlspecialchars($this->deadlineLocal);
+    }
+}
 ?>
 
 <!-- Tiêu đề -->
@@ -75,7 +89,40 @@ foreach ($this->items as $index => $item) {
     (<?php echo $learnerCode; ?>)
 </h4>
 
-<!-- Ghi chú nộp phí -->
+<!-- Lưu ý quan trọng về nghĩa vụ học phí — luôn hiển thị -->
+<div class="alert alert-warning mb-3">
+    <span class="icon-warning me-2" aria-hidden="true"></span>
+    <strong>Lưu ý quan trọng:</strong>
+    HVSV phải hoàn thành nghĩa vụ học phí của môn học trước khi nộp phí thi lại.
+    Nếu còn nợ học phí môn học thì HVSV sẽ không được thi lại.
+</div>
+
+<!-- ─── Thông báo về deadline ─────────────────────────────────────────────────
+     Hiển thị khi menu item có cấu hình deadline.
+     - Chưa quá hạn: alert-info, nhắc nhở thời hạn còn lại.
+     - Đã quá hạn  : alert-danger, cảnh báo rõ ràng kèm thời điểm hết hạn.
+     ─────────────────────────────────────────────────────────────────────────── -->
+<?php if ($deadlineDisplay !== null): ?>
+    <?php if ($this->isDeadlinePassed): ?>
+        <div class="alert alert-danger mb-3">
+            <span class="icon-warning me-2" aria-hidden="true"></span>
+            <strong>Đã hết hạn nộp phí.</strong>
+            Thời hạn nộp phí thi lại đã kết thúc lúc
+            <strong><?php echo $deadlineDisplay; ?></strong>.
+            Vui lòng liên hệ Phòng KT&amp;ĐBCLĐT để được hỗ trợ.
+        </div>
+    <?php else: ?>
+        <div class="alert alert-warning mb-3">
+            <span class="icon-clock me-2" aria-hidden="true"></span>
+            <strong>Lưu ý thời hạn nộp phí:</strong>
+            Hạn chót nộp phí thi lại là <strong><?php echo $deadlineDisplay; ?></strong>.
+            Sau thời hạn này, bạn sẽ không thể nộp phí qua hệ thống.
+        </div>
+    <?php endif; ?>
+<?php endif; ?>
+
+<!-- Ghi chú nộp phí — chỉ hiển thị khi còn trong hạn (hoặc không có deadline) -->
+<?php if (!$this->isDeadlinePassed): ?>
 <div class="alert alert-info mb-3">
     <span class="icon-info me-1" aria-hidden="true"></span>
     HVSV nộp phí thi lại theo từng môn. Để nộp phí thi lại, HVSV nhấn chuột vào nút
@@ -83,6 +130,7 @@ foreach ($this->items as $index => $item) {
     nhận tự động theo thời gian thực, mà cán bộ Học viện sẽ duyệt thủ công. HVSV vui
     lòng kiểm tra lại trạng thái nộp phí sau <strong>1–2 ngày</strong>.
 </div>
+<?php endif; ?>
 
 <!-- ═══════════════════════════════════════
      BẢNG — không chứa modal bên trong
@@ -107,9 +155,28 @@ foreach ($this->items as $index => $item) {
         </thead>
         <tbody>
         <?php foreach ($itemsData as $i => $data):
-            $item      = $data['item'];
-            $modalId   = $data['modalId'];
-            $hasFee    = (float) $item->payment_amount > 0;
+            $item   = $data['item'];
+            $modalId = $data['modalId'];
+            $hasFee  = (float) $item->payment_amount > 0;
+
+	        // Xác định trạng thái cột "Nộp phí" cho dòng này.
+            // Thứ tự ưu tiên kiểm tra:
+            //   1. Miễn phí hoặc đã nộp               → done
+            //   2. Đã quá deadline                     → overdue
+            //   3. Chưa đến thời điểm bắt đầu         → not_started
+            //   4. Cổng thu phí đang tạm dừng         → suspended
+            //   5. Tất cả điều kiện thỏa mãn          → pay
+	        if (!$hasFee || $item->payment_completed) {
+		        $paymentCellType = 'done';
+	        } elseif ($this->isDeadlinePassed) {
+		        $paymentCellType = 'overdue';
+	        } elseif ($this->isBeforeOpenFrom) {
+		        $paymentCellType = 'not_started';
+	        } elseif (!$this->paymentGateOpen) {
+		        $paymentCellType = 'suspended';
+	        } else {
+		        $paymentCellType = 'pay';
+	        }
         ?>
             <tr>
                 <td class="text-center"><?php echo $i + 1; ?></td>
@@ -157,22 +224,42 @@ foreach ($this->items as $index => $item) {
                     <?php endif; ?>
                 </td>
 
-                <!-- Cột Nộp phí: chỉ chứa nút hoặc icon, KHÔNG chứa modal -->
+                <!-- Cột Nộp phí: chỉ chứa nút/badge, KHÔNG chứa modal -->
                 <td class="text-center">
-                    <?php if (!$hasFee || $item->payment_completed): ?>
-                        <?php echo HTMLHelper::_('jgrid.published', 1, 0, '', false); ?>
-                    <?php else: ?>
+		            <?php if ($paymentCellType === 'done'): ?>
+			            <?php echo HTMLHelper::_('jgrid.published', 1, 0, '', false); ?>
+
+		            <?php elseif ($paymentCellType === 'overdue'): ?>
+                        <span class="badge bg-danger px-2 py-1">
+                            <span class="icon-times-circle me-1" aria-hidden="true"></span>
+                            Quá hạn
+                        </span>
+
+		            <?php elseif ($paymentCellType === 'not_started'): ?>
+                        <span class="badge bg-secondary px-2 py-1">
+                            <span class="icon-clock me-1" aria-hidden="true"></span>
+                            Chưa bắt đầu
+                        </span>
+
+		            <?php elseif ($paymentCellType === 'suspended'): ?>
+                        <span class="badge bg-warning text-dark px-2 py-1">
+                            <span class="icon-pause me-1" aria-hidden="true"></span>
+                            Tạm dừng thu
+                        </span>
+
+		            <?php else: /* pay */ ?>
                         <button
-                            type="button"
-                            class="btn btn-sm btn-warning"
-                            data-bs-toggle="modal"
-                            data-bs-target="#<?php echo $modalId; ?>"
+                                type="button"
+                                class="btn btn-sm btn-warning"
+                                data-bs-toggle="modal"
+                                data-bs-target="#<?php echo $modalId; ?>"
                         >
                             <span class="icon-credit-card me-1" aria-hidden="true"></span>
                             Nộp phí
                         </button>
-                    <?php endif; ?>
+		            <?php endif; ?>
                 </td>
+
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -183,14 +270,21 @@ foreach ($this->items as $index => $item) {
 <!-- ═══════════════════════════════════════════════════════════════════════════
      CÁC MODAL — đặt NGOÀI table, sau thẻ đóng </div> của table-responsive.
      Đây là điều kiện bắt buộc để Bootstrap tìm được đúng element theo id.
+     Chỉ render modal cho các môn có phí, chưa nộp, và còn trong hạn.
      ═══════════════════════════════════════════════════════════════════════════ -->
 <?php foreach ($itemsData as $data):
     $item    = $data['item'];
     $modalId = $data['modalId'];
     $qrUrl   = $data['qrUrl'];
 
-    // Chỉ render modal cho trường hợp có phí mà chưa nộp
-    if ((float) $item->payment_amount <= 0 || $item->payment_completed) {
+    // Chỉ render modal khi: có phí + chưa nộp + chưa quá deadline
+	if ((float) $item->payment_amount <= 0
+		|| $item->payment_completed
+		|| $this->isDeadlinePassed
+		|| $this->isBeforeOpenFrom
+		|| !$this->paymentGateOpen
+	)
+    {
         continue;
     }
 ?>
@@ -240,6 +334,12 @@ foreach ($this->items as $index => $item) {
                             <?php echo htmlspecialchars($item->feeLabel); ?>
                         </strong>
                     </div>
+                    <?php if ($deadlineDisplay !== null): ?>
+                    <div class="mt-1 text-warning">
+                        <span class="icon-clock me-1" aria-hidden="true"></span>
+                        Hạn chót nộp phí: <strong><?php echo $deadlineDisplay; ?></strong>
+                    </div>
+                    <?php endif; ?>
                     <div class="mt-1">
                         Sau khi chuyển khoản, vui lòng kiểm tra lại trạng thái nộp phí
                         sau <strong>1–2 ngày làm việc</strong>.

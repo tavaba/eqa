@@ -247,31 +247,6 @@ class ConfigService
 	}
 
 	/**
-	 * Trả về mã NAPAS của ngân hàng của tài khoản thụ hưởng (benificiary) dùng để nhận các khoản phí, lệ phí.
-	 * @return string|null
-	 *
-	 * @since 2.0.1
-	 */
-	public function getBenificiaryBankNapasCode(): string|null
-	{
-		return $this->params->get('params.benificiary_bank_napas_code');
-	}
-
-	/**
-	 * Trả về số tài khoản của tài khoản thụ hưởng (benificiary) dùng để nhận các khoản phí, lệ phí.
-	 * @return string|null
-	 *
-	 * @since 2.0.1
-	 */
-	public function getBenificiaryBankAccount(): string|null
-	{
-		return $this->params->get('params.benificiary_bank_account');
-	}
-
-
-
-
-	/**
 	 * Trả về chế độ tính phí phúc khảo (regrading).
 	 * Giá trị tương ứng với các hằng số REGRADING_FEE_MODE_* của ExamHelper.
 	 *
