@@ -5,9 +5,11 @@ namespace Kma\Component\Eqa\Administrator\View\SecondAttempts;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 
@@ -53,6 +55,8 @@ class HtmlView extends ItemsHtmlView
 		$f->printRaw = true; // Để in HTML icon
         $option->customFieldset1[] = $f;
 
+	    $f = new ListLayoutItemFieldOption('description', 'Mô tả');
+        $option->customFieldset1[] = $f;
         $this->itemFields = $option;
     }
 
@@ -106,6 +110,10 @@ class HtmlView extends ItemsHtmlView
 
 		//ToolbarHelper::deleteList('Bạn có chắc muốn xóa các bản ghi đã chọn? Hành động này không thể hoàn tác.', 'secondattempts.delete', 'Xóa');
 
+        // Nút Nhập sao kê — chuyển sang layout importstatement
+        $importUrl = Route::_('index.php?option=com_eqa&view=secondattempts&layout=importstatement', false);
+        ToolbarHelper::appendLink('core.edit', $importUrl, 'Nhập sao kê', 'file');
+
 	    // Nút "Đã nộp phí": đánh dấu các mục đã chọn là đã nộp phí (cần confirm)
 	    ToolbarHelper::appendConfirmButton(
 		    'core.edit',
@@ -127,5 +135,42 @@ class HtmlView extends ItemsHtmlView
 		    true,
 		    'btn btn-warning'
 	    );
+    }
+	
+    // =========================================================================
+    // Layout: importstatement
+    // =========================================================================
+
+    /**
+     * Chuẩn bị dữ liệu cho layout upload bản sao kê ngân hàng.
+     *
+     * @return void
+     * @since 2.0.3
+     */
+    protected function prepareDataForLayoutImportstatement(): void
+    {
+        $this->form = FormHelper::getBackendForm(
+            'com_eqa.upload.statement',
+            'upload_statement.xml',
+            []
+        );
+    }
+
+    /**
+     * Toolbar cho layout importstatement.
+     *
+     * @return void
+     * @since 2.0.3
+     */
+    protected function addToolbarForLayoutImportstatement(): void
+    {
+        ToolbarHelper::title('Nhập bản sao kê ngân hàng');
+
+        // Nút Submit form upload (formValidate = true để bắt required field)
+        ToolbarHelper::appendUpload('secondattempts.importStatement', 'Đối chiếu & Cập nhật', 'upload','core.edit', true);
+
+        // Nút Hủy — quay về list view
+        $cancelUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+        ToolbarHelper::appendCancelLink($cancelUrl);
     }
 }

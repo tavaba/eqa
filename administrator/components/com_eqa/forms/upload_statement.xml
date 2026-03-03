@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form upload bản sao kê tài khoản ngân hàng (MB Bank Excel .xlsx)
+    dùng cho chức năng đối chiếu và ghi nhận thanh toán thi lần hai.
+-->
+<form>
+    <fieldset name="upload">
+
+        <field
+            name="bank_statement"
+            type="file"
+            label="Bản sao kê ngân hàng"
+            description="Chọn file Excel (.xlsx) bản sao kê tài khoản MB Bank. Hệ thống sẽ tự đối chiếu mã thanh toán và cập nhật trạng thái nộp phí."
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            class="form-control"
+            required="true"
+        />
+
+    </fieldset>
+</form>

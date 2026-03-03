@@ -12,6 +12,18 @@ abstract class FormHelper{
     {
         return Factory::getContainer()->get(FormFactoryInterface::class);
     }
+
+	/**
+	 * Load a form definition from an XML file located in the component's administrator/forms directory.
+	 * @param   string  $formName The name of the form (used as the form's name attribute)
+	 * @param   string  $fileName The XML file name (relative to the component's forms directory), with the .xml extension. For example: 'myform.xml'.
+	 * @param   array   $options An associative array of options to pass to the form factory when creating the form.
+	 *
+	 * @return Form|null
+	 *
+	 * @throws \Exception
+	 * @since 1.0.0
+	 */
 	public static function getBackendForm(string $formName, string $fileName, array $options=['control'=>'jform', 'component_name'=>null]){
 		$componentName = $options['component_name'] ?? ComponentHelper::getName();
 		$fullFileName = JPATH_ADMINISTRATOR . '/components/' . $componentName . '/forms/' . $fileName;

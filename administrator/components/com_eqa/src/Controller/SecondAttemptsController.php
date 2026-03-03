@@ -1,134 +1,317 @@
 <?php
+
 namespace Kma\Component\Eqa\Administrator\Controller;
+
 defined('_JEXEC') or die();
 
 use Exception;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 
-class SecondAttemptsController extends AdminController {
-	/**
-	 * Làm mới danh sách thí sinh thi lần hai.
-	 *
-	 * Phương thức này thực hiện việc đồng bộ bảng #__eqa_secondattempts với
-	 * dữ liệu hiện tại: loại bỏ các trường hợp không còn hợp lệ và bổ sung
-	 * các trường hợp mới, đồng thời bảo toàn thông tin đóng phí đã có.
-	 *
-	 * @return void
-	 * @since 2.0.2
-	 */
-	public function refresh(): void
-	{
-		try {
-			// Kiểm tra token chống CSRF
-			$this->checkToken();
+class SecondAttemptsController extends AdminController
+{
+    /**
+     * Làm mới danh sách thí sinh thi lần hai.
+     *
+     * @return void
+     * @since 2.0.2
+     */
+    public function refresh(): void
+    {
+        try {
+            $this->checkToken();
 
-			// Kiểm tra quyền
-			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
-				throw new Exception('Bạn không có quyền thực hiện chức năng này');
-			}
+            if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+                throw new Exception('Bạn không có quyền thực hiện chức năng này');
+            }
 
-			/** @var SecondAttemptsModel $model */
-			$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
-			$result = $model->refresh();
+            /** @var SecondAttemptsModel $model */
+            $model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+            $result = $model->refresh();
 
-			$msg = sprintf(
-				'Làm mới thành công! Đã xóa %d trường hợp lỗi thời, thêm mới %d trường hợp.',
-				$result['removed'],
-				$result['added']
-			);
-			$this->setMessage($msg, 'success');
+            $msg = sprintf(
+                'Làm mới thành công! Đã xóa %d trường hợp lỗi thời, thêm mới %d trường hợp.',
+                $result['removed'],
+                $result['added']
+            );
+            $this->setMessage($msg, 'success');
 
-		} catch (Exception $e) {
-			$this->setMessage($e->getMessage(), 'error');
-		}
+        } catch (Exception $e) {
+            $this->setMessage($e->getMessage(), 'error');
+        }
 
-		$this->setRedirect(
-			Route::_('index.php?option=com_eqa&view=secondattempts', false)
-		);
-	}
+        $this->setRedirect(
+            Route::_('index.php?option=com_eqa&view=secondattempts', false)
+        );
+    }
 
-	/**
-	 * Đánh dấu "Đã nộp phí" cho các bản ghi được chọn.
-	 *
-	 * @return void
-	 * @since 2.0.2
-	 */
-	public function markPaymentCompleted(): void
-	{
-		$this->updatePaymentStatus(true);
-	}
+    /**
+     * Hiển thị form upload bản sao kê ngân hàng.
+     *
+     * Không thực hiện xử lý — chỉ redirect đến layout 'importstatement'.
+     * Joomla MVC sẽ tự gọi HtmlView::prepareDataForLayoutImportstatement().
+     *
+     * @return void
+     * @since 2.0.3
+     */
+    public function showImportStatement(): void
+    {
+        $this->setRedirect(
+            Route::_(
+                'index.php?option=com_eqa&view=secondattempts&layout=importstatement',
+                false
+            )
+        );
+    }
 
-	/**
-	 * Xử lý chung cho 2 tác vụ cập nhật trạng thái thanh toán.
-	 *
-	 * @param  bool  $targetValue  TRUE = Đã nộp phí; FALSE = Chưa nộp phí.
-	 * @return void
-	 * @since 2.0.2
-	 */
-	private function updatePaymentStatus(bool $targetValue): void
-	{
-		$redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+    /**
+     * Nhận file sao kê, đối chiếu mã thanh toán và cập nhật trạng thái nộp phí.
+     *
+     * Flow:
+     *   1. Validate token + quyền.
+     *   2. Validate file upload (có file, đúng extension .xlsx, không lỗi upload).
+     *   3. Lưu file tạm vào thư mục tmp của Joomla.
+     *   4. Gọi SecondAttemptsModel::importBankStatement().
+     *   5. Build message tổng hợp kết quả.
+     *   6. Xóa file tạm.
+     *   7. Redirect về list view.
+     *
+     * @return void
+     * @since 2.0.3
+     */
+    public function importStatement(): void
+    {
+        $redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
 
-		try {
-			$this->checkToken();
+        try {
+            $this->checkToken();
 
-			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
-				throw new Exception('Bạn không có quyền thực hiện chức năng này');
-			}
+            if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+                throw new Exception('Bạn không có quyền thực hiện chức năng này');
+            }
 
-			$ids = (array) $this->input->post->get('cid', [], 'int');
-			$ids = array_filter($ids);
-			if (empty($ids)) {
-				throw new Exception('Không có trường hợp nào được chọn');
-			}
+            // ── Validate file upload ─────────────────────────────────────────
+            $uploadedFile = $this->input->files->get('bank_statement');
 
-			/** @var SecondAttemptsModel $model */
-			$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
-			$result = $targetValue
-				? $model->setPaymentCompleted($ids)
-				: $model->setPaymentIncomplete($ids);
+            if (empty($uploadedFile) || empty($uploadedFile['tmp_name'])) {
+                throw new Exception('Vui lòng chọn file bản sao kê ngân hàng (.xlsx).');
+            }
 
-			$changed = $result['changed'];
-			$skipped = $result['skipped'];
-			$codes   = $result['changedLearnerCodes'];
+            if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception(
+                    'Lỗi upload file (mã lỗi: ' . $uploadedFile['error'] . '). ' .
+                    'Vui lòng thử lại.'
+                );
+            }
 
-			if ($changed === 0) {
-				// Không có bản ghi nào thỏa điều kiện để thay đổi
-				$msg = $targetValue
-					? 'Không có trường hợp nào chuyển sang "Đã nộp phí" (có thể tất cả đã ở trạng thái này hoặc không yêu cầu đóng phí).'
-					: 'Không có trường hợp nào chuyển về "Chưa nộp phí" (có thể tất cả đã ở trạng thái này hoặc không yêu cầu đóng phí).';
-				$this->setMessage($msg, 'warning');
-			} else {
-				$codeList = implode(', ', $codes);
-				$msg = $targetValue
-					? sprintf('Đã chuyển <b>%d</b> trường hợp sang "Đã nộp phí": %s', $changed, $codeList)
-					: sprintf('Đã chuyển <b>%d</b> trường hợp về "Chưa nộp phí": %s', $changed, $codeList);
+            $originalName = $uploadedFile['name'] ?? '';
+            $ext          = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if ($ext !== 'xlsx') {
+                throw new Exception(
+                    'Định dạng file không hợp lệ. Chỉ chấp nhận file Excel (.xlsx) ' .
+                    'bản sao kê MB Bank.'
+                );
+            }
 
-				if ($skipped > 0) {
-					$msg .= sprintf('<br>Có <b>%d</b> trường hợp không thay đổi trạng thái (không đủ điều kiện).', $skipped);
-				}
+            // ── Lưu file tạm ─────────────────────────────────────────────────
+            $tmpDir  = Factory::getApplication()->get('tmp_path');
+            $tmpFile = $tmpDir . '/eqa_statement_' . uniqid('', true) . '.xlsx';
 
-				$this->setMessage($msg, 'success');
-			}
+            if (!move_uploaded_file($uploadedFile['tmp_name'], $tmpFile)) {
+                throw new Exception('Không thể lưu file upload. Vui lòng kiểm tra quyền ghi thư mục tmp.');
+            }
 
-		} catch (Exception $e) {
-			$this->setMessage($e->getMessage(), 'error');
-		}
+            try {
+                // ── Gọi model xử lý đối chiếu ────────────────────────────────
+                /** @var SecondAttemptsModel $model */
+                $model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+                $result = $model->importBankStatement($tmpFile);
 
-		$this->setRedirect($redirectUrl);
-	}
+            } finally {
+                // Luôn xóa file tạm dù thành công hay thất bại
+                if (file_exists($tmpFile)) {
+                    @unlink($tmpFile);
+                }
+            }
 
-	/**
-	 * Thu hồi trạng thái "Đã nộp phí" — chuyển về "Chưa nộp phí".
-	 *
-	 * @return void
-	 * @since 2.0.2
-	 */
-	public function markPaymentIncomplete(): void
-	{
-		$this->updatePaymentStatus(false);
-	}
+            // ── Build thông báo kết quả ───────────────────────────────────────
+            $this->setMessage(
+                $this->buildImportResultMessage($result),
+                ($result['updated'] > 0 || empty($result['amountMismatch'])) ? 'success' : 'warning'
+            );
+
+        } catch (Exception $e) {
+            $this->setMessage($e->getMessage(), 'error');
+        }
+
+        $this->setRedirect($redirectUrl);
+    }
+
+    // =========================================================================
+    // Quản lý trạng thái thanh toán (thủ công)
+    // =========================================================================
+
+    /**
+     * Đánh dấu "Đã nộp phí" cho các bản ghi được chọn.
+     *
+     * @return void
+     * @since 2.0.2
+     */
+    public function markPaymentCompleted(): void
+    {
+        $this->updatePaymentStatus(true);
+    }
+
+    /**
+     * Thu hồi trạng thái "Đã nộp phí" — chuyển về "Chưa nộp phí".
+     *
+     * @return void
+     * @since 2.0.2
+     */
+    public function markPaymentIncomplete(): void
+    {
+        $this->updatePaymentStatus(false);
+    }
+
+    // =========================================================================
+    // Private helpers
+    // =========================================================================
+
+    /**
+     * Xử lý chung cho 2 tác vụ cập nhật trạng thái thanh toán thủ công.
+     *
+     * @param  bool  $targetValue  TRUE = Đã nộp phí; FALSE = Chưa nộp phí.
+     * @return void
+     * @since 2.0.2
+     */
+    private function updatePaymentStatus(bool $targetValue): void
+    {
+        $redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+
+        try {
+            $this->checkToken();
+
+            if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+                throw new Exception('Bạn không có quyền thực hiện chức năng này');
+            }
+
+            $ids = (array) $this->input->post->get('cid', [], 'int');
+            $ids = array_filter($ids);
+            if (empty($ids)) {
+                throw new Exception('Không có trường hợp nào được chọn');
+            }
+
+            /** @var SecondAttemptsModel $model */
+            $model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+            $result = $targetValue
+                ? $model->setPaymentCompleted($ids)
+                : $model->setPaymentIncomplete($ids);
+
+            $changed = $result['changed'];
+            $skipped = $result['skipped'];
+            $codes   = $result['changedLearnerCodes'];
+
+            if ($changed === 0) {
+                $msg = $targetValue
+                    ? 'Không có trường hợp nào chuyển sang "Đã nộp phí" (có thể tất cả đã ở trạng thái này hoặc không yêu cầu đóng phí).'
+                    : 'Không có trường hợp nào chuyển về "Chưa nộp phí" (có thể tất cả đã ở trạng thái này hoặc không yêu cầu đóng phí).';
+                $this->setMessage($msg, 'warning');
+            } else {
+                $codeList = implode(', ', $codes);
+                $msg = $targetValue
+                    ? sprintf('Đã chuyển <b>%d</b> trường hợp sang "Đã nộp phí": %s', $changed, $codeList)
+                    : sprintf('Đã chuyển <b>%d</b> trường hợp về "Chưa nộp phí": %s', $changed, $codeList);
+
+                if ($skipped > 0) {
+                    $msg .= sprintf(
+                        '<br>Có <b>%d</b> trường hợp không thay đổi trạng thái (không đủ điều kiện).',
+                        $skipped
+                    );
+                }
+
+                $this->setMessage($msg, 'success');
+            }
+
+        } catch (Exception $e) {
+            $this->setMessage($e->getMessage(), 'error');
+        }
+
+        $this->setRedirect($redirectUrl);
+    }
+
+    /**
+     * Tạo thông báo HTML tổng hợp kết quả đối chiếu sao kê.
+     *
+     * @param  array  $result  Kết quả trả về từ importBankStatement().
+     * @return string
+     * @since 2.0.3
+     */
+    private function buildImportResultMessage(array $result): string
+    {
+        $lines = [];
+
+        // Kết quả cập nhật thành công
+        if ($result['updated'] > 0) {
+            $codes  = implode(', ', $result['updatedCodes']);
+            $lines[] = sprintf(
+                '✅ Đã ghi nhận <b>%d</b> trường hợp nộp phí thành công: %s',
+                $result['updated'],
+                $codes
+            );
+        } else {
+            $lines[] = 'ℹ️ Không có trường hợp nào được cập nhật trạng thái thanh toán.';
+        }
+
+        // Đã thanh toán từ trước
+        if ($result['alreadyPaid'] > 0) {
+            $lines[] = sprintf(
+                'ℹ️ <b>%d</b> trường hợp đã được ghi nhận thanh toán từ trước (bỏ qua).',
+                $result['alreadyPaid']
+            );
+        }
+
+        // Sai số tiền
+        if (!empty($result['amountMismatch'])) {
+            $lines[] = sprintf(
+                '⚠️ <b>%d</b> trường hợp <b>sai số tiền</b>, chưa được cập nhật:',
+                count($result['amountMismatch'])
+            );
+            foreach ($result['amountMismatch'] as $item) {
+                $lines[] = sprintf(
+                    '&nbsp;&nbsp;• <code>%s</code> (HVSV: %s) — Cần: <b>%s đ</b>, Thực nhận: <b>%s đ</b> | Nội dung: %s',
+                    htmlspecialchars($item['payment_code']),
+                    htmlspecialchars($item['learner_code']),
+                    number_format($item['expected'], 0, ',', '.'),
+                    number_format($item['actual'], 0, ',', '.'),
+                    htmlspecialchars(mb_substr($item['description'], 0, 80))
+                );
+            }
+        }
+
+        // Thanh toán 2 lần
+        if (!empty($result['duplicate'])) {
+            $lines[] = sprintf(
+                '🔴 <b>%d</b> mã thanh toán xuất hiện <b>nhiều lần</b> trong sao kê (chưa xử lý, cần kiểm tra thủ công):',
+                count($result['duplicate'])
+            );
+            foreach ($result['duplicate'] as $item) {
+                $lines[] = sprintf(
+                    '&nbsp;&nbsp;• <code>%s</code> — xuất hiện <b>%d lần</b>',
+                    htmlspecialchars($item['payment_code']),
+                    $item['count']
+                );
+                foreach ($item['descriptions'] as $desc) {
+                    $lines[] = sprintf(
+                        '&nbsp;&nbsp;&nbsp;&nbsp;↳ %s',
+                        htmlspecialchars(mb_substr($desc, 0, 100))
+                    );
+                }
+            }
+        }
+
+        return implode('<br>', $lines);
+    }
 }
