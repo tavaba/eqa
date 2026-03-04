@@ -227,35 +227,4 @@ class ExamseasonsController extends AdminController
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		jexit();
 	}
-
-	public function exportUnpassedExaminees()
-	{
-		try
-		{
-			/**
-			 * Get unpassed (failed or deferred) examinees
-			 * @var ExamseasonsModel $model
-			 */
-			$model = $this->getModel('Examseasons');
-			$unpassedExaminees = $model->getUnpassedExaminees();
-			if(empty($unpassedExaminees))
-				throw new Exception('Không có thí sinh thi lại, bảo lưu');
-
-			//Write to Excel file
-			$spreadsheet = new Spreadsheet();
-			$spreadsheet->removeSheetByIndex(0);
-			IOHelper::writeUnpassedExaminees($spreadsheet, $unpassedExaminees);
-
-			//Let user download the file
-			$fileName = 'Danh sách thí sinh thi lại, bảo lưu.xlsx';
-			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-			jexit();
-		}
-		catch (Exception $e)
-		{
-			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examseasons', false));
-			return;
-		}
-	}
 }

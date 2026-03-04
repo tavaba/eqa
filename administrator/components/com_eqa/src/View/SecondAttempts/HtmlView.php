@@ -138,6 +138,12 @@ class HtmlView extends ItemsHtmlView
 		    true,
 		    'btn btn-primary'
 	    );
+
+		//Xuất danh sách đầy đủ ra Excel
+	    \Kma\Library\Kma\Helper\ToolbarHelper::appendButton('download','Xuất danh sách đầy đủ','secondattempts.exportFullList');
+
+		//Xuất danh sách đã đóng phí ra Excel
+	    \Kma\Library\Kma\Helper\ToolbarHelper::appendButton('download','Xuất danh sách đã đóng phí','secondattempts.exportPaidList');
 	}
 	
     // =========================================================================

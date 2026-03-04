@@ -953,4 +953,42 @@ class SecondAttemptsModel extends ListModel
 
 		return $transactions;
 	}
+
+	public function loadList(bool $onlyFreeOrPaymentCompleted): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			$db->quoteName('a.learner_id')          . ' AS ' . $db->quoteName('learnerId'),
+			$db->quoteName('c.code')                . ' AS ' . $db->quoteName('learnerCode'),
+			$db->quoteName('c.lastname')            . ' AS ' . $db->quoteName('lastname'),
+			$db->quoteName('c.firstname')           . ' AS ' . $db->quoteName('firstname'),
+			$db->quoteName('e.id')                  . ' AS ' . $db->quoteName('subjectId'),
+			$db->quoteName('e.code')                . ' AS ' . $db->quoteName('subjectCode'),
+			$db->quoteName('e.name')                . ' AS ' . $db->quoteName('subjectName'),
+			$db->quoteName('e.finaltesttype')       . ' AS ' . $db->quoteName('testType'),
+			$db->quoteName('e.finaltestduration')   . ' AS ' . $db->quoteName('testDuration'),
+			$db->quoteName('d.term')                . ' AS ' . $db->quoteName('term'),
+			$db->quoteName('f.code')                . ' AS ' . $db->quoteName('academicyear'),
+			$db->quoteName('a.last_exam_id')             . ' AS ' . $db->quoteName('examId'),
+			$db->quoteName('a.class_id')            . ' AS ' . $db->quoteName('classId'),
+			$db->quoteName('b.ntaken')              . ' AS ' . $db->quoteName('ntaken'),
+			$db->quoteName('a.last_conclusion')          . ' AS ' . $db->quoteName('conclusion'),
+		];
+
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_secondattempts AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
+			->leftJoin('#__eqa_classes AS d', 'd.id=a.class_id')
+			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id')
+			->leftJoin('#__eqa_academicyears AS f', 'f.id=d.academicyear_id');
+		if($onlyFreeOrPaymentCompleted) {
+			$query->where('(a.payment_amount = 0 OR a.payment_completed = 1)');
+		}
+
+		$db->setQuery($query);
+		return $db->loadObjectList();
+	}
+
 }

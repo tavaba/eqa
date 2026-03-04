@@ -7,9 +7,12 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamseasonsModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class SecondAttemptsController extends AdminController
 {
@@ -320,4 +323,48 @@ class SecondAttemptsController extends AdminController
 
         return implode('<br>', $lines);
     }
+
+
+	// =========================================================================
+	// Xuất danh sách thí sinh thi lại ra Excel
+	// =========================================================================
+	public function exportFullList()
+	{
+		$this->exportList(false);
+	}
+	public function exportPaidList()
+	{
+		$this->exportList(true);
+	}
+	private function exportList(bool $onlyFreeOrPaymentCompleted): void
+	{
+		try
+		{
+			/**
+			 * Get unpassed (failed or deferred) examinees
+			 * @var SecondAttemptsModel $model
+			 */
+			$model = $this->getModel('SecondAttempts');
+			$examinees = $model->loadList($onlyFreeOrPaymentCompleted);
+			if(empty($examinees))
+				throw new Exception('Không có thí sinh thi lại, bảo lưu');
+
+			//Write to Excel file
+			$spreadsheet = new Spreadsheet();
+			$spreadsheet->removeSheetByIndex(0);
+			IOHelper::writeUnpassedExaminees($spreadsheet, $examinees);
+
+			//Let user download the file
+			$fileName = 'Danh sách thí sinh thi lại, bảo lưu.xlsx';
+			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+			jexit();
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=secondattempts', false));
+			return;
+		}
+	}
+
 }

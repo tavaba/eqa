@@ -150,11 +150,6 @@ JHtml::_('bootstrap.framework');
                 <div class="tab-pane fade" id="tab3" role="tabpanel">
                     <div class="row g-3">
                         <div class="col-md-6 d-grid">
-                            <a href="<?php echo Route::_('index.php?option=com_eqa&task=examseasons.exportUnpassedExaminees'); ?>" class="btn btn-outline-primary">
-                                <i class="fas fa-file-download me-1"></i> Tải danh sách thí sinh thi lại và bảo lưu
-                            </a>
-                        </div>
-                        <div class="col-md-6 d-grid">
                             <a href="<?php echo Route::_('index.php?option=com_eqa&view=SecondAttempts'); ?>" class="btn btn-outline-primary">
                                 <i class="fas fa-file-alt me-1"></i> Danh sách thi lần 2
                             </a>
