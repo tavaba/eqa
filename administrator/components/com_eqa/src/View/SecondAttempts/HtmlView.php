@@ -4,11 +4,13 @@ namespace Kma\Component\Eqa\Administrator\View\SecondAttempts;
 
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
+use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -48,10 +50,10 @@ class HtmlView extends ItemsHtmlView
 		$f->printRaw = true; // Để in HTML badge
         $option->customFieldset1[] = $f;
 
-	    $option->customFieldset1[] = new ListLayoutItemFieldOption('payment_code', 'Mã thanh toán', false, false, 'text-center text-nowrap font-monospace');
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('payment_code', 'Mã CK', false, false, 'text-center text-nowrap font-monospace');
 
         // Cột "Đã nộp phí": giá trị đã được tiền xử lý thành HTML icon trong prepareData
-        $f = new ListLayoutItemFieldOption('payment_completed_html', 'Đã nộp phí', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('payment_completed_html', 'Đã nộp', false, false, 'text-center');
 		$f->printRaw = true; // Để in HTML icon
         $option->customFieldset1[] = $f;
 
@@ -114,28 +116,16 @@ class HtmlView extends ItemsHtmlView
         $importUrl = Route::_('index.php?option=com_eqa&view=secondattempts&layout=importstatement', false);
         ToolbarHelper::appendLink('core.edit', $importUrl, 'Nhập sao kê', 'file');
 
-	    // Nút "Đã nộp phí": đánh dấu các mục đã chọn là đã nộp phí (cần confirm)
-	    ToolbarHelper::appendConfirmButton(
+		//Nút Đổi trạng thái nộp phí
+	    ToolbarHelper::appendButton(
 		    'core.edit',
-		    'Xác nhận các trường hợp được chọn ĐÃ NỘP PHÍ?',
-		    'check',
-		    'Đã nộp phí',
-		    'secondattempts.markPaymentCompleted',
+		    'flag',
+		    'Đổi trạng thái nộp phí',
+		    'secondattempts.setPaymentStatus',
 		    true,
-		    'btn btn-success'
+		    'btn btn-primary'
 	    );
-
-	    // Nút "Chưa nộp phí": thu hồi trạng thái đã nộp phí của các mục đã chọn
-	    ToolbarHelper::appendConfirmButton(
-		    'core.edit',
-			'Xác nhận các trường hợp đã chọn là CHƯA NỘP PHÍ?',
-		    'minus-circle',
-		    'Chưa nộp phí',
-		    'secondattempts.markPaymentIncomplete',
-		    true,
-		    'btn btn-warning'
-	    );
-    }
+	}
 	
     // =========================================================================
     // Layout: importstatement
@@ -173,4 +163,62 @@ class HtmlView extends ItemsHtmlView
         $cancelUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
         ToolbarHelper::appendCancelLink($cancelUrl);
     }
+
+	/**
+	 * Chuẩn bị dữ liệu cho layout 'setpayment'.
+	 *
+	 * Đọc id từ GET, load bản ghi từ model, load form XML,
+	 * bind giá trị hiện tại vào form để pre-fill các trường.
+	 *
+	 * @return void
+	 * @since 2.0.4
+	 */
+	protected function prepareDataForLayoutSetpayment(): void
+	{
+		$app = Factory::getApplication();
+		$id = $app->input->getInt('id');
+
+		if ($id <= 0) {
+			die('ID bản ghi không hợp lệ. Vui lòng quay lại và thử lại.');
+		}
+
+		// Load thông tin bản ghi (dùng cho phần hiển thị thông tin thí sinh read-only)
+		/** @var SecondAttemptsModel $model */
+		$model      = $this->getModel();
+		$this->item = $model->getItemById($id);
+
+		// Load form XML và bind giá trị hiện tại vào form để pre-fill
+		$this->form = FormHelper::getBackendForm(
+			'com_eqa.secondattempts.setpaymentstatus',
+			'setpaymentstatus.xml',
+			[]
+		);
+
+		$this->form->setValue('id',                null, $this->item->id);
+		$this->form->setValue('payment_completed', null, (int) $this->item->payment_completed);
+		$this->form->setValue('description',       null, $this->item->description ?? '');
+	}
+
+	/**
+	 * Toolbar cho layout 'setpayment'.
+	 *
+	 * @return void
+	 * @since 2.0.4
+	 */
+	protected function addToolbarForLayoutSetpayment(): void
+	{
+		ToolbarHelper::title('Cập nhật trạng thái nộp phí');
+
+		ToolbarHelper::appendButton(
+			'core.edit',
+			'save',
+			'Lưu',
+			'secondattempts.savePaymentStatus',
+			false,
+			'btn btn-success'
+		);
+
+		$cancelUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+		ToolbarHelper::appendCancelLink($cancelUrl);
+	}
 }

@@ -1268,7 +1268,7 @@ class ExamModel extends AdminModel{
 			return 0;
 
 		//2. Không chỉ đơn giản là xóa thông tin khuyến khích đối với thí sinh
-		//Mà còn phải xóa cả điểm (nếu có): final_mark, module_mark, module_grade, conclusion
+		//Mà còn phải xóa cả điểm (nếu có): mark_final, module_mark, module_grade, conclusion
 		//để CBKT biết mà cập nhật lại
 		$learnerIds = array_column($stimulations, 'learner_id');
 		$learnerIdSet = '(' . implode(',', $learnerIds) . ')';
@@ -1276,7 +1276,7 @@ class ExamModel extends AdminModel{
 			->update('#__eqa_exam_learner')
 			->set([
 				'stimulation_id=NULL',
-				'final_mark=NULL',
+				'mark_final=NULL',
 				'module_mark=NULL',
 				'module_grade=NULL',
 				'conclusion=NULL'

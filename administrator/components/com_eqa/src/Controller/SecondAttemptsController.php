@@ -150,97 +150,101 @@ class SecondAttemptsController extends AdminController
         $this->setRedirect($redirectUrl);
     }
 
-    // =========================================================================
-    // Quản lý trạng thái thanh toán (thủ công)
-    // =========================================================================
+	// =========================================================================
+	// Quản lý trạng thái thanh toán (thủ công) — POST → REDIRECT → POST
+	// =========================================================================
 
-    /**
-     * Đánh dấu "Đã nộp phí" cho các bản ghi được chọn.
-     *
-     * @return void
-     * @since 2.0.2
-     */
-    public function markPaymentCompleted(): void
-    {
-        $this->updatePaymentStatus(true);
-    }
+	/**
+	 * POST 1: Tiếp nhận danh sách id được chọn, lấy id đầu tiên,
+	 * redirect đến layout 'setpayment' để người dùng nhập thông tin.
+	 *
+	 * @return void
+	 * @since 2.0.4
+	 */
+	public function setPaymentStatus(): void
+	{
+		$listUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
 
-    /**
-     * Thu hồi trạng thái "Đã nộp phí" — chuyển về "Chưa nộp phí".
-     *
-     * @return void
-     * @since 2.0.2
-     */
-    public function markPaymentIncomplete(): void
-    {
-        $this->updatePaymentStatus(false);
-    }
+		try {
+			$this->checkToken();
 
-    // =========================================================================
-    // Private helpers
-    // =========================================================================
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+			}
 
-    /**
-     * Xử lý chung cho 2 tác vụ cập nhật trạng thái thanh toán thủ công.
-     *
-     * @param  bool  $targetValue  TRUE = Đã nộp phí; FALSE = Chưa nộp phí.
-     * @return void
-     * @since 2.0.2
-     */
-    private function updatePaymentStatus(bool $targetValue): void
-    {
-        $redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+			$ids = (array) $this->input->post->get('cid', [], 'int');
+			$ids = array_values(array_filter($ids));
 
-        try {
-            $this->checkToken();
+			if (empty($ids)) {
+				throw new Exception('Không có trường hợp nào được chọn');
+			}
 
-            if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
-                throw new Exception('Bạn không có quyền thực hiện chức năng này');
-            }
+			// Chỉ xử lý trường hợp đầu tiên trong danh sách được chọn
+			$id = (int) $ids[0];
 
-            $ids = (array) $this->input->post->get('cid', [], 'int');
-            $ids = array_filter($ids);
-            if (empty($ids)) {
-                throw new Exception('Không có trường hợp nào được chọn');
-            }
+			$this->setRedirect(
+				Route::_(
+					'index.php?option=com_eqa&view=secondattempts&layout=setpayment&id=' . $id,
+					false
+				)
+			);
+			return;
 
-            /** @var SecondAttemptsModel $model */
-            $model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
-            $result = $targetValue
-                ? $model->setPaymentCompleted($ids)
-                : $model->setPaymentIncomplete($ids);
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
 
-            $changed = $result['changed'];
-            $skipped = $result['skipped'];
-            $codes   = $result['changedLearnerCodes'];
+		$this->setRedirect($listUrl);
+	}
 
-            if ($changed === 0) {
-                $msg = $targetValue
-                    ? 'Không có trường hợp nào chuyển sang "Đã nộp phí" (có thể tất cả đã ở trạng thái này hoặc không yêu cầu đóng phí).'
-                    : 'Không có trường hợp nào chuyển về "Chưa nộp phí" (có thể tất cả đã ở trạng thái này hoặc không yêu cầu đóng phí).';
-                $this->setMessage($msg, 'warning');
-            } else {
-                $codeList = implode(', ', $codes);
-                $msg = $targetValue
-                    ? sprintf('Đã chuyển <b>%d</b> trường hợp sang "Đã nộp phí": %s', $changed, $codeList)
-                    : sprintf('Đã chuyển <b>%d</b> trường hợp về "Chưa nộp phí": %s', $changed, $codeList);
+	/**
+	 * POST 2: Tiếp nhận dữ liệu từ form layout 'setpayment',
+	 * gọi model cập nhật DB, redirect về list view với thông báo kết quả.
+	 *
+	 * @return void
+	 * @since 2.0.4
+	 */
+	public function savePaymentStatus(): void
+	{
+		$listUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
 
-                if ($skipped > 0) {
-                    $msg .= sprintf(
-                        '<br>Có <b>%d</b> trường hợp không thay đổi trạng thái (không đủ điều kiện).',
-                        $skipped
-                    );
-                }
+		try {
+			$this->checkToken();
 
-                $this->setMessage($msg, 'success');
-            }
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+			}
 
-        } catch (Exception $e) {
-            $this->setMessage($e->getMessage(), 'error');
-        }
+			$id               = $this->input->post->getInt('id');
+			$paymentCompleted = (bool) $this->input->post->getInt('payment_completed', 1);
+			$descriptionRaw   = $this->input->post->getString('description', '');
+			$description      = trim($descriptionRaw) !== '' ? trim($descriptionRaw) : null;
 
-        $this->setRedirect($redirectUrl);
-    }
+			if ($id <= 0) {
+				throw new Exception('ID bản ghi không hợp lệ');
+			}
+
+			/** @var SecondAttemptsModel $model */
+			$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+			$result = $model->savePaymentStatus($id, $paymentCompleted, $description);
+
+			$statusLabel = $result['paymentCompleted']
+				? '<b>Đã nộp phí</b>'
+				: '<b>Chưa nộp phí</b>';
+
+			$msg = sprintf(
+				'Đã cập nhật trạng thái nộp phí của <b>%s</b> thành %s.',
+				htmlspecialchars($result['learnerCode']),
+				$statusLabel
+			);
+			$this->setMessage($msg, 'success');
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+
+		$this->setRedirect($listUrl);
+	}
 
     /**
      * Tạo thông báo HTML tổng hợp kết quả đối chiếu sao kê.

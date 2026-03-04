@@ -559,7 +559,7 @@ class ExamseasonModel extends AdminModel{
 	 * - debtor: Nợ phí hay không? (true/false)
 	 * - anomaly: Loại vi phạm (null nếu không có)
 	 * - stimulation_id: ID của chương trình khuyến khích (null nếu không có)
-	 * - final_mark: Điểm thi KTHP sau khi xử lý vi phạm, khuyến khích (nếu có))
+	 * - mark_final: Điểm thi KTHP sau khi xử lý vi phạm, khuyến khích (nếu có))
 	 * - module_mark: Điểm học phần
 	 * - module_grade: Điểm chữ
 	 * - description: Mô tả về lý do bị cấm thi hoặc nợ phí (null nếu không có)

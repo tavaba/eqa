@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form cập nhật trạng thái nộp phí thi lần hai.
+    Sử dụng tại layout 'setpayment' của view SecondAttempts.
+    Task xử lý: secondattempts.savePaymentStatus
+-->
+<form>
+    <fieldset name="setpaymentstatus">
+
+        <!-- ID bản ghi — hidden, truyền qua POST -->
+        <field
+            name="id"
+            type="hidden"
+        />
+
+        <!-- Trường chọn trạng thái nộp phí -->
+        <field
+            name="payment_completed"
+            type="radio"
+            required="true"
+            default="1"
+            label="Trạng thái mới"
+        >
+            <option value="1">Đã nộp phí</option>
+            <option value="0">Chưa nộp phí</option>
+        </field>
+
+        <!-- Trường mô tả / ghi chú -->
+        <field
+            name="description"
+            type="textarea"
+            label="Mô tả"
+            rows="5"
+            description="Ghi chú về việc nộp phí, ví dụ: nội dung chuyển khoản trong bảng sao kê của ngân hàng. Để trống để xóa nội dung hiện tại."
+        />
+
+    </fieldset>
+</form>

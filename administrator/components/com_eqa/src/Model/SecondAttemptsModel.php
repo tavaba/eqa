@@ -588,136 +588,101 @@ class SecondAttemptsModel extends ListModel
     // =========================================================================
     // Chức năng cập nhật trạng thái thanh toán
     // =========================================================================
+	/**
+	 * Lấy thông tin một bản ghi thi lần hai theo id, kèm thông tin người học
+	 * và môn thi. Dùng cho layout 'setpayment'.
+	 *
+	 * @param  int  $id  ID bản ghi trong #__eqa_secondattempts.
+	 * @return object
+	 * @throws Exception  Nếu không tìm thấy bản ghi.
+	 * @since 2.0.4
+	 */
+	public function getItemById(int $id): object
+	{
+		$db    = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('sa.id'),
+				$db->quoteName('sa.payment_amount'),
+				$db->quoteName('sa.payment_completed'),
+				$db->quoteName('sa.description'),
+				$db->quoteName('lr.code', 'learner_code'),
+				$db->quoteName('lr.lastname', 'learner_lastname'),
+				$db->quoteName('lr.firstname', 'learner_firstname'),
+				$db->quoteName('su.code', 'subject_code'),
+				$db->quoteName('su.name', 'subject_name'),
+			])
+			->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('sa.learner_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_exams', 'ex') .
+				' ON ' . $db->quoteName('ex.id') . ' = ' . $db->quoteName('sa.last_exam_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_subjects', 'su') .
+				' ON ' . $db->quoteName('su.id') . ' = ' . $db->quoteName('ex.subject_id')
+			)
+			->where($db->quoteName('sa.id') . ' = ' . (int) $id);
 
-    /**
-     * Đánh dấu "Đã nộp phí" cho các bản ghi được chọn.
-     *
-     * Chỉ áp dụng với các bản ghi có payment_amount > 0 và payment_completed = FALSE.
-     * Các bản ghi khác trong danh sách $ids bị bỏ qua (không phát sinh lỗi).
-     *
-     * @param  int[]  $ids  Danh sách id bản ghi trong #__eqa_secondattempts.
-     * @return array{
-     *     changed: int,
-     *     skipped: int,
-     *     changedLearnerCodes: string[]
-     * }
-     * @throws Exception
-     * @since 2.0.2
-     */
-    public function setPaymentCompleted(array $ids): array
-    {
-        return $this->updatePaymentStatus($ids, true);
-    }
+		$db->setQuery($query);
+		$record = $db->loadObject();
 
-    /**
-     * Đánh dấu "Chưa nộp phí" cho các bản ghi được chọn.
-     *
-     * Chỉ áp dụng với các bản ghi có payment_amount > 0 và payment_completed = TRUE.
-     * Các bản ghi khác trong danh sách $ids bị bỏ qua (không phát sinh lỗi).
-     *
-     * @param  int[]  $ids  Danh sách id bản ghi trong #__eqa_secondattempts.
-     * @return array{
-     *     changed: int,
-     *     skipped: int,
-     *     changedLearnerCodes: string[]
-     * }
-     * @throws Exception
-     * @since 2.0.2
-     */
-    public function setPaymentIncomplete(array $ids): array
-    {
-        return $this->updatePaymentStatus($ids, false);
-    }
+		if ($record === null) {
+			throw new Exception('Không tìm thấy bản ghi thi lần hai có id = ' . $id);
+		}
 
-    /**
-     * Cập nhật trạng thái payment_completed cho danh sách bản ghi.
-     *
-     * Logic:
-     *   - Đọc toàn bộ các bản ghi có id trong $ids kèm learner code.
-     *   - Với mỗi bản ghi, kiểm tra điều kiện áp dụng:
-     *       payment_amount > 0  VÀ  payment_completed ≠ $targetValue
-     *   - Những bản ghi đủ điều kiện → UPDATE, thu thập learner_code.
-     *   - Những bản ghi không đủ điều kiện → đếm vào $skipped.
-     *
-     * @param  int[]  $ids          Danh sách id.
-     * @param  bool   $targetValue  TRUE = Đã nộp phí; FALSE = Chưa nộp phí.
-     * @return array{changed: int, skipped: int, changedLearnerCodes: string[]}
-     * @throws Exception
-     * @since 2.0.2
-     */
-    private function updatePaymentStatus(array $ids, bool $targetValue): array
-    {
-        if (empty($ids)) {
-            return ['changed' => 0, 'skipped' => 0, 'changedLearnerCodes' => []];
-        }
+		return $record;
+	}
 
-        $db = DatabaseHelper::getDatabaseDriver();
+	/**
+	 * Cập nhật trạng thái nộp phí và mô tả cho một bản ghi thi lần hai.
+	 *
+	 * Logic:
+	 *   - Kiểm tra bản ghi tồn tại và có yêu cầu đóng phí (payment_amount > 0).
+	 *   - UPDATE payment_completed và description theo giá trị truyền vào.
+	 *   - description = NULL nếu $description là null (đã được xử lý tại Controller).
+	 *
+	 * @param  int          $id                ID bản ghi trong #__eqa_secondattempts.
+	 * @param  bool         $paymentCompleted  TRUE = Đã nộp phí; FALSE = Chưa nộp phí.
+	 * @param  string|null  $description       Mô tả/ghi chú; NULL để xóa mô tả cũ.
+	 * @return array{learnerCode: string, paymentCompleted: bool}
+	 * @throws Exception  Nếu bản ghi không tồn tại hoặc không có yêu cầu đóng phí.
+	 * @since 2.0.4
+	 */
+	public function savePaymentStatus(int $id, bool $paymentCompleted, ?string $description): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
 
-        // Đọc thông tin cần thiết của các bản ghi được chọn, kèm learner code
-        $idList = implode(',', array_map('intval', $ids));
-        $query  = $db->getQuery(true)
-            ->select([
-                $db->quoteName('sa.id'),
-                $db->quoteName('sa.payment_amount'),
-                $db->quoteName('sa.payment_completed'),
-                $db->quoteName('lr.code', 'learner_code'),
-            ])
-            ->from($db->quoteName('#__eqa_secondattempts', 'sa'))
-            ->leftJoin(
-                $db->quoteName('#__eqa_learners', 'lr') .
-                ' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('sa.learner_id')
-            )
-            ->where($db->quoteName('sa.id') . ' IN (' . $idList . ')');
-        $db->setQuery($query);
-        $records = $db->loadObjectList();
+		// Đọc bản ghi để validate và lấy learner_code cho thông báo
+		$record = $this->getItemById($id);
 
-        $eligibleIds         = [];
-        $changedLearnerCodes = [];
-        $skipped             = 0;
+		if ((float) $record->payment_amount <= 0) {
+			throw new Exception(
+				sprintf(
+					'Trường hợp HVSV %s không yêu cầu đóng phí — không thể cập nhật trạng thái nộp phí.',
+					$record->learner_code ?? ('id=' . $id)
+				)
+			);
+		}
 
-        foreach ($records as $record) {
-            // Điều kiện áp dụng: có phí VÀ trạng thái chưa ở giá trị đích
-            if ((float) $record->payment_amount > 0 && (bool) $record->payment_completed !== $targetValue) {
-                $eligibleIds[]         = (int) $record->id;
-                $changedLearnerCodes[] = $record->learner_code ?? '';
-            } else {
-                $skipped++;
-            }
-        }
+		// Thực hiện UPDATE
+		$query = $db->getQuery(true)
+			->update($db->quoteName('#__eqa_secondattempts'))
+			->set($db->quoteName('payment_completed') . ' = ' . ($paymentCompleted ? 1 : 0))
+			->set($db->quoteName('description') . ' = ' . ($description !== null ? $db->quote($description) : 'NULL'))
+			->where($db->quoteName('id') . ' = ' . (int) $id);
 
-//        if (!empty($eligibleIds)) {
-//            $eligibleIdList = implode(',', $eligibleIds);
-//            $newValue       = $targetValue ? 1 : 0;
-//            $db->setQuery(
-//                'UPDATE ' . $db->quoteName('#__eqa_secondattempts') .
-//                ' SET ' . $db->quoteName('payment_completed') . ' = ' . $newValue .
-//                ' WHERE ' . $db->quoteName('id') . ' IN (' . $eligibleIdList . ')'
-//            );
-//            $db->execute();
-//        }
-	    if (!empty($eligibleIds)) {
-		    $query = $db->getQuery(true);
-		    $newValue = $targetValue ? 1 : 0;
+		$db->setQuery($query);
+		$db->execute();
 
-		    $query->update($db->quoteName('#__eqa_secondattempts'))
-			    ->set($db->quoteName('payment_completed') . ' = ' . (int) $newValue);
-
-		    // Nếu $newValue = 0, cập nhật thêm trường description về NULL
-		    if ($newValue === 0) {
-			    $query->set($db->quoteName('description') . ' = NULL');
-		    }
-
-		    $query->where($db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $eligibleIds)) . ')');
-
-		    $db->setQuery($query);
-		    $db->execute();
-	    }
-        return [
-            'changed'             => count($eligibleIds),
-            'skipped'             => $skipped,
-            'changedLearnerCodes' => $changedLearnerCodes,
-        ];
-    }
+		return [
+			'learnerCode'      => $record->learner_code ?? ('id=' . $id),
+			'paymentCompleted' => $paymentCompleted,
+		];
+	}
 
 	// =========================================================================
 	// Chức năng nhập bản sao kê ngân hàng

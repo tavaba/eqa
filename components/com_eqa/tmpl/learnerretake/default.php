@@ -149,7 +149,7 @@ if ($this->deadlineLocal !== null) {
                 <th class="text-center" style="width:7%">Điểm thi</th>
                 <th class="text-center" style="width:7%">Điểm HP</th>
                 <th class="text-center" style="width:8%">Kết luận</th>
-                <th class="text-center" style="width:10%">Lệ phí</th>
+                <th class="text-center" style="width:10%">Phí thi lại</th>
                 <th class="text-center" style="width:10%">Nộp phí</th>
             </tr>
         </thead>
