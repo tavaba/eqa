@@ -299,8 +299,10 @@ class SecondAttemptsController extends AdminController
             );
             foreach ($result['duplicate'] as $item) {
                 $lines[] = sprintf(
-                    '&nbsp;&nbsp;• <code>%s</code> — xuất hiện <b>%d lần</b>',
+                    '&nbsp;&nbsp;• <code>%s</code> — HVSV: <b>%s</b> (%s) — xuất hiện <b>%d lần</b>',
                     htmlspecialchars($item['payment_code']),
+                    htmlspecialchars($item['full_name']),
+                    htmlspecialchars($item['learner_code']),
                     $item['count']
                 );
                 foreach ($item['descriptions'] as $desc) {

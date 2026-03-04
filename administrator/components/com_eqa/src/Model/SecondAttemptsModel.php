@@ -719,174 +719,179 @@ class SecondAttemptsModel extends ListModel
         ];
     }
 
-    // =========================================================================
-    // Chức năng nhập bản sao kê ngân hàng
-    // =========================================================================
+	// =========================================================================
+	// Chức năng nhập bản sao kê ngân hàng
+	// =========================================================================
 
-    /**
-     * Đối chiếu bản sao kê ngân hàng MB Bank (file .xlsx) với dữ liệu thanh toán
-     * thi lần hai, tự động ghi nhận trạng thái "Đã nộp phí" cho những trường hợp
-     * hợp lệ.
-     *
-     * Thuật toán đối chiếu:
-     *   1. Parse toàn bộ dòng Credit > 0 từ file Excel (bỏ qua dòng Debit và tổng kết).
-     *   2. Load tất cả bản ghi DB có payment_amount > 0 và payment_code IS NOT NULL,
-     *      xây dựng map: payment_code → record.
-     *   3. Với mỗi dòng sao kê, tìm payment_code nào có trong chuỗi nội dung (INSTR).
-     *   4. Phân loại kết quả:
-     *      - Trùng code >1 lần trong toàn bộ sao kê → cảnh báo "thanh toán 2 lần".
-     *      - Số tiền credit ≠ payment_amount trong DB → lỗi sai số tiền, không cập nhật.
-     *      - Đã payment_completed = TRUE từ trước → bỏ qua (đã ghi nhận).
-     *      - Hợp lệ → UPDATE payment_completed = 1, description = nội dung CK.
-     *
-     * @param  string  $filePath  Đường dẫn tuyệt đối đến file .xlsx đã upload.
-     * @return array{
-     *     updated:          int,
-     *     alreadyPaid:      int,
-     *     notFound:         int,
-     *     amountMismatch:   array<array{payment_code: string, description: string, expected: float, actual: float}>,
-     *     duplicate:        array<array{payment_code: string, count: int, descriptions: string[]}>,
-     *     updatedCodes:     string[]
-     * }
-     * @throws Exception  Nếu file không đọc được hoặc format không đúng.
-     * @since 2.0.3
-     */
-    public function importBankStatement(string $filePath): array
-    {
-        // ── 1. Parse file Excel ──────────────────────────────────────────────
-        $transactions = $this->parseBankStatementExcel($filePath);
+	/**
+	 * Đối chiếu bản sao kê ngân hàng MB Bank (file .xlsx) với dữ liệu thanh toán
+	 * thi lần hai, tự động ghi nhận trạng thái "Đã nộp phí" cho những trường hợp
+	 * hợp lệ.
+	 *
+	 * Thuật toán đối chiếu:
+	 *   1. Parse toàn bộ dòng Credit > 0 từ file Excel (bỏ qua dòng Debit và tổng kết).
+	 *   2. Load tất cả bản ghi DB có payment_amount > 0 và payment_code IS NOT NULL,
+	 *      xây dựng map: payment_code → record.
+	 *   3. Với mỗi dòng sao kê, tìm payment_code nào có trong chuỗi nội dung (INSTR).
+	 *   4. Phân loại kết quả:
+	 *      - Trùng code >1 lần trong toàn bộ sao kê → cảnh báo "thanh toán 2 lần".
+	 *      - Số tiền credit ≠ payment_amount trong DB → lỗi sai số tiền, không cập nhật.
+	 *      - Đã payment_completed = TRUE từ trước → bỏ qua (đã ghi nhận).
+	 *      - Hợp lệ → UPDATE payment_completed = 1, description = nội dung CK.
+	 *
+	 * @param  string  $filePath  Đường dẫn tuyệt đối đến file .xlsx đã upload.
+	 * @return array{
+	 *     updated:          int,
+	 *     alreadyPaid:      int,
+	 *     notFound:         int,
+	 *     amountMismatch:   array<array{payment_code: string, description: string, expected: float, actual: float}>,
+	 *     duplicate:        array<array{payment_code: string, count: int, descriptions: string[]}>,
+	 *     updatedCodes:     string[]
+	 * }
+	 * @throws Exception  Nếu file không đọc được hoặc format không đúng.
+	 * @since 2.0.3
+	 */
+	public function importBankStatement(string $filePath): array
+	{
+		// ── 1. Parse file Excel ──────────────────────────────────────────────
+		$transactions = $this->parseBankStatementExcel($filePath);
 
-        if (empty($transactions)) {
-            throw new Exception(
-                'File sao kê không có giao dịch Credit nào hợp lệ. ' .
-                'Vui lòng kiểm tra lại định dạng file (MB Bank .xlsx).'
-            );
-        }
+		if (empty($transactions)) {
+			throw new Exception(
+				'File sao kê không có giao dịch Credit nào hợp lệ. ' .
+				'Vui lòng kiểm tra lại định dạng file (MB Bank .xlsx).'
+			);
+		}
 
-        // ── 2. Load tất cả bản ghi cần đối chiếu từ DB ──────────────────────
-        $db    = DatabaseHelper::getDatabaseDriver();
-        $query = $db->getQuery(true)
-            ->select([
-                $db->quoteName('sa.id'),
-                $db->quoteName('sa.payment_code'),
-                $db->quoteName('sa.payment_amount'),
-                $db->quoteName('sa.payment_completed'),
-                $db->quoteName('lr.code', 'learner_code'),
-            ])
-            ->from($db->quoteName('#__eqa_secondattempts', 'sa'))
-            ->leftJoin(
-                $db->quoteName('#__eqa_learners', 'lr') .
-                ' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('sa.learner_id')
-            )
-            ->where($db->quoteName('sa.payment_amount') . ' > 0')
-            ->where($db->quoteName('sa.payment_code') . ' IS NOT NULL');
-        $db->setQuery($query);
-        $dbRecords = $db->loadObjectList();
+		// ── 2. Load tất cả bản ghi cần đối chiếu từ DB ──────────────────────
+		$db    = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('sa.id'),
+				$db->quoteName('sa.payment_code'),
+				$db->quoteName('sa.payment_amount'),
+				$db->quoteName('sa.payment_completed'),
+				$db->quoteName('lr.code', 'learner_code'),
+				$db->quoteName('lr.lastname', 'learner_lastname'),
+				$db->quoteName('lr.firstname', 'learner_firstname'),
+			])
+			->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('sa.learner_id')
+			)
+			->where($db->quoteName('sa.payment_amount') . ' > 0')
+			->where($db->quoteName('sa.payment_code') . ' IS NOT NULL');
+		$db->setQuery($query);
+		$dbRecords = $db->loadObjectList();
 
-        // Xây dựng map: payment_code (UPPER) → record
-        // payment_code trong DB đã là [A-Z0-9], nhưng normalize để an toàn.
-        $codeToRecord = [];
-        foreach ($dbRecords as $rec) {
-            $codeToRecord[strtoupper(trim($rec->payment_code))] = $rec;
-        }
+		// Xây dựng map: payment_code (UPPER) → record
+		// payment_code trong DB đã là [A-Z0-9], nhưng normalize để an toàn.
+		$codeToRecord = [];
+		foreach ($dbRecords as $rec) {
+			$codeToRecord[strtoupper(trim($rec->payment_code))] = $rec;
+		}
 
-        // ── 3. Đối chiếu từng dòng sao kê với DB ────────────────────────────
-        // codeMatchCount[payment_code] = số lần code xuất hiện trong sao kê
-        $codeMatchCount = [];
-        // codeToTransactions[payment_code] = danh sách transaction khớp
-        $codeToTransactions = [];
+		// ── 3. Đối chiếu từng dòng sao kê với DB ────────────────────────────
+		// codeMatchCount[payment_code] = số lần code xuất hiện trong sao kê
+		$codeMatchCount = [];
+		// codeToTransactions[payment_code] = danh sách transaction khớp
+		$codeToTransactions = [];
 
-        foreach ($transactions as $tx) {
-            $descUpper = strtoupper($tx['description']);
-            foreach ($codeToRecord as $code => $rec) {
-                if (str_contains($descUpper, $code)) {
-                    $codeMatchCount[$code]        = ($codeMatchCount[$code] ?? 0) + 1;
-                    $codeToTransactions[$code][]  = $tx;
-                }
-            }
-        }
+		foreach ($transactions as $tx) {
+			$descUpper = strtoupper($tx['description']);
+			foreach ($codeToRecord as $code => $rec) {
+				if (str_contains($descUpper, $code)) {
+					$codeMatchCount[$code]        = ($codeMatchCount[$code] ?? 0) + 1;
+					$codeToTransactions[$code][]  = $tx;
+				}
+			}
+		}
 
-        // ── 4. Phân loại và xử lý kết quả ───────────────────────────────────
-        $result = [
-            'updated'        => 0,
-            'alreadyPaid'    => 0,
-            'notFound'       => 0,
-            'amountMismatch' => [],
-            'duplicate'      => [],
-            'updatedCodes'   => [],
-        ];
+		// ── 4. Phân loại và xử lý kết quả ───────────────────────────────────
+		$result = [
+			'updated'        => 0,
+			'alreadyPaid'    => 0,
+			'notFound'       => 0,
+			'amountMismatch' => [],
+			'duplicate'      => [],
+			'updatedCodes'   => [],
+		];
 
-        // 4a. Xác định các payment_code bị duplicate (xuất hiện ≥ 2 lần trong sao kê)
-        $duplicateCodes = [];
-        foreach ($codeMatchCount as $code => $count) {
-            if ($count >= 2) {
-                $duplicateCodes[$code] = true;
-                $result['duplicate'][] = [
-                    'payment_code' => $code,
-                    'count'        => $count,
-                    'descriptions' => array_column($codeToTransactions[$code], 'description'),
-                ];
-            }
-        }
+		// 4a. Xác định các payment_code bị duplicate (xuất hiện ≥ 2 lần trong sao kê)
+		$duplicateCodes = [];
+		foreach ($codeMatchCount as $code => $count) {
+			if ($count >= 2) {
+				$duplicateCodes[$code] = true;
+				$rec = $codeToRecord[$code];
+				$result['duplicate'][] = [
+					'payment_code'  => $code,
+					'learner_code'  => $rec->learner_code ?? '',
+					'full_name'     => trim(($rec->learner_lastname ?? '') . ' ' . ($rec->learner_firstname ?? '')),
+					'count'         => $count,
+					'descriptions'  => array_column($codeToTransactions[$code], 'description'),
+				];
+			}
+		}
 
-        // 4b. Xử lý các payment_code hợp lệ (xuất hiện đúng 1 lần)
-        $idsToUpdate    = [];
-        $descToUpdate   = []; // id → description
+		// 4b. Xử lý các payment_code hợp lệ (xuất hiện đúng 1 lần)
+		$idsToUpdate    = [];
+		$descToUpdate   = []; // id → description
 
-        foreach ($codeMatchCount as $code => $count) {
-            if (isset($duplicateCodes[$code])) {
-                continue; // Bỏ qua duplicate — đã ghi vào $result['duplicate']
-            }
+		foreach ($codeMatchCount as $code => $count) {
+			if (isset($duplicateCodes[$code])) {
+				continue; // Bỏ qua duplicate — đã ghi vào $result['duplicate']
+			}
 
-            $rec = $codeToRecord[$code];
-            $tx  = $codeToTransactions[$code][0]; // đúng 1 phần tử
+			$rec = $codeToRecord[$code];
+			$tx  = $codeToTransactions[$code][0]; // đúng 1 phần tử
 
-            // Kiểm tra đã thanh toán chưa
-            if ((bool) $rec->payment_completed) {
-                $result['alreadyPaid']++;
-                continue;
-            }
+			// Kiểm tra đã thanh toán chưa
+			if ((bool) $rec->payment_completed) {
+				$result['alreadyPaid']++;
+				continue;
+			}
 
-            // Kiểm tra số tiền: cho phép sai lệch nhỏ (±1đ) do làm tròn
-            $expected = (float) $rec->payment_amount;
-            $actual   = (float) $tx['credit'];
-            if (abs($expected - $actual) > 1.0) {
-                $result['amountMismatch'][] = [
-                    'payment_code' => $code,
-                    'learner_code' => $rec->learner_code ?? '',
-                    'description'  => $tx['description'],
-                    'expected'     => $expected,
-                    'actual'       => $actual,
-                ];
-                continue;
-            }
+			// Kiểm tra số tiền: cho phép sai lệch nhỏ (±1đ) do làm tròn
+			$expected = (float) $rec->payment_amount;
+			$actual   = (float) $tx['credit'];
+			if (abs($expected - $actual) > 1.0) {
+				$result['amountMismatch'][] = [
+					'payment_code' => $code,
+					'learner_code' => $rec->learner_code ?? '',
+					'description'  => $tx['description'],
+					'expected'     => $expected,
+					'actual'       => $actual,
+				];
+				continue;
+			}
 
-            // Hợp lệ → đánh dấu để UPDATE
-            $idsToUpdate[]             = (int) $rec->id;
-            $descToUpdate[(int)$rec->id] = $tx['description'];
-            $result['updatedCodes'][]  = $rec->learner_code ?? $code;
-        }
+			// Hợp lệ → đánh dấu để UPDATE
+			$idsToUpdate[]             = (int) $rec->id;
+			$descToUpdate[(int)$rec->id] = $tx['description'];
+			$result['updatedCodes'][]  = $rec->learner_code ?? $code;
+		}
 
-        // 4c. Đếm các code trong DB không xuất hiện trong sao kê
-        // (chỉ tính bản ghi chưa thanh toán, có thể chưa đến hạn)
-        // Không cần thiết phải báo lỗi, chỉ ghi nhận.
+		// 4c. Đếm các code trong DB không xuất hiện trong sao kê
+		// (chỉ tính bản ghi chưa thanh toán, có thể chưa đến hạn)
+		// Không cần thiết phải báo lỗi, chỉ ghi nhận.
 
-        // 4d. Thực hiện UPDATE theo từng bản ghi (cần ghi description riêng từng record)
-        foreach ($idsToUpdate as $id) {
-            $description = $descToUpdate[$id];
-            $db->setQuery(
-                'UPDATE ' . $db->quoteName('#__eqa_secondattempts') .
-                ' SET ' .
-                    $db->quoteName('payment_completed') . ' = 1, ' .
-                    $db->quoteName('description') . ' = ' . $db->quote($description) .
-                ' WHERE ' . $db->quoteName('id') . ' = ' . (int) $id
-            );
-            $db->execute();
-            $result['updated']++;
-        }
+		// 4d. Thực hiện UPDATE theo từng bản ghi (cần ghi description riêng từng record)
+		foreach ($idsToUpdate as $id) {
+			$description = $descToUpdate[$id];
+			$db->setQuery(
+				'UPDATE ' . $db->quoteName('#__eqa_secondattempts') .
+				' SET ' .
+				$db->quoteName('payment_completed') . ' = 1, ' .
+				$db->quoteName('description') . ' = ' . $db->quote($description) .
+				' WHERE ' . $db->quoteName('id') . ' = ' . (int) $id
+			);
+			$db->execute();
+			$result['updated']++;
+		}
 
-        return $result;
-    }
+		return $result;
+	}
 
 	/**
 	 * Parse file Excel bản sao kê MB Bank, trả về danh sách giao dịch Credit.
