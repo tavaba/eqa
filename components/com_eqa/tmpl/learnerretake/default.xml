@@ -84,6 +84,22 @@
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
             </field>
+
+            <field
+                    name="last_statement_update"
+                    type="calendar"
+                    label="Thời điểm cập nhật sao kê gần nhất"
+                    description="Thời điểm cán bộ cập nhật sao kê lần gần nhất. Thông tin này sẽ hiển thị cho HVSV kèm hướng dẫn kiểm tra trạng thái nộp phí. Nhập theo giờ địa phương. Để trống nếu chưa có."
+                    default=""
+                    required="false"
+                    format="%Y-%m-%d %H:%M:%S"
+                    filter="raw"
+                    showtime="true"
+                    timeformat="24"
+                    todaybutton="true"
+                    singleheader="true"
+            />
+
         </fieldset>
     </fields>
 </metadata>

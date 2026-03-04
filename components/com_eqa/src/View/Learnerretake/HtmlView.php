@@ -136,6 +136,24 @@ class HtmlView extends BaseHtmlView
 	 */
 	protected bool $paymentGateOpen = true;
 
+	/**
+	 * Thời điểm cập nhật sao kê gần nhất dạng UTC.
+	 * Null nếu chưa được cấu hình.
+	 *
+	 * @var string|null
+	 * @since 2.0.3
+	 */
+	protected ?string $lastStatementUpdateUtc = null;
+
+	/**
+	 * Thời điểm cập nhật sao kê gần nhất dạng local time (để hiển thị).
+	 * Null nếu chưa được cấu hình.
+	 *
+	 * @var string|null
+	 * @since 2.0.3
+	 */
+	protected ?string $lastStatementUpdateLocal = null;
+
     public function display($tpl = null): void
     {
         $this->prepareData();
@@ -252,6 +270,13 @@ class HtmlView extends BaseHtmlView
 
 		// ── Trạng thái cổng thu phí ─────────────────────────────────────────────
 	    $this->paymentGateOpen = (bool) $params->get('payment_gate_open', 1);
+
+	    // ── Thời điểm cập nhật sao kê gần nhất ──────────────────────────────────
+	    $lastStatementRaw = trim((string) $params->get('last_statement_update', ''));
+	    if ($lastStatementRaw !== '') {
+		    $this->lastStatementUpdateUtc   = DatetimeHelper::toUtc($lastStatementRaw);
+		    $this->lastStatementUpdateLocal = DatetimeHelper::fromUtc($this->lastStatementUpdateUtc);
+	    }
 	}
 
     /**

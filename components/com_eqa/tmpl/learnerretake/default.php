@@ -81,6 +81,17 @@ if ($this->deadlineLocal !== null) {
         $deadlineDisplay = htmlspecialchars($this->deadlineLocal);
     }
 }
+
+// Định dạng last_statement_update để hiển thị (dd/mm/yyyy hh:mm)
+$lastStatementDisplay = null;
+if ($this->lastStatementUpdateLocal !== null) {
+	try {
+		$dt                   = new DateTime($this->lastStatementUpdateLocal);
+		$lastStatementDisplay = $dt->format('H:i, d/m/Y');
+	} catch (Exception $e) {
+		$lastStatementDisplay = htmlspecialchars($this->lastStatementUpdateLocal);
+	}
+}
 ?>
 
 <!-- Tiêu đề -->
@@ -129,6 +140,11 @@ if ($this->deadlineLocal !== null) {
     <strong>"Nộp phí"</strong> ở môn tương ứng. Hiện nay, kết quả nộp phí chưa được ghi
     nhận tự động theo thời gian thực, mà cán bộ Học viện sẽ duyệt thủ công. HVSV vui
     lòng kiểm tra lại trạng thái nộp phí sau <strong>1–2 ngày</strong>.
+	<?php if ($lastStatementDisplay !== null): ?>
+        <br>
+        <span class="icon-info-circle me-1" aria-hidden="true"></span>
+        Sao kê được cập nhật lần gần nhất lúc <strong><?php echo $lastStatementDisplay; ?></strong>.
+	<?php endif; ?>
 </div>
 <?php endif; ?>
 
@@ -343,6 +359,11 @@ if ($this->deadlineLocal !== null) {
                     <div class="mt-1">
                         Sau khi chuyển khoản, vui lòng kiểm tra lại trạng thái nộp phí
                         sau <strong>1–2 ngày làm việc</strong>.
+		                <?php if ($lastStatementDisplay !== null): ?>
+                            <br>
+                            Sao kê được cập nhật lần gần nhất lúc
+                            <strong><?php echo $lastStatementDisplay; ?></strong>.
+		                <?php endif; ?>
                     </div>
                 </div>
             </div>
