@@ -44,13 +44,17 @@ $formatMoney = static fn(float $amount): string =>
         </a>
     </div>
 
+    <!-- Card "Người học" — nhấn để chuyển sang view SecondAttemptLearners -->
     <div class="col-6 col-md-4 col-xl-2">
-        <div class="card text-center border-secondary h-100">
-            <div class="card-body py-2 px-1">
-                <div class="fs-3 fw-bold text-secondary"><?php echo $stats->totalLearners; ?></div>
-                <div class="small text-muted">Người học</div>
+        <a href="<?php echo Route::_('index.php?option=com_eqa&view=secondattemptlearners', false); ?>"
+           class="text-decoration-none" title="Xem danh sách theo HVSV">
+            <div class="card text-center border-secondary h-100 eqa-card-link">
+                <div class="card-body py-2 px-1">
+                    <div class="fs-3 fw-bold text-secondary"><?php echo $stats->totalLearners; ?></div>
+                    <div class="small text-muted">HVSV</div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="col-6 col-md-4 col-xl-2">
