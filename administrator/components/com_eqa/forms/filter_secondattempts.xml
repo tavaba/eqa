@@ -21,7 +21,7 @@
 
         <field
             name="subject_id"
-            type="subject"
+            type="secondattemptsubject"
             default=""
             class="select2-basic"
             label="COM_EQA_FORM_CLASSES_FILTER_SUBJECT_LABEL"
@@ -47,6 +47,28 @@
             default=""
             onchange="this.form.submit();"
         />
+
+        <field
+                name="is_debtor"
+                type="list"
+                label="Nợ phí"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Nợ phí ở lần thi trước -</option>
+            <option value="0">Không</option>
+            <option value="1">Có</option>
+        </field>
+
+        <field
+                name="anomaly"
+                type="anomaly"
+                label="Bất thường"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Bất thường -</option>
+        </field>
 
         <field
             name="has_fee"

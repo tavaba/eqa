@@ -66,7 +66,9 @@ class SecondAttemptsModel extends ListModel
                 'sa.class_id',
                 'sa.learner_id',
                 'sa.last_exam_id',
-                'sa.last_attempt',
+	            'sa.last_attempt',
+				'el.debtor',
+	            'el.anomaly',
                 'sa.last_conclusion',
                 'sa.payment_amount',
                 'sa.payment_completed',
@@ -86,6 +88,8 @@ class SecondAttemptsModel extends ListModel
                 'learner_id',
                 'last_exam_id',
                 'last_attempt',
+	            'is_debtor',
+	            'last_anomaly',
                 'last_conclusion',
                 'payment_amount',
                 'payment_completed',
@@ -123,7 +127,9 @@ class SecondAttemptsModel extends ListModel
             ->leftJoin(
                 $db->quoteName('#__eqa_subjects', 'su') .
                 ' ON ' . $db->quoteName('su.id') . ' = ' . $db->quoteName('ex.subject_id')
-            );
+            )
+	        ->leftJoin($db->quoteName('#__eqa_exam_learner','el'),
+		        'el.exam_id = sa.last_exam_id AND el.learner_id = sa.learner_id');
 
         // --- Filtering ---
 
@@ -154,6 +160,16 @@ class SecondAttemptsModel extends ListModel
         if (is_numeric($term)) {
             $query->where($db->quoteName('cl.term') . ' = ' . (int) $term);
         }
+
+		$isDebtor = $this->getState('filter.is_debtor');
+		if(is_numeric($isDebtor)){
+			$query->where($db->quoteName('el.debtor') . ' = ' . (int)$isDebtor);
+		}
+
+		$anomaly = $this->getState('filter.anomaly');
+		if(is_numeric($anomaly)){
+			$query->where($db->quoteName('el.anomaly') . ' = ' . (int)$anomaly);
+		}
 
         // Filter "Có phí": 1 = payment_amount > 0; 0 = payment_amount = 0
         $hasFee = $this->getState('filter.has_fee');
@@ -202,6 +218,7 @@ class SecondAttemptsModel extends ListModel
      * để phản ánh đúng tổng quan tình hình.
      *
      * @return object{
+     *     totalExams: int,
      *     totalLearners: int,
      *     totalAttempts: int,
      *     totalFree: int,
@@ -219,8 +236,10 @@ class SecondAttemptsModel extends ListModel
 
         $query = $db->getQuery(true)
             ->select([
-                'COUNT(DISTINCT ' . $db->quoteName('learner_id') . ')' .
-                ' AS ' . $db->quoteName('totalLearners'),
+	            'COUNT(DISTINCT ' . $db->quoteName('last_exam_id') . ')' .
+	            ' AS ' . $db->quoteName('totalExams'),
+	            'COUNT(DISTINCT ' . $db->quoteName('learner_id') . ')' .
+	            ' AS ' . $db->quoteName('totalLearners'),
                 'COUNT(1)' .
                 ' AS ' . $db->quoteName('totalAttempts'),
                 'SUM(CASE WHEN ' . $db->quoteName('payment_amount') . ' = 0 THEN 1 ELSE 0 END)' .

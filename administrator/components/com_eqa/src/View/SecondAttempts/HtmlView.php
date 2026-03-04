@@ -9,6 +9,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Helper\FormHelper;
@@ -44,6 +45,12 @@ class HtmlView extends ItemsHtmlView
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('academicyear', 'Năm học', false, false, 'text-center text-nowrap');
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('term', 'Học kỳ', false, false, 'text-center');
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('last_attempt', 'Đã thi', false, false, 'text-center');
+
+	    $f = new ListLayoutItemFieldOption('is_debtor_label', 'Nợ phí', false, false, 'text-center');
+		$f->printRaw = true; // Để in HTML badge
+		$option->customFieldset1[] = $f;
+
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('last_anomaly_label', 'Bất thường');
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('conclusion_label', 'Kết luận', false, false, 'text-center');
 
         $f = new ListLayoutItemFieldOption('payment_amount_label', 'Phí', false, false, 'text-center');
@@ -75,6 +82,12 @@ class HtmlView extends ItemsHtmlView
         // Tiền xử lý từng bản ghi
         if (!empty($this->layoutData->items)) {
             foreach ($this->layoutData->items as $item) {
+				// Nhãn "Nợ phí" từ Enum
+	            $item->is_debtor_label = $item->is_debtor ? '<span class="badge bg-danger">Có</span>' : '<span class="badge bg-success">Không</span>';
+
+				//Nhãn "Bất thường" từ Enum
+	            $item->last_anomaly_label = $item->last_anomaly==ExamHelper::EXAM_ANOMALY_NONE ? '' : ExamHelper::getAnomaly($item->last_anomaly);
+
                 // Nhãn kết luận từ Enum
                 $conclusion             = Conclusion::from((int) $item->last_conclusion);
                 $item->conclusion_label = $conclusion->getLabel();

@@ -33,6 +33,15 @@ $formatMoney = static fn(float $amount): string =>
     <div class="col-6 col-md-4 col-xl-2">
         <div class="card text-center border-secondary h-100">
             <div class="card-body py-2 px-1">
+                <div class="fs-3 fw-bold text-secondary"><?php echo $stats->totalExams; ?></div>
+                <div class="small text-muted">Môn thi</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card text-center border-secondary h-100">
+            <div class="card-body py-2 px-1">
                 <div class="fs-3 fw-bold text-secondary"><?php echo $stats->totalLearners; ?></div>
                 <div class="small text-muted">Người học</div>
             </div>
