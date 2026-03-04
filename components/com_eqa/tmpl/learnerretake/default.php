@@ -136,8 +136,12 @@ if ($this->lastStatementUpdateLocal !== null) {
 <?php if (!$this->isDeadlinePassed): ?>
 <div class="alert alert-info mb-3">
     <span class="icon-info me-1" aria-hidden="true"></span>
-    HVSV nộp phí thi lại theo từng môn. Để nộp phí thi lại, HVSV nhấn chuột vào nút
-    <strong>"Nộp phí"</strong> ở môn tương ứng. Hiện nay, kết quả nộp phí chưa được ghi
+    HVSV nộp phí thi lại <strong>theo từng môn</strong>. Để nộp phí thi lại, HVSV nhấn chuột vào nút
+    <strong>"Nộp phí"</strong> ở môn tương ứng, sau đó quét mã QR để chuyển khoản.
+    Lưu ý rằng mỗi thí sinh ở mỗi môn thi có một mã chuyển khoản riêng để phần mềm xử lý;
+    nếu HVSV tự ý nhập nội dung chuyển khoản, phần mềm không nhận diện được thì HVSV
+    phải <strong>tự chịu trách nhiệm</strong>.<br/>
+    Hiện nay, kết quả nộp phí chưa được ghi
     nhận tự động theo thời gian thực, mà cán bộ Học viện sẽ duyệt thủ công. HVSV vui
     lòng kiểm tra lại trạng thái nộp phí sau <strong>1–2 ngày</strong>.
 	<?php if ($lastStatementDisplay !== null): ?>
@@ -359,11 +363,6 @@ if ($this->lastStatementUpdateLocal !== null) {
                     <div class="mt-1">
                         Sau khi chuyển khoản, vui lòng kiểm tra lại trạng thái nộp phí
                         sau <strong>1–2 ngày làm việc</strong>.
-		                <?php if ($lastStatementDisplay !== null): ?>
-                            <br>
-                            Sao kê được cập nhật lần gần nhất lúc
-                            <strong><?php echo $lastStatementDisplay; ?></strong>.
-		                <?php endif; ?>
                     </div>
                 </div>
             </div>
