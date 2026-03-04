@@ -10,6 +10,7 @@
 
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Helper\ViewHelper;
 
 /** @var \Kma\Component\Eqa\Administrator\View\SecondAttempts\HtmlView $this */
@@ -30,13 +31,17 @@ $formatMoney = static fn(float $amount): string =>
      ========================================================= -->
 <div class="row g-2 mb-3">
 
+    <!-- Card "Môn thi" — nhấn để chuyển sang view SecondAttemptSubjects -->
     <div class="col-6 col-md-4 col-xl-2">
-        <div class="card text-center border-secondary h-100">
-            <div class="card-body py-2 px-1">
-                <div class="fs-3 fw-bold text-secondary"><?php echo $stats->totalExams; ?></div>
-                <div class="small text-muted">Môn thi</div>
+        <a href="<?php echo Route::_('index.php?option=com_eqa&view=secondattemptsubjects', false); ?>"
+           class="text-decoration-none" title="Xem danh sách theo môn thi">
+            <div class="card text-center border-secondary h-100 eqa-card-link">
+                <div class="card-body py-2 px-1">
+                    <div class="fs-3 fw-bold text-secondary"><?php echo $stats->totalExams; ?></div>
+                    <div class="small text-muted">Môn thi</div>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="col-6 col-md-4 col-xl-2">
