@@ -28,6 +28,8 @@ class HtmlView extends ItemsHtmlView
         $f->urlFormatString='index.php?option=com_eqa&view=examexaminees&exam_id=%d';
         $fields->customFieldset1[] = $f;
 
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('neligible', 'Được thi', true, false, 'text-center');
+
         $f = new ListLayoutItemFieldOption('nexamroom', 'COM_EQA_EXAMROOM',true,false,'text-center');
 		$f->urlFormatString = 'index.php?option=com_eqa&view=examrooms&filter[exam_id]=%d';
 	    $fields->customFieldset1[] = $f;

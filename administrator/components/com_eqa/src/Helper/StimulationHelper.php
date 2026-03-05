@@ -20,7 +20,7 @@ use Joomla\CMS\Language\Text;
 abstract class StimulationHelper
 {
 	public const TYPE_NONE=0;       //Không có
-	public const TYPE_EXEMPT=1;     //Miễn thi, cộng điểm
+	public const TYPE_EXEMPT=1;     //Miễn thi, ghi nhận điểm
 	public const TYPE_ADD=2;        //Cộng điểm
 	public const TYPE_TRANS=3;      //Quy đổi điểm
 	static public function getStimulationType(int $bonusCode){

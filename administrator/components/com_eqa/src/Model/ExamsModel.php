@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Library\Kma\Model\ListModel;
 
 class ExamsModel extends ListModel{
@@ -22,6 +23,22 @@ class ExamsModel extends ListModel{
 	    $subExamineeCount = 'SELECT COUNT(learner_id) FROM #__eqa_exam_learner WHERE exam_id=a.id';
 	    $subExamroomCount = 'SELECT COUNT(DISTINCT examroom_id) FROM #__eqa_exam_learner WHERE examroom_id IS NOT NULL AND exam_id=a.id';
 
+	    // Số thí sinh có quyền dự thi thực sự (loại trừ: không được phép thi,
+	    // nợ học phí, được miễn thi hoặc quy đổi điểm)
+	    $subEligibleCount = 'SELECT COUNT(1)'
+		    . ' FROM #__eqa_exam_learner AS el'
+		    . ' INNER JOIN #__eqa_class_learner AS cl'
+		    .   ' ON cl.class_id = el.class_id AND cl.learner_id = el.learner_id'
+		    . ' LEFT JOIN #__eqa_stimulations AS st'
+		    .   ' ON st.id = el.stimulation_id'
+		    . ' WHERE el.exam_id = a.id'
+		    .   ' AND cl.allowed <> 0'
+		    .   ' AND el.debtor = 0'
+		    .   ' AND (el.stimulation_id IS NULL'
+		    .     ' OR st.type NOT IN ('
+		    .       StimulationHelper::TYPE_EXEMPT . ',' . StimulationHelper::TYPE_TRANS
+		    .     '))';
+
 
 	    $columns = $db->quoteName(
             array('a.id','b.name',   'a.name','a.testtype','a.status', 'a.usetestbank', 'a.questiondeadline',  'a.description'),
@@ -32,6 +49,7 @@ class ExamsModel extends ListModel{
             ->leftJoin('#__eqa_examseasons AS b', 'a.examseason_id=b.id')
             ->select($columns)
 	        ->select('('.$subExamineeCount.') AS nexaminee')
+	        ->select('('.$subEligibleCount.') AS neligible')
 	        ->select('('.$subExamroomCount.') AS nexamroom');
 
         //Filtering
