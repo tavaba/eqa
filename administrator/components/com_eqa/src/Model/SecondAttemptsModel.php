@@ -954,7 +954,7 @@ class SecondAttemptsModel extends ListModel
 		return $transactions;
 	}
 
-	public function loadList(bool $onlyFreeOrPaymentCompleted): array
+	public function loadListForExport(bool $onlyFreeOrPaymentCompleted): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [

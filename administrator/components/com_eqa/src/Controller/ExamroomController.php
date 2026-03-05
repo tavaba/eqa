@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Model\ExamroomModel;
 use Kma\Library\Kma\Controller\FormController;
 
 defined('_JEXEC') or die();
@@ -90,7 +91,10 @@ class ExamroomController extends  FormController {
             $normalizedLearnerCodes = trim($normalizedLearnerCodes);
             $learnerCodes = explode(' ', $normalizedLearnerCodes);
 
-            //2. Gọi model để thêm thí sinh
+            /**
+             * 2. Gọi model để thêm thí sinh
+             * @var ExamroomModel $model
+			 */
             $model = $this->getModel();
             $model->addExaminees($examroomId, $examId, $learnerCodes);
 

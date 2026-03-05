@@ -1460,10 +1460,13 @@ class ExamModel extends AdminModel{
 			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể cập nhật thông tin nợ phí');
 
 		//3. Lấy thông tin nợ phí hiện thời từ 2 nơi: môn thi, người học
-		$columns = $db->quoteName(
-			array('a.learner_id', 'b.code',      'a.debtor',    'b.debtor', 'a.module_mark'),
-			array('learnerId',    'learnerCode', 'currentDebt', 'newDebt',  'moduleMark')
-		);
+		$columns = [
+			$db->quoteName('a.learner_id',      'learnerId'),
+			$db->quoteName('b.code',            'learnerCode'),
+			$db->quoteName('a.debtor',          'currentDebt'),
+			$db->quoteName('b.debtor',          'newDebt'),
+			$db->quoteName('a.module_mark',     'moduleMark')
+		];
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_exam_learner AS a')
@@ -1500,6 +1503,121 @@ class ExamModel extends AdminModel{
 				$query = $db->getQuery(true)
 					->update('#__eqa_exam_learner')
 					->set('debtor=' . $examinee->newDebt)
+					->where([
+						'exam_id=' . $examId,
+						'learner_id=' . $examinee->learnerId
+					]);
+				$db->setQuery($query);
+				if(!$db->execute())
+					throw new Exception('Phát sinh lỗi khi cập nhật thông tin nợ phí');
+			}
+
+			//Commit
+			$db->transactionCommit();
+		}
+		catch (Exception $e)
+		{
+			$db->transactionRollback();
+			throw $e;
+		}
+
+		//Return some information to the caller
+		$messages = [];
+
+		if(!empty($listUnset))
+		{
+			$messages[] = Text::sprintf('%d HVSV đã hết nợ: %s',
+				sizeof($listUnset),
+				implode(', ', $listUnset)
+			);
+		}
+		if(!empty($listSet))
+		{
+			$messages[] = Text::sprintf('%d HVSV đã phát sinh nợ: %s',
+				sizeof($listSet),
+				implode(', ', $listSet)
+			);
+		}
+		if(!empty($listCannotChange))
+		{
+			$messages[] = Text::sprintf('%d HVSV có thay đổi trạng thái nợ phí nhưng không được cập nhật vì đã có kết quả: %s',
+				sizeof($listCannotChange),
+				implode(', ', $listCannotChange)
+			);
+		}
+		if(empty($listSet) && empty($listUnset))
+			$messages[] = 'Thông tin nợ phí không thay đổi';
+		return $messages;
+	}
+
+	/**
+	 * Cập nhật lại thông tin nợp phí của thí sinh dựa trên thông tin nộp phí
+	 * dự thi lần 2. Thí sinh được ghi nợ nếu thuộc 1 trong 2 trường hợp: Bản thân đang nợ
+	 * học phí (bảng _learners) hoặc chưa đóng phí thi lần 2 (bảng _secondattempts)
+	 * @param $examId
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 * @since 2.0.3
+	 */
+	public function updateSecondAttemptPaymentStatus($examId): array
+	{
+		//1. Init
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//2. Kiểm tra điều kiện
+		if (DatabaseHelper::isCompletedExam($examId))
+			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể cập nhật thông tin nợ phí');
+
+		//3. Lấy thông tin nợ phí hiện thời từ 3 nơi: môn thi, người học
+		$columns = [
+			$db->quoteName('a.learner_id',          'learnerId'),
+			$db->quoteName('b.code',                'learnerCode'),
+			$db->quoteName('a.debtor',              'currentDebt'),
+			$db->quoteName('b.debtor',              'generalDebt'),
+			$db->quoteName('a.module_mark',         'moduleMark'),
+			$db->quoteName('c.payment_amount',      'secondAttemptPaymentAmount'),
+			$db->quoteName('c.payment_completed',   'secondAttemptPaymentCompleted'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+			->leftJoin('#__eqa_secondattempts AS c', 'c.learner_id=a.learner_id AND c.class_id=a.class_id')
+			->where('a.exam_id=' . $examId);
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList();
+
+		//4. Cập nhật lại thông tin nợ phí
+		$listUnset = [];
+		$listSet = [];
+		$listCannotChange = [];
+		$db->transactionStart();
+		try
+		{
+			foreach ($examinees as $examinee)
+			{
+				$newDebt = ($examinee->generalDebt || ($examinee->secondAttemptPaymentAmount>0 && !$examinee->secondAttemptPaymentCompleted)) ? 1 : 0;
+				if($examinee->currentDebt == $newDebt)
+					continue;
+
+				if(!is_null($examinee->moduleMark))
+				{
+					$listCannotChange[] = $examinee->learnerCode;
+					continue;
+				}
+
+				//Thống kê
+				if ($newDebt==0)
+					$listUnset[] = $examinee->learnerCode;
+				else
+					$listSet[] = $examinee->learnerCode;
+
+				//Cập nhật
+				$query = $db->getQuery(true)
+					->update('#__eqa_exam_learner')
+					->set('debtor=' . $newDebt)
 					->where([
 						'exam_id=' . $examId,
 						'learner_id=' . $examinee->learnerId

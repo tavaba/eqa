@@ -136,7 +136,8 @@ class HtmlView extends ItemsHtmlView {
         ToolbarHelper::appendDelete('exam.removeExaminees');
 	    ToolbarHelper::appendButton('core.edit', 'loop','Khuyến khích','exam.stimulate',false, 'btn btn-success');
 		$msg = 'Điều này có thể làm xáo trộn trạng thái thí sinh môn thi. Bạn có chắc muốn thực hiện?';
-		ToolbarHelper::appendConfirmButton('core.edit',$msg, 'loop','Nợ phí','exam.updateDebt',false,'btn btn-success');
+	    ToolbarHelper::appendConfirmButton('core.edit',$msg, 'loop','Nợ học phí','exam.updateDebt',false,'btn btn-success');
+	    ToolbarHelper::appendConfirmButton('core.edit',$msg, 'loop','Nợ phí thi lại','exam.updateSecondAttemptPaymentStatus',false,'btn btn-success');
 	    ToolbarHelper::appendButton('core.edit','smiley-happy','Xóa nợ','exam.clearDebt',true,'btn btn-success');
 	    ToolbarHelper::appendButton('core.edit','smiley-sad','Ghi nợ','exam.markDebt',true,'btn btn-danger');
 	    ToolbarHelper::appendButton('core.edit','pause','Hoãn thi','exam.delay',true, 'btn btn-danger');

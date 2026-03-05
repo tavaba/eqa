@@ -345,7 +345,7 @@ class SecondAttemptsController extends AdminController
 			 * @var SecondAttemptsModel $model
 			 */
 			$model = $this->getModel('SecondAttempts');
-			$examinees = $model->loadList($onlyFreeOrPaymentCompleted);
+			$examinees = $model->loadListForExport($onlyFreeOrPaymentCompleted);
 			if(empty($examinees))
 				throw new Exception('Không có thí sinh thi lại, bảo lưu');
 

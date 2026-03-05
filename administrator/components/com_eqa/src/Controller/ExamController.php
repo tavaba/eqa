@@ -726,6 +726,43 @@ class ExamController extends  FormController
 			$this->setRedirect($url);
 		}
 	}
+	public function updateSecondAttemptPaymentStatus(): void
+	{
+		try
+		{
+			//Check token
+			$this->checkToken();
+
+			//Get exam id
+			$examId = $this->input->getInt('exam_id');
+			if(empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+			//Check permissions
+			if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			/**
+			 * Update debt information
+			 * @var ExamModel $model
+			 */
+			$model = $this->getModel();
+			$messages = $model->updateSecondAttemptPaymentStatus($examId);
+
+			//Set redirect in any case
+			$this->setMessage(implode('. ', $messages));
+			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			if(empty($examId))
+				$url = Route::_('index.php?option=com_eqa',false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+			$this->setRedirect($url);
+		}
+	}
 	public function setDebt():void
 	{
 		try

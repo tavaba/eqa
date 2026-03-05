@@ -8,6 +8,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -249,16 +250,16 @@ class ExamseasonController extends FormController
 
 			/**
 			 * Load the list of examinees/exams that will be used to generate retake exams
-			 * @var ExamseasonsModel $examseasonsModel
+			 * @var SecondAttemptsModel $secondAttemptsModel
 			 */
-			$examseasonsModel = $this->getModel('Examseasons');
-			$unpassedExaminees = $examseasonsModel->getUnpassedExaminees();
-			if(empty($unpassedExaminees))
+			$secondAttemptsModel = $this->getModel('SecondAttempts');
+			$retakingExaminees = $secondAttemptsModel->loadListForExport(false);
+			if(empty($retakingExaminees))
 				throw new Exception('Không có thí sinh nào cần thi lại.');
 
 			//Group the list by the property 'subjectId'
 			$groupedExaminees = [];
-			foreach ($unpassedExaminees as $examinee) {
+			foreach ($retakingExaminees as $examinee) {
 				$subjectId = $examinee->subjectId;
 				if (!isset($groupedExaminees[$subjectId])) {
 					$groupedExaminees[$subjectId] = [];
@@ -299,6 +300,7 @@ class ExamseasonController extends FormController
 
 					//Prepare data for creating an exam
 					$examData                  = [];
+					$examData['code']		  =  $subject->code;
 					$examData['name']          = $examName;
 					$examData['subject_id']    = $subjectId;
 					$examData['examseason_id'] = $examseasonId;
@@ -307,6 +309,7 @@ class ExamseasonController extends FormController
 					$examData['kmonitor']      = $subject->kmonitor; //Copy duration from subject
 					$examData['kassess']       = $subject->kassess; //Copy duration from subject
 					$examData['usetestbank']   = empty($subject->testbankyear) ? 0 : 1;
+					$examData['allowed_rooms'] = $subject->allowed_rooms;
 					$examData['status']        = ExamHelper::EXAM_STATUS_UNKNOWN;
 					$examData['nexaminee']     = 0;
 
@@ -324,6 +327,10 @@ class ExamseasonController extends FormController
 
 				//Add examinees into the exam
 				$countAdded = $examModel->addExaminees($examId, $examinees);
+
+				//Cập nhật thông tin nợ phí thi lần 2
+				$examModel->updateSecondAttemptPaymentStatus($examId);
+
 				$countTotal = count($examinees);
 				if($examExists)
 					$msg = sprintf('Môn thi <b>%s</b> đã tồn tại, %d/%d đã được thêm vào',
@@ -342,7 +349,7 @@ class ExamseasonController extends FormController
 			//Redirect to the list of exams of the examseason
 			$msg = sprintf('Tổng cộng có %d môn thi, %d lượt thí sinh được xử lý',
 				count($groupedExaminees),
-				count($unpassedExaminees));
+				count($retakingExaminees));
 			$this->app->enqueueMessage($msg);
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false));
 		}
