@@ -80,11 +80,13 @@ class ExamseasonModel extends AdminModel{
                 $exam = [
                     'subject_id' => $subjectId,
                     'examseason_id' => $examseasonId,
+                    'code' => $subject->code,
                     'name' => $subject->name,
                     'testtype' => $subject->finaltesttype,
                     'duration' => $subject->finaltestduration,
                     'kmonitor' => $subject->kmonitor,
                     'kassess' => $subject->kassess,
+                    'allowed_rooms' => $subject->allowed_rooms,
                     'usetestbank' => empty($subject->testbankyear)?0:1,
                     'status' => ExamHelper::EXAM_STATUS_UNKNOWN
                 ];

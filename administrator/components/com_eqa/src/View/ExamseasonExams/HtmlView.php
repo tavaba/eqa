@@ -21,9 +21,12 @@ class HtmlView extends ItemsHtmlView
         $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
         $fields->check = ListLayoutItemFields::defaultFieldCheck();
 
-        $f = new ListLayoutItemFieldOption('name','COM_EQA_EXAM');
-		$f->urlFormatString='index.php?option=com_eqa&view=exam&layout=edit&id=%d';
+	    $f = new ListLayoutItemFieldOption('code','Mã môn thi');
+	    $f->urlFormatString='index.php?option=com_eqa&view=exam&layout=edit&id=%d';
 	    $fields->customFieldset1[] = $f;
+
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('name','Tên môn thi');
+
         $f = new ListLayoutItemFieldOption('nexaminee','COM_EQA_EXAMINEE',true,false,'text-center');
         $f->urlFormatString='index.php?option=com_eqa&view=examexaminees&exam_id=%d';
         $fields->customFieldset1[] = $f;

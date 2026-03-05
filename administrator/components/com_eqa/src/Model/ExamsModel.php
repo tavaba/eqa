@@ -41,8 +41,8 @@ class ExamsModel extends ListModel{
 
 
 	    $columns = $db->quoteName(
-            array('a.id','b.name',   'a.name','a.testtype','a.status', 'a.usetestbank', 'a.questiondeadline',  'a.description'),
-            array('id', 'examseason', 'name',  'testtype',  'status',   'usetestbank',  'questiondeadline',    'description')
+            array('a.id','b.name',   'a.code', 'a.name','a.testtype','a.status', 'a.usetestbank', 'a.questiondeadline',  'a.description'),
+            array('id', 'examseason','code',   'name',  'testtype',  'status',   'usetestbank',  'questiondeadline',    'description')
         );
         $query =  parent::getListQuery();
         $query->from('#__eqa_exams AS a')

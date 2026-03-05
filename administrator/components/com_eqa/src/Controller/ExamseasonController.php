@@ -179,6 +179,7 @@ class ExamseasonController extends FormController
 					throw new Exception('Không tìm thấy môn học với id='.$class->subject_id);
 
 				//2. Prepare data for creating an exam
+				$exam['code'] = $class->code;
 				$exam['name'] = $class->name;
 				$exam['subject_id'] = $class->subject_id;
 				$exam['examseason_id'] = $examseasonId;
@@ -186,6 +187,7 @@ class ExamseasonController extends FormController
 				$exam['duration'] = $subject->finaltestduration; //Copy duration from subject
 				$exam['kmonitor'] = $subject->kmonitor; //Copy duration from subject
 				$exam['kassess'] = $subject->kassess; //Copy duration from subject
+				$exam['allowed_rooms'] = $subject->allowed_rooms;
 				$exam['usetestbank'] = empty($subject->testbankyear)?0:1;
 				$exam['status'] = ExamHelper::EXAM_STATUS_UNKNOWN;
 				$exam['nexaminee'] = 0;
