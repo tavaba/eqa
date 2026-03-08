@@ -112,12 +112,7 @@ class HtmlView extends ItemsHtmlView {
 				if(!is_null($item->conclusion))
 					$item->conclusion = Conclusion::from($item->conclusion)->getLabel();
 
-				if($item->pam1<0)
-					$item->pam1 = ExamHelper::specialMarkToText($item->pam1);
-	            if($item->pam2<0)
-		            $item->pam2 = ExamHelper::specialMarkToText($item->pam2);
-	            if($item->pam<0)
-		            $item->pam = ExamHelper::specialMarkToText($item->pam);
+				ExamHelper::normalizeMarks($item);
 
 				if($item->module_base4_mark > 0)
 	                $item->module_base4_mark = sprintf('%.1f',$item->module_base4_mark);

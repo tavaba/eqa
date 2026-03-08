@@ -92,6 +92,34 @@ class ConfigService
 	}
 
 	/**
+	 * Trả về số năm cộng thêm vào năm hiện tại để xác định năm học cao nhất
+	 * trong danh sách chọn của AcademicyearField.
+	 *
+	 * Ví dụ: offset = 1, năm hiện tại = 2026 → năm học cao nhất = 2027-2028.
+	 *
+	 * @return  int
+	 * @since   2.0.4
+	 */
+	public function getAcademicYearUpperOffset(): int
+	{
+		return (int) $this->params->get('params.academicyear_upper_offset', 0);
+	}
+
+	/**
+	 * Trả về số năm trừ đi từ năm hiện tại để xác định năm học thấp nhất
+	 * trong danh sách chọn của AcademicyearField.
+	 *
+	 * Ví dụ: offset = 5, năm hiện tại = 2026 → năm học thấp nhất = 2020-2021.
+	 *
+	 * @return  int
+	 * @since   2.0.4
+	 */
+	public function getAcademicYearLowerOffset(): int
+	{
+		return (int) $this->params->get('params.academicyear_lower_offset', 5);
+	}
+
+	/**
 	 * Trả về số lần dự thi tối đa cho phép đối với một môn thi.
 	 *
 	 * @return  int

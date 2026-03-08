@@ -24,6 +24,20 @@
 					default="Hà Nội"
 					label="Thành phố"
 			/>
+			<field
+					name="academicyear_upper_offset"
+					type="number"
+					default="0"
+					label="Khoảng lệch năm học cao nhất"
+					description="Số năm cộng thêm vào năm hiện tại để xác định năm học cao nhất trong danh sách chọn. Ví dụ: nhập 1 khi năm hiện tại là 2026 thì năm học cao nhất là 2027-2028."
+			/>
+			<field
+					name="academicyear_lower_offset"
+					type="number"
+					default="5"
+					label="Khoảng lệch năm học thấp nhất"
+					description="Số năm trừ đi từ năm hiện tại để xác định năm học thấp nhất trong danh sách chọn. Ví dụ: nhập 5 khi năm hiện tại là 2026 thì năm học thấp nhất là 2020-2021."
+			/>
 		</fieldset>
 		<fieldset
 				name="exam"

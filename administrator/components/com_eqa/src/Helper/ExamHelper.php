@@ -6,26 +6,26 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
+use Kma\Component\Eqa\Administrator\Enum\SpecialMark;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Service\ConfigService;
 
-abstract class ExamHelper{
+abstract class ExamHelper
+{
 	private static ConfigService $configService;
-
-	public const SPECIAL_MARK_N25=-25;
-	public const SPECIAL_MARK_N100=-100;
-	public const SPECIAL_MARK_TKD=-10;
 
 	static public function markToText($mark):string
 	{
+		//Trường hợp 1: Chưa có điểm
 		if(is_null($mark))
 			return '';
-		if($mark == ExamHelper::SPECIAL_MARK_N25)
-			return 'N25';
-		if($mark == ExamHelper::SPECIAL_MARK_N100)
-			return 'N100';
-		if($mark == ExamHelper::SPECIAL_MARK_TKD)
-			return 'TKD';
+
+		//Trường hợp 2: Điểm đặc biệt
+		$specialMark = SpecialMark::tryFrom((int)$mark);
+		if($specialMark !== null)
+			return $specialMark->getLabel();
+
+		//Trường hợp 3: Điểm bình thường
 		return (string)$mark;
 	}
 
@@ -41,42 +41,29 @@ abstract class ExamHelper{
 	static public function toPam($value, string|null $description=null): float|bool
 	{
 		//Prepare
-		if(!empty($description))
-			$description = mb_strtolower(trim($description));
 		if(is_string($value)){
 			$value = str_replace(',','.',trim($value));
 		}
 
 		//If $value is NOT a numeric value
-		if(!empty($value) && !is_numeric($value)){
-			if($value==='N25')
-				return ExamHelper::SPECIAL_MARK_N25;
-			if($value==='N100')
-				return ExamHelper::SPECIAL_MARK_N100;
-			if ($value==='TKD' || $value==='TKĐ')
-				return ExamHelper::SPECIAL_MARK_TKD;
+		if(!empty($value) && !is_numeric($value))
+		{
+			$specialMark = SpecialMark::tryFromText($value);
+			if($specialMark)
+				return $specialMark->value;
 			return false;
 		}
 
 		//If $value is of some cases of "empty" (not exactly is_empty() function)
 		if($value==0 || $value=='' || is_null($value))
 		{
-			switch ($description){
-				case 'n25':
-					return ExamHelper::SPECIAL_MARK_N25;
-				case 'n100':
-				case 'nghỉ học':
-				case 'nghi hoc':
-					return ExamHelper::SPECIAL_MARK_N100;
-				case 'tkd':
-				case 'tkđ':
-				case 'trượt gk':
-					return ExamHelper::SPECIAL_MARK_TKD;
-				default:
-					if($value==0)
-						return 0;
-					return false;
-			}
+			$specialMark = SpecialMark::tryFromText($description);
+			if($specialMark)
+				return $specialMark->value;
+			else if ($value==0)
+				return 0;
+			else
+				return false;
 		}
 
 		//$value is a number
@@ -195,23 +182,14 @@ abstract class ExamHelper{
 			return 'A';
 		return 'A+';
 	}
-	static public function specialMarkToText(int $specialMark)
-	{
-		return match ($specialMark)
-		{
-			self::SPECIAL_MARK_TKD => 'TKD',
-			self::SPECIAL_MARK_N25 => 'N25',
-			self::SPECIAL_MARK_N100 => 'N100'
-		};
-	}
 	static public function normalizeMarks(object &$learner):void
 	{
 		if(!empty($learner->pam1) && $learner->pam1<0)
-			$learner->pam1 = self::specialMarkToText($learner->pam1);
+			$learner->pam1 = SpecialMark::from($learner->pam1)->getLabel();
 		if(!empty($learner->pam2) && $learner->pam2<0)
-			$learner->pam2 = self::specialMarkToText($learner->pam2);
+			$learner->pam2 = SpecialMark::from($learner->pam2)->getLabel();
 		if(!empty($learner->pam) && $learner->pam<0)
-			$learner->pam = self::specialMarkToText($learner->pam);
+			$learner->pam = SpecialMark::from($learner->pam)->getLabel();
 	}
 	static public function calculateConclusion($moduleMark, $finalExamMark, $anomaly, $attempt): Conclusion
 	{
