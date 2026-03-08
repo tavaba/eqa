@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -139,7 +140,7 @@ class PaperexamController extends  FormController {
 
 		//Cập nhật trạng thái môn thi
 		$model = $this->createModel('exam');
-		$model->setExamStatus($examId,ExamHelper::EXAM_STATUS_EXAMINER_ASSIGNED);
+		$model->setExamStatus($examId,ExamStatus::ExaminerAssigned);
 	}
 	public function exportMarkingSheet()
 	{

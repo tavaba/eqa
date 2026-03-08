@@ -8,6 +8,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -189,7 +190,7 @@ class ExamseasonController extends FormController
 				$exam['kassess'] = $subject->kassess; //Copy duration from subject
 				$exam['allowed_rooms'] = $subject->allowed_rooms;
 				$exam['usetestbank'] = empty($subject->testbankyear)?0:1;
-				$exam['status'] = ExamHelper::EXAM_STATUS_UNKNOWN;
+				$exam['status'] = ExamStatus::Unknown->value;
 				$exam['nexaminee'] = 0;
 
 				//3. Create the exam
@@ -312,7 +313,7 @@ class ExamseasonController extends FormController
 					$examData['kassess']       = $subject->kassess; //Copy duration from subject
 					$examData['usetestbank']   = empty($subject->testbankyear) ? 0 : 1;
 					$examData['allowed_rooms'] = $subject->allowed_rooms;
-					$examData['status']        = ExamHelper::EXAM_STATUS_UNKNOWN;
+					$examData['status']        = ExamStatus::Unknown->value;
 					$examData['nexaminee']     = 0;
 
 					//Create the exam and get the id of the newly created exam.

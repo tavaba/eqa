@@ -4,6 +4,9 @@ use Exception;
 use JFactory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Enum\PpaaType;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -72,7 +75,7 @@ class GradecorrectionModel extends AdminModel {
 		$query = $db->getQuery(true)
 			->update('#__eqa_gradecorrections')
 			->set([
-				'status = ' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED,
+				'status = ' . PpaaStatus::Accepted->value,
 				'handled_by = ' . $db->quote($currentUsername),
 				'handled_at = ' . $db->quote($currentTime)
 			])
@@ -149,7 +152,7 @@ class GradecorrectionModel extends AdminModel {
 		$query = $db->getQuery(true)
 			->update('#__eqa_gradecorrections')
 			->set([
-				'status = ' . ExamHelper::EXAM_PPAA_STATUS_REJECTED,
+				'status = ' . PpaaStatus::Rejected->value,
 				'description = ' . $db->quote($description),
 				'handled_by = ' . $db->quote($currentUsername),
 				'handled_at = ' . $db->quote($currentTime)
@@ -201,28 +204,29 @@ class GradecorrectionModel extends AdminModel {
 			'exam'=>$item->exam,
 			'reason'=>$item->reason
 		];
-		switch ($item->constituent) {
-			case ExamHelper::MARK_CONSTITUENT_PAM1:
+		$constituent = MarkConstituent::from($item->constituent);
+		switch ($constituent) {
+			case MarkConstituent::Pam1:
 				$data['pam1'] = $item->pam1;
 				$form->removeField('pam2');
 				$form->removeField('final_exam');
 				break;
-			case ExamHelper::MARK_CONSTITUENT_PAM2:
+			case MarkConstituent::Pam2:
 				$data['pam2'] = $item->pam2;
 				$form->removeField('pam1');
 				$form->removeField('final_exam');
 				break;
-			case ExamHelper::MARK_CONSTITUENT_PAM:
+			case MarkConstituent::Pam:
 				$data['pam1'] = $item->pam1;
 				$data['pam2'] = $item->pam2;
 				$form->removeField('final_exam');
 				break;
-			case ExamHelper::MARK_CONSTITUENT_FINAL_EXAM:
+			case MarkConstituent::FinalExam:
 				$data['final_exam'] = $item->origMark;
 				$form->removeField('pam1');
 				$form->removeField('pam2');
 				break;
-			case ExamHelper::MARK_CONSTITUENT_ALL:
+			case MarkConstituent::All:
 				$data['pam1'] = $item->pam1;
 				$data['pam2'] = $item->pam2;
 				$data['final_exam'] = $item->origMark;
@@ -242,7 +246,7 @@ class GradecorrectionModel extends AdminModel {
 
 		//1. Parse form data
 		$itemId = $formData['id'] ?? null;
-		$constituent = $formData['constituent'] ?? null;
+		$constituent = MarkConstituent::tryFrom((int)$formData['constituent']);
 		$newPam1 = $formData['pam1'] ?? null;
 		$newPam2 = $formData['pam2'] ?? null;
 		$newFinalExam = $formData['final_exam'] ?? null;
@@ -259,11 +263,11 @@ class GradecorrectionModel extends AdminModel {
 		if(is_null($reviewerId)) throw new Exception("Thiếu thông tin về người đã xử lý yêu cầu đính chính");
 		if(is_null($isCompleted)) throw new Exception("Thiếu thông tin về trạng thái xử lý");
 		if(
-			($constituent==ExamHelper::MARK_CONSTITUENT_PAM1 && (!is_numeric($newPam1) || $newPam2!=null || $newFinalExam!=null))
-			|| ($constituent==ExamHelper::MARK_CONSTITUENT_PAM2 && (!is_numeric($newPam2) || $newPam1!=null || $newFinalExam!=null))
-			|| ($constituent==ExamHelper::MARK_CONSTITUENT_FINAL_EXAM && (!is_numeric($newFinalExam) || $newPam1!=null || $newPam2!=null))
-			|| ($constituent==ExamHelper::MARK_CONSTITUENT_PAM && (!is_numeric($newPam1) || !is_numeric($newPam2) || $newFinalExam!=null))
-			|| ($constituent==ExamHelper::MARK_CONSTITUENT_ALL && (!is_numeric($newPam1) || !is_numeric($newPam2) || !is_numeric($newFinalExam)))
+			($constituent==MarkConstituent::Pam1 && (!is_numeric($newPam1) || $newPam2!=null || $newFinalExam!=null))
+			|| ($constituent==MarkConstituent::Pam2 && (!is_numeric($newPam2) || $newPam1!=null || $newFinalExam!=null))
+			|| ($constituent==MarkConstituent::FinalExam && (!is_numeric($newFinalExam) || $newPam1!=null || $newPam2!=null))
+			|| ($constituent==MarkConstituent::Pam && (!is_numeric($newPam1) || !is_numeric($newPam2) || $newFinalExam!=null))
+			|| ($constituent==MarkConstituent::All && (!is_numeric($newPam1) || !is_numeric($newPam2) || !is_numeric($newFinalExam)))
 		)
 			throw new Exception("Các thành phần điểm không phù hợp với yêu cầu đính chính");
 
@@ -277,7 +281,7 @@ class GradecorrectionModel extends AdminModel {
 			'reviewer_id = ' . (int)$reviewerId,
 			'changed = ' . (int)$changed,
 			'description = ' . $db->quote($description),
-			'status = ' . ($isCompleted ? ExamHelper::EXAM_PPAA_STATUS_DONE : ExamHelper::EXAM_PPAA_STATUS_REQUIRE_INFO),
+			'status = ' . ($isCompleted ? PpaaStatus::Done->value : PpaaStatus::RequireInfo->value),
 			'updated_by = ' . $db->quote($currentUsername),
 			'updated_at = ' . $db->quote($currentTime)
 		];
@@ -317,7 +321,7 @@ class GradecorrectionModel extends AdminModel {
 		$newPam = ExamHelper::calculatePam($examinee->subjectId, $newPam1, $newPam2);
 
 		//7.2. Update the table #__eqa_class_learner if $pam1 or $pam2 has been changed
-		if($constituent == !ExamHelper::MARK_CONSTITUENT_FINAL_EXAM)
+		if($constituent == !MarkConstituent::FinalExam)
 		{
 			$updatedValues = [
 				'pam1 = ' . (float)$newPam1,
@@ -352,13 +356,13 @@ class GradecorrectionModel extends AdminModel {
 		$finalMark = ExamHelper::calculateFinalMark($newFinalExam, $examinee->anomaly, $examinee->attempt, $addValue, $admissionYear);
 		$moduleMark = ExamHelper::calculateModuleMark($examinee->learnerId, $newPam, $finalMark, $examinee->attempt, $admissionYear);
 		$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-		$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $examinee->anomaly, $examinee->attempt);
+		$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $examinee->anomaly, $examinee->attempt);
 		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
 		//7.3.2. Cập nhật điểm phúc khảo vào bảng #__eqa_exam_learner
 		$query = $db->getQuery(true)
 			->update('#__eqa_exam_learner')
-			->set($db->quoteName('ppaa') . '=' . ExamHelper::EXAM_PPAA_REVIEW)
+			->set($db->quoteName('ppaa') . '=' . PpaaType::Review->value)
 			->set($db->quoteName('mark_ppaa') . '=' . $newFinalExam)
 			->set($db->quoteName('mark_final') . '=' . $finalMark)
 			->set($db->quoteName('module_mark') . '=' . $moduleMark)
@@ -376,7 +380,7 @@ class GradecorrectionModel extends AdminModel {
 		if($examinee->conclusion == $conclusion->value)
 			return;
 
-		if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
+		if($conclusion == Conclusion::Passed || $conclusion == Conclusion::RetakeCourse)
 			$expired=1;
 		else
 			$expired=0;

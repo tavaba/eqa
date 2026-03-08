@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 /**
@@ -18,7 +19,7 @@ class MarkconstituentField extends ListField
     protected function getOptions()
     {
         $options = parent::getOptions();
-        foreach (ExamHelper::getMarkConstituents() as $code=>$text)
+        foreach (MarkConstituent::getOptions() as $code=>$text)
         {
             $options[] = HTMLHelper::_('select.option', $code, $text);
         }

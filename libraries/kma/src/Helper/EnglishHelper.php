@@ -133,8 +133,8 @@ abstract class EnglishHelper
         // Words ending in is (Greek)
         '/is$/i' => 'es',
 
-	    // Words ending in some consonants + on
-        '/([tns])on$/i' => '$1ons',
+	    // Words ending in 'ion' or in some consonants + 'on'
+        '/([itns])on$/i' => '$1ons',
 
 	    // Words ending in on (Greek)
         '/on$/i' => 'a',

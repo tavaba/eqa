@@ -5,7 +5,9 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseDriver;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -369,6 +371,20 @@ class ExamModel extends AdminModel{
 			return true;
 		}
 	}
+
+	/**
+	 * Hoãn thi cho một số thí sinh của một môn thi.
+	 * Những thí sinh đã có bất thường, hoặc không đủ điều kiện dự thi,
+	 * hoặc đang nợ học phí sẽ KHÔNG được hoãn thi và sẽ được thông báo rõ ràng.
+	 *
+	 * @param   int    $examId
+	 * @param   array  $examineeIds
+	 *
+	 * @return bool
+	 *
+	 * @throws Exception
+	 * @since 1.0.0
+	 */
 	public function delayExaminees(int $examId, array $examineeIds):bool
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -411,8 +427,8 @@ class ExamModel extends AdminModel{
 		$query = $db->getQuery(true)
 			->update('#__eqa_exam_learner')
 			->set([
-				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY,
-				'conclusion=' . Conclusion::Deferred->value
+				'anomaly=' . Anomaly::Deferred->value,
+				'conclusion=' . Conclusion::Postponed->value
 			])
 			->where([
 				'exam_id=' . $examId,
@@ -449,7 +465,7 @@ class ExamModel extends AdminModel{
 			->where([
 				'a.exam_id=' . $examId,
 				'a.learner_id IN ' . $examineeIdSet,
-				'a.anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY
+				'a.anomaly=' . Anomaly::Deferred->value,
 			]);
 		$db->setQuery($query);
 		$learners = $db->loadAssocList();
@@ -466,7 +482,7 @@ class ExamModel extends AdminModel{
 		$query = $db->getQuery(true)
 			->update('#__eqa_exam_learner')
 			->set([
-				'anomaly=' . ExamHelper::EXAM_ANOMALY_NONE,
+				'anomaly=' . Anomaly::None->value,
 				'conclusion=NULL'
 			])
 			->where([
@@ -529,10 +545,10 @@ class ExamModel extends AdminModel{
 
 		//Tính toán lại trạng thái môn thi
 		$status = $exam->status;
-		if($status == ExamHelper::EXAM_STATUS_PAM_BUT_QUESTION)
-			$status = ExamHelper::EXAM_STATUS_QUESTION_AND_PAM;
-		elseif($status < ExamHelper::EXAM_STATUS_QUESTION_AND_PAM)
-			$status = ExamHelper::EXAM_STATUS_QUESTION_BUT_PAM;
+		if($status == ExamStatus::PamPendingQuestion->value)
+			$status = ExamStatus::QuestionAndPamReady->value;
+		elseif($status < ExamStatus::QuestionAndPamReady->value)
+			$status = ExamStatus::QuestionPendingPam->value;
 
 		//Cập nhật thông tin đề thi và trạng thái môn thi
 		$query = $db->getQuery(true)
@@ -1692,7 +1708,18 @@ class ExamModel extends AdminModel{
 		return $db->execute();
 	}
 
-	public function setExamStatus(int $examId, int $status): bool
+	public function getExamStatus(int $examId): ExamStatus
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('status')
+			->from('#__eqa_exams')
+			->where('id=' . $examId);
+		$db->setQuery($query);
+		$statusValue = $db->loadResult();
+		return ExamStatus::from($statusValue);
+	}
+	public function setExamStatus(int $examId, ExamStatus $status): bool
 	{
 		if (DatabaseHelper::isCompletedExam($examId))
 			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể cập nhật trạng thái');
@@ -1700,7 +1727,7 @@ class ExamModel extends AdminModel{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$query = $db->getQuery(true)
 			->update('#__eqa_exams')
-			->set($db->quoteName('status') . '=' . $status)
+			->set($db->quoteName('status') . '=' . $status->value)
 			->where('id=' . $examId);
 		$db->setQuery($query);
 		return $db->execute();
@@ -1722,18 +1749,18 @@ class ExamModel extends AdminModel{
 	}
 	public function isWithSomeMarks(int $examId):bool
 	{
-		$db = DatabaseHelper::getDatabaseDriver();
-		$query = $db->getQuery(true)
-			->select('COUNT(*)')
-			->from('#__eqa_exam_learner')
-			->where([
-				'exam_id='.$examId,
-				'stimulation_id IS NULL',
-				'mark_orig IS NOT NULL'
-			])
+		$db = $this->getDatabase();
+
+		$inner = $db->getQuery(true)
+			->select('1')
+			->from($db->quoteName('#__eqa_exam_learner'))
+			->where($db->quoteName('exam_id') . ' = ' . $examId)
+			->where($db->quoteName('mark_orig') . ' IS NOT NULL')
 			->setLimit(1);
-		$db->setQuery($query);
-		return $db->loadResult()>0;
+
+		return (bool) $db->setQuery(
+			$db->getQuery(true)->select('IF(EXISTS(' . $inner . '), 1, 0)')
+		)->loadResult();
 	}
 	public function isWithAllMarks(int $examId):bool
 	{
@@ -1751,114 +1778,373 @@ class ExamModel extends AdminModel{
 		$db->setQuery($query);
 		return $db->loadResult()==0;
 	}
-	public function doConclusionForDebtorsOrAbsentOrBannedExaminees(int $examId):void
+	public function isWithAllConclusions(int $examId): bool
 	{
-		//Load current info
+		$db = $this->getDatabase();
+
+		$hasMissingConclusion = $db->getQuery(true)
+			->select('1')
+			->from($db->quoteName('#__eqa_exam_learner'))
+			->where($db->quoteName('exam_id') . ' = ' . $examId)
+			->where($db->quoteName('conclusion') . ' IS NULL')
+			->setLimit(1);
+
+		return !(bool) $db->setQuery(
+			$db->getQuery(true)->select('EXISTS(' . $hasMissingConclusion . ')')
+		)->loadResult();
+	}
+
+	/**
+	 * Tính toán điểm học phần và kết luận kết quả học phần cho tất cả thí sinh
+	 * của một môn thi. Method này có thể được gọi sau khi điểm thi đã được cập nhật
+	 * hoặc sau bất kỳ thay đổi nào liên quan đến thí sinh.
+	 *
+	 * Trình tự xử lý cho mỗi thí sinh:
+	 *  1. Không đủ điều kiện dự thi (cl.allowed = FALSE) → Ineligible
+	 *  2. Khuyến khích quy đổi điểm (TYPE_TRANS) → module_mark = st.value
+	 *  3. Khuyến khích miễn thi (TYPE_EXEMPT) → mark_final = st.value, tính module_mark
+	 *  4. Hoãn thi / Làm lại bài (Deferred/Retake) → Deferred, set NULL
+	 *  5. Chưa có điểm thi → bỏ qua
+	 *  6. Đã có điểm thi → tính toán đầy đủ
+	 *
+	 * @param   int   $examId                    ID của môn thi cần xử lý
+	 * @param   bool  $disciplineAlreadyApplied  Điểm thi đã bao gồm việc xử lý kỷ luật hay chưa
+	 *
+	 * @return ExamStatus
+	 * @throws Exception
+	 * @since 2.1.0
+	 */
+	public function conclude(int $examId, bool $disciplineAlreadyApplied): ExamStatus
+	{
 		$db = DatabaseHelper::getDatabaseDriver();
-		$columns=[
-			'a.class_id AS classId',
-			'a.learner_id AS learnerId',
-			'a.anomaly AS anomaly',
-			'a.attempt AS attempt',
-			'b.pam AS pam',
-			'c.subject_id AS subjectId'
+
+		// Lấy toàn bộ thí sinh của môn thi, kèm thông tin cần thiết để tính toán
+		$columns = [
+			$db->quoteName('el.learner_id',       'learnerId'),
+			$db->quoteName('el.class_id',         'classId'),
+			$db->quoteName('el.attempt',          'attempt'),
+			$db->quoteName('el.anomaly',          'anomaly'),
+			$db->quoteName('el.mark_orig',        'markOrig'),
+			$db->quoteName('el.mark_ppaa',        'markPpaa'),
+			$db->quoteName('cl.pam',              'pam'),
+			$db->quoteName('cl.allowed',          'allowed'),
+			$db->quoteName('cl.ntaken',           'ntaken'),
+			$db->quoteName('c.subject_id',        'subjectId'),
+			$db->quoteName('cs.admissionyear',    'admissionYear'),
+			$db->quoteName('st.id',               'stimulationId'),
+			$db->quoteName('st.type',             'stimulationType'),
+			$db->quoteName('st.value',            'stimulationValue'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
-			->leftJoin('#__eqa_classes AS c', 'c.id=b.class_id')
-			->where([
-				'a.exam_id='.$examId,
-				'(a.debtor=1 OR a.anomaly=' . ExamHelper::EXAM_ANOMALY_ABSENT.' OR a.anomaly=' . ExamHelper::EXAM_ANOMALY_BAN.')',
-				'b.allowed=1'
-			]);
+			->from($db->quoteName('#__eqa_exam_learner', 'el'))
+			->leftJoin(
+				$db->quoteName('#__eqa_class_learner', 'cl'),
+				'cl.class_id = el.class_id AND cl.learner_id = el.learner_id'
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_classes', 'c'),
+				'c.id = el.class_id'
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'l'),
+				'l.id = el.learner_id'
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_groups', 'g'),
+				'g.id = l.group_id'
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_courses', 'cs'),
+				'cs.id = g.course_id'
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_stimulations', 'st'),
+				'st.id = el.stimulation_id'
+			)
+			->where($db->quoteName('el.exam_id') . ' = ' . (int) $examId);
 		$db->setQuery($query);
 		$examinees = $db->loadObjectList();
 
-		//Update info
-		foreach ($examinees as $examinee)
-		{
-			$classId = $examinee->classId;
-			$learnerId = $examinee->learnerId;
-			$pam       = $examinee->pam;
-			$subjectId = $examinee->subjectId;
-			$attempt   = $examinee->attempt;
-			$anomaly   = $examinee->anomaly;
-			$markOrig = 0;
-			$markFinal = 0;
-			$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt,0);
-			$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-			$conclusion = ExamHelper::conclude($moduleMark, $markFinal, $anomaly, $attempt);
-			$moduleGrade= ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+		if (empty($examinees)) {
+			return $this->getExamStatus($examId);
+		}
 
-			//1. Update marks and conclusion
-			$query = $db->getQuery(true)
-				->update('#__eqa_exam_learner')
-				->set([
-					'mark_orig=' . $markOrig,
-					'mark_final=' . $markFinal,
-					'module_mark=' . $moduleMark,
-					'module_base4_mark=' . $moduleBase4Mark,
-					'module_grade='. $db->quote($moduleGrade),
-					'conclusion='.$conclusion->value
-				])
-				->where([
-					'exam_id='.$examId,
-					'learner_id='.$learnerId
+		$db->transactionStart();
+		try {
+			foreach ($examinees as $examinee) {
+				$learnerId       = (int) $examinee->learnerId;
+				$classId         = (int) $examinee->classId;
+				$attempt         = (int) $examinee->attempt;
+				$anomaly         = (int) $examinee->anomaly;
+				$subjectId       = (int) $examinee->subjectId;
+				$admissionYear   = (int) ($examinee->admissionYear ?? 0);
+				$pam             = (float) ($examinee->pam ?? 0.0);
+				$ntaken          = (int) $examinee->ntaken;
+				$markOrig        = $examinee->markOrig;   // có thể NULL
+				$markPpaa        = $examinee->markPpaa;   // có thể NULL
+				$stimulationId   = $examinee->stimulationId;
+				$stimulationType = (int) ($examinee->stimulationType ?? StimulationHelper::TYPE_NONE);
+				$stimulationValue = (float) ($examinee->stimulationValue ?? 0.0);
+				$allowed         = (bool) $examinee->allowed;
+
+				// ----------------------------------------------------------------
+				// BƯỚC 1: Không đủ điều kiện dự thi
+				// ----------------------------------------------------------------
+				if (!$allowed) {
+					$this->updateExamLearnerConclusion(
+						$db, $examId, $learnerId,
+						elUpdates: ['conclusion' => Conclusion::Ineligible->value]
+					);
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, expired: true);
+					continue;
+				}
+
+				// ----------------------------------------------------------------
+				// BƯỚC 2: Khuyến khích quy đổi điểm (TYPE_TRANS)
+				// ----------------------------------------------------------------
+				if ($stimulationId !== null && $stimulationType === StimulationHelper::TYPE_TRANS) {
+					$moduleMark      = $stimulationValue;
+					$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
+					$conclusion      = ExamHelper::calculateConclusion($moduleMark, $stimulationValue, $anomaly, $attempt);
+					$moduleGrade     = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+
+					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
+						'mark_orig'        => $stimulationValue,
+						'mark_final'       => $stimulationValue,
+						'module_mark'      => $moduleMark,
+						'module_base4_mark'=> $moduleBase4Mark,
+						'module_grade'     => $db->quote($moduleGrade),
+						'conclusion'       => $conclusion->value,
+					]);
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, expired: true);
+					$this->markStimulationUsed($db, (int) $stimulationId);
+					continue;
+				}
+
+				// ----------------------------------------------------------------
+				// BƯỚC 3: Khuyến khích miễn thi (TYPE_EXEMPT)
+				// ----------------------------------------------------------------
+				if ($stimulationId !== null && $stimulationType === StimulationHelper::TYPE_EXEMPT) {
+					$markFinal       = $stimulationValue;
+					$moduleMark      = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt, $admissionYear);
+					$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
+					$conclusion      = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt);
+					$moduleGrade     = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+
+					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
+						'mark_orig'         => $stimulationValue,
+						'mark_final'        => $markFinal,
+						'module_mark'       => $moduleMark,
+						'module_base4_mark' => $moduleBase4Mark,
+						'module_grade'      => $db->quote($moduleGrade),
+						'conclusion'        => $conclusion->value,
+					]);
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, expired: true);
+					$this->markStimulationUsed($db, (int) $stimulationId);
+					continue;
+				}
+
+				// ----------------------------------------------------------------
+				// BƯỚC 4: Hoãn thi (DELAY) hoặc làm lại bài (REDO)
+				// ----------------------------------------------------------------
+				if (in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true)) {
+					// conclude() với mark = 0 sẽ trả về Conclusion::Deferred
+					$conclusion  = ExamHelper::calculateConclusion(0, 0, $anomaly, $attempt);
+					$moduleGrade = ExamHelper::calculateModuleGrade(0, $conclusion);
+
+					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
+						'mark_orig'         => 'NULL',
+						'mark_final'        => 'NULL',
+						'module_mark'       => 'NULL',
+						'module_base4_mark' => 'NULL',
+						'module_grade'      => $db->quote($moduleGrade),
+						'conclusion'        => $conclusion->value,
+					]);
+					// Không cập nhật ntaken, không set expired
+					continue;
+				}
+
+				// ----------------------------------------------------------------
+				// BƯỚC 5: Chưa có điểm thi → bỏ qua
+				// ----------------------------------------------------------------
+				if ($markOrig === null) {
+					continue;
+				}
+
+				// ----------------------------------------------------------------
+				// BƯỚC 6: Đã có điểm thi – trường hợp thông thường
+				// ----------------------------------------------------------------
+
+				// 6.1. Xác định điểm cộng khuyến khích (nếu có)
+				$addValue = ($stimulationId !== null && $stimulationType === StimulationHelper::TYPE_ADD)
+					? $stimulationValue
+					: 0.0;
+
+				// 6.2. Nếu điểm thi đã bao gồm xử lý kỷ luật (trừ 25%/50%) từ trước,
+				//      đặt lại $anomaly = NONE để calculateFinalMark() không trừ thêm lần nữa.
+				//      Lưu ý: giữ nguyên $anomaly gốc cho ExamHelper::conclude() ở bước sau
+				//      để kết luận vẫn phản ánh đúng tình trạng kỷ luật của thí sinh.
+				$anomalyForCalculationFinalMark = $anomaly;
+				if ($disciplineAlreadyApplied
+					&& in_array($anomaly, [Anomaly::Penalized25->value, Anomaly::Penalized50->value], true)
+				) {
+					$anomalyForCalculationFinalMark = Anomaly::None->value;
+				}
+
+				// 6.3. Tính toán các điểm số
+				$examMark        = ($markPpaa !== null) ? (float) $markPpaa : (float) $markOrig;
+				$markFinal       = ExamHelper::calculateFinalMark($examMark, $anomalyForCalculationFinalMark, $attempt, $addValue, $admissionYear);
+				$moduleMark      = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt, $admissionYear);
+				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
+				$conclusion      = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt);
+				$moduleGrade     = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+
+				// 6.4. Cập nhật #__eqa_exam_learner
+				$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
+					'mark_final'        => $markFinal,
+					'module_mark'       => $moduleMark,
+					'module_base4_mark' => $moduleBase4Mark,
+					'module_grade'      => $db->quote($moduleGrade),
+					'conclusion'        => $conclusion->value,
 				]);
-			$db->setQuery($query);
-			if (!$db->execute()) {
-				throw new Exception('Lỗi cập nhật thông tin môn thi cho các thí sinh nợ phí');
+
+				// 6.5. Cập nhật #__eqa_class_learner (ntaken, expired)
+				$expired   = in_array($conclusion, [Conclusion::Passed, Conclusion::RetakeCourse], true) ? 1 : 0;
+				$newNtaken = (!in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true))
+					? $attempt
+					: $ntaken;
+				$query = $db->getQuery(true)
+					->update($db->quoteName('#__eqa_class_learner'))
+					->set([
+						$db->quoteName('ntaken')  . ' = ' . $newNtaken,
+						$db->quoteName('expired') . ' = ' . $expired,
+					])
+					->where($db->quoteName('class_id')   . ' = ' . $classId)
+					->where($db->quoteName('learner_id') . ' = ' . $learnerId);
+				$db->setQuery($query);
+				if (!$db->execute()) {
+					throw new Exception(
+						sprintf('Lỗi cập nhật lớp học phần cho người học id=%d', $learnerId)
+					);
+				}
+
+				// 6.6. Ghi nhận khuyến khích cộng điểm đã được sử dụng (nếu có và đạt)
+				if ($stimulationId !== null
+					&& $stimulationType === StimulationHelper::TYPE_ADD
+					&& $conclusion === Conclusion::Passed
+				) {
+					$this->markStimulationUsed($db, (int) $stimulationId);
+				}
+			} // end foreach
+
+
+			$status = null;
+			if ($this->isWithAllConclusions($examId)) {
+				//Nếu tất cả thí sinh đều đã có kết luận thì tự động cập nhật
+				// trạng thái môn thi thành 'Tất cả đã có kết luận'
+				$status = ExamStatus::AllConcluded;
+				$this->setExamStatus($examId, ExamStatus::AllConcluded);
+			}
+			else if($this->isWithSomeMarks($examId)) {
+				// Nếu có ít nhất 1 thí sinh đã có điểm thi (mark_orig)
+				// thì cập nhật trạng thái thành 'Đã có một phần điểm thi'
+				$status = ExamStatus::MarkPartial;
+				$this->setExamStatus($examId, ExamStatus::MarkPartial);
 			}
 
-			//2. Update status in class_learner table
-			$expired = $conclusion == Conclusion::FailedAndExpired ? 1 : 0;
-			$query = $db->getQuery(true)
-				->update('#__eqa_class_learner')
-				->set([
-					'ntaken=' . $attempt,
-					'expired=' . $expired
-				])
-				->where([
-					'class_id='.$classId,
-					'learner_id='.$learnerId
-				]);
-			$db->setQuery($query);
-			if (!$db->execute()) {
-				throw new Exception('Lỗi cập nhật thông tin lớp học phần cho các thí sinh nợ phí');
-			}
+			//Commit and return the final status of the exam after conclusion
+			$db->transactionCommit();
+			if($status === null)
+				$status = $this->getExamStatus($examId);
+			return $status;
+		} catch (Exception $e) {
+			$db->transactionRollback();
+			throw $e;
 		}
 	}
-	public function doConclusionForDeferredExaminees(int $examId):void
-	{
-		$db = DatabaseHelper::getDatabaseDriver();
+
+	/**
+	 * Cập nhật các cột kết quả trong #__eqa_exam_learner cho một thí sinh.
+	 *
+	 * @param DatabaseDriver $db
+	 * @param int            $examId
+	 * @param int            $learnerId
+	 * @param array          $elUpdates  Mảng cặp 'tên_cột' => giá_trị (giá trị đã được escape/quote sẵn nếu cần)
+	 *
+	 * @throws Exception
+	 * @since 2.0.4
+	 */
+	private function updateExamLearnerConclusion($db, int $examId, int $learnerId, array $elUpdates): void {
+		$sets = [];
+		foreach ($elUpdates as $col => $val) {
+			// Giá trị NULL, số, hoặc chuỗi đã quote → gán trực tiếp
+			$sets[] = $db->quoteName($col) . ' = ' . $val;
+		}
+
 		$query = $db->getQuery(true)
-			->update('#__eqa_exam_learner')
-			->set([
-				'mark_orig=NULL',
-				'mark_final=NULL',
-				'module_mark=NULL',
-				'module_base4_mark=NULL',
-				'module_grade=' . $db->quote('I'),
-				'conclusion=' . Conclusion::Deferred->value
-			])
-			->where([
-				'exam_id='.$examId,
-				'anomaly=' . ExamHelper::EXAM_ANOMALY_DELAY
-			]);
+			->update($db->quoteName('#__eqa_exam_learner'))
+			->set($sets)
+			->where($db->quoteName('exam_id')    . ' = ' . (int) $examId)
+			->where($db->quoteName('learner_id') . ' = ' . (int) $learnerId);
 		$db->setQuery($query);
+
 		if (!$db->execute()) {
-			throw new Exception('Lỗi cập nhật thông tin môn thi cho các thí sinh hoãn thi');
+			throw new Exception(
+				sprintf('Lỗi cập nhật kết quả môn thi cho người học id=%d', $learnerId)
+			);
 		}
 	}
 
-	public function conclude(int $examId):void
+	/**
+	 * Cập nhật trạng thái expired trong #__eqa_class_learner.
+	 *
+	 * @param DatabaseDriver $db
+	 * @param int            $classId
+	 * @param int            $learnerId
+	 * @param bool           $expired
+	 *
+	 * @throws Exception
+	 * @since 2.0.4
+	 */
+	private function updateClassLearnerExpired($db, int $classId, int $learnerId, bool $expired): void
 	{
-		//TODO: Implement conclude() method.
-		//This method should/can be call after marks have been updated
-		//or any changes are made to the examinees
-		//Lưu ý trường hợp chưa có điểm thì chưa thể kết luận.
+		$query = $db->getQuery(true)
+			->update($db->quoteName('#__eqa_class_learner'))
+			->set($db->quoteName('expired') . ' = ' . (int) $expired)
+			->where($db->quoteName('class_id')   . ' = ' . $classId)
+			->where($db->quoteName('learner_id') . ' = ' . $learnerId);
+		$db->setQuery($query);
+
+		if (!$db->execute()) {
+			throw new Exception(
+				sprintf('Lỗi cập nhật trạng thái expired cho người học id=%d', $learnerId)
+			);
+		}
+	}
+
+	/**
+	 * Đánh dấu một mục khuyến khích đã được sử dụng.
+	 *
+	 * @param DatabaseDriver $db
+	 * @param int            $stimulationId
+	 *
+	 * @throws Exception
+	 * @since 2.0.4
+	 */
+	private function markStimulationUsed($db, int $stimulationId): void
+	{
+		$query = $db->getQuery(true)
+			->update($db->quoteName('#__eqa_stimulations'))
+			->set($db->quoteName('used') . ' = 1')
+			->where($db->quoteName('id') . ' = ' . $stimulationId);
+		$db->setQuery($query);
+
+		if (!$db->execute()) {
+			throw new Exception(
+				sprintf('Lỗi cập nhật trạng thái sử dụng khuyến khích id=%d', $stimulationId)
+			);
+		}
 	}
 
 	/**
@@ -1871,10 +2157,123 @@ class ExamModel extends AdminModel{
 	 *
 	 * @return bool
 	 *
-	 * @throws Exception
-	 * @since version
+	 * @since 1.0.0
 	 */
 	public function importitest(int $examId, array $examinees): bool
+	{
+		/* Logic of thí function:
+		 * 1. Đọc từ CSDL thông tin thí sinh của môn thi $examId
+		 * 2. Kiểm tra, đảm bảo rằng tất cả thí sinh có trong $examinees đều có trong CSDL môn thi
+		 *    (trùng khớp cặp thuộc tính 'code' và 'learnerCode'). Nếu không trùng khớp thì báo lỗi
+		 *   và thoát.
+		 * 3. Với mỗi thí sinh trong $examinees, tiến hành cập nhật điểm theo quy tắc sau:
+		 */
+
+
+		try
+		{
+			//Init
+			$app = Factory::getApplication();
+			$db = DatabaseHelper::getDatabaseDriver();
+
+
+			//1. Đọc từ CSDL thông tin thí sinh của môn thi $examId
+			$columns = $db->quoteName(
+				array('a.code', 'b.code'),
+				array('code',   'learner_code')
+			);
+			$query = $db->getQuery(true)
+				->select($columns)
+				->from('#__eqa_exam_learner AS a')
+				->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+				->where('a.exam_id=' . $examId);
+			$db->setQuery($query);
+			$items = $db->loadAssocList('learner_code','code');
+
+			//2. Kiểm tra, đảm bảo rằng tất cả thí sinh có trong $examinees đều có trong CSDL môn thi
+			//   (trùng khớp cặp thuộc tính 'code' và 'learnerCode'). Nếu không trùng khớp thì báo lỗi
+			//   và thoát.
+			foreach ($examinees as $examinee)
+			{
+				if (!isset($items[$examinee->learnerCode]))
+				{
+					$msg = Text::sprintf('Không tìm thấy thông tin thí sinh <b>%s</b> trong CSDL môn thi', $examinee->learnerCode);
+					throw new Exception($msg);
+				}
+				if ($items[$examinee->learnerCode] != $examinee->code)
+				{
+					$msg = Text::sprintf('Thông tin thí sinh <b>%s</b> không khớp với CSDL môn thi', $examinee->learnerCode);
+					throw new Exception($msg);
+				}
+			}
+
+			//3. Tải bảng tra cứu learnerCode → learner_id cho môn thi này
+			$query = $db->getQuery(true)
+				->select($db->quoteName(['el.learner_id', 'l.code'], ['learner_id', 'learner_code']))
+				->from($db->quoteName('#__eqa_exam_learner', 'el'))
+				->leftJoin(
+					$db->quoteName('#__eqa_learners', 'l'),
+					$db->quoteName('l.id') . ' = ' . $db->quoteName('el.learner_id')
+				)
+				->where($db->quoteName('el.exam_id') . ' = ' . $examId);
+			$db->setQuery($query);
+			$lookup = $db->loadAssocList('learner_code', 'learner_id');
+
+			//Start transaction
+			$db->transactionStart();
+
+			//4. Với mỗi thí sinh trong $examinees, tiến hành cập nhật điểm
+			foreach ($examinees as $examinee) {
+				$learnerCode = $examinee->learnerCode;
+
+				if (!isset($lookup[$learnerCode])) {
+					throw new Exception(
+						sprintf('Không tìm thấy thí sinh <b>%s</b> trong môn thi', htmlspecialchars($learnerCode))
+					);
+				}
+
+				$learnerId  = (int) $lookup[$learnerCode];
+				$descValue  = empty($examinee->description)
+					? 'NULL'
+					: $db->quote($examinee->description);
+
+				$query = $db->getQuery(true)
+					->update($db->quoteName('#__eqa_exam_learner'))
+					->set($db->quoteName('mark_orig') . ' = ' . (float) $examinee->mark)
+					->set($db->quoteName('description') . ' = ' . $descValue)
+					->where($db->quoteName('exam_id') . ' = ' . $examId)
+					->where($db->quoteName('learner_id') . ' = ' . $learnerId);
+				$db->setQuery($query);
+
+				if (!$db->execute()) {
+					throw new Exception(
+						sprintf('Lỗi ghi điểm cho thí sinh <b>%s</b>', htmlspecialchars($learnerCode))
+					);
+				}
+			}
+
+			//5. Sau khi cập nhật điểm cho tất cả thí sinh,
+			// tiến hành tính toán kết quả học phần và kết luận cho từng thí sinh
+			// Lưu ý rằng điểm thi của thí sinh đã bao gồm việc xử lý kỷ luật (nếu có)
+			// từ trước, nên khi conclude() sẽ không trừ thêm lần nữa.
+			$this->conclude($examId, true);
+
+			//Commit on success
+			$db->transactionCommit();
+		}
+		catch (Exception $e)
+		{
+			$db->transactionRollback();
+			$msg = $e->getMessage();
+			$app->enqueueMessage($msg, 'error');
+			return false;
+		}
+
+		$msg = Text::sprintf('Nhập điểm thành công %d thí sinh', sizeof($examinees));
+		$app->enqueueMessage($msg, 'success');
+		return true;
+	}
+	public function importitest_bak(int $examId, array $examinees): bool
 	{
 		/* Logic of thí function:
 		 * 1. Đọc từ CSDL thông tin thí sinh của môn thi $examId
@@ -1924,10 +2323,23 @@ class ExamModel extends AdminModel{
 			}
 
 			//3. Với mỗi thí sinh trong $examinees, tiến hành cập nhật điểm
-			foreach ($examinees as $examinee){
+			// Cụ thể, có 2 trường được cập nhật: mark_orig và description
+			foreach ($examinees as $examinee)
+			{
 				$learnerCode = $examinee->learnerCode;
 				$mark = $examinee->mark;
 				$description = $examinee->description;
+
+				$query = $db->getQuery(true)
+					->update('#__eqa_exam_learner AS a')
+					->join('#__eqa_learners AS b ON b.id=a.learner_id')
+					->set([
+						'mark_orig = ' . $mark,
+						'description = ' . $db->quote($description)
+					])
+					->where('a.exam_id=' . $examId . ' AND b.code=' . $db->quote($learnerCode));
+				$db->setQuery($query);
+
 				/**
 				 * Việc import gồm một số bước
 				 *  - Ghi điểm $mark vào bảng #__eqa_exam_learner (cột 'mark_orig')
@@ -1973,10 +2385,10 @@ class ExamModel extends AdminModel{
 				//Vì là môn thi iTest nên việc trừ điểm kỷ (nếu có) đã được thực hiện từ trước
 				//Do đó, $finalMark ở đây sẽ luôn đợc tính với EXAM_ANOMALY_NONE
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
-				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue, $admissionYear);
+				$finalMark = ExamHelper::calculateFinalMark($mark, Anomaly::None->value, $attempt, $addValue, $admissionYear);
 				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt,$admissionYear);
 				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
+				$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				if(empty($description))
 					$description = 'NULL';
@@ -2002,10 +2414,10 @@ class ExamModel extends AdminModel{
 				}
 
 				//c) Cập nhật số lượt thi, điều kiện tiếp tục dự thi
-				if(!in_array($anomaly, [ExamHelper::EXAM_ANOMALY_DELAY, ExamHelper::EXAM_ANOMALY_REDO]))
+				if(!in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value]))
 					$ntaken = $attempt;
 				$expired = 0;
-				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
+				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::RetakeCourse)
 					$expired=1;
 				$query = $db->getQuery(true)
 					->update('#__eqa_class_learner')

@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -70,9 +71,9 @@ class HtmlView extends ItemsHtmlView
                     $item->usetestbank = Text::_('JNO');
 
                 //3. Trạng thái môn thi
-	            if($item->status >= ExamHelper::EXAM_STATUS_MARK_FULL)
+	            if($item->status >= ExamStatus::MarkFull->value)
 		            $item->optionRowCssClass='table-success';
-	            $item->status = ExamHelper::ExamStatus($item->status);
+	            $item->status = ExamStatus::from($item->status)->getLabel();
 
                 //4. 'description' = 'description' + many else
             }

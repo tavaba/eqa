@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -115,9 +116,9 @@ class GradecorrectionController extends  FormController {
 				throw new Exception('Không tìm thấy yêu cầu đính chính');
 			$learner = implode(' ', [$request->learnerLastname, $request->learnerFirstname]) . ' (' . $request->learnerCode . ')';
 
-			if($request->status == ExamHelper::EXAM_PPAA_STATUS_INIT)
+			if($request->status == PpaaStatus::Init->value)
 				throw new Exception('Yêu cầu đính chính của <b>'. htmlspecialchars($learner).'</b> chưa được phê duyệt');
-			if($request->status == ExamHelper::EXAM_PPAA_STATUS_REJECTED)
+			if($request->status == PpaaStatus::Rejected->value)
 				throw new Exception('Yêu cầu đính chính của <b>'. htmlspecialchars($learner).'</b> đã bị từ chối');
 
 			//5. Create document

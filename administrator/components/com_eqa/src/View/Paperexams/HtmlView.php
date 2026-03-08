@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Paperexams;    //The namespace mu
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -61,7 +62,7 @@ class HtmlView extends ItemsHtmlView
 					$item->optionRowCssClass='table-success';
 
 				//2. Status
-	            $item->status = ExamHelper::ExamStatus($item->status);
+	            $item->status = ExamStatus::from($item->status)->getLabel();
 
                 //4. 'description' = 'description' + many else
             }

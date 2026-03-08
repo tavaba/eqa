@@ -7,6 +7,8 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Enum\PpaaType;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -58,10 +60,10 @@ class RegradingsController extends AdminController {
 
 			//2. Prepare data for saving
 			$userId = $this->app->getIdentity()->id;
-			$status = $accepted ? ExamHelper::EXAM_PPAA_STATUS_ACCEPTED : ExamHelper::EXAM_PPAA_STATUS_INIT;
+			$status = $accepted ? PpaaStatus::Accepted : PpaaStatus::Init;
 			$data = [
 				'exam_id'=>$examId,
-				'status' => $status,
+				'status' => $status->value,
 				'requested_by'=>$userId,
 				'requested_at'=>date('Y-m-d H:i:s'),
 			];
@@ -92,7 +94,7 @@ class RegradingsController extends AdminController {
 				$regradingModel->save($data);
 
 				//Update 'ppaa' info in the #__eqa_exam_learner table
-				if(!$examModel->updateExamineePpaa($examId, $learnerId, ExamHelper::EXAM_PPAA_REVIEW))
+				if(!$examModel->updateExamineePpaa($examId, $learnerId, PpaaType::Review->value))
 				{
 					$msg = htmlspecialchars($examModel->getError());
 					throw new Exception($msg);

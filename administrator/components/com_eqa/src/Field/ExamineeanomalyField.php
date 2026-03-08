@@ -4,16 +4,18 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 class ExamineeanomalyField extends ListField
 {
     protected $type = 'examineeanomaly';
+	static protected ?string $htmlElement=null;
 	static protected $options;
 	static protected function initOptions()
     {
 	    $options = [];
-	    foreach (ExamHelper::getAnomalies() as $code=>$text)
+	    foreach (Anomaly::getOptions() as $code=>$text)
 	    {
 		    $options[] = HTMLHelper::_('select.option', $code, $text);
 	    }
@@ -28,6 +30,10 @@ class ExamineeanomalyField extends ListField
 	}
 	static public function getElementHtml(string $name, int|null $selectedValue=null, string $prompt='', string $class='select2-basic'): string
 	{
+		//If the element is already rendered, return it
+		if(self::$htmlElement !== null)
+			return self::$htmlElement;
+
 		//Init groups if needed
 		if(empty(self::$options))
 			self::initOptions();
@@ -50,6 +56,7 @@ class ExamineeanomalyField extends ListField
 		//Closing tag
 		$html .= "</select>";
 
-		return $html;
+		self::$htmlElement = $html;
+		return self::$htmlElement;
 	}
 }

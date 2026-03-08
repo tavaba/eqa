@@ -8,6 +8,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
@@ -75,7 +76,7 @@ class HtmlView extends ItemsHtmlView
         parent::prepareDataForLayoutDefault();
 
         // Nạp số liệu thống kê
-        /** @var \Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel $model */
+        /** @var SecondAttemptsModel $model */
         $model            = $this->getModel();
         $this->statistics = $model->getStatistics();
 
@@ -86,7 +87,10 @@ class HtmlView extends ItemsHtmlView
 	            $item->is_debtor_label = $item->is_debtor ? '<span class="badge bg-danger">Có</span>' : '<span class="badge bg-success">Không</span>';
 
 				//Nhãn "Bất thường" từ Enum
-	            $item->last_anomaly_label = $item->last_anomaly==ExamHelper::EXAM_ANOMALY_NONE ? '' : ExamHelper::getAnomaly($item->last_anomaly);
+	            $item->last_anomaly_label =
+		            $item->last_anomaly==Anomaly::None->value
+			            ? ''
+			            : Anomaly::from($item->last_anomaly)->getLabel();
 
                 // Nhãn kết luận từ Enum
                 $conclusion             = Conclusion::from((int) $item->last_conclusion);

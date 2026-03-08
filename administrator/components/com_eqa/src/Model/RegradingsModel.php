@@ -4,6 +4,8 @@ use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Enum\PpaaType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -137,7 +139,7 @@ class RegradingsModel extends ListModel
 			$examseasonId = DatabaseHelper::getDefaultExamseason()->id;
 		$query->where('d.examseason_id='.$examseasonId);
 		if ($onlyAccepted)
-			$query->where('a.status='.ExamHelper::EXAM_PPAA_STATUS_ACCEPTED);
+			$query->where('a.status='.PpaaStatus::Accepted->value);
 
 		//3. Execute
 		$db->setQuery($query);
@@ -268,7 +270,7 @@ class RegradingsModel extends ListModel
 			->where('b.examseason_id='.$examseasonId)
 			->where('b.testtype='.TestType::Paper->value);
 		if($onlyAccepted)
-			$query->where('a.status=' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED);
+			$query->where('a.status=' . PpaaStatus::Accepted->value);
 		$db->setQuery($query);
 		$items = $db->loadObjectList();
 		if(empty($items)) return []; //Không có gì để trả
@@ -309,7 +311,7 @@ class RegradingsModel extends ListModel
 			->where('b.examseason_id='.$examseasonId)
 			->where('b.testtype='.TestType::MachineHybrid->value);
 		if($onlyAccepted)
-			$query->where('a.status=' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED);
+			$query->where('a.status=' . PpaaStatus::Accepted->value);
 		$db->setQuery($query);
 		$items = $db->loadObjectList();
 		if(empty($items)) return []; //Không có gì để trả
@@ -357,8 +359,8 @@ class RegradingsModel extends ListModel
 			->leftJoin('#__eqa_exams AS b', 'b.id = a.exam_id')
 			->where([
 				'b.examseason_id=' . $examseasonId,
-				'a.status<>' . ExamHelper::EXAM_PPAA_STATUS_INIT,
-				'a.status<>' . ExamHelper::EXAM_PPAA_STATUS_REJECTED
+				'a.status<>' . PpaaStatus::Init->value,
+				'a.status<>' . PpaaStatus::Rejected->value
 			]);
 		$db->setQuery($query);
 		$items = $db->loadObjectList();
@@ -449,8 +451,8 @@ class RegradingsModel extends ListModel
 				$query->set('examiner2_id=' . (int)$examiners['examiner2_id']);
 			$query->where([
 				'exam_id=' . $examId,
-				'status<>' . ExamHelper::EXAM_PPAA_STATUS_INIT,
-				'status<>' . ExamHelper::EXAM_PPAA_STATUS_REJECTED
+				'status<>' . PpaaStatus::Init->value,
+				'status<>' . PpaaStatus::Rejected->value
 			]);
 			$db->setQuery($query)->execute();
 		}
@@ -477,8 +479,8 @@ class RegradingsModel extends ListModel
 			->from('#__eqa_regradings AS a')
 			->leftJoin('#__eqa_exams AS b', 'b.id=a.exam_id')
 			->where('b.examseason_id=' . $examseasonId)
-			->where('a.status<>'.ExamHelper::EXAM_PPAA_STATUS_INIT)
-			->where('a.status<>'.ExamHelper::EXAM_PPAA_STATUS_REJECTED)
+			->where('a.status<>'.PpaaStatus::Init->value)
+			->where('a.status<>'.PpaaStatus::Rejected->value)
 			->where('(a.examiner1_id IS NULL OR a.examiner2_id IS NULL)')
 			->setLimit(1);
 		$db->setQuery($query);
@@ -513,7 +515,7 @@ class RegradingsModel extends ListModel
 		$query = $db->getQuery(true)
 			->update('#__eqa_regradings')
 			->set($db->quoteName('result') . '=' . $newMark)
-			->set($db->quoteName('status') . '=' . ExamHelper::EXAM_PPAA_STATUS_DONE)
+			->set($db->quoteName('status') . '=' . PpaaStatus::Done->value)
 			->where('exam_id=' . $examId)
 			->where('learner_id=' . $learnerId);
 		if(!empty($changeDescription))
@@ -527,7 +529,7 @@ class RegradingsModel extends ListModel
 		{
 			$db->getQuery(true)
 				->update('#__eqa_exam_learner')
-				->set($db->quoteName('ppaa') . '=' . ExamHelper::EXAM_PPAA_REVIEW)
+				->set($db->quoteName('ppaa') . '=' . PpaaType::Review->value)
 				->set($db->quoteName('mark_ppaa') . '=' . $newMark)
 				->where('exam_id=' . $examId)
 				->where('learner_id=' . $learnerId);
@@ -541,13 +543,13 @@ class RegradingsModel extends ListModel
 		$finalMark = ExamHelper::calculateFinalMark($newMark, $anomaly, $attempt, $addValue, $admissionYear);
 		$moduleMark = ExamHelper::calculateModuleMark($learnerId, $pam, $finalMark, $attempt, $admissionYear);
 		$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-		$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
+		$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $anomaly, $attempt);
 		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
 		//4.2. Cập nhật điểm phúc khảo vào bảng #__eqa_exam_learner
 		$query = $db->getQuery(true)
 			->update('#__eqa_exam_learner')
-			->set($db->quoteName('ppaa') . '=' . ExamHelper::EXAM_PPAA_REVIEW)
+			->set($db->quoteName('ppaa') . '=' . PpaaType::Review->value)
 			->set($db->quoteName('mark_ppaa') . '=' . $newMark)
 			->set($db->quoteName('mark_final') . '=' . $finalMark)
 			->set($db->quoteName('module_mark') . '=' . $moduleMark)
@@ -565,7 +567,7 @@ class RegradingsModel extends ListModel
 		if($oldConclusion == $conclusion->value)
 			return;
 
-		if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
+		if($conclusion == Conclusion::Passed || $conclusion == Conclusion::RetakeCourse)
 			$expired=1;
 		else
 			$expired=0;
@@ -666,7 +668,7 @@ class RegradingsModel extends ListModel
 			->leftJoin('#__eqa_classes AS d', 'd.id=b.class_id')
 			->leftJoin('#__eqa_class_learner AS e', 'e.class_id=d.id AND e.learner_id=a.learner_id')
 			->leftJoin('#__eqa_learners AS f', 'f.id=a.learner_id')
-			->where('a.exam_id=' . $examId. ' AND a.status IN (' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED . ',' . ExamHelper::EXAM_PPAA_STATUS_DONE . ')');
+			->where('a.exam_id=' . $examId. ' AND a.status IN (' . PpaaStatus::Accepted->value . ',' . PpaaStatus::Done->value . ')');
 		$db->setQuery($query);
 		$examinees = $db->loadObjectList('learnerCode'); //Mảng kết hợp, key là learnerCode
 		if(empty($examinees))

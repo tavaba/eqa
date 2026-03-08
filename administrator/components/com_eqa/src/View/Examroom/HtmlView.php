@@ -123,7 +123,7 @@ class HtmlView extends ItemHtmlView {
         //Determine the exam id and get the exam
         $examroomId = $app->input->getInt('examroom_id');
         $this->examroom = DatabaseHelper::getExamroomInfo($examroomId);
-	    $this->form = FormHelper::getBackendForm('com_eqa.addexamroomexaminees','addexamroomexaminees.xml');
+	    $this->form = FormHelper::getBackendForm('com_eqa.addexamroomexaminees','addexamroomexaminees.xml', []);
     }
     protected function addToolbarForLayoutAddexaminees() : void
     {

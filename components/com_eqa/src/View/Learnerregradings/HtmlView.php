@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Factory;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -72,15 +73,16 @@ class HtmlView extends ItemsHtmlView
 			if(!empty($this->layoutData) && !empty($this->layoutData->items)){
 				foreach ($this->layoutData->items as &$item)
 				{
-					$item->statusText = ExamHelper::decodePpaaStatus($item->statusCode);
-					switch ($item->statusCode){
-						case ExamHelper::EXAM_PPAA_STATUS_ACCEPTED:
+					$status = PpaaStatus::from($item->statusCode);
+					$item->statusText = $status->getLabel();
+					switch ($status){
+						case PpaaStatus::Accepted:
 							$item->optionRowCssClass='table-primary';
 							break;
-						case ExamHelper::EXAM_PPAA_STATUS_REJECTED:
+						case PpaaStatus::Rejected:
 							$item->optionRowCssClass='table-danger';
 							break;
-						case ExamHelper::EXAM_PPAA_STATUS_DONE:
+						case PpaaStatus::Done:
 							$item->optionRowCssClass='table-success';
 							break;
 					}

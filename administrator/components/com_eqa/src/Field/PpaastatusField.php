@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 /**
@@ -23,7 +24,7 @@ class PpaastatusField extends ListField
     protected function getOptions()
     {
         $options = parent::getOptions();
-        foreach (ExamHelper::getPpaaStatuses() as $code=>$text)
+        foreach (PpaaStatus::getOptions() as $code=>$text)
         {
             $options[] = HTMLHelper::_('select.option', $code, $text);
         }

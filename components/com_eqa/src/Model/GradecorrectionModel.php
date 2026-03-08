@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -14,7 +15,7 @@ class GradecorrectionModel extends AdminModel{
 	public function canDelete($record=null): bool
 	{
 		//Chỉ có thể xóa nếu yêu cầu chưa được tiếp nhận hay từ chối
-		if($record->status > ExamHelper::EXAM_PPAA_STATUS_INIT)
+		if($record->status > PpaaStatus::Init->value)
 			return false;
 
 		//Chỉ thí sinh mới có thể tự xóa yêu cầu của mình
@@ -48,7 +49,7 @@ class GradecorrectionModel extends AdminModel{
 	private function isTimeToAcceptOrReject($request):bool
 	{
 		//Check time
-		if($request->status >= ExamHelper::EXAM_PPAA_STATUS_DONE)
+		if($request->status >= PpaaStatus::Done->value)
 			return false;
 		if($request->enabled && !DatetimeHelper::isTimeOver($request->deadline))
 			return false;
@@ -91,7 +92,7 @@ class GradecorrectionModel extends AdminModel{
 
 			$query = $db->getQuery(true)
 				->update('#__eqa_gradecorrections')
-				->set('`status`=' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED)
+				->set('`status`=' . PpaaStatus::Accepted->value)
 				->where('id=' . (int)$request->id);
 			$db->setQuery($query);
 			if($db->execute())
@@ -151,7 +152,7 @@ class GradecorrectionModel extends AdminModel{
 		$query = $db->getQuery(true)
 			->update('#__eqa_gradecorrections')
 			->set([
-				'`status`=' . ExamHelper::EXAM_PPAA_STATUS_REJECTED,
+				'`status`=' . PpaaStatus::Rejected->value,
 				'`description`=' . $db->quote($description)
 			])
 			->where('id=' . (int)$request->id);

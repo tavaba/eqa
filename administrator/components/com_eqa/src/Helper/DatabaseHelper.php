@@ -2,6 +2,7 @@
 
 namespace Kma\Component\Eqa\Administrator\Helper;
 
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
@@ -916,7 +917,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$res = $db->loadAssoc();
 		if(empty($res))
 			return false;
-		if($res['exam_status']==ExamHelper::EXAM_STATUS_COMPLETED)
+		if($res['exam_status']==ExamStatus::Completed->value)
 			return true;
 		if($res['examseason_completed'])
 			return true;

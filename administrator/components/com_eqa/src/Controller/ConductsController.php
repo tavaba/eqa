@@ -98,7 +98,7 @@ class ConductsController extends AdminController {
 	{
 		$count = 0;
 		foreach ($exams as $exam)
-			if($exam->conclusion == Conclusion::Failed->value)
+			if($exam->conclusion == Conclusion::RetakeExam->value)
 				++$count;
 		return $count;
 	}
@@ -106,7 +106,7 @@ class ConductsController extends AdminController {
 	{
 		$count = 0;
 		foreach ($exams as $exam)
-			if($exam->conclusion == Conclusion::FailedAndExpired->value)
+			if($exam->conclusion == Conclusion::RetakeCourse->value)
 				++$count;
 		return $count;
 	}

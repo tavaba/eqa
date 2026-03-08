@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\AdminModel;
@@ -424,7 +425,7 @@ class PaperexamModel extends AdminModel{
 		//Return
 		return $info;
 	}
-	public function importMarkByMask(int $examId, array $marks): bool
+	public function importMarkByMask_bak(int $examId, array $marks): bool
 	{
 		/**
 		 * Controller phải kiểm tra tính hợp lệ của KIỂU DỮ LIỆU trong mảng $marks trước
@@ -502,7 +503,7 @@ class PaperexamModel extends AdminModel{
 				$finalMark = ExamHelper::calculateFinalMark($mark, $anomaly, $attempt, $addValue, $admissionYear);
 				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt, $admissionYear);
 				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
+				$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				$query = $db->getQuery(true)
 					->update('#__eqa_exam_learner')
@@ -523,10 +524,10 @@ class PaperexamModel extends AdminModel{
 				}
 
 				//c) Cập nhật số lượt thi, điều kiện tiếp tục dự thi
-				if($anomaly!=ExamHelper::EXAM_ANOMALY_REDO && $anomaly!=ExamHelper::EXAM_ANOMALY_DELAY)
+				if($anomaly!=Anomaly::Retake->value && $anomaly!=Anomaly::Deferred->value)
 					$ntaken = $attempt;
 				$expired = 0;
-				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
+				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::RetakeCourse)
 					$expired=1;
 				$query = $db->getQuery(true)
 					->update('#__eqa_class_learner')
@@ -569,5 +570,78 @@ class PaperexamModel extends AdminModel{
 			return false;
 		}
 		return true;
+	}
+	public function importMarkByMask(int $examId, array $marks): void
+	{
+		/**
+		 * Controller phải kiểm tra tính hợp lệ của KIỂU DỮ LIỆU trong mảng $marks trước
+		 * khi gọi phương thức này.
+		 * $marks là mảng liên kểt [$mask => $mark]
+		 *
+		 * Việc import gồm một số bước
+		 *  - Ghi điểm $mark vào bảng #__eqa_papers
+		 *  - Ghi điểm $mark vào bảng #__eqa_exam_learner (cột 'mark_orig')
+		 *    đồng thời tính toán các giá trị 'mark_final', 'module_grade'
+		 *  - Cập nhật số lượt thi, điều kiện tiếp tục thi vào bảng #__eqa_class_learner
+		 */
+
+		//Init
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//Check if can import
+		if(DatabaseHelper::isCompletedExam($examId))
+			throw new Exception('Môn thi đã kết thúc, không thể nhập điểm');
+
+		//Xác định bảng mapping $mask - $learnerId để tránh phải truy vấn nhiều lần trong vòng lặp
+		$query = $db->getQuery(true)
+			->select('mask, learner_id')
+			->from('#__eqa_papers')
+			->where('exam_id=' . $examId);
+		$db->setQuery($query);
+		$maskLearnerMap = $db->loadAssocList('mask','learner_id');
+
+		//Xác định subject id để phục vụ tính toán điểm học phần
+		$db->setQuery('SELECT subject_id FROM #__eqa_exams WHERE id='.$examId);
+		$subjectId = $db->loadResult();
+
+
+		$db->transactionStart();
+		try
+		{
+			foreach ($marks as $mask => $mark)
+			{
+				//1. Cập nhật điểm vào bảng #__eqa_papers
+				$query = $db->getQuery(true)
+					->update('#__eqa_papers')
+					->set('mark = ' . $mark)
+					->where('exam_id=' . $examId . ' AND mask=' . $mask);
+				$db->setQuery($query);
+				if(!$db->execute())
+				{
+					$msg = Text::sprintf('Lỗi cập nhật điểm bài thi cho số phách <b>%d</b>', $mask);
+					throw new Exception($msg);
+				}
+
+				//2. Cập nhật điểm vào bảng #__eqa_exam_learner
+				$learnerId = (int)$maskLearnerMap[$mask];
+				$query = $db->getQuery(true)
+					->update('#__eqa_exam_learner')
+					->set('mark_orig = ' . $mark)
+					->where('exam_id=' . $examId . ' AND learner_id=' . $learnerId);
+				$db->setQuery($query);
+				if(!$db->execute())
+				{
+					$msg = Text::sprintf('Lỗi cập nhật điểm học phần cho số phách <b>%d</b>', $mask);
+					throw new Exception($msg);
+				}
+			}
+			//Commit
+			$db->transactionCommit();
+		}
+		catch (Exception $e)
+		{
+			$db->transactionRollback();
+			throw $e;
+		}
 	}
 }

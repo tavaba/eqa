@@ -6,6 +6,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -103,10 +104,10 @@ class HtmlView extends ItemsHtmlView {
 				if($item->stimulation !== null)
 					$item->stimulation = StimulationHelper::getStimulationType($item->stimulation);
 
-				if($item->anomaly == ExamHelper::EXAM_ANOMALY_NONE)
+				if($item->anomaly == Anomaly::None->value)
 					$item->anomaly = '';
 				else
-					$item->anomaly = ExamHelper::getAnomaly($item->anomaly);
+					$item->anomaly = Anomaly::from($item->anomaly)->getLabel();
 
 				if(!is_null($item->conclusion))
 					$item->conclusion = Conclusion::from($item->conclusion)->getLabel();

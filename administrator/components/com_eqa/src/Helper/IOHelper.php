@@ -7,8 +7,11 @@ use Collator;
 use Exception;
 use JComponentHelper;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
+use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
@@ -687,7 +690,7 @@ abstract class IOHelper extends BaseIOHelper
 				$item->group,
 				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam1),
 				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam2),
-				($item->anomaly==ExamHelper::EXAM_ANOMALY_DELAY || $item->anomaly==ExamHelper::EXAM_ANOMALY_ABSENT) ? 'K' : $item->mark_final,
+				(in_array($item->anomaly, [Anomaly::Deferred->value, Anomaly::Absent->value, Anomaly::Retake->value])) ? 'K' : $item->mark_final,
 				$item->module_mark,
 				$item->module_grade,
 				(!empty($item->description)) ? explode(';', $item->description)[0] : null
@@ -806,7 +809,7 @@ abstract class IOHelper extends BaseIOHelper
 				null,
 				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam1),
 				$item->stimulation_type==StimulationHelper::TYPE_TRANS ? $item->module_mark : ExamHelper::markToText($item->pam2),
-				($item->anomaly==ExamHelper::EXAM_ANOMALY_DELAY || $item->anomaly==ExamHelper::EXAM_ANOMALY_ABSENT) ? 'K' : $item->mark_final,
+				(in_array($item->anomaly, [Anomaly::Absent->value, Anomaly::Deferred->value, Anomaly::Retake->value])) ? 'K' : $item->mark_final,
 				$item->module_mark,
 				$item->module_grade
 			];
@@ -1379,7 +1382,7 @@ abstract class IOHelper extends BaseIOHelper
 				$entry->code,
 				$entry->lastname,
 				$entry->firstname,
-				ExamHelper::getAnomaly($entry->anomaly)
+				Anomaly::from($entry->anomaly)->getLabel()
 			];
 		}
 
@@ -1924,11 +1927,12 @@ abstract class IOHelper extends BaseIOHelper
 		foreach ($items as $item)
 		{
 			$seq++;
-			$mark = match ($item->constituentCode)
+			$constituent = MarkConstituent::from($item->constituentCode);
+			$mark = match ($constituent)
 			{
-				ExamHelper::MARK_CONSTITUENT_PAM1 => $item->pam1,
-				ExamHelper::MARK_CONSTITUENT_PAM2 => $item->pam2,
-				ExamHelper::MARK_CONSTITUENT_FINAL_EXAM => $item->finalExamMark
+				MarkConstituent::Pam1 => $item->pam1,
+				MarkConstituent::Pam2 => $item->pam2,
+				MarkConstituent::FinalExam => $item->finalExamMark
 			};
 			$data[] = [
 				$seq,
@@ -1936,7 +1940,7 @@ abstract class IOHelper extends BaseIOHelper
 				$item->learnerLastname,
 				$item->learnerFirstname,
 				$item->examName,
-				ExamHelper::decodeMarkConstituent($item->constituentCode),
+				MarkConstituent::from($item->constituentCode)->getLabel(),
 				$mark,
 				$item->reason
 			];
@@ -1994,7 +1998,7 @@ abstract class IOHelper extends BaseIOHelper
 				$item->learnerLastname,
 				$item->learnerFirstname,
 				$item->code,
-				ExamHelper::decodePpaaStatus($item->statusCode),
+				PpaaStatus::from($item->statusCode)->getLabel(),
 				$item->mask,
 				$item->packageNumber,
 				$item->originalMark,
@@ -2050,7 +2054,7 @@ abstract class IOHelper extends BaseIOHelper
 				$item->learnerLastname,
 				$item->learnerFirstname,
 				$item->code,
-				ExamHelper::decodePpaaStatus($item->statusCode),
+				PpaaStatus::from($item->statusCode)->getLabel(),
 				$item->originalMark
 			];
 		}
@@ -2779,7 +2783,7 @@ abstract class IOHelper extends BaseIOHelper
 		$textRun->addText('Thí sinh: ');
 		$textRun->addText($learner, 'Bold');
 
-		$section->addText('Điểm cần đính chính: '. ExamHelper::decodeMarkConstituent($request->constituent));
+		$section->addText('Điểm cần đính chính: '. MarkConstituent::from($request->constituent)->getLabel());
 		$section->addText('Mô tả yêu cầu đính chính:');
 		$section->addText(htmlspecialchars($request->reason), 'Italic', 'Blockquote');
 

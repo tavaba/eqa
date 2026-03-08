@@ -6,10 +6,13 @@ require JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Model\ExamModel;
+use Kma\Component\Eqa\Administrator\Model\PaperexamModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Library\Kma\Helper\IOHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -45,27 +48,17 @@ class PaperexamsController extends AdminController {
 		}
 
 		//Try to open file
-		try {
-			// Check if the file is Excel 97 (.xls)
-			$fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
-			if ($fileExtension === 'xls') {
-				$reader = new Xls();
-			} else {
-				// Assume it's an Excel 2007 or later (.xlsx)
-				$reader = IOFactory::createReader('Xlsx');
-			}
-			$spreadsheet = $reader->load($file['tmp_name']);
-		}
-		catch (Exception $e){
-			$msg = '<b>' . htmlentities($file['name']) . '</b> : ' . $e->getMessage();
-			$this->setMessage($msg, 'error');
-			return;
-		}
+		$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
 
-		//Process the file
+		/**
+		 * Process the file
+		 * @var PaperexamModel $paperExamModel
+		 * @var ExamModel $examModel
+		 */
 		$examInfoPattern = '/^Môn thi: [\s\S]+ \(Mã môn thi: ([0-9]+)\)$/u';
 		$maskColumnName = 'Số phách';
-		$model = $this->getModel();
+		$paperExamModel = $this->getModel();
+		$examModel = $this->createModel('exam');
 		$examIds = [];
 		foreach ($spreadsheet->getAllSheets() as $sheet){
 			//1. Tìm kiếm môn thi
@@ -150,26 +143,17 @@ class PaperexamsController extends AdminController {
 			}
 
 			//4. Ghi điểm
-			if($model->importMarkByMask($examId, $marks))
+			try
 			{
+				$paperExamModel->importMarkByMask($examId, $marks);
+				$examModel->conclude($examId, false);
 				$msg = Text::sprintf('<b>%s</b>: Nhập điểm thành công cho %d thí sinh', $sheet->getTitle(), sizeof($marks));
 				$this->app->enqueueMessage($msg, 'success');
 			}
-		}
-
-		//Cập nhật trạng thái (các) môn thi
-		$model = $this->createModel('exam');
-		foreach ($examIds as $examId)
-		{
-			$exam = DatabaseHelper::getExamInfo($examId);
-			$total = $exam->countTotal;
-			$concluded = $exam->countConcluded;
-			if($concluded == $total)
-				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
-			else
-				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_PARTIAL);
-			$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả', $exam->name, $concluded, $total);
-			$this->app->enqueueMessage($msg);
+			catch(Exception $e)
+			{
+				$this->app->enqueueMessage($e->getMessage(), 'error');
+			}
 		}
 	}
 }

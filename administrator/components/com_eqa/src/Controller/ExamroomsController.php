@@ -6,7 +6,10 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
+use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -184,13 +187,14 @@ class ExamroomsController extends AdminController {
 				$examinee->description = $sheet->getCell('J'.$row)->getValue();
 				if($importAnomaly)
 				{
-					$examinee->anomaly = ExamHelper::getAnomalyFromDescription($examinee->description);
-					if($examinee->anomaly === false)
+					$anomaly = Anomaly::tryFromLabel($examinee->description);
+					if($anomaly==null)
 					{
 						$msg = Text::sprintf("Dòng 'Ghi chú' không hợp lệ: sheet %s, dòng %d", $sheet->getTitle(), $row);
 						$this->setMessage($msg, 'error');
 						return;
 					}
+					$examinee->anomaly = $anomaly->value;
 				}
 				$examinees[$examinee->learnerCode] = $examinee;
 			}
@@ -198,13 +202,13 @@ class ExamroomsController extends AdminController {
 
 			/**
 			 * 4. Load model and do import
-			 * @var ExamroomModel $model
+			 * @var ExamroomModel $examModel
 			 */
-			$model = $this->getModel();
+			$examModel = $this->getModel();
 			$examroomName = $sheet->getTitle();
 			try
 			{
-				$model->import($examroomId, $examroomName, $examinees, $importAnomaly);
+				$examModel->import($examroomId, $examroomName, $examinees, $importAnomaly);
 			}
 			catch(Exception $e){
 				$this->setMessage($e->getMessage(), 'error');
@@ -212,21 +216,22 @@ class ExamroomsController extends AdminController {
 			}
 		}//Hết tất cả các sheet
 
-		//Cập nhật trạng thái môn thi
+		/**
+		 * Cập nhật trạng thái môn thi
+		 * @var ExamModel $examModel
+		 */
 		$examIds = array_unique($examIds);
-		$model = $this->createModel('exam');
+		$examModel = $this->createModel('exam');
 		foreach ($examIds as $examId)
 		{
 			$exam = DatabaseHelper::getExamInfo($examId);
 			if ($exam->countConcluded == $exam->countTotal)
 			{
-				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
 				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countTotal);
 				$app->enqueueMessage($msg, 'success');
 			}
 			elseif ($exam->countConcluded > 0)
 			{
-				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_PARTIAL);
 				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countToTake);
 				$app->enqueueMessage($msg );
 			}
@@ -234,13 +239,13 @@ class ExamroomsController extends AdminController {
 			{
 				if ($exam->countHavePaperInfo == $exam->countToTake)
 				{
-					$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_PAPER_INFO_FULL);
+					$examModel->setExamStatus($examId, ExamStatus::PaperInfoFull);
 					$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
 					$app->enqueueMessage($msg, 'success');
 				}
 				elseif ($exam->countHavePaperInfo > 0)
 				{
-					$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_PAPER_INFO_PARTIAL);
+					$examModel->setExamStatus($examId, ExamStatus::PaperInfoPartial);
 					$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
 					$app->enqueueMessage($msg);
 				}

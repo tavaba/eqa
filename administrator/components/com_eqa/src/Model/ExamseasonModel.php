@@ -3,7 +3,9 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
@@ -88,7 +90,7 @@ class ExamseasonModel extends AdminModel{
                     'kassess' => $subject->kassess,
                     'allowed_rooms' => $subject->allowed_rooms,
                     'usetestbank' => empty($subject->testbankyear)?0:1,
-                    'status' => ExamHelper::EXAM_STATUS_UNKNOWN
+                    'status' => ExamStatus::Unknown->value
                 ];
                 $table = $this->getTable('exam');
                 $table->save($exam);
@@ -205,7 +207,7 @@ class ExamseasonModel extends AdminModel{
 					'kmonitor' => $subject->kmonitor,
 					'kassess' => $subject->kassess,
 					'usetestbank' => empty($subject->testbankyear)?0:1,
-					'status' => ExamHelper::EXAM_STATUS_PAM_BUT_QUESTION
+					'status' => ExamStatus::PamPendingQuestion->value
 				];
 				$table = $this->getTable('exam');
 				$table->save($exam);
@@ -487,9 +489,9 @@ class ExamseasonModel extends AdminModel{
 
 		//Bước 2. Trích xuất các lượt thí sinh có xử lý kỷ luật (chỉ lấy 'id')
 		$penalties = [
-			ExamHelper::EXAM_ANOMALY_SUB25,
-			ExamHelper::EXAM_ANOMALY_SUB50,
-			ExamHelper::EXAM_ANOMALY_BAN
+			Anomaly::Penalized25->value,
+			Anomaly::Penalized50->value,
+			Anomaly::Suspended->value
 		];
 		$penaltySet = '(' . implode(',', $penalties) . ')';
 		$examIds = array_keys($exams); //Lấy ra danh sách các mã môn thi
@@ -960,7 +962,7 @@ class ExamseasonModel extends AdminModel{
 			->select('id, name, testtype')
 			->from('#__eqa_exams')
 			->where([
-				'status >= ' . ExamHelper::EXAM_STATUS_MARK_FULL,
+				'status >= ' . ExamStatus::MarkFull->value,
 				'examseason_id IN ' . $examseasonIdSet
 			]);
 		$db->setQuery($query);

@@ -5,6 +5,7 @@ use JFactory;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Utilities\ArrayHelper;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -120,7 +121,7 @@ class RegradingModel extends AdminModel {
 		$query = $db->getQuery(true)
 			->update('#__eqa_regradings')
 			->set([
-				'status = ' . ExamHelper::EXAM_PPAA_STATUS_ACCEPTED,
+				'status = ' . PpaaStatus::Accepted->value,
 				'handled_by = ' . $db->quote($currentUsername),
 				'handled_at = ' . $db->quote($currentTime)
 			])
@@ -166,7 +167,7 @@ class RegradingModel extends AdminModel {
 		$query = $db->getQuery(true)
 			->update('#__eqa_regradings')
 			->set([
-				'status = ' . ExamHelper::EXAM_PPAA_STATUS_REJECTED,
+				'status = ' . PpaaStatus::Rejected->value,
 				'handled_by = ' . $db->quote($currentUsername),
 				'handled_at = ' . $db->quote($currentTime)
 			])

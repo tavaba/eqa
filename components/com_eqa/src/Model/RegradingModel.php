@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -15,7 +16,7 @@ class RegradingModel extends AdminModel{
 	public function canDelete($record=null): bool
 	{
 		//Chỉ có thể xóa nếu yêu cầu chưa được tiếp nhận hay từ chối
-		if($record->status > ExamHelper::EXAM_PPAA_STATUS_INIT)
+		if($record->status > PpaaStatus::Init->value)
 			return false;
 
 		//Chỉ thí sinh mới có thể tự xóa yêu cầu của mình
@@ -48,7 +49,7 @@ class RegradingModel extends AdminModel{
 	private function isTimeToAcceptOrReject($request):bool
 	{
 		//Check time
-		if($request->status >= ExamHelper::EXAM_PPAA_STATUS_DONE)
+		if($request->status >= PpaaStatus::Done->value)
 			return false;
 		if($request->enabled && !DatetimeHelper::isTimeOver($request->deadline))
 			return false;
@@ -89,7 +90,7 @@ class RegradingModel extends AdminModel{
 				continue;
 			}
 
-			$newStatus = $accepted ? ExamHelper::EXAM_PPAA_STATUS_ACCEPTED : ExamHelper::EXAM_PPAA_STATUS_REJECTED;
+			$newStatus = $accepted ? PpaaStatus::Accepted->value : PpaaStatus::Rejected->value;
 			$query = $db->getQuery(true)
 				->update('#__eqa_regradings')
 				->set('`status`=' . $newStatus)
@@ -145,7 +146,7 @@ class RegradingModel extends AdminModel{
 		if(!$this->isTimeToAcceptOrReject($request))
 			throw new Exception('Chưa hết thời hạn thí sinh gửi yêu cầu');
 
-		$newStatus = $accepted ? ExamHelper::EXAM_PPAA_STATUS_ACCEPTED : ExamHelper::EXAM_PPAA_STATUS_REJECTED;
+		$newStatus = $accepted ? PpaaStatus::Accepted->value : PpaaStatus::Rejected->value;
 		$query = $db->getQuery(true)
 			->update('#__eqa_regradings')
 			->set('`status`=' . $newStatus)

@@ -3,7 +3,10 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
@@ -39,7 +42,7 @@ class ExamroomModel extends AdminModel {
 
         //1. Kiểm tra điều kiện để xóa
         //a) Nếu có một môn thi nào đó đã được tổ chức thì không cho xóa
-        $prohibitStatus = ExamHelper::EXAM_STATUS_EXAM_CONDUCTED;
+        $prohibitStatus = ExamStatus::ExamConducted->value;
         $query = $db->getQuery(true)
             ->select('a.learner_id')
             ->from('#__eqa_exam_learner AS a')
@@ -252,7 +255,7 @@ class ExamroomModel extends AdminModel {
 					$anomaly = $examinee->anomaly;
 				else
 					$anomaly = $examinee->currentAanomaly;
-				if($anomaly != ExamHelper::EXAM_ANOMALY_NONE)
+				if($anomaly != Anomaly::None->value)
 					$countAnomaly++;
 
 				//Ghi thông tin thu bài thi viết (upset operation)
@@ -295,26 +298,26 @@ class ExamroomModel extends AdminModel {
 				}
 
 			}
+
+			//Commit on success
+			$db->transactionCommit();
+			$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi viết <b>%s</b>: %d thí sinh, %d bài thi, %d tờ giấy thi; trong đó %d thí sinh có bất thường',
+				htmlspecialchars($examName),
+				$examroomName,
+				sizeof($examinees),
+				$countPaper,
+				$countSheet,
+				$countAnomaly
+			);
+			$app->enqueueMessage($msg, 'success');
 		}
 		catch (Exception $e)
 		{
 			$db->transactionRollback();
 			throw  new Exception($e->getMessage());
 		}
-
-		//Commit on success
-		$db->transactionCommit();
-		$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi viết <b>%s</b>: %d thí sinh, %d bài thi, %d tờ giấy thi; trong đó %d thí sinh có bất thường',
-			htmlspecialchars($examName),
-			$examroomName,
-			sizeof($examinees),
-			$countPaper,
-			$countSheet,
-			$countAnomaly
-		);
-		$app->enqueueMessage($msg, 'success');
 	}
-	private function importNonpaperTest(int $examId, string $examroomName,  array $examinees, bool $importAnomaly): void
+	private function importNonpaperTest_bak(int $examId, string $examroomName,  array $examinees, bool $importAnomaly): void
 	{
 		//Init
 		$app = Factory::getApplication();
@@ -380,7 +383,7 @@ class ExamroomModel extends AdminModel {
 					$anomaly = $examinee->anomaly;
 				else
 					$anomaly = (int)$obj->anomaly;
-				if($anomaly != ExamHelper::EXAM_ANOMALY_NONE)
+				if($anomaly != Anomaly::None->value)
 					$countAnomaly++;
 				$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
 
@@ -390,10 +393,10 @@ class ExamroomModel extends AdminModel {
 				//   Với lưu ý rằng điểm trong biên bản là điểm sau khi đã xử lý kỷ luật, nên khi tính $finalMark
 				//   thì luôn đặt $anomaly là NONE
 				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
-				$finalMark = ExamHelper::calculateFinalMark($mark, ExamHelper::EXAM_ANOMALY_NONE, $attempt, $addValue, $admissionYear);
+				$finalMark = ExamHelper::calculateFinalMark($mark, Anomaly::None->value, $attempt, $addValue, $admissionYear);
 				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt, $admissionYear);
 				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-				$conclusion = ExamHelper::conclude($moduleMark, $finalMark, $anomaly, $attempt);
+				$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $anomaly, $attempt);
 				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 				if(empty($description))
 					$description = 'NULL';
@@ -421,12 +424,12 @@ class ExamroomModel extends AdminModel {
 				}
 
 				//c) Cập nhật số lượt thi, điều kiện tiếp tục dự thi
-				if(!in_array($anomaly, [ExamHelper::EXAM_ANOMALY_DELAY, ExamHelper::EXAM_ANOMALY_REDO]))
+				if(!in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value]))
 				{
 					$ntaken = $attempt;
 				}
 				$expired = 0;
-				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::FailedAndExpired)
+				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::RetakeCourse)
 					$expired=1;
 				$query = $db->getQuery(true)
 					->update('#__eqa_class_learner')
@@ -464,6 +467,85 @@ class ExamroomModel extends AdminModel {
 					}
 				}
 			}
+			//Commit on success
+			$db->transactionCommit();
+		}
+		catch (Exception $e)
+		{
+			$db->transactionRollback();
+			throw new Exception($e->getMessage());
+		}
+
+		$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: nhập điểm thành công %d thí sinh, trong đó %d thí sinh có bất thường',
+			htmlspecialchars($examName), htmlspecialchars($examroomName), sizeof($examinees), $countAnomaly);
+		$app->enqueueMessage($msg, 'success');
+	}
+	private function importNonpaperTest(int $examId, string $examroomName,  array $examinees, bool $importAnomaly): void
+	{
+		//Init
+		$app = Factory::getApplication();
+		$db = DatabaseHelper::getDatabaseDriver();
+		$countAnomaly = 0;
+		$EXAM_MARK_DECIMAL_PLACES = ConfigHelper::getExamMarkPrecision();  //Chỉ số thập phân của điểm
+
+		/**
+		 * @var ExamModel $examModel
+		 */
+		$examModel = ComponentHelper::getMVCFactory()->createModel('exam', 'Administrator');
+
+		$db->transactionStart();
+		try
+		{
+			//Xác định tên môn thi (phục vụ gửi thông báo)
+			$db->setQuery('SELECT name FROM #__eqa_exams WHERE id='.$examId);
+			$examName = $db->loadResult();
+			if(empty($examName))
+				throw new Exception('Không tìm thấy môn thi');
+
+			//Xử lý từng thí sinh
+			foreach ($examinees as $examinee){
+				$code = $examinee->code;
+				$learnerCode = $examinee->learnerCode;
+				$mark = NumberHelper::toFloat($examinee->value, $EXAM_MARK_DECIMAL_PLACES);
+				$description = $examinee->description;
+
+				//Kiểm tra tính hợp lệ của cột 'điểm'
+				if($mark === false || $mark<0 || $mark>10)
+				{
+					$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: điểm thi của <b>%s</b> không hợp lệ',
+						htmlspecialchars($examName),
+						htmlspecialchars($examroomName), htmlspecialchars($learnerCode));
+					throw new Exception($msg);
+				}
+
+				$anomaly = $examinee->anomaly;
+
+				//Ghi vào bang #__eqa_exam_learner các thông tin
+				// - mark_orig: điểm gốc (điểm trong biên bản)
+				// - anomaly: mã của tình huống bất thường (chỉ ghi nếu $importAnomaly=true)
+				// - description: ghi chú (nếu có)
+				$setClause = [
+					'mark_orig = ' . $mark,
+					'description = ' . (empty($description) ? 'NULL' : $db->quote($description))
+				];
+				if($importAnomaly)
+					$setClause[] = 'anomaly = ' . $anomaly;
+				$query = $db->getQuery(true)
+					->update('#__eqa_exam_learner')
+					->set($setClause)
+					->where('exam_id=' . $examId . ' AND code=' . $code);
+				$db->setQuery($query);
+				if(!$db->execute())
+				{
+					$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi %s: lỗi cập nhật điểm gốc cho <b>%s</b>',
+						htmlspecialchars($examName), $examroomName, $learnerCode);
+					throw new Exception($msg);
+				}
+			}
+
+			//Tính toán điểm thi cho thí sinh trong toàn môn thi
+			$examModel->conclude($examId, true);
+
 			//Commit on success
 			$db->transactionCommit();
 		}

@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
@@ -82,9 +83,9 @@ class HtmlView extends ItemsHtmlView
                     $item->usetestbank = Text::_('JNO');
 
                 //3. Trạng thái môn thi
-	            if($item->status >= ExamHelper::EXAM_STATUS_MARK_FULL)
+	            if($item->status >= ExamStatus::MarkFull->value)
 		            $item->optionRowCssClass='table-success';
-	            $item->status = ExamHelper::ExamStatus($item->status);
+	            $item->status = ExamStatus::from($item->status)->getLabel();
 
                 //4. 'description' = 'description' + many else
             }
@@ -114,7 +115,8 @@ class HtmlView extends ItemsHtmlView
 		Do phải rà soát toàn CSDL nên thời gian thực hiện có thể tốn vài phút.';
 	    ToolbarHelper::appendConfirmButton('core.create',$msg,'plus-circle','Thêm môn thi lại','examseason.addRetakeExams',false, 'btn btn-danger');
 		ToolbarHelper::appendButton(null,'download','Danh sách thi','exams.export',true);
-		ToolbarHelper::appendButton('core.edit','loop','Trạng thái', 'exams.recheckStatus',true);
+	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm CHƯA xử lý kỷ luật', 'exams.concludeWithDisciplineAlreadyApplied',true);
+	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm ĐÃ xử lý kỷ luật', 'exams.concludeWithDisciplineNotApplied',true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm SV', 'exams.exportResultForLearners', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 1)', 'exams.exportResultForEms', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 2)', 'exams.exportResultForEms2', true);

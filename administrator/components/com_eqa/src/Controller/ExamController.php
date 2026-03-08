@@ -9,6 +9,7 @@ use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
 use JRoute;
+use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Controller\FormController;
@@ -88,7 +89,7 @@ class ExamController extends  FormController
 				throw new Exception('Không xác định được môn thi');
 			return false;
 		}
-		if($exam->status >= ExamHelper::EXAM_STATUS_EXAM_CONDUCTED){
+		if($exam->status >= ExamStatus::ExamConducted->value){
 			if($throw)
 				throw new Exception('Môn thi đã được tiến hành, không thể thêm thí sinh');
 			return false;
@@ -121,7 +122,7 @@ class ExamController extends  FormController
 				throw new Exception('Không xác định được môn thi');
 			return false;
 		}
-		if($exam->status >= ExamHelper::EXAM_STATUS_EXAM_CONDUCTED){
+		if($exam->status >= ExamStatus::ExamConducted->value){
 			if($throw)
 				throw new Exception('Môn thi đã được tiến hành, không thể xóa thí sinh');
 			return false;
@@ -914,7 +915,10 @@ class ExamController extends  FormController
 			$examinees[] = $examinee;
 		}
 
-		//Nhập dữ liệu
+		/**
+		 * Nhập dữ liệu
+		 * @var ExamModel $model
+		 */
 		$model = $this->getModel();
 		if(!$model->importitest($examId, $examinees))
 		{
@@ -926,9 +930,9 @@ class ExamController extends  FormController
 		if($exam->countConcluded>0)
 		{
 			if($exam->countConcluded == $exam->countToTake + $exam->countExempted)
-				$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
+				$model->setExamStatus($examId, ExamStatus::MarkFull);
 			else
-				$model->setExamStatus($examId,ExamHelper::EXAM_STATUS_MARK_PARTIAL);
+				$model->setExamStatus($examId,ExamStatus::MarkPartial);
 		}
 
 		//Thông báo kết quả

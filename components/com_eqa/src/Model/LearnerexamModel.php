@@ -6,6 +6,8 @@ use DateTime;
 use Joomla\CMS\Date\Date;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
+use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -99,7 +101,7 @@ class LearnerexamModel extends AdminModel{
 		}
 
 		//Ghi yêu cầu phúc khảo
-		$columnValues = [$examId, $learnerId,ExamHelper::EXAM_PPAA_STATUS_INIT];
+		$columnValues = [$examId, $learnerId, PpaaStatus::Init->value];
 		$tupe = implode(',', $columnValues);
 		$query = $db->getQuery(true)
 			->insert('#__eqa_regradings')
@@ -183,7 +185,7 @@ class LearnerexamModel extends AdminModel{
 		if($db->loadResult()>0)
 		{
 			$msg = Text::sprintf('Bạn đã yêu cầu đính chính <b>%s</b> của môn <b>%s</b>.',
-				ExamHelper::decodeMarkConstituent($consituent),
+				MarkConstituent::from($consituent)->getLabel(),
 				htmlspecialchars($exam->name));
 			$app->enqueueMessage($msg, 'warning');
 			return;
@@ -192,7 +194,7 @@ class LearnerexamModel extends AdminModel{
 		//Ghi yêu cầu đính chính
 		//Get current time for the field 'requested_at'
 		$time = DatetimeHelper::getCurrentHanoiDatetime();
-		$columnValues = [$examId, $learnerId, $consituent, $db->quote($reason), ExamHelper::EXAM_PPAA_STATUS_INIT, $db->quote($time)];
+		$columnValues = [$examId, $learnerId, $consituent, $db->quote($reason), PpaaStatus::Init->value, $db->quote($time)];
 		$tupe = implode(',', $columnValues);
 		$query = $db->getQuery(true)
 			->insert('#__eqa_gradecorrections')
@@ -207,7 +209,7 @@ class LearnerexamModel extends AdminModel{
 
 		//Thông báo thành công
 		$msg = Text::sprintf('Đã tạo yêu cầu đính chính <b>%s</b> của môn <b>%s</b>',
-			ExamHelper::decodeMarkConstituent($consituent),
+			MarkConstituent::from($consituent)->getLabel(),
 			htmlspecialchars($exam->name));
 		$app->enqueueMessage($msg,'success');
 	}

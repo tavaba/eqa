@@ -21,12 +21,26 @@ class HtmlView extends ItemsHtmlView {
 		$f = new ListLayoutItemFieldOption('examroom','COM_EQA_EXAMROOM');
 		$f->altField = 'description';   //Will be prepared
 		$option->customFieldset1[] = $f;
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('monitor1','COM_EQA_EXAM_MONITOR1_ABBR');
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('monitor2','COM_EQA_EXAM_MONITOR2_ABBR');
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('monitor3','COM_EQA_EXAM_MONITOR3_ABBR');
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner1','COM_EQA_EXAM_EXAMINER1_ABBR');
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner2','COM_EQA_EXAM_EXAMINER2_ABBR');
 
+		$f = new ListLayoutItemFieldOption('monitor1','COM_EQA_EXAM_MONITOR1_ABBR');
+		$f->printRaw = true;   //Will be prepared as HTML select
+		$option->customFieldset1[] = $f;
+
+		$f = new ListLayoutItemFieldOption('monitor2','COM_EQA_EXAM_MONITOR2_ABBR');
+		$f->printRaw = true;   //Will be prepared as HTML select
+		$option->customFieldset1[] = $f;
+
+		$f = new ListLayoutItemFieldOption('monitor3','COM_EQA_EXAM_MONITOR3_ABBR');
+		$f->printRaw = true;   //Will be prepared as HTML select
+		$option->customFieldset1[] = $f;
+
+		$f = new ListLayoutItemFieldOption('examiner1','COM_EQA_EXAM_EXAMINER1_ABBR');
+		$f->printRaw = true;   //Will be prepared as HTML select
+		$option->customFieldset1[] = $f;
+
+		$f = new ListLayoutItemFieldOption('examiner2','COM_EQA_EXAM_EXAMINER2_ABBR');
+		$f->printRaw = true;   //Will be prepared as HTML select
+		$option->customFieldset1[] = $f;
 
 		//Set the option
 		$this->itemFields = $option;

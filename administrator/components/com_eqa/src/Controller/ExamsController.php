@@ -80,7 +80,15 @@ class ExamsController extends AdminController {
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();
 	}
-	public function recheckStatus()
+	public function concludeWithDisciplineAlreadyApplied()
+	{
+		$this->conclude(true);
+	}
+	public function concludeWithDisciplineNotApplied()
+	{
+		$this->conclude(false);
+	}
+	protected function conclude(bool $disciplineAlreadyApplied)
 	{
 		//Set redirect in any case
 		$examseasonId = $this->input->getInt('examseason_id');
@@ -89,12 +97,6 @@ class ExamsController extends AdminController {
 		else
 			$url = JRoute::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
 		$this->setRedirect($url);
-
-//		//TEMPORARY DISABLE THIS FUNCTIONALITY
-//		$this->setMessage('Tính năng này tạm thời bị vô hiệu hóa.
-//		Sẽ cần phải điều chỉnh chương trình để có thể loại bỏ hoàn toàn
-//		chức năng này.','warning'); //TODO: Remove this line after testing
-//		return;
 
 		//Check token
 		$this->checkToken();
@@ -122,12 +124,7 @@ class ExamsController extends AdminController {
 		try
 		{
 			foreach ($examIds as $examId)
-			{
-				$model->doConclusionForDebtorsOrAbsentOrBannedExaminees($examId);
-				$model->doConclusionForDeferredExaminees($examId);
-				if($model->isWithAllMarks($examId))
-					$model->setExamStatus($examId, ExamHelper::EXAM_STATUS_MARK_FULL);
-			}
+				$model->conclude($examId, $disciplineAlreadyApplied);
 		}
 		catch(Exception $e)
 		{

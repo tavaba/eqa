@@ -337,8 +337,8 @@ class SecondAttemptsModel extends ListModel
             ]);
 
         $validConclusions = implode(',', [
-            Conclusion::Failed->value,
-            Conclusion::Deferred->value,
+            Conclusion::RetakeExam->value,
+            Conclusion::Postponed->value,
         ]);
 
         $query = $db->getQuery(true)
@@ -480,7 +480,7 @@ class SecondAttemptsModel extends ListModel
             $lastAttempt    = (int) $entry->last_attempt;
             $lastConclusion = (int) $entry->last_conclusion;
 
-            if ($lastConclusion === Conclusion::Deferred->value || $isFree) {
+            if ($lastConclusion === Conclusion::Postponed->value || $isFree) {
                 // Thí sinh bảo lưu hoặc chế độ miễn phí: payment_amount = 0
                 $rows[] = '(' .
                     $classId . ', ' .

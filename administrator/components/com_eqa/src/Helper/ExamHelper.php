@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
@@ -10,53 +11,10 @@ use Kma\Component\Eqa\Administrator\Service\ConfigService;
 
 abstract class ExamHelper{
 	private static ConfigService $configService;
-    public const EXAM_TYPE_OTHER = 0;                   //Thi khác
-    public const EXAM_TYPE_SUBJECT_FINAL_TEST = 1;      //Thi kết thúc học phần
-    public const EXAM_TYPE_CERTIFICATION = 2;           //Thi sát hạch (đầu vào, đầu ra,...)
-    public const EXAM_TYPE_GRADUATION = 3;              //Thi tốt nghiệp
-
-    public const EXAM_STATUS_UNKNOWN = 0;               //Chưa xác định
-    public const EXAM_STATUS_QUESTION_BUT_PAM = 10;     //Đã có đề thi, Chưa có điểm quá trình
-    public const EXAM_STATUS_PAM_BUT_QUESTION = 11;     //Đã có điểm quá trình, Chưa có đề thi
-    public const EXAM_STATUS_QUESTION_AND_PAM = 12;     //Đã có đề thi và điểm quá trình
-    public const EXAM_STATUS_READY_TO_EXAM = 20;        //Đã chia phòng thi
-	public const EXAM_STATUS_EXAM_CONDUCTED = 21;       //Đã tổ chức thi
-	public const EXAM_STATUS_PAPER_INFO_PARTIAL = 22;          //Đã bắt đầu nhập biên bản thi viết
-	public const EXAM_STATUS_PAPER_INFO_FULL = 23;             //Đã hoàn thành nhập biên bản thi viết
-	public const EXAM_STATUS_MASKING_DONE = 25;                //Đã làm phách, dồn túi
-	public const EXAM_STATUS_EXAMINER_ASSIGNED = 26;           //Đã phân công chấm thi viết
-	public const EXAM_STATUS_ANOMALY_INPUTTED = 30;           //Đã nhập thông tin bất thường phòng thi
-    public const EXAM_STATUS_MARKING_STARTED = 50;      //Đã bắt đầu chấm thi
-	public const EXAM_STATUS_MARK_PARTIAL = 51;         //Đã có một phần điểm
-	public const EXAM_STATUS_MARK_FULL = 52;            //Đã có đủ điểm
-    public const EXAM_STATUS_COMPLETED = 100;           //Đã hoàn tất
-
-    public const EXAM_ANOMALY_NONE=0;           //Không có
-    public const EXAM_ANOMALY_SUB25=11;        //Trừ 25%
-    public const EXAM_ANOMALY_SUB50=12;        //Trừ 50%
-    public const EXAM_ANOMALY_BAN=13;           //Đình chỉ thi
-    public const EXAM_ANOMALY_ABSENT=20;        //Vắng thi (không lý do)
-    public const EXAM_ANOMALY_DELAY=30;         //Hoãn thi (vắng có lý do)
-    public const EXAM_ANOMALY_REDO=40;          //Hủy bài thi và làm lại bài thi vào kỳ thi sau
-
-    public const EXAM_PPAA_NONE=0;
-    public const EXAM_PPAA_REVIEW=10;
-    public const EXAM_PPAA_CORRECTION=20;
-	public const EXAM_PPAA_STATUS_INIT=0;
-	public const EXAM_PPAA_STATUS_ACCEPTED=20;
-	public const EXAM_PPAA_STATUS_REQUIRE_INFO=25;
-	public const EXAM_PPAA_STATUS_REJECTED=30;
-	public const EXAM_PPAA_STATUS_DONE=40;
 
 	public const SPECIAL_MARK_N25=-25;
 	public const SPECIAL_MARK_N100=-100;
 	public const SPECIAL_MARK_TKD=-10;
-
-	public const MARK_CONSTITUENT_PAM1=10;
-	public const MARK_CONSTITUENT_PAM2=20;
-	public const MARK_CONSTITUENT_PAM=30;
-	public const MARK_CONSTITUENT_FINAL_EXAM=100;
-	public const MARK_CONSTITUENT_ALL=120;
 
 	static public function markToText($mark):string
 	{
@@ -71,192 +29,6 @@ abstract class ExamHelper{
 		return (string)$mark;
 	}
 
-	/**
-     * Hàm này dịch từ MÃ LOẠI KỲ THI thành LOẠI KỲ THI
-     * @param int $typeCode   Hằng số quy ước cho mã loại kỳ thi
-     * @return string|null  Tên loại kỳ thi (dịch từ tập tin language) tương ứng với hằng số
-     * @since 1.0
-     */
-    static public function ExamType(int $typeCode): string|null
-    {
-        return match ($typeCode) {
-            self::EXAM_TYPE_OTHER => "Khác",
-            self::EXAM_TYPE_SUBJECT_FINAL_TEST => "KTHP",
-            self::EXAM_TYPE_CERTIFICATION => "Sát hạch",
-            self::EXAM_TYPE_GRADUATION => "Tốt nghiệp",
-            default => null,
-        };
-    }
-
-    /**
-     * Hàm này trả về mảng thông tin loại kỳ thi trong đó $key là mã loại kỳ thi,
-     * còn $value là tên loại kỳ thi được dịch từ tập tin ngôn ngữ.
-     * @return array    Mỗi phần tử $key=>$value ứng với $key là mã loại kỳ thi, $value là tên loại kỳ thi
-     * @since 1.0
-     */
-    static public function ExamTypes(): array
-    {
-        $types = array();
-        $types[self::EXAM_TYPE_SUBJECT_FINAL_TEST] = self::ExamType(self::EXAM_TYPE_SUBJECT_FINAL_TEST);
-        $types[self::EXAM_TYPE_CERTIFICATION] = self::ExamType(self::EXAM_TYPE_CERTIFICATION);
-        $types[self::EXAM_TYPE_GRADUATION] = self::ExamType(self::EXAM_TYPE_GRADUATION);
-        $types[self::EXAM_TYPE_OTHER] = self::ExamType(self::EXAM_TYPE_OTHER);
-        return $types;
-    }
-
-    /**
-     * Hàm này dịch từ MÃ TRẠNG THÁI MÔN THI thành TRẠNG THÁI MÔN THI
-     * @param int $statusCode   Hằng số quy ước cho mã trạng thái
-     * @return string|null  Tên trạng thái tương ứng với hằng số
-     * @since 1.0
-     */
-    static public function ExamStatus(int $statusCode): string|null
-    {
-        return match ($statusCode) {
-            self::EXAM_STATUS_UNKNOWN => 'Chưa biết',
-            self::EXAM_STATUS_QUESTION_BUT_PAM => 'Đã có đề thi, chưa có điểm quá trình',
-            self::EXAM_STATUS_PAM_BUT_QUESTION => 'Đã có điểm quá trình, chưa có đề thi',
-            self::EXAM_STATUS_QUESTION_AND_PAM => 'Đã có đề thi và điểm quá trình',
-            self::EXAM_STATUS_READY_TO_EXAM => 'Đã sẵn sàng để thi',
-	        self::EXAM_STATUS_EXAM_CONDUCTED => 'Đã thi xong',
-	        self::EXAM_STATUS_PAPER_INFO_PARTIAL => 'Đã bắt đầu nhập thông tin bài thi viết',
-	        self::EXAM_STATUS_PAPER_INFO_FULL => 'Đã nhập xong thông tin bài thi viết',
-	        self::EXAM_STATUS_MASKING_DONE => 'Đã đánh phách, dồn túi',
-	        self::EXAM_STATUS_EXAMINER_ASSIGNED => 'Đã phân công chấm thi viết',
-	        self::EXAM_STATUS_ANOMALY_INPUTTED => 'Đã nhập thông tin bất thường phòng thi',
-            self::EXAM_STATUS_MARKING_STARTED => 'Đã giao bài thi cho CBChT',
-	        self::EXAM_STATUS_MARK_PARTIAL => 'Đã có một phần điểm thi',
-	        self::EXAM_STATUS_MARK_FULL => 'Đã có đủ điểm thi',
-            self::EXAM_STATUS_COMPLETED => 'Đã hoàn tất',
-            default => null,
-        };
-    }
-
-    /**
-     * Hàm này trả về mảng TRẠNG THÁI MÔN THI trong đó $key là mã trạng thái,
-     * còn $value là tên trạng thái được dịch từ tập tin ngôn ngữ.
-     * @return array    Mỗi phần tử $key=>$value ứng với $key là mã trạng thái, $value là tên trạng thái
-     * @since 1.0
-     */
-    static public function ExamStatuses(): array
-    {
-        $statuses = array();
-        $statuses[self::EXAM_STATUS_UNKNOWN]            = self::ExamStatus(self::EXAM_STATUS_UNKNOWN);
-        $statuses[self::EXAM_STATUS_QUESTION_BUT_PAM]   = self::ExamStatus(self::EXAM_STATUS_QUESTION_BUT_PAM);
-        $statuses[self::EXAM_STATUS_PAM_BUT_QUESTION]   = self::ExamStatus(self::EXAM_STATUS_PAM_BUT_QUESTION);
-        $statuses[self::EXAM_STATUS_QUESTION_AND_PAM]   = self::ExamStatus(self::EXAM_STATUS_QUESTION_AND_PAM);
-        $statuses[self::EXAM_STATUS_READY_TO_EXAM]      = self::ExamStatus(self::EXAM_STATUS_READY_TO_EXAM);
-	    $statuses[self::EXAM_STATUS_EXAM_CONDUCTED]     = self::ExamStatus(self::EXAM_STATUS_EXAM_CONDUCTED);
-	    $statuses[self::EXAM_STATUS_PAPER_INFO_PARTIAL] = self::ExamStatus(self::EXAM_STATUS_PAPER_INFO_PARTIAL);
-	    $statuses[self::EXAM_STATUS_PAPER_INFO_FULL]    = self::ExamStatus(self::EXAM_STATUS_PAPER_INFO_FULL);
-	    $statuses[self::EXAM_STATUS_MASKING_DONE]       = self::ExamStatus(self::EXAM_STATUS_MASKING_DONE);
-	    $statuses[self::EXAM_STATUS_EXAMINER_ASSIGNED]  = self::ExamStatus(self::EXAM_STATUS_EXAMINER_ASSIGNED);
-	    $statuses[self::EXAM_STATUS_ANOMALY_INPUTTED]   = self::ExamStatus(self::EXAM_STATUS_ANOMALY_INPUTTED);
-        $statuses[self::EXAM_STATUS_MARKING_STARTED]    = self::ExamStatus(self::EXAM_STATUS_MARKING_STARTED);
-	    $statuses[self::EXAM_STATUS_MARK_PARTIAL]       = self::ExamStatus(self::EXAM_STATUS_MARK_PARTIAL);
-	    $statuses[self::EXAM_STATUS_MARK_FULL]          = self::ExamStatus(self::EXAM_STATUS_MARK_FULL);
-        $statuses[self::EXAM_STATUS_COMPLETED]          = self::ExamStatus(self::EXAM_STATUS_COMPLETED);
-        return $statuses;
-    }
-
-    static public function getAnomaly(int $anomalyCode){
-        return match ($anomalyCode)
-        {
-            self::EXAM_ANOMALY_NONE => "Không",
-            self::EXAM_ANOMALY_SUB25 => "Kỷ luật, trừ 25%",
-            self::EXAM_ANOMALY_SUB50 => "Kỷ luật, trừ 50%",
-            self::EXAM_ANOMALY_BAN => "Đình chỉ thi",
-            self::EXAM_ANOMALY_ABSENT => "Vắng thi (không lý do)",
-            self::EXAM_ANOMALY_DELAY => "Hoãn thi (có lý do)",
-            self::EXAM_ANOMALY_REDO => "Dừng thi, bảo lưu lượt thi"
-        };
-    }
-    static public function getAnomalies(){
-        $anomalies = array();
-        $anomalies[self::EXAM_ANOMALY_NONE] = self::getAnomaly(self::EXAM_ANOMALY_NONE);
-        $anomalies[self::EXAM_ANOMALY_SUB25] = self::getAnomaly(self::EXAM_ANOMALY_SUB25);
-        $anomalies[self::EXAM_ANOMALY_SUB50] = self::getAnomaly(self::EXAM_ANOMALY_SUB50);
-        $anomalies[self::EXAM_ANOMALY_BAN] = self::getAnomaly(self::EXAM_ANOMALY_BAN);
-        $anomalies[self::EXAM_ANOMALY_ABSENT] = self::getAnomaly(self::EXAM_ANOMALY_ABSENT);
-        $anomalies[self::EXAM_ANOMALY_DELAY] = self::getAnomaly(self::EXAM_ANOMALY_DELAY);
-        $anomalies[self::EXAM_ANOMALY_REDO] = self::getAnomaly(self::EXAM_ANOMALY_REDO);
-        return $anomalies;
-    }
-
-	static public function getPostPrimaryAssessmentAction(int $pppaCode){
-        return match ($pppaCode)
-        {
-            self::EXAM_PPAA_NONE => "Không",
-            self::EXAM_PPAA_REVIEW => "Phúc khảo",
-            self::EXAM_PPAA_CORRECTION => "Sửa sai điểm",
-            default => false
-        };
-    }
-
-    static public function getPostPrimaryAssessmentActions(){
-        $ppaa = array();
-        $ppaa[self::EXAM_PPAA_NONE] = self::getPostPrimaryAssessmentAction(self::EXAM_PPAA_NONE);
-        $ppaa[self::EXAM_PPAA_REVIEW] = self::getPostPrimaryAssessmentAction(self::EXAM_PPAA_REVIEW);
-        $ppaa[self::EXAM_PPAA_CORRECTION] = self::getPostPrimaryAssessmentAction(self::EXAM_PPAA_CORRECTION);
-        return $ppaa;
-    }
-
-	static public function decodeMarkConstituent(int $constituent):string|null
-	{
-		return match ($constituent){
-			self::MARK_CONSTITUENT_PAM1 => 'Điểm TP1',
-			self::MARK_CONSTITUENT_PAM2 => 'Điểm TP2',
-			self::MARK_CONSTITUENT_PAM => 'Điểm QT (TP1, TP2)',
-			self::MARK_CONSTITUENT_FINAL_EXAM => 'Điểm thi KTHP',
-			self::MARK_CONSTITUENT_ALL => 'Tất cả thành phần',
-			default => null
-		};
-	}
-	static public function getMarkConstituents(){
-		return [
-			self::MARK_CONSTITUENT_PAM1 => self::decodeMarkConstituent(self::MARK_CONSTITUENT_PAM1),
-			self::MARK_CONSTITUENT_PAM2 => self::decodeMarkConstituent(self::MARK_CONSTITUENT_PAM2),
-			self::MARK_CONSTITUENT_PAM => self::decodeMarkConstituent(self::MARK_CONSTITUENT_PAM),
-			self::MARK_CONSTITUENT_FINAL_EXAM => self::decodeMarkConstituent(self::MARK_CONSTITUENT_FINAL_EXAM),
-			self::MARK_CONSTITUENT_ALL => self::decodeMarkConstituent(self::MARK_CONSTITUENT_ALL)
-		];
-	}
-	static public function decodePpaaStatus(int $status):string|null
-	{
-		return match ($status){
-			self::EXAM_PPAA_STATUS_INIT => 'Chưa xử lý',
-			self::EXAM_PPAA_STATUS_ACCEPTED => 'Đã chấp nhận và đang xử lý',
-			self::EXAM_PPAA_STATUS_REQUIRE_INFO => 'Cần bổ sung thông tin',
-			self::EXAM_PPAA_STATUS_REJECTED => 'Bị từ chối',
-			self::EXAM_PPAA_STATUS_DONE => 'Đã xử lý xong',
-			default => null
-		};
-	}
-	static public function getPpaaStatuses(){
-		return [
-			self::EXAM_PPAA_STATUS_INIT => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_INIT),
-			self::EXAM_PPAA_STATUS_ACCEPTED => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_ACCEPTED),
-			self::EXAM_PPAA_STATUS_REQUIRE_INFO => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_REQUIRE_INFO),
-			self::EXAM_PPAA_STATUS_REJECTED => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_REJECTED),
-			self::EXAM_PPAA_STATUS_DONE => self::decodePpaaStatus(self::EXAM_PPAA_STATUS_DONE)
-		];
-	}
-
-	static public function getAnomalyFromDescription(string|null $description): int|false
-	{
-		if(empty($description))
-			return self::EXAM_ANOMALY_NONE;
-
-		return match ($description){
-			'K25', 'Khiển trách' => self::EXAM_ANOMALY_SUB25,
-			'K50', 'Cảnh cáo' => self::EXAM_ANOMALY_SUB50,
-			'ĐC', 'DC', 'Đình chỉ', 'Đình chỉ thi' => self::EXAM_ANOMALY_BAN,
-			'Vắng thi' => self::EXAM_ANOMALY_ABSENT,
-			'Hoãn thi' => self::EXAM_ANOMALY_DELAY,
-			'Dừng thi' => self::EXAM_ANOMALY_REDO,
-			default => false
-		};
-	}
 	static public function isAllowedToFinalExam(float $pam1, float $pam2, float $pam): bool
 	{
 		$thresholdPam1 = ConfigHelper::getThresholdForPam1();
@@ -329,16 +101,28 @@ abstract class ExamHelper{
 		$pam = 0.7*$pam1 + 0.3*$pam2;
 		return $pam;
 	}
-	static public function calculateFinalMark(float $originalMark, int $anomaly, int $attempt, float $addValue, int $admissionYear)
+
+	/**
+	 * @param   float  $examMark Điểm thi gốc, có thể trước hoặc sau phúc khảo, đính chính
+	 * @param   int    $anomalyValue
+	 * @param   int    $attempt
+	 * @param   float  $addValue
+	 * @param   int    $admissionYear
+	 *
+	 * @return float|int|mixed
+	 *
+	 * @since 1.0.0
+	 */
+	static public function calculateFinalMark(float $examMark, int $anomalyValue, int $attempt, float $addValue, int $admissionYear)
 	{
 		$precision = ConfigHelper::getExamMarkPrecision();
 
 		//Xử lý kỷ luật, nếu có
-		$finalMark = match ($anomaly)
+		$finalMark = match ($anomalyValue)
 		{
-			self::EXAM_ANOMALY_NONE => $originalMark,
-			self::EXAM_ANOMALY_SUB25 => round(0.75 * $originalMark, $precision),
-			self::EXAM_ANOMALY_SUB50 => round(0.5 * $originalMark, $precision),
+			Anomaly::None->value => $examMark,
+			Anomaly::Penalized25->value => round(0.75 * $examMark, $precision),
+			Anomaly::Penalized50->value => round(0.5 * $examMark, $precision),
 			default => 0,
 		};
 
@@ -357,6 +141,8 @@ abstract class ExamHelper{
 	}
 	static public function calculateModuleMark(int $subjectId, float $pam, float $examMark, int $attempt, int $admissionYear)
 	{
+		//Nothing to do with $subjectId for now
+		//TODO: Xử lý trường hợp môn thi có các hệ số khác nhau
 		$precision = ConfigHelper::getModuleMarkPrecision();
 		$limit = ConfigHelper::getSecondAttemptMarkLimitMode();
 		$moduleMark = 0.3*$pam + 0.7*$examMark;
@@ -388,9 +174,9 @@ abstract class ExamHelper{
 
 	static public function calculateModuleGrade(float $moduleMark, Conclusion $conclusion): string
 	{
-		if($conclusion == Conclusion::Deferred)
+		if($conclusion == Conclusion::Postponed)
 			return 'I';
-		if($conclusion == Conclusion::Failed || $conclusion == Conclusion::FailedAndExpired)
+		if($conclusion == Conclusion::RetakeExam || $conclusion == Conclusion::RetakeCourse)
 			return 'F';
 
 		if($moduleMark <= 4.7)
@@ -427,13 +213,13 @@ abstract class ExamHelper{
 		if(!empty($learner->pam) && $learner->pam<0)
 			$learner->pam = self::specialMarkToText($learner->pam);
 	}
-	static public function conclude($moduleMark, $finalExamMark, $anomaly, $attempt): Conclusion
+	static public function calculateConclusion($moduleMark, $finalExamMark, $anomaly, $attempt): Conclusion
 	{
-		if($anomaly == ExamHelper::EXAM_ANOMALY_BAN)
-			return Conclusion::FailedAndExpired;
+		if($anomaly == Anomaly::Suspended->value)
+			return Conclusion::RetakeCourse;
 
-		if($anomaly == self::EXAM_ANOMALY_DELAY || $anomaly == self::EXAM_ANOMALY_REDO)
-			return Conclusion::Deferred;
+		if($anomaly == Anomaly::Deferred->value || $anomaly == Anomaly::Retake->value)
+			return Conclusion::Postponed;
 
 		//TODO: Tính toán ngưỡng khác nhau cho Đại học và Cao học
 		//      Đưa ngưỡng điểm tổng vào cấu hình
@@ -444,8 +230,8 @@ abstract class ExamHelper{
 		{
 			$maxAttempts = ConfigHelper::getMaxExamAttempts();
 			if($attempt>=$maxAttempts)
-				return Conclusion::FailedAndExpired;
-			return Conclusion::Failed;
+				return Conclusion::RetakeCourse;
+			return Conclusion::RetakeExam;
 		}
 
 		return Conclusion::Passed;

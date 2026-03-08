@@ -6,6 +6,7 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
+use Kma\Component\Eqa\Administrator\Model\SubjectsModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -109,7 +110,10 @@ class SubjectsController extends AdminController{
 				];
 			}
 
-			//5. Save data into database
+			/**
+			 * 5. Save data into database
+			 * @var SubjectsModel $model
+			 */
 			if(empty($data))
 				throw new Exception('Không có dữ liệu để nhập');
 			$username = $this->app->getIdentity()->username;
