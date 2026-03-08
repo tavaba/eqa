@@ -16,6 +16,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
+use Kma\Component\Eqa\Administrator\Service\ConfigService;
 use Kma\Component\Eqa\Site\Service\Router;
 use Joomla\CMS\Component\Router\RouterInterface;
 
@@ -27,6 +28,14 @@ return new class implements ServiceProviderInterface
 		$container->registerServiceProvider(new MVCFactory('\\Kma\\Component\\Eqa'));
 		$container->registerServiceProvider(new ComponentDispatcherFactory('\\Kma\\Component\\Eqa'));
 	    $container->registerServiceProvider(new RouterFactory('\\Kma\\Component\\Eqa'));
+
+	    // ── Đăng ký ConfigService vào DIC ────────────────────────────────────
+	    // DIC sẽ tạo instance một lần duy nhất (shared = true theo mặc định)
+	    // và tái sử dụng trong suốt vòng đời của request.
+	    $container->set(
+		    ConfigService::class,
+		    fn(Container $container) => new ConfigService()
+	    );
 
 	    $container->set(
 		    RouterInterface::class,
@@ -45,6 +54,7 @@ return new class implements ServiceProviderInterface
 				$component->setRegistry($container->get(Registry::class));
 				$component->setMVCFactory($container->get(MVCFactoryInterface::class));
 				$component->setRouterFactory($container->get(RouterFactoryInterface::class));
+				$component->setConfigService($container->get(ConfigService::class));
 				return $component;
 			}
 		);

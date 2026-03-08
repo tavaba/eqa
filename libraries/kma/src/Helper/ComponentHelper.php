@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Document\Document;
+use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactory;
 use Joomla\CMS\Component\ComponentHelper as JoomlaComponentHelper;
@@ -12,6 +13,18 @@ use Joomla\Registry\Registry;
 
 abstract class ComponentHelper
 {
+	/**
+	 * Return the ComponentInterface instance of the component calling this helper.
+	 * @return ComponentInterface
+	 * @throws Exception
+	 * @since 2.0.4
+	 */
+	public static function getComponent(): ComponentInterface
+	{
+		$app = Factory::getApplication();
+		$componentName = self::getName();
+		return $app->bootComponent($componentName);
+	}
 
     /**
      * Return the full name of the component calling this helper. Example: com_kma

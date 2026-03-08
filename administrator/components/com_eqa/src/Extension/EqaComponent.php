@@ -17,6 +17,7 @@ use Joomla\CMS\Component\Router\RouterServiceTrait;
 use Joomla\CMS\Extension\BootableExtensionInterface;
 use Joomla\CMS\Extension\MVCComponent;
 use Joomla\CMS\HTML\HTMLRegistryAwareTrait;
+use Kma\Component\Eqa\Administrator\Service\ConfigService;
 use Kma\Component\Eqa\Administrator\Service\HTML\AdministratorService;
 use Psr\Container\ContainerInterface;
 use Joomla\CMS\Component\Router\RouterServiceInterface;
@@ -32,8 +33,49 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	use HTMLRegistryAwareTrait;
 	use RouterServiceTrait;
 
-	public function boot(ContainerInterface $container)
+	/**
+	 * Service đọc cấu hình của component, được inject qua DI.
+	 *
+	 * @var    ConfigService
+	 * @since  2.0.4
+	 */
+	private ConfigService $configService;
+
+	/**
+	 * Được Joomla gọi sau khi component được boot từ DIC.
+	 * Dùng để đăng ký các HTML service, v.v.
+	 *
+	 * @param   ContainerInterface  $container  Child DIC của component.
+	 *
+	 * @return  void
+	 * @since   1.0.0
+	 */
+	public function boot(ContainerInterface $container): void
 	{
 		$this->getRegistry()->register('eqaadministrator', new AdministratorService);
+	}
+
+	/**
+	 * Nhận ConfigService từ DIC (được gọi trong provider.php).
+	 *
+	 * @param   ConfigService  $configService
+	 *
+	 * @return  void
+	 * @since   2.0.4
+	 */
+	public function setConfigService(ConfigService $configService): void
+	{
+		$this->configService = $configService;
+	}
+
+	/**
+	 * Trả về ConfigService để các class khác sử dụng.
+	 *
+	 * @return  ConfigService
+	 * @since   2.0.4
+	 */
+	public function getConfigService(): ConfigService
+	{
+		return $this->configService;
 	}
 }
