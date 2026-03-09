@@ -9,7 +9,7 @@
                 class="js-stools-search-string"
         />
         <field
-                name="academicyear_id"
+                name="academicyear"
                 type="academicyear"
                 label="COM_EQA_FORM_EXAMSEASONS_FILTER_SCHOOLYEAR_LABEL"
                 default=""

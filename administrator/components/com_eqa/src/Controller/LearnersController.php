@@ -67,7 +67,7 @@ class LearnersController extends AdminController{
         date_default_timezone_set('Asia/Ho_Chi_Minh');
         $now = date('Y-m-d H:i:s');
         $learner = new Learner();
-        $learner->created_by = GeneralHelper::getCurrentUsername();
+        $learner->created_by = (int)$app->getIdentity()->id;
         $learner->created_at = $now;
 
         // Check if the file is Excel 97 (.xls)
@@ -300,6 +300,6 @@ class Learner{
     public string $firstname;
     public string $lastname;
     public int $group_id;
-    public string $created_by;
+    public int $created_by;
     public string $created_at;
 }

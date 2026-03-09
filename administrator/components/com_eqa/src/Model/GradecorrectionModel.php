@@ -240,7 +240,7 @@ class GradecorrectionModel extends AdminModel {
 		return $form;
 	}
 
-	public function correct(array $formData, string $currentUsername, string $currentTime)
+	public function correct(array $formData, int $currentUserId, string $currentTime)
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -282,7 +282,7 @@ class GradecorrectionModel extends AdminModel {
 			'changed = ' . (int)$changed,
 			'description = ' . $db->quote($description),
 			'status = ' . ($isCompleted ? PpaaStatus::Done->value : PpaaStatus::RequireInfo->value),
-			'updated_by = ' . $db->quote($currentUsername),
+			'updated_by = ' . $currentUserId,
 			'updated_at = ' . $db->quote($currentTime)
 		];
 		$query = $db->getQuery(true)

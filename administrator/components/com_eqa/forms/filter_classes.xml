@@ -38,7 +38,7 @@
             <option value="partial">COM_EQA_PAM_PARTIAL</option>
         </field>
         <field
-                name="academicyear_id"
+                name="academicyear"
                 type="academicyear"
                 label="COM_EQA_FORM_CLASSES_FILTER_ACADEMICYEAR_LABEL"
                 default=""

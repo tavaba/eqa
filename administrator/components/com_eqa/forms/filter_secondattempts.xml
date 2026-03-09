@@ -3,7 +3,7 @@
     Form bộ lọc cho view SecondAttempts.
     Các trường lọc:
       - search           : tìm kiếm trong mã HVSV, họ tên, mã/tên môn học
-      - academicyear_id  : năm học (custom field type="academicyear")
+      - academicyear     : năm học (custom field type="academicyear")
       - term             : học kỳ (custom field type="term")
       - has_fee          : có phí / miễn phí (dựa trên payment_amount > 0)
       - payment_completed: đã nộp phí / chưa nộp phí
@@ -31,7 +31,7 @@
         </field>
 
         <field
-            name="academicyear_id"
+            name="academicyear"
             type="academicyear"
             label="Năm học"
             default=""

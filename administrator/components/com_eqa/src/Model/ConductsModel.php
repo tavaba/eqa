@@ -27,36 +27,34 @@ class ConductsModel extends ListModel {
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
-			$db->quoteName('a.id')                      . ' AS ' . $db->quoteName('id'),
-			$db->quoteName('e.code')                    . ' AS ' . $db->quoteName('academicyear'),
-			$db->quoteName('a.term')                    . ' AS ' . $db->quoteName('termCode'),
-			$db->quoteName('d.code')                    . ' AS ' . $db->quoteName('course'),
-			$db->quoteName('c.code')                    . ' AS ' . $db->quoteName('group'),
-			$db->quoteName('b.code')                    . ' AS ' . $db->quoteName('learnerCode'),
-			$db->quoteName('b.firstname')               . ' AS ' . $db->quoteName('firstname'),
-			$db->quoteName('b.lastname')                . ' AS ' . $db->quoteName('lastname'),
-			$db->quoteName('a.excused_absence_count')   . ' AS ' . $db->quoteName('excusedAbsenceCount'),
-			$db->quoteName('a.unexcused_absence_count') . ' AS ' . $db->quoteName('unexcusedAbsenceCount'),
-			$db->quoteName('a.resit_count')             . ' AS ' . $db->quoteName('resitCount'),
-			$db->quoteName('a.retake_count')            . ' AS ' . $db->quoteName('retakeCount'),
-			$db->quoteName('a.award_count')             . ' AS ' . $db->quoteName('awardCount'),
-			$db->quoteName('a.disciplinary_action_count')   . ' AS ' . $db->quoteName('disciplinaryCount'),
-			$db->quoteName('a.total_credits')           . ' AS ' . $db->quoteName('totalCredits'),
-			$db->quoteName('a.academic_score')          . ' AS ' . $db->quoteName('academicScore'),
-			$db->quoteName('a.academic_rating')         . ' AS ' . $db->quoteName('academicRating'),
-			$db->quoteName('a.conduct_score')           . ' AS ' . $db->quoteName('conductScore'),
-			$db->quoteName('a.conduct_rating')          . ' AS ' . $db->quoteName('conductRating'),
-			$db->quoteName('a.note')                    . ' AS ' . $db->quoteName('note'),
-			$db->quoteName('a.description')             . ' AS ' . $db->quoteName('description'),
+			$db->quoteName('a.id',                          'id'),
+			$db->quoteName('a.academicyear',                'academicyear'),
+			$db->quoteName('a.term',                        'termCode'),
+			$db->quoteName('d.code',                        'course'),
+			$db->quoteName('c.code',                        'group'),
+			$db->quoteName('b.code',                        'learnerCode'),
+			$db->quoteName('b.firstname',                   'firstname'),
+			$db->quoteName('b.lastname',                    'lastname'),
+			$db->quoteName('a.excused_absence_count',       'excusedAbsenceCount'),
+			$db->quoteName('a.unexcused_absence_count',     'unexcusedAbsenceCount'),
+			$db->quoteName('a.resit_count',                 'resitCount'),
+			$db->quoteName('a.retake_count',                'retakeCount'),
+			$db->quoteName('a.award_count',                 'awardCount'),
+			$db->quoteName('a.disciplinary_action_count',   'disciplinaryCount'),
+			$db->quoteName('a.total_credits',               'totalCredits'),
+			$db->quoteName('a.academic_score',              'academicScore'),
+			$db->quoteName('a.academic_rating',             'academicRating'),
+			$db->quoteName('a.conduct_score',               'conductScore'),
+			$db->quoteName('a.conduct_rating',              'conductRating'),
+			$db->quoteName('a.note',                        'note'),
+			$db->quoteName('a.description',                 'description'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_conducts AS a')
 			->leftJoin('#__eqa_learners AS b','b.id = a.learner_id')
 			->leftJoin('#__eqa_groups AS c','c.id = b.group_id')
-			->leftJoin('#__eqa_courses AS d', 'd.id = c.course_id')
-			->leftJoin('#__eqa_academicyears AS e', 'e.id = a.academicyear_id');
-
+			->leftJoin('#__eqa_courses AS d', 'd.id = c.course_id');
 		//Ordering
 		$orderingCol = $query->db->escape($this->getState('list.ordering','code'));
 		$orderingDir = $query->db->escape($this->getState('list.direction','asc'));
@@ -71,9 +69,9 @@ class ConductsModel extends ListModel {
 			$query->where('(CONCAT(`b`.`lastname`, " ", `b`.`firstname`) LIKE ' . $like .' OR `b`.`code` LIKE ' . $like . ')');
 		}
 
-		$academicyear_id = $this->getState('filter.academicyear_id');
-		if(is_numeric($academicyear_id))
-			$query->where('`a`.`academicyear_id`='.(int)$academicyear_id);
+		$academicyear = $this->getState('filter.academicyear');
+		if (is_numeric($academicyear))
+			$query->where($db->quoteName('a.academicyear') . ' = ' . (int) $academicyear);
 
 		$term = $this->getState('filter.term');
 		if(is_numeric($term))
@@ -99,18 +97,17 @@ class ConductsModel extends ListModel {
         return parent::getStoreId($id);
     }
 
-	public function getListByTerm(int $academicyearId, int $term):array
+	public function getListByTerm(int $academicyear, int $term): array
 	{
-		$db = $this->getDatabase();
+		$db    = $this->getDatabase();
 		$query = $this->getListQuery();
 		$query->clear('where')
-			->where('`a`.`academicyear_id`='.$academicyearId)
-			->where('`a`.`term`='.$term);
+			->where($db->quoteName('a.academicyear') . ' = ' . (int) $academicyear)
+			->where($db->quoteName('a.term') . ' = ' . (int) $term);
 		$db->setQuery($query);
 		return $db->loadObjectList();
 	}
-
-	public function caclculateAcacdemicYearResults(int $academicyearId, ?int $courseId):void
+	public function caclculateAcacdemicYearResults(int $academicyearCode, ?int $courseId):void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		/*
@@ -149,7 +146,7 @@ class ConductsModel extends ListModel {
 		$query = $db->getQuery(true)
 			->select('c.*')
 			->from('#__eqa_conducts AS c')
-			->where('c.academicyear_id='.$academicyearId)
+			->where('c.academicyear='.$academicyearCode)
 			->where('c.term <> '. TermHelper::TERM_NONE);
 		if($courseId)
 		{
@@ -217,11 +214,10 @@ class ConductsModel extends ListModel {
 
 		//Step 4. Update database
 		$time = DatetimeHelper::getCurrentHanoiDatetime();
-		$username = Factory::getApplication()->getIdentity()->username;
+		$userId = (int)Factory::getApplication()->getIdentity()->id;
 		$quotedTime = $db->quote($time);
-		$quotedUsername = $db->quote($username);
 		$columns = [
-			'academicyear_id',
+			'academicyear',
 			'term',
 			'learner_id',
 			'excused_absence_count',
@@ -245,7 +241,7 @@ class ConductsModel extends ListModel {
 			$properties['academic_score'] = round($properties['academic_score'],2);
 			$properties['conduct_score'] = round($properties['conduct_score']);
 			$values = [
-				$academicyearId,
+				$academicyearCode,
 				TermHelper::TERM_NONE,
 				$id,
 				$properties['excused_absence_count'],
@@ -261,19 +257,19 @@ class ConductsModel extends ListModel {
 				$db->quote(RatingHelper::rateConductScore($properties['conduct_score'])),
 				is_null($properties['note'])?'NULL':$db->quote($properties['note']),
 				$quotedTime,
-				$quotedUsername
+				$userId
 			];
 			$tuples[] = '(' . implode(', ', $values) . ')';
 		}
 		$insertPart = implode(',', $tuples);
 		$updateFields = [];
 		foreach ($columns as $col) {
-			if(in_array($col,['academicyear_id', 'term', 'learner_id', 'created_at', 'created_by']))
+			if(in_array($col,['academicyear', 'term', 'learner_id', 'created_at', 'created_by']))
 				continue;
 			$updateFields[] = $db->quoteName($col) . '=VALUES('.$db->quoteName($col).')';
 		}
 		$updateFields[] = $db->quoteName('updated_at').'='.$quotedTime;
-		$updateFields[] = $db->quoteName('updated_by').'='.$quotedUsername;
+		$updateFields[] = $db->quoteName('updated_by').'='.$userId;
 		$updatePart = implode(', ', $updateFields);
 
 		$query = "INSERT INTO #__eqa_conducts ($columnPart) 

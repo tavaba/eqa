@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use DateTime;
 use Exception;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -42,7 +43,10 @@ class HtmlView extends ItemsHtmlView{
 			if (!GeneralHelper::checkPermissions('eqa.supervise'))
 				throw new Exception('Bạn không có quyền xem danh sách yêu cầu phúc khảo.');
 
-			//Create an instance of the backend model and set it as the default
+			/**
+			 * Create an instance of the backend model and set it as the default
+			 * @var RegradingsModel $model
+			 */
 			$mvcFactory= ComponentHelper::getMVCFactory();
 			$model = $mvcFactory->createModel('Regradings', 'Administrator');
 			$this->setModel($model, true);

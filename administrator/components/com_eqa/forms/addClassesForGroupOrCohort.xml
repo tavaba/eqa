@@ -50,7 +50,7 @@
             <option value="3">Học kỳ 3</option>
         </field>
         <field
-                name="academicyear_id"
+                name="academicyear"
                 type="academicyear"
                 label="Năm học"
                 required="true"

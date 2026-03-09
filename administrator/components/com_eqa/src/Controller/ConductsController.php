@@ -18,6 +18,7 @@ use Kma\Component\Eqa\Administrator\Helper\RatingHelper;
 use Kma\Component\Eqa\Administrator\Model\ConductModel;
 use Kma\Component\Eqa\Administrator\Model\ConductsModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use stdClass;
@@ -31,7 +32,7 @@ class ConductsController extends AdminController {
 			return false;
 		return true;
 	}
-	private function importSheet(Worksheet $sheet, int $academicyearId, int $term, bool $importMark, bool $importCredits): void
+	private function importSheet(Worksheet $sheet, int $academicyearCode, int $term, bool $importMark, bool $importCredits): void
 	{
 		$data = $sheet->toArray();
 		$firstRow = 0;
@@ -90,7 +91,7 @@ class ConductsController extends AdminController {
 				$item->totalCredits = floatval($creditNumber);
 
 			}
-			$model->importItem($academicyearId, $term,$item, $importMark, $importCredits,true);
+			$model->importItem($academicyearCode, $term,$item, $importMark, $importCredits,true);
 			$r++;
 		}
 	}
@@ -180,10 +181,10 @@ class ConductsController extends AdminController {
 
 			//Try get first portion of form data
 			$input = $this->app->input;
-			$academicyearId = $input->getInt('academicyear_id',null);
+			$academicyearCode = $input->getInt('academicyear',null);
 
 			//PHASE 1: Show form
-			if(is_null($academicyearId)) //Show form to select academic year
+			if(is_null($academicyearCode)) //Show form to select academic year
 			{
 				$redirectUrl = Route::_('index.php?option=com_eqa&view=conducts&layout=import', false);
 				$this->setRedirect($redirectUrl);
@@ -208,7 +209,7 @@ class ConductsController extends AdminController {
 				$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
 				foreach ($spreadsheet->getAllSheets() as $sheet)
 				{
-					$this->importSheet($sheet,$academicyearId,$term, $importMark, $importCredits);
+					$this->importSheet($sheet,$academicyearCode,$term, $importMark, $importCredits);
 				}
 			}
 
@@ -249,9 +250,9 @@ class ConductsController extends AdminController {
 			{
 				$item = $conductModel->getItem($id);
 				$learnerId = $item->learner_id;
-				$academicyearId = $item->academicyear_id;
+				$academicyearCode = $item->academicyear;
 				$term = $item->term;
-				$learnerExams = $conductModel->getLearnerExams($learnerId, $academicyearId, $term);
+				$learnerExams = $conductModel->getLearnerExams($learnerId, $academicyearCode, $term);
 				$countResits = $this->countResitExams($learnerExams);
 				$countRetakes = $this->countRetakeSubjects($learnerExams);
 				$termResult = $this->calculateTermResult($learnerExams);
@@ -266,7 +267,7 @@ class ConductsController extends AdminController {
 						implode(' ', [$learner->lastname, $learner->firstname]),
 						$learner->code,
 						$term,
-						DatabaseHelper::getAcademicyearCode($academicyearId)
+						DatetimeHelper::decodeAcademicYear($academicyearCode)
 					);
 					throw new Exception($msg);
 				}
@@ -299,12 +300,12 @@ class ConductsController extends AdminController {
 			//Check token
 			$this->checkToken();
 
-			//Get filters. There must be academicyear_id and course_id fields.
+			//Get filters. There must be academicyear and course_id fields.
 			$input = $this->app->input;
 			$filters = $input->post->get('filter', [], 'array');
-			if(!is_numeric($filters['academicyear_id']) || !is_numeric($filters['course_id']))
+			if(!is_numeric($filters['academicyear']) || !is_numeric($filters['course_id']))
 				throw new Exception('Thiếu thông tin năm học hoặc/và khóa học');
-			$academicyearId = intval($filters['academicyear_id']);
+			$academicyearCode = intval($filters['academicyear']);
 			$courseId = intval($filters['course_id']);
 
 			/**
@@ -312,7 +313,7 @@ class ConductsController extends AdminController {
 			 * @var ConductsModel $model
 			 */
 			$model = $this->getModel('Conducts');
-			$model->caclculateAcacdemicYearResults($academicyearId, $courseId);
+			$model->caclculateAcacdemicYearResults($academicyearCode, $courseId);
 			$this->setMessage('Tính điểm rèn luyện và học tập thành công','success');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=conducts',false));
 		}
@@ -329,12 +330,12 @@ class ConductsController extends AdminController {
 			//Check token
 			$this->checkToken();
 
-			//Get filters. There must be academicyear_id and term fields.
+			//Get filters. There must be academicyear and term fields.
 			$input = $this->app->input;
 			$filters = $input->post->get('filter', [], 'array');
-			if(!is_numeric($filters['academicyear_id']) || !is_numeric($filters['term']))
+			if(!is_numeric($filters['academicyear']) || !is_numeric($filters['term']))
 				throw new Exception('Thiếu thông tin năm học hoặc/và học kỳ');
-			$academicyearId = intval($filters['academicyear_id']);
+			$academicyearCode = intval($filters['academicyear']);
 			$term = intval($filters['term']);
 
 			/**
@@ -342,7 +343,7 @@ class ConductsController extends AdminController {
 			 * @var ConductsModel $model
 			 */
 			$model = $this->getModel('Conducts');
-			$conducts = $model->getListByTerm($academicyearId,$term);
+			$conducts = $model->getListByTerm($academicyearCode,$term);
 			if (count($conducts)==0)
 				throw new Exception('Không tìm thấy kết quả rèn luyện cho học kỳ và năm học đã chọn');
 
@@ -398,12 +399,12 @@ class ConductsController extends AdminController {
 			//Check token
 			$this->checkToken();
 
-			//Get filters. There must be academicyear_id and term fields.
+			//Get filters. There must be academicyear and term fields.
 			$input = $this->app->input;
 			$filters = $input->post->get('filter', [], 'array');
-			if(!is_numeric($filters['academicyear_id']) || !is_numeric($filters['term']))
+			if(!is_numeric($filters['academicyear']) || !is_numeric($filters['term']))
 				throw new Exception('Thiếu thông tin năm học hoặc/và học kỳ');
-			$academicyearId = intval($filters['academicyear_id']);
+			$academicyearCode = intval($filters['academicyear']);
 			$term = intval($filters['term']);
 
 			/**
@@ -411,7 +412,7 @@ class ConductsController extends AdminController {
 			 * @var ConductsModel $model
 			 */
 			$model = $this->getModel('Conducts');
-			$conducts = $model->getListByTerm($academicyearId,$term);
+			$conducts = $model->getListByTerm($academicyearCode,$term);
 			if (count($conducts)==0)
 				throw new Exception('Không tìm thấy kết quả rèn luyện cho học kỳ và năm học đã chọn');
 

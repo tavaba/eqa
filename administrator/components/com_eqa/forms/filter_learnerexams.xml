@@ -15,7 +15,7 @@
                 onchange="this.form.submit();"
         />
         <field
-                name="academicyear_id"
+                name="academicyear"
                 type="academicyear"
                 label="COM_EQA_ACADEMICYEAR"
                 default=""

@@ -169,10 +169,10 @@ class GradecorrectionController extends  FormController {
 			//Phase 2. Correct the grade correction request
 			//Get jform data
 			$formData = $post->get('jform', [], 'array');
-			$currentUsername = $this->app->getIdentity()->username;
+			$currentUserId = $this->app->getIdentity()->id;
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');
-			$model->correct($formData, $currentUsername, $currentTime);
+			$model->correct($formData, $currentUserId, $currentTime);
 
 			//Redirect back
 			$this->setMessage('Đã lưu kết quả xử lý cho yêu cầu đính chính', 'success');

@@ -25,4 +25,3 @@ DROP TABLE IF EXISTS `#__eqa_classes`;
 DROP TABLE IF EXISTS `#__eqa_subjects`;
 DROP TABLE IF EXISTS `#__eqa_employees`;
 DROP TABLE IF EXISTS `#__eqa_units`;
-DROP TABLE IF EXISTS `#__eqa_academicyears`;

@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Classes;    //The namespace must 
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
@@ -53,6 +54,7 @@ class HtmlView extends ItemsHtmlView
         if(!empty($this->layoutData->items)){
             foreach ($this->layoutData->items as $item){
                 $item->lecturer = EmployeeHelper::getFullName($item->lecturer_id);
+				$item->academicyear = DatetimeHelper::decodeAcademicYear($item->academicyear);
             }
         }
 

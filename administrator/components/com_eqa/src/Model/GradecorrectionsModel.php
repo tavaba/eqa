@@ -70,8 +70,8 @@ class GradecorrectionsModel extends ListModel
 			$db->quoteName('a.description')  . ' AS ' . $db->quotename('description'),
 			$db->quoteName('a.handled_by')   . ' AS ' . $db->quotename('handledBy'),
 			$db->quoteName('a.handled_at')   . ' AS ' . $db->quotename('handledAt'),
-			$db->quoteName('a.updated_by')   . ' AS ' . $db->quotename('updatedBy'),
-			$db->quoteName('a.updated_at')   . ' AS ' . $db->quotename('updatedAt'),
+			$db->quoteName('a.modified_by')   . ' AS ' . $db->quotename('updatedBy'),
+			$db->quoteName('a.modified_at')   . ' AS ' . $db->quotename('updatedAt'),
 			$db->quoteName('g.lastname')     . ' AS ' . $db->quotename('reviewerLastname'),
 			$db->quoteName('g.firstname')    . ' AS ' . $db->quotename('reviewerFirstname'),
 		];

@@ -99,11 +99,6 @@ JHtml::_('bootstrap.framework');
                 <div class="tab-pane fade" id="tab2" role="tabpanel">
                     <div class="row g-3">
                         <div class="col-md-4 d-grid">
-                            <a href="<?php echo Route::_('index.php?option=com_eqa&view=academicyears'); ?>" class="btn btn-outline-primary">
-                                <i class="fas fa-calendar-alt me-1"></i> <?php echo Text::_('COM_EQA_BUTTON_ACADEMICYEARS'); ?>
-                            </a>
-                        </div>
-                        <div class="col-md-4 d-grid">
                             <a href="<?php echo Route::_('index.php?option=com_eqa&view=courses'); ?>" class="btn btn-outline-secondary">
                                 <i class="fas fa-layer-group me-1"></i> <?php echo Text::_('COM_EQA_BUTTON_COURSES'); ?>
                             </a>

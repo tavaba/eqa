@@ -49,7 +49,7 @@ class LearnerexamsModel extends ListModel {
 
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
-            array('a.exam_id', 'f.code',       'e.term', 'e.name',     'b.name', 'd.type',     'd.value',     'c.pam1', 'c.pam2', 'c.pam', 'a.attempt', 'c.allowed', 'a.debtor', 'a.anomaly','a.mark_orig', 'a.ppaa', 'a.mark_ppaa', 'a.mark_final', 'a.module_mark', 'a.module_base4_mark', 'a.module_grade', 'a.conclusion'),
+            array('a.exam_id', 'e.academicyear',       'e.term', 'e.name',     'b.name', 'd.type',     'd.value',     'c.pam1', 'c.pam2', 'c.pam', 'a.attempt', 'c.allowed', 'a.debtor', 'a.anomaly','a.mark_orig', 'a.ppaa', 'a.mark_ppaa', 'a.mark_final', 'a.module_mark', 'a.module_base4_mark', 'a.module_grade', 'a.conclusion'),
             array('id',        'academicyear', 'term',   'examseason', 'name',   'stimulType', 'stimulValue', 'pam1',   'pam2',   'pam',   'attempt',   'allowed',   'isDebtor', 'anomaly',  'origMark',    'ppaa',   'ppaaMark',    'finalMark',    'moduleMark',    'moduleBase4Mark',    'moduleGrade',    'conclusion')
         );
         $query = $db->getQuery(true)
@@ -59,7 +59,6 @@ class LearnerexamsModel extends ListModel {
             ->leftJoin('#__eqa_class_learner AS c','c.class_id=a.class_id AND c.learner_id=a.learner_id')
 	        ->leftJoin('#__eqa_stimulations AS d', 'd.id=a.stimulation_id')
 	        ->leftJoin('#__eqa_examseasons AS e', 'e.id=b.examseason_id')
-	        ->leftJoin('#__eqa_academicyears AS f', 'f.id=e.academicyear_id')
 	        ->leftJoin('#__eqa_classes AS g', 'g.id=a.class_id')
             ->where('a.learner_id = ' . $learnerId);
 

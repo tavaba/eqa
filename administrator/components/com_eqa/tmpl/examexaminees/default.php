@@ -6,7 +6,10 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 
-$exam = ExamInfo::cast($this->exam);
+/**
+ * @var ExamInfo $exam
+ */
+$exam = $this->exam;
 ?>
     <div class="accordion">
         <div class="accordion-item">
@@ -42,10 +45,11 @@ $exam = ExamInfo::cast($this->exam);
         Kỳ thi: <?php echo $exam->examseason;?> <br/>
         (Học kỳ <?php echo $exam->term;?>. Năm học <?php echo $exam->academicyear;?>)<br/>
         Tổng số thí sinh: <?php echo $exam->countTotal;?><br/>
-        Đủ điều kiện dự thi: <?php echo $exam->countToTake;?>
+        Được thi: <?php echo $exam->countAllowed;?>
         &nbsp;&nbsp;&nbsp;&nbsp; Miễn thi: <?php echo $exam->countExempted; ?>
         &nbsp;&nbsp;&nbsp;&nbsp; Trượt quá trình: <?php echo $exam->countTotal - $exam->countAllowed;?>
         &nbsp;&nbsp;&nbsp;&nbsp; Nợ học phí: <?php echo $exam->countDebtors;?>
+        &nbsp;&nbsp;&nbsp;&nbsp; Sẽ thi: <?php echo $exam->countToTake;?>
         <br/>
     </div>
 <?php

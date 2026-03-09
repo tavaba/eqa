@@ -18,71 +18,72 @@ class ExamseasonsModel extends ListModel{
     {
         parent::populateState($ordering, $direction);
     }
+	public function getListQuery()
+	{
+		$db = $this->getDatabase();
 
-    public function getListQuery()
-    {
-        $db = $this->getDatabase();
-	    $subQueryNumberOfExamsessions = $db->getQuery(true)
-		    ->select('COUNT(1)')
-		    ->from('#__eqa_examsessions AS z')
-		    ->where('z.examseason_id = a.id');
-	    $subQueryNumberOfExams = $db->getQuery(true)
-		    ->select('COUNT(1)')
-		    ->from('#__eqa_exams AS y')
-		    ->where('y.examseason_id = a.id');
-	    $subQueryNumberOfEntries = $db->getQuery(true)
-		    ->select('COUNT(1)')
-		    ->from('#__eqa_exam_learner AS x')
-		    ->leftJoin('#__eqa_exams AS w','w.id=x.exam_id')
-		    ->where('w.examseason_id = a.id');
-        $columns = $db->quoteName(
-            array('a.id','b.code', 'a.term', 'a.type', 'a.name', 'a.attempt', 'a.default', 'a.start', 'a.finish', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline', 'a.statistic', 'a.description', 'a.completed'),
-            array('id', 'academicyear','term', 'type',  'name',  'attempt',   'default',   'start',   'finish',   'ppaa_req_enabled',   'ppaa_req_deadline',   'statistic', 'description','completed')
-        );
+		$subQueryNumberOfExamsessions = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__eqa_examsessions AS z')
+			->where('z.examseason_id = a.id');
 
-        $query =  parent::getListQuery();
-        $query->from('#__eqa_examseasons AS a')
-            ->leftJoin('#__eqa_academicyears AS b','a.academicyear_id = b.id')
-            ->select($columns)
-	        ->select('(' . $subQueryNumberOfExamsessions . ') AS nexamsession')
-	        ->select('(' . $subQueryNumberOfExams . ') AS nexam')
-	        ->select('(' . $subQueryNumberOfEntries . ') AS nentry');
+		$subQueryNumberOfExams = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__eqa_exams AS y')
+			->where('y.examseason_id = a.id');
 
-        //Filtering
-        $search = $this->getState('filter.search');
-        if(!empty($search)){
-            $like = $db->quote('%'.trim($search).'%');
-            $query->where('a.name LIKE '.$like);
-        }
+		$subQueryNumberOfEntries = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__eqa_exam_learner AS x')
+			->leftJoin('#__eqa_exams AS w', 'w.id = x.exam_id')
+			->where('w.examseason_id = a.id');
 
-        $academicyear_id = $this->getState('filter.academicyear_id');
-        if(is_numeric($academicyear_id)){
-            $query->where('a.academicyear_id = '.(int)$academicyear_id);
-        }
+		$columns = $db->quoteName(
+			array('a.id', 'a.academicyear', 'a.term', 'a.type', 'a.name', 'a.attempt', 'a.default', 'a.start', 'a.finish', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline', 'a.statistic', 'a.description', 'a.completed'),
+			array('id',   'academicyear',   'term',   'type',   'name',   'attempt',   'default',   'start',   'finish',   'ppaa_req_enabled',   'ppaa_req_deadline',   'statistic',   'description',   'completed')
+		);
 
-        $term = $this->getState('filter.term');
-        if(is_numeric($term)){
-            $query->where('a.term = '.(int)$term);
-        }
+		$query = parent::getListQuery();
+		$query->from('#__eqa_examseasons AS a')
+			->select($columns)
+			->select('(' . $subQueryNumberOfExamsessions . ') AS nexamsession')
+			->select('(' . $subQueryNumberOfExams . ') AS nexam')
+			->select('(' . $subQueryNumberOfEntries . ') AS nentry');
 
-        $type = $this->getState('filter.type');
-        if(is_numeric($type)){
-            $query->where('a.type = '.(int)$type);
-        }
+		// Filtering
+		$search = $this->getState('filter.search');
+		if (!empty($search)) {
+			$like = $db->quote('%' . trim($search) . '%');
+			$query->where('a.name LIKE ' . $like);
+		}
 
-        $completed = $this->getState('filter.completed');
-        if(is_numeric($completed)){
-            $query->where('a.completed = '.(int)$completed);
-        }
+		$academicyear = $this->getState('filter.academicyear');
+		if (is_numeric($academicyear)) {
+			$query->where('a.academicyear = ' . (int) $academicyear);
+		}
 
-        //Ordering
-        $orderingCol = $query->db->escape($this->getState('list.ordering','id'));
-        $orderingDir = $query->db->escape($this->getState('list.direction','desc'));
-        $query->order($db->quoteName($orderingCol).' '.$orderingDir);
+		$term = $this->getState('filter.term');
+		if (is_numeric($term)) {
+			$query->where('a.term = ' . (int) $term);
+		}
 
-        return $query;
-    }
+		$type = $this->getState('filter.type');
+		if (is_numeric($type)) {
+			$query->where('a.type = ' . (int) $type);
+		}
 
+		$completed = $this->getState('filter.completed');
+		if (is_numeric($completed)) {
+			$query->where('a.completed = ' . (int) $completed);
+		}
+
+		// Ordering
+		$orderingCol = $query->db->escape($this->getState('list.ordering', 'id'));
+		$orderingDir = $query->db->escape($this->getState('list.direction', 'DESC'));
+		$query->order($db->quoteName($orderingCol) . ' ' . $orderingDir);
+
+		return $query;
+	}
     public function getStoreId($id = '')
     {
         $id .= ':' . $this->getState('filter.search');

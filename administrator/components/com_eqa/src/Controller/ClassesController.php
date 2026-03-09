@@ -80,15 +80,15 @@ class ClassesController extends AdminController
 			if(empty($term))
 				throw new Exception('Bạn phải chọn một học kỳ');
 
-			$academicyearId = $this->input->getInt('academicyear_id');
-			if(empty($academicyearId))
+			$academicyear = $this->input->getInt('academicyear');
+			if (empty($academicyear))
 				throw new Exception('Bạn phải chọn một năm học');
 
 			//4. Create classes
 			$model = $this->getModel('class');
 			foreach ($subjectIds as $subjectId)
 			{
-				$model->addForGroupOrCohort($targetType, $targetId, $subjectId, $term, $academicyearId);
+				$model->addForGroupOrCohort($targetType, $targetId, $subjectId, $term, $academicyear);
 			}
 		}
 		catch(Exception $e)
@@ -140,11 +140,11 @@ class ClassesController extends AdminController
         $now = date('Y-m-d H:i:s');
         $autoYearAndTerm = $this->input->getInt('auto_year_and_term');
         if(!$autoYearAndTerm){
-            $academicyear_id = $this->input->getInt('academicyear_id');
+	        $academicyearCode = $this->input->getInt('academicyear');
             $term = $this->input->getInt('term');
         }
         $class = new Creditclass();
-        $class->created_by = GeneralHelper::getCurrentUsername();
+        $class->created_by = (int)$user->id;
         $class->created_at = $now;
         $class_learner = new ClassLearner();
         $parser = new ClassnameParser();
@@ -195,16 +195,13 @@ class ClassesController extends AdminController
 
                 //Xác định năm học và học kỳ từ tên lớp học phần (nếu cần)
                 if($autoYearAndTerm){
-                    $academicyear_id = DatabaseHelper::getAcademicyearId($parser->year);
-                    if(empty($academicyear_id))
-                    {
-                        $msg = Text::sprintf('COM_EQA_MSG_ACADEMICYEAR_DOES_NOT_EXIST_FOR_CLASS_S',htmlspecialchars($class->name));
-                        $app->enqueueMessage(htmlentities($msg),'error');
-                        continue;
-                    }
+
+                    $academicyearCode = (int)$parser->year;
+					if ($academicyearCode<2000)
+						$academicyearCode += 2000;
                     $term = $parser->term;
                 }
-                $class->academicyear_id = $academicyear_id;
+                $class->academicyear = $academicyearCode;
                 $class->term = $term;
 
                 //Lấy mã môn học tại ô M6 và xác định id, hình thức thi của môn học
@@ -633,7 +630,7 @@ class Creditclass{
     public int|null $lecturer_id;
     public int $academicyear_id;
     public int $term;
-    public string $created_by;
+    public int $created_by;
     public string $created_at;
 }
 

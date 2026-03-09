@@ -19,19 +19,14 @@ class ExamInfo extends ObjectInfo
 	public int $attempt;
 	public bool $useTestBank;
 	public int $status;
-	public int $countTotal;
-	public int $countAllowed;
-	public int $countDebtors;
-	public int $countExempted;
-	public int $countToTake;
+	public int $countTotal;         //Tổng số thí sinh
+	public int $countAllowed;       //Tổng số thí sinh được thi (ở lớp học phần)
+	public int $countDebtors;       //Tổng số thí sinh nợ phí
+	public int $countExempted;      //Tổng số thí sinh không phải thi
+	public int $countToTake;        //Tổng số thí sinh sẽ dự thi
 	public int $countHavePaperInfo; //Có thông tin về bài thi viết (trong số thí sinh được thi)
 	public int $countConcluded;     //Đã có kết quả thi (điểm thi, không được thi,...)
 
-
-	static public function cast($obj): ExamInfo
-	{
-		return $obj;
-	}
 	public function getHtml(array $options=[]): string
 	{
 		$basicInfomationOnly = false;

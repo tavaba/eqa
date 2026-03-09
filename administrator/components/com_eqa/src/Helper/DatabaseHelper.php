@@ -10,6 +10,7 @@ use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Interface\GradeCorrectionInfo;
 use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
 use Kma\Library\Kma\Helper\DatabaseHelper as DatabaseHelperBase;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 abstract class DatabaseHelper extends DatabaseHelperBase
 {
@@ -39,53 +40,81 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		}
 		return $academicyears[$academicyear_id];
 	}
-    static public function getClassInfo($id){
-        if(empty($id))
-            return  null;
-		$id = (int)$id;
 
-        $db = self::getDatabaseDriver();
-		$subqueryCountAllowed = "SELECT COUNT(1) FROM #__eqa_class_learner WHERE class_id=$id AND allowed=1";
+	/**
+	 * Lấy thông tin tóm tắt của một lớp học phần theo ID.
+	 *
+	 * @param   int|null  $id  ID lớp học phần.
+	 *
+	 * @return  object|null
+	 * @since   1.0
+	 */
+	static public function getClassInfo($id): object|null
+	{
+		if (empty($id)) {
+			return null;
+		}
+
+		$id = (int) $id;
+		$db = self::getDatabaseDriver();
+
+		$subqueryCountAllowed = "SELECT COUNT(1) FROM #__eqa_class_learner"
+			. " WHERE class_id={$id} AND allowed=1";
+
 		$columns = $db->quoteName(
-			array('a.id', 'a.code', 'a.name', 'b.code',     'b.name',      'e.name', 'b.credits', 'a.term', 'd.code',       'a.size', 'lecturer_id'),
-			array('id',   'code',   'name',   'subjectCode','subjectName', 'unit',   'credits',   'term',   'academicyear', 'size',  'lecturerId')
+			['a.id', 'a.code', 'a.name', 'b.code',      'b.name',       'e.name', 'b.credits', 'a.term', 'a.academicyear', 'a.size', 'a.lecturer_id'],
+			['id',   'code',   'name',   'subjectCode', 'subjectName',  'unit',   'credits',   'term',   'academicyear',   'size',   'lecturerId']
 		);
-        $query = $db->getQuery(true)
-            ->from('#__eqa_classes AS a')
-	        ->leftJoin('#__eqa_subjects AS b','b.id=a.subject_id')
-	        ->leftJoin('#__eqa_academicyears AS d', 'd.id=a.academicyear_id')
-	        ->leftJoin('#__eqa_units AS e', 'e.id=b.unit_id')
-            ->select($columns)
-	        ->select('('.$subqueryCountAllowed.') AS countAllowed')
-            ->where('a.id = '. (int)$id);
-        $db->setQuery($query);
-        return $db->loadObject();
-    }
-	static public function getCourseStudyYear(string|int $courseCodeOrId, string|int $currentAcademicyearCodeOrId):int
+
+		$query = $db->getQuery(true)
+			->from('#__eqa_classes AS a')
+			->leftJoin('#__eqa_subjects AS b', 'b.id = a.subject_id')
+			->leftJoin('#__eqa_units AS e', 'e.id = b.unit_id')
+			->select($columns)
+			->select('(' . $subqueryCountAllowed . ') AS countAllowed')
+			->where('a.id = ' . $id);
+
+		$db->setQuery($query);
+		$obj = $db->loadObject();
+
+		if ($obj) {
+			// Chuyển INT sang chuỗi hiển thị, ví dụ: 2025 → "2025-2026"
+			$obj->academicyear = DatetimeHelper::decodeAcademicYear((int) $obj->academicyear);
+		}
+
+		return $obj;
+	}
+
+	/**
+	 * Tính năm học thứ mấy của một khóa học trong một năm học cho trước.
+	 *
+	 * @param   string|int  $courseCodeOrId   Mã hoặc ID khóa học.
+	 * @param   int         $currentAcademicyear  Năm học hiện tại (encoded, ví dụ: 2025).
+	 *
+	 * @return  int  Năm học thứ N (tính từ 1).
+	 * @since   1.0
+	 */
+	static public function getCourseStudyYear(string|int $courseCodeOrId, int $currentAcademicyear): int
 	{
 		$db = self::getDatabaseDriver();
 
-		//1. Get the course admission year
+		// 1. Lấy năm nhập học của khóa học
 		$query = $db->getQuery(true)
-			->select('admissionyear')
-			->from('#__eqa_courses');
-		if(is_numeric($courseCodeOrId))
-			$query->where('id=' . (int)$courseCodeOrId);
-		else
-			$query->where('code=' . $db->quote($courseCodeOrId));
-		$db->setQuery($query);
-		$admissionYear = $db->loadResult();
+			->select($db->quoteName('admissionyear'))
+			->from($db->quoteName('#__eqa_courses'));
 
-		//2. If the academic year is given by id, load its code
-		if(is_numeric($currentAcademicyearCodeOrId)){
-			$currentAcademicyearCode = self::getAcademicyearCode((int)$currentAcademicyearCodeOrId);
+		if (is_numeric($courseCodeOrId)) {
+			$query->where('id = ' . (int) $courseCodeOrId);
+		} else {
+			$query->where('code = ' . $db->quote($courseCodeOrId));
 		}
-		else
-			$currentAcademicyearCode = $currentAcademicyearCodeOrId;
 
-		//3. Calculate and return study year
-		$startYear = substr($currentAcademicyearCode, 0, 4);
-		return $startYear - $admissionYear + 1;
+		$db->setQuery($query);
+		$admissionYear = (int) $db->loadResult();
+
+		// 2. Tính và trả về năm học thứ N
+		// $currentAcademicyear đã là năm đầu tiên của năm học (encoded INT)
+		return $currentAcademicyear - $admissionYear + 1;
 	}
 
 	static public function getExamName(int $examId)
@@ -122,119 +151,109 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$time = $db->loadResult();
 		return $time;
 	}
-	static public function getExamInfo($examId): ExamInfo|null
-	{
-		if(empty($examId))
-			return  null;
 
-		$db = self::getDatabaseDriver();
+	/**
+	 * Lấy thông tin chi tiết của một môn thi theo ID.
+	 *
+	 * @param   int  $examId  ID môn thi.
+	 *
+	 * @return  ExamInfo|null
+	 * @since   1.0
+	 */
+	static public function getExamInfo(int $examId): ExamInfo|null
+	{
+		if (empty($examId)) {
+			return null;
+		}
+
+		$db      = self::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('a.id', 'd.code', 'd.credits', 'a.name', 'a.testtype', 'a.usetestbank', 'a.duration','a.examseason_id', 'b.name',  'b.term',  'c.code', 'a.status'),
-			array('id',   'code',   'credits',   'name',   'testtype',   'usetestbank',   'duration',  'examseasonId', 'examseason', 'term', 'academicyear', 'status')
+			['a.id', 'd.code', 'd.credits', 'a.name', 'a.testtype', 'a.usetestbank', 'a.duration', 'a.examseason_id', 'b.name',     'b.term', 'b.academicyear', 'a.status'],
+			['id',   'code',   'credits',   'name',   'testtype',   'usetestbank',   'duration',   'examseasonId',   'examseason', 'term',   'academicyear',   'status']
 		);
+
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_exams AS a')
 			->leftJoin('#__eqa_examseasons AS b', 'a.examseason_id = b.id')
-			->leftJoin('#__eqa_academicyears AS c', 'b.academicyear_id=c.id')
-			->leftJoin('#__eqa_subjects AS d', 'd.id=a.subject_id')
-			->where('a.id = '.(int)$examId);
+			->leftJoin('#__eqa_subjects AS d', 'd.id = a.subject_id')
+			->where('a.id = ' . (int) $examId);
+
 		$db->setQuery($query);
 		$obj = $db->loadObject();
 
-		$exam = new ExamInfo();
-		$exam->id = $obj->id;
-		$exam->code = $obj->code;
-		$exam->credits = $obj->credits;
-		$exam->name = $obj->name;
-		$exam->testtype = $obj->testtype;
-		$exam->useTestBank = $obj->usetestbank;
-		$exam->duration = $obj->duration;
-		$exam->examseasonId = $obj->examseasonId;
-		$exam->examseason = $obj->examseason;
-		$exam->term = $obj->term;
-		$exam->academicyear = $obj->academicyear;
-		$exam->status = $obj->status;
+		if (!$obj) {
+			return null;
+		}
+
+		// Decode INT → chuỗi "YYYY-YYYY"
+		$obj->academicyear = DatetimeHelper::decodeAcademicYear((int) $obj->academicyear);
+
+		$examInfo = new ExamInfo($obj);
 
 
-		/**
-		 * Load additional statistic fields
-		 *      - countTotal: tổng số thí sinh
-		 *      - countNotAllowed: số HVSV không được thi (đánh giá quá trình)
-		 *      - countExempted: số HVSV được miễn thi
-		 */
-
+		//Tiếp tục với các thuộc tính đếm số lượng
 		//1. Tổng số thí sinh
-		$db->setQuery('SELECT COUNT(1) FROM #__eqa_exam_learner WHERE exam_id='.(int)$examId);
-		$exam->countTotal = $db->loadResult();
-
-		//2. Thí sinh được thi
-		$query = $db->getQuery(true)
-			->select('COUNT(1)')
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_class_learner AS b', '(a.class_id = b.class_id AND a.learner_id=b.learner_id)')
-			->where('a.exam_id='.(int)$examId.' AND b.allowed<>0');
-		$db->setQuery($query);
-		$exam->countAllowed = $db->loadResult();
-
-		//3. Tổng thí sinh nợ phí, học phí
 		$query = $db->getQuery(true)
 			->select('COUNT(1)')
 			->from('#__eqa_exam_learner')
-			->where('exam_id=' . $examId . ' AND debtor<>0');
+			->where('exam_id='.$examId);
 		$db->setQuery($query);
-		$exam->countDebtors=$db->loadResult();
+		$examInfo->countTotal = $db->loadResult();
 
-		//4. Thí sinh được miễn thi, được quy đổi điểm
-		$freeTypes = [
-			StimulationHelper::TYPE_EXEMPT,
-			StimulationHelper::TYPE_TRANS
-		];
-		$freeTypeSet = '(' . implode(',', $freeTypes) . ')';
+		//2. Tổng số thí sinh được thi (ở lớp học phần)
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__eqa_exam_learner AS a')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id = a.class_id AND b.learner_id=a.learner_id')
+			->where([
+				'a.exam_id='.$examId,
+				'b.allowed<>0',
+			]);
+		$db->setQuery($query);
+		$examInfo->countAllowed = $db->loadResult();
+
+		//3. Tổng số thí sinh nợ phí
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__eqa_exam_learner')
+			->where([
+				'exam_id='.$examId,
+				'debtor<>0',
+			]);
+		$db->setQuery($query);
+		$examInfo->countDebtors = $db->loadResult();
+
+		//4. Tổng số thí sinh không phải thi (miễn thi, đổi điểm)
+		$exemptSet = '(' . implode(',', [StimulationHelper::TYPE_EXEMPT, StimulationHelper::TYPE_TRANS]) . ')';
 		$query = $db->getQuery(true)
 			->select('COUNT(1)')
 			->from('#__eqa_exam_learner AS a')
 			->leftJoin('#__eqa_stimulations AS b', 'a.stimulation_id=b.id')
-			->where('a.exam_id='.$examId . ' AND b.type IN ' . $freeTypeSet);
+			->where([
+				'a.exam_id='.$examId,
+				'b.type IN ' . $exemptSet,
+			]);
 		$db->setQuery($query);
-		$exam->countExempted = $db->loadResult();
+		$examInfo->countExempted = $db->loadResult();
 
-		//Thí sinh cần dự thi
+		//5. Tổng số thí sinh sẽ (phải/được) thi
 		$query = $db->getQuery(true)
 			->select('COUNT(1)')
 			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_class_learner AS b', '(a.class_id = b.class_id AND a.learner_id=b.learner_id)')
-			->leftJoin('#__eqa_stimulations AS d', 'a.stimulation_id=d.id')
+			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
+			->leftJoin('#__eqa_stimulations AS c', 'a.stimulation_id=c.id')
 			->where([
-				'a.exam_id=' . (int)$examId,
-				'b.allowed<>0',
+				'a.exam_id='.$examId,
 				'a.debtor=0',
-				'(a.stimulation_id IS NULL OR d.type='.StimulationHelper::TYPE_ADD . ')'
+				'b.allowed<>0',
+				'(a.stimulation_id IS NULL OR c.type=' . StimulationHelper::TYPE_ADD . ')'
 			]);
 		$db->setQuery($query);
-		$exam->countToTake = $db->loadResult();
+		$examInfo->countToTake = $db->loadResult();
 
-		//Nếu là thi viết thì đếm số lượng thí sinh đã có thông tin về bài thi
-		if($exam->testtype == TestType::Paper->value)
-		{
-			$query = $db->getQuery(true)
-				->select('COUNT(1)')
-				->from('#__eqa_papers')
-				->where('exam_id='.$examId);
-			$db->setQuery($query);
-			$exam->countHavePaperInfo = $db->loadResult();
-		}
 
-		//Thí sinh đã có kết quả
-		$query = $db->getQuery(true)
-			->select('COUNT(1)')
-			->from('#__eqa_exam_learner')
-			->where('conclusion IS NOT NULL AND exam_id='.$examId);
-		$db->setQuery($query);
-		$exam->countConcluded = $db->loadResult();
-
-		//return
-		return $exam;
+		return $examInfo;
 	}
     static public function getExamExaminees(int $examId, bool $allowedOnly = false)
     {
@@ -334,8 +353,8 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 
 		$db = self::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('a.id', 'a.name', 'a.exam_ids', 'c.code',  'd.start', 'e.attempt', 'e.term', 'f.code',      'e.name',    'd.name',     'd.id',          'a.monitor1_id', 'a.monitor2_id', 'a.monitor3_id', 'a.examiner1_id', 'a.examiner2_id'),
-			array('id',   'name',   'exam_ids',   'building','examtime', 'attempt',  'term',   'academicyear','examseason','examsession','examsession_id','monitor1_id',   'monitor2_id',   'monitor3_id',   'examiner1_id',   'examiner2_id')
+			array('a.id', 'a.name', 'a.exam_ids', 'c.code',  'd.start', 'e.attempt', 'e.term', 'e.academicyear', 'e.name',    'd.name',     'd.id',          'a.monitor1_id', 'a.monitor2_id', 'a.monitor3_id', 'a.examiner1_id', 'a.examiner2_id'),
+			array('id',   'name',   'exam_ids',   'building','examtime', 'attempt',  'term',   'academicyear',   'examseason','examsession','examsession_id','monitor1_id',   'monitor2_id',   'monitor3_id',   'examiner1_id',   'examiner2_id')
 		);
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -344,7 +363,6 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 			->leftJoin('#__eqa_buildings AS c', 'b.building_id=c.id')
 			->leftJoin('#__eqa_examsessions AS d', 'a.examsession_id=d.id')
 			->leftJoin('#__eqa_examseasons AS e', 'd.examseason_id=e.id')
-			->leftJoin('#__eqa_academicyears AS f', 'e.academicyear_id=f.id')
 			->where('a.id='. $id);
 		$db->setQuery($query);
 		$obj = $db->loadObject();
@@ -473,34 +491,50 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 			return false;
 		return $res;
 	}
-	static public function getExamseasonInfo($id=null): ExamseasonInfo|null
+
+	/**
+	 * Lấy thông tin kỳ thi theo ID, hoặc kỳ thi mặc định nếu không truyền ID.
+	 *
+	 * @param   int|null  $id  ID kỳ thi. Nếu null, lấy kỳ thi có default=1.
+	 *
+	 * @return  ExamseasonInfo|null
+	 * @since   1.0
+	 */
+	static public function getExamseasonInfo(?int $id = null): ExamseasonInfo|null
 	{
-		$db = self::getDatabaseDriver();
+		$db      = self::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('a.id', 'a.name',    'b.code',   'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'),
-			array(' id',   'name',  'academicyear', 'term',  'completed',   'ppaa_req_enabled',   'ppaa_req_deadline')
+			['a.id', 'a.name', 'a.academicyear', 'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'],
+			['id',   'name',   'academicyear',   'term',   'completed',   'ppaa_req_enabled',   'ppaa_req_deadline']
 		);
+
 		$query = $db->getQuery(true)
 			->select($columns)
-			->from('#__eqa_examseasons AS a')
-			->leftJoin('#__eqa_academicyears AS b', 'a.academicyear_id=b.id');
-		if(empty($id))
-			$query->where($db->quoteName('a.default'). '= 1');
-		else
-			$query->where('a.id='.(int)$id);
+			->from('#__eqa_examseasons AS a');
+
+		if (empty($id)) {
+			$query->where($db->quoteName('a.default') . ' = 1');
+		} else {
+			$query->where('a.id = ' . (int) $id);
+		}
+
 		$db->setQuery($query);
 		$obj = $db->loadObject();
-		if(!$obj)
-			return null;
 
-		$examseason = new ExamseasonInfo();
-		$examseason->id = $obj->id;
-		$examseason->name = $obj->name;
-		$examseason->academicyear = $obj->academicyear;
-		$examseason->term = $obj->term;
-		$examseason->completed = $obj->completed;
-		$examseason->ppaaRequestEnabled = $obj->ppaa_req_enabled;
+		if (!$obj) {
+			return null;
+		}
+
+		$examseason                   = new ExamseasonInfo();
+		$examseason->id               = $obj->id;
+		$examseason->name             = $obj->name;
+		// Decode INT → chuỗi "YYYY-YYYY" để giữ nguyên kiểu dữ liệu string của field
+		$examseason->academicyear     = DatetimeHelper::decodeAcademicYear((int) $obj->academicyear);
+		$examseason->term             = $obj->term;
+		$examseason->completed        = $obj->completed;
+		$examseason->ppaaRequestEnabled  = $obj->ppaa_req_enabled;
 		$examseason->ppaaRequestDeadline = $obj->ppaa_req_deadline;
+
 		return $examseason;
 	}
 	static public function getExamseasonIdByExamroom(int $examroomId){

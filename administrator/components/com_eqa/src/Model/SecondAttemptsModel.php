@@ -79,7 +79,7 @@ class SecondAttemptsModel extends ListModel
                 'lr.firstname',
                 'su.code',
                 'su.name',
-                'ay.code',
+                'cl.academicyear',
                 'cl.term',
             ],
             [
@@ -117,10 +117,6 @@ class SecondAttemptsModel extends ListModel
                 ' ON ' . $db->quoteName('cl.id') . ' = ' . $db->quoteName('sa.class_id')
             )
             ->leftJoin(
-                $db->quoteName('#__eqa_academicyears', 'ay') .
-                ' ON ' . $db->quoteName('ay.id') . ' = ' . $db->quoteName('cl.academicyear_id')
-            )
-            ->leftJoin(
                 $db->quoteName('#__eqa_exams', 'ex') .
                 ' ON ' . $db->quoteName('ex.id') . ' = ' . $db->quoteName('sa.last_exam_id')
             )
@@ -151,9 +147,9 @@ class SecondAttemptsModel extends ListModel
             $query->where($db->quoteName('su.id') . ' = ' . (int) $subjectId);
         }
 
-        $academicyearId = $this->getState('filter.academicyear_id');
-        if (is_numeric($academicyearId)) {
-            $query->where($db->quoteName('cl.academicyear_id') . ' = ' . (int) $academicyearId);
+        $academicyearCode = $this->getState('filter.academicyear');
+        if (is_numeric($academicyearCode)) {
+            $query->where($db->quoteName('cl.academicyear') . ' = ' . (int) $academicyearCode);
         }
 
         $term = $this->getState('filter.term');
@@ -784,6 +780,7 @@ class SecondAttemptsModel extends ListModel
 
 		foreach ($transactions as $tx) {
 			$descUpper = strtoupper($tx['description']);
+			$descUpper = str_replace(' ','', $descUpper);
 			foreach ($codeToRecord as $code => $rec) {
 				if (str_contains($descUpper, $code)) {
 					$codeMatchCount[$code]        = ($codeMatchCount[$code] ?? 0) + 1;
@@ -937,8 +934,9 @@ class SecondAttemptsModel extends ListModel
 
 			// Cột E (index 4): Nội dung chuyển khoản
 			$description = trim((string) ($row[4] ?? ''));
+
 			// Normalize khoảng trắng và ký tự xuống dòng thừa trong nội dung CK
-			$description = trim(preg_replace('/\s+/', ' ', $description));
+			$description = trim(preg_replace('/\s+/', '', $description));
 
 			if ($description === '') {
 				continue;
@@ -968,7 +966,7 @@ class SecondAttemptsModel extends ListModel
 			$db->quoteName('e.finaltesttype')       . ' AS ' . $db->quoteName('testType'),
 			$db->quoteName('e.finaltestduration')   . ' AS ' . $db->quoteName('testDuration'),
 			$db->quoteName('d.term')                . ' AS ' . $db->quoteName('term'),
-			$db->quoteName('f.code')                . ' AS ' . $db->quoteName('academicyear'),
+			$db->quoteName('d.academicyear')                . ' AS ' . $db->quoteName('academicyear'),
 			$db->quoteName('a.last_exam_id')             . ' AS ' . $db->quoteName('examId'),
 			$db->quoteName('a.class_id')            . ' AS ' . $db->quoteName('classId'),
 			$db->quoteName('b.ntaken')              . ' AS ' . $db->quoteName('ntaken'),
@@ -981,8 +979,7 @@ class SecondAttemptsModel extends ListModel
 			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
 			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
 			->leftJoin('#__eqa_classes AS d', 'd.id=a.class_id')
-			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id')
-			->leftJoin('#__eqa_academicyears AS f', 'f.id=d.academicyear_id');
+			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id');
 		if($onlyFreeOrPaymentCompleted) {
 			$query->where('(a.payment_amount = 0 OR a.payment_completed = 1)');
 		}

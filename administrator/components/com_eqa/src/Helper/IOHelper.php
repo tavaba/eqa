@@ -2281,7 +2281,7 @@ abstract class IOHelper extends BaseIOHelper
 				$item->subjectCode,
 				$item->subjectName,
 				$item->term,
-				$item->academicyear,
+				DatetimeHelper::decodeAcademicYear($item->academicyear),
 				(string) $item->ntaken,
 				Conclusion::from($item->conclusion)->getLabel()
 			];

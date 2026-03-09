@@ -93,7 +93,7 @@ class SubjectsModel extends ListModel{
 	 * @throws Exception Controller chịu trách nhiệm xử lý exception nếu có lỗi xảy ra
 	 * @since 1.2.0
 	 */
-	public function import(array $subjects, bool $updateExisting, string $username, string $time): void
+	public function import(array $subjects, bool $updateExisting, int $userId, string $time): void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -154,7 +154,7 @@ class SubjectsModel extends ListModel{
 							'credits='.$credits,
 							'finaltesttype='.$finaltesttype,
 							'testbankyear='.$testbankyear,
-							'updated_by='.$db->quote($username),
+							'updated_by='.$userId,
 							'updated_at='.$db->quote($time)
 						])
 						->where('id='.$subjectId);
@@ -175,7 +175,7 @@ class SubjectsModel extends ListModel{
 						$finaltesttype,
 						$finaltestweight,
 						$testbankyear,
-						$db->quote($username),
+						$userId,
 						$db->quote($time)
 					];
 					$tuple = implode(',',$data);

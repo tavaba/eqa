@@ -55,7 +55,7 @@ $bankAccount     = htmlspecialchars($this->bankAccount);
 // Tính toán dữ liệu QR trước — dùng chung cho cả bảng lẫn vòng lặp modal
 $itemsData = [];
 foreach ($this->items as $index => $item) {
-    $feeAmount          = (int) round($item->feeAmount);
+    $feeAmount          = (int) round($item->payment_amount);
     $paymentDescription = rawurlencode($item->payment_code . '-' . $this->learnerCode);
     $qrUrl = sprintf(
         'https://img.vietqr.io/image/%s-%s-compact2.png?amount=%d&addInfo=%s',
@@ -239,7 +239,7 @@ if ($this->lastStatementUpdateLocal !== null) {
                         <span class="text-success fw-semibold">Miễn phí</span>
                     <?php else: ?>
                         <span class="text-danger fw-semibold">
-                            <?php echo htmlspecialchars($item->feeLabel); ?>
+                            <?php echo htmlspecialchars($item->payment_amount); ?>
                         </span>
                     <?php endif; ?>
                 </td>
@@ -351,7 +351,7 @@ if ($this->lastStatementUpdateLocal !== null) {
                     <div>
                         Số tiền:
                         <strong class="text-danger">
-                            <?php echo htmlspecialchars($item->feeLabel); ?>
+                            <?php echo htmlspecialchars($item->payment_amount); ?>
                         </strong>
                     </div>
                     <?php if ($deadlineDisplay !== null): ?>

@@ -6,6 +6,7 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -406,170 +407,23 @@ class PaperexamModel extends AdminModel{
 
 		//$exam
 		$columns = $db->quoteName(
-			array('a.name', 'b.name', 'b.term', 'c.code'),
+			array('a.name', 'b.name', 'b.term', 'b.academicyear'),
 			array('name', 'examseason', 'term', 'academicyear')
 		);
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_exams AS a')
 			->leftJoin('#__eqa_examseasons AS b', 'a.examseason_id=b.id')
-			->leftJoin('#__eqa_academicyears AS c', 'b.academicyear_id=c.id')
 			->where('a.id='.$examId);
 		$db->setQuery($query);
 		$exam = $db->loadObject();
 		$info->examName = $exam->name;
 		$info->examseasonName = $exam->examseason;
 		$info->term = $exam->term;
-		$info->academicyearCode = $exam->academicyear;
+		$info->academicyearCode = DatetimeHelper::decodeAcademicYear($exam->academicyear);
 
 		//Return
 		return $info;
-	}
-	public function importMarkByMask_bak(int $examId, array $marks): bool
-	{
-		/**
-		 * Controller phải kiểm tra tính hợp lệ của KIỂU DỮ LIỆU trong mảng $marks trước
-		 * khi gọi phương thức này.
-		 * $marks là mảng liên kểt [$mask => $mark]
-		 *
-		 * Việc import gồm một số bước
-		 *  - Ghi điểm $mark vào bảng #__eqa_papers
-		 *  - Ghi điểm $mark vào bảng #__eqa_exam_learner (cột 'mark_orig')
-		 *    đồng thời tính toán các giá trị 'mark_final', 'module_grade'
-		 *  - Cập nhật số lượt thi, điều kiện tiếp tục thi vào bảng #__eqa_class_learner
-		 */
-
-		//Init
-		$app = Factory::getApplication();
-		$db = DatabaseHelper::getDatabaseDriver();
-
-		//Check if can import
-		if(DatabaseHelper::isCompletedExam($examId))
-		{
-			$app->enqueueMessage('Môn thi đã kết thúc, không thể nhập điểm', 'error');
-			return false;
-		}
-
-		//Xác định subject id để phục vụ tính toán điểm học phần
-		$db->setQuery('SELECT subject_id FROM #__eqa_exams WHERE id='.$examId);
-		$subjectId = $db->loadResult();
-
-
-		$db->transactionStart();
-		try
-		{
-			foreach ($marks as $mask => $mark)
-			{
-				//1. Cập nhật điểm vào bảng #__eqa_papers
-				$query = $db->getQuery(true)
-					->update('#__eqa_papers')
-					->set('mark = ' . $mark)
-					->where('exam_id=' . $examId . ' AND mask=' . $mask);
-				$db->setQuery($query);
-				if(!$db->execute())
-				{
-					$msg = Text::sprintf('Lỗi cập nhật điểm bài thi cho số phách <b>%d</b>', $mask);
-					throw new Exception($msg);
-				}
-
-				//2. Cập nhật điểm vào bảng #__eqa_exam_learner
-				//a) Tìm id, pam, anomaly của thí sinh
-				$columns = $db->quoteName(
-					array('a.learner_id', 'b.class_id', 'c.pam', 'b.attempt', 'b.anomaly', 'c.ntaken', 'd.id',     'd.type',     'd.value'),
-					array('learner_id',   'class_id',   'pam',   'attempt',   'anomaly',   'ntaken',   'stimul_id','stimul_type','stimul_value')
-				);
-				$query = $db->getQuery(true)
-					->select($columns)
-					->from('#__eqa_papers AS a')
-					->leftJoin('#__eqa_exam_learner AS b', 'a.exam_id=b.exam_id AND a.learner_id=b.learner_id')
-					->leftJoin('#__eqa_class_learner AS c', 'b.class_id=c.class_id AND b.learner_id=c.learner_id')
-					->leftJoin('#__eqa_stimulations AS d', 'd.id = b.stimulation_id')
-					->where('a.exam_id=' . $examId . ' AND a.mask=' . $mask);
-				$db->setQuery($query);
-				$obj = $db->loadObject();
-				$learnerId = (int)$obj->learner_id;
-				$classId = (int)$obj->class_id;
-				$pam = (float)$obj->pam;
-				$attempt = (int)$obj->attempt;
-				$anomaly = (int)$obj->anomaly;
-				$ntaken = (int)$obj->ntaken;
-				$stimulationId = $obj->stimul_id;
-				$stimulationType = $obj->stimul_type;
-				$stimulationValue = $obj->stimul_value;
-				$admissionYear = $attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($learnerId) : 0;
-
-				//b) Tính toán và cập nhật điểm
-				$addValue = $stimulationType==StimulationHelper::TYPE_ADD ? $stimulationValue : 0;
-				$finalMark = ExamHelper::calculateFinalMark($mark, $anomaly, $attempt, $addValue, $admissionYear);
-				$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $finalMark, $attempt, $admissionYear);
-				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-				$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $anomaly, $attempt);
-				$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
-				$query = $db->getQuery(true)
-					->update('#__eqa_exam_learner')
-					->set([
-						'mark_orig = ' . $mark,
-						'mark_final = ' . $finalMark,
-						'module_mark = ' . $moduleMark,
-						'module_base4_mark = ' . $moduleBase4Mark,
-						'module_grade = ' . $db->quote($moduleGrade),
-						'conclusion = ' . $conclusion->value
-					])
-					->where('exam_id=' . $examId . ' AND learner_id=' . $learnerId);
-				$db->setQuery($query);
-				if(!$db->execute())
-				{
-					$msg = Text::sprintf('Lỗi cập nhật điểm học phần cho số phách <b>%d</b>', $mask);
-					throw new Exception($msg);
-				}
-
-				//c) Cập nhật số lượt thi, điều kiện tiếp tục dự thi
-				if($anomaly!=Anomaly::Retake->value && $anomaly!=Anomaly::Deferred->value)
-					$ntaken = $attempt;
-				$expired = 0;
-				if($conclusion == Conclusion::Passed || $conclusion == Conclusion::RetakeCourse)
-					$expired=1;
-				$query = $db->getQuery(true)
-					->update('#__eqa_class_learner')
-					->set([
-						'ntaken = ' . $ntaken,
-						'expired = ' . $expired
-					])
-					->where([
-						'class_id = ' . $classId,
-						'learner_id = ' . $learnerId
-					]);
-				$db->setQuery($query);
-				if(!$db->execute())
-				{
-					$msg = Text::sprintf('Lỗi cập nhật thông tin lớp học phần cho số phách <b>%d</b>', $mask);
-					throw new Exception($msg);
-				}
-
-				//d) Ghi nhận chế độ khuyến khích đã được sử dụng
-				//Nếu SV được cộng điểm, kết quả đánh giá học phần là "ĐẠT" thì ghi nhận
-				//chế độ khuyến khích của SV đã được sử dụng
-				if($stimulationType==StimulationHelper::TYPE_ADD && $conclusion == Conclusion::Passed)
-				{
-					$query = $db->getQuery(true)
-						->update('#__eqa_stimulations')
-						->set('used=1')
-						->where('id=' . $stimulationId);
-					$db->setQuery($query);
-					if (!$db->execute())
-						throw new Exception('Lỗi ghi nhận điểm khuyến khích');
-				}
-			}
-			//Commit
-			$db->transactionCommit();
-		}
-		catch (Exception $e)
-		{
-			$db->transactionRollback();
-			$app->enqueueMessage($e->getMessage(), 'error');
-			return false;
-		}
-		return true;
 	}
 	public function importMarkByMask(int $examId, array $marks): void
 	{

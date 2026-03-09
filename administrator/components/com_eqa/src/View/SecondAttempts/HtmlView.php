@@ -13,6 +13,7 @@ use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -83,6 +84,7 @@ class HtmlView extends ItemsHtmlView
         // Tiền xử lý từng bản ghi
         if (!empty($this->layoutData->items)) {
             foreach ($this->layoutData->items as $item) {
+				$item->academicyear = DatetimeHelper::decodeAcademicYear($item->academicyear);
 				// Nhãn "Nợ phí" từ Enum
 	            $item->is_debtor_label = $item->is_debtor ? '<span class="badge bg-danger">Có</span>' : '<span class="badge bg-success">Không</span>';
 

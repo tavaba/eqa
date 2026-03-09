@@ -16,73 +16,74 @@ class ClassesModel extends ListModel{
 	{
 		parent::populateState($ordering, $direction);
 	}
-    public function getListQuery()
-    {
-        $db = DatabaseHelper::getDatabaseDriver();
-        $columns = $db->quoteName(
-            array('a.id','a.coursegroup','a.code','a.name',  'a.lecturer_id',  'b.code',   'a.term', 'a.size', 'a.npam', 'a.description'),
-            array('id',    'coursegroup', 'code',    'name', 'lecturer_id',  'academicyear', 'term',   'size', 'npam',   'description')
-        );
-        $query =  $db->getQuery(true);
-        $query->from('#__eqa_classes AS a')
-            ->leftJoin('#__eqa_academicyears AS b','a.academicyear_id = b.id')
-	        ->leftJoin('#__eqa_subjects AS c', 'c.id=a.subject_id')
-            ->select($columns);
+	public function getListQuery()
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = $db->quoteName(
+			array('a.id', 'a.coursegroup', 'a.code', 'a.name', 'a.lecturer_id', 'a.academicyear', 'a.term', 'a.size', 'a.npam', 'a.description'),
+			array('id',   'coursegroup',   'code',   'name',   'lecturer_id',   'academicyear',   'term',   'size',   'npam',   'description')
+		);
 
-        //Filtering
-        $search = $this->getState('filter.search');
-        if(!empty($search)){
-            $like = $db->quote('%'.trim($search).'%');
-            $query->where('(a.name LIKE ' . $like . 'OR a.code LIKE ' . $like . ')');
-        }
+		$query = $db->getQuery(true);
+		$query->from('#__eqa_classes AS a')
+			->leftJoin('#__eqa_subjects AS c', 'c.id = a.subject_id')
+			->select($columns);
+
+		// Filtering
+		$search = $this->getState('filter.search');
+		if (!empty($search)) {
+			$like = $db->quote('%' . trim($search) . '%');
+			$query->where('(a.name LIKE ' . $like . ' OR a.code LIKE ' . $like . ')');
+		}
 
 		$unitId = $this->getState('filter.unit_id');
-	    if(is_numeric($unitId)){
-		    $query->where('c.unit_id = '.(int)$unitId);
-	    }
+		if (is_numeric($unitId)) {
+			$query->where('c.unit_id = ' . (int) $unitId);
+		}
 
-        $subject_id = $this->getState('filter.subject_id');
-        if(is_numeric($subject_id)){
-            $query->where('a.subject_id = '.(int)$subject_id);
-        }
+		$subjectId = $this->getState('filter.subject_id');
+		if (is_numeric($subjectId)) {
+			$query->where('a.subject_id = ' . (int) $subjectId);
+		}
 
-        $pam = $this->getState('filter.pam');
-        switch ($pam){
-            case 'none':
-                $query->where('`npam`=0');
-                break;
-            case 'full':
-                $query->where($db->quoteName('npam') . '=' . $db->quoteName('size'));
-                break;
-            case 'partial':
-                $query->where([
-                    $db->quoteName('npam') . '>0',
-                    $db->quoteName('npam') . '<' . $db->quoteName('size')
-                ]);
-        }
+		$pam = $this->getState('filter.pam');
+		switch ($pam) {
+			case 'none':
+				$query->where($db->quoteName('a.npam') . ' = 0');
+				break;
+			case 'full':
+				$query->where($db->quoteName('a.npam') . ' = ' . $db->quoteName('a.size'));
+				break;
+			case 'partial':
+				$query->where([
+					$db->quoteName('a.npam') . ' > 0',
+					$db->quoteName('a.npam') . ' < ' . $db->quoteName('a.size'),
+				]);
+				break;
+		}
 
-        $academicyear_id = $this->getState('filter.academicyear_id');
-        if(is_numeric($academicyear_id)){
-            $query->where('a.academicyear_id = '.(int)$academicyear_id);
-        }
+		$academicyear = $this->getState('filter.academicyear');
+		if (is_numeric($academicyear)) {
+			$query->where('a.academicyear = ' . (int) $academicyear);
+		}
 
-        $term = $this->getState('filter.term');
-        if(is_numeric($term)){
-            $query->where('a.term = '.(int)$term);
-        }
+		$term = $this->getState('filter.term');
+		if (is_numeric($term)) {
+			$query->where('a.term = ' . (int) $term);
+		}
 
-        $lecturer_id = $this->getState('filter.lecturer_id');
-        if(is_numeric($lecturer_id)){
-            $query->where('a.lecturer_id = '.(int)$lecturer_id);
-        }
+		$lecturerId = $this->getState('filter.lecturer_id');
+		if (is_numeric($lecturerId)) {
+			$query->where('a.lecturer_id = ' . (int) $lecturerId);
+		}
 
-        //Ordering
-        $orderingCol = $query->db->escape($this->getState('list.ordering','id'));
-        $orderingDir = $query->db->escape($this->getState('list.direction','DESC'));
-        $query->order($db->quoteName($orderingCol).' '.$orderingDir);
+		// Ordering
+		$orderingCol = $query->db->escape($this->getState('list.ordering', 'id'));
+		$orderingDir = $query->db->escape($this->getState('list.direction', 'desc'));
+		$query->order($db->quoteName($orderingCol) . ' ' . $orderingDir);
 
-        return $query;
-    }
+		return $query;
+	}
     public function getStoreId($id = '')
     {
         $id .= ':' . $this->getState('filter.search');

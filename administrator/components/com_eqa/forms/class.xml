@@ -53,7 +53,7 @@
                 default="Cần được thay thế bằng một SubForm"
                 label="COM_EQA_FORM_CLASS_LECTURERS_LABEL"
         />
-        <field  name="academicyear_id"
+        <field  name="academicyear"
                 type="academicyear"
                 required="true"
                 label="COM_EQA_FORM_CLASS_ACADEMICYEAR_LABEL"

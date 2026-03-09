@@ -11,7 +11,7 @@
                 type="hidden"
         />
         <field
-                name="academicyear_id"
+                name="academicyear"
                 type="academicyear"
                 label="COM_EQA_ACADEMICYEAR"
                 required="true"

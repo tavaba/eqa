@@ -7,6 +7,7 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\View\ListLayoutData;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -39,7 +40,7 @@ class HtmlView extends ItemHtmlView {
 		//This model allow the layout to utilize ViewHelper to display a list of subjects
 		//that the user can select to 'import' exams
 		$existingSubjectIds = $itemModel->getSubjectIdsByExamseasonId($examseasonId);
-		$termSubjectIds = $itemModel->getSubjectIdsByTerm($this->examseason->academicyear_id, $this->examseason->term);
+		$termSubjectIds = $itemModel->getSubjectIdsByTerm($this->examseason->academicyear, $this->examseason->term);
 		$limitSubjectIds = array_diff($termSubjectIds, $existingSubjectIds);
 		$factory = ComponentHelper::getMVCFactory();
 		$listModel = $factory->createModel('subjects');
@@ -115,7 +116,7 @@ class HtmlView extends ItemHtmlView {
 		/** @var ClassesModel $listModel */
 		$factory = ComponentHelper::getMVCFactory();
 		$listModel = $factory->createModel('classes');
-		$listModel->setState('filter.academicyear_id', $this->examseason->academicyear_id);
+		$listModel->setState('filter.academicyear', $this->examseason->academicyear);
 		$listModel->setState('filter.term', $this->examseason->term);
 		$this->setModel($listModel, true);
 
@@ -132,6 +133,7 @@ class HtmlView extends ItemHtmlView {
 		//Preprocess the layout data
 		if(!empty($this->listLayoutData->items)) {
 			foreach ($this->listLayoutData->items as $item) {
+				$item->academicyear = DatetimeHelper::decodeAcademicYear($item->academicyear);
 				$item->lecturer = EmployeeHelper::getFullName($item->lecturer_id);
 			}
 		}

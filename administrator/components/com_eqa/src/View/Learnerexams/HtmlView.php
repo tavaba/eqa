@@ -8,6 +8,7 @@ use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\PpaaType;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -62,9 +63,8 @@ class HtmlView extends ItemsHtmlView {
 		{
 			foreach ($this->layoutData->items as &$item) {
 				$item->stimulType = $item->stimulType ? StimulationHelper::getStimulationType($item->stimulType) : '';
-				$item->pam1 = $item->pam1 >=0 ? $item->pam1 : ExamHelper::markToText($item->pam1);
-				$item->pam2 = $item->pam2 >=0 ? $item->pam2 : ExamHelper::markToText($item->pam2);
-				$item->pam = $item->pam >=0 ? $item->pam : ExamHelper::markToText($item->pam);
+				ExamHelper::normalizeMarks($item);
+				$item->academicyear = DatetimeHelper::decodeAcademicYear($item->academicyear);
 				$item->isDebtor = $item->isDebtor ? 'Có' : '';
 				$item->ppaa = PpaaType::from($item->ppaa)->getLabel();
 				$item->anomaly = Anomaly::from($item->anomaly)->getLabel();

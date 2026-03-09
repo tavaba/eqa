@@ -14,6 +14,7 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Field\ExamineeanomalyField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamroomexamineesModel;
 
 class HtmlView extends ItemHtmlView {
     protected $examroom;
@@ -28,7 +29,10 @@ class HtmlView extends ItemHtmlView {
         $this->toolbarOption->title = Text::_('COM_EQA_EXAMINEES_OF_EXAMROOM');
         $this->toolbarOption->taskCancel = true;
 
-        //Prepare model
+        /**
+         * Prepare model
+         * @var ExamroomexamineesModel $model
+         */
         $factory = ComponentHelper::getMVCFactory();
         $model = $factory->createModel('examroomexaminees');
         $this->setModel($model,true);

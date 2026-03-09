@@ -7,7 +7,9 @@ use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
+use Kma\Component\Eqa\Administrator\Model\LearnerexamsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -42,7 +44,10 @@ class HtmlView extends ItemsHtmlView{
 		try{
 			$app = Factory::getApplication();
 
-			//Set a model from the backend
+			/**
+			 * Set a model from the backend
+			 * @var LearnerexamsModel $model
+			 */
 			$mvcFactory = ComponentHelper::getMVCFactory();
 			$model = $mvcFactory->createModel('Learnerexams','Administrator');
 			$this->setModel($model,true);
@@ -79,6 +84,7 @@ class HtmlView extends ItemsHtmlView{
 				foreach ($this->layoutData->items as &$item)
 				{
 					ExamHelper::normalizeMarks($item);
+					$item->academicyear = DatetimeHelper::decodeAcademicYear($item->academicyear);
 				}
 			}
 		}

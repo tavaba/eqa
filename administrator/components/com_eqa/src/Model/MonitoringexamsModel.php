@@ -45,10 +45,10 @@ class MonitoringexamsModel extends ListModel{
         if(is_numeric($examseasonId))
             $query->where('a.examseason_id = '.(int)$examseasonId);
 
-        $academicyear_id = $this->getState('filter.academicyear_id');
-        if(is_numeric($academicyear_id)){
-            $query->where('b.academicyear_id = '.(int)$academicyear_id);
-        }
+	    $academicyear = $this->getState('filter.academicyear');
+	    if (is_numeric($academicyear)) {
+		    $query->where('b.academicyear = ' . (int) $academicyear);
+	    }
 
         $term = $this->getState('filter.term');
         if(is_numeric($term)){

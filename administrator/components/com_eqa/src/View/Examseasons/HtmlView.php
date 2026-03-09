@@ -6,6 +6,7 @@ use DateTime;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\ExamType;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
@@ -54,6 +55,7 @@ class HtmlView extends ItemsHtmlView
         //Preprocessing
         if(!empty($this->layoutData->items)) {
             foreach ($this->layoutData->items as $item) {
+				$item->academicyear = DatetimeHelper::decodeAcademicYear($item->academicyear);
                 $item->type = ExamType::from($item->type)->getLabel();
                 if($item->completed){
                     $item->completed = Text::_('JYES');

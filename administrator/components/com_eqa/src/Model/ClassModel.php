@@ -599,92 +599,115 @@ class ClassModel extends AdminModel {
 		$db->setQuery($query);
 		return $db->loadObject();
 	}
-	public function addForGroupOrCohort(string $targetType, int $targetId, int $subjectId, int $term, int $academicyearId): void
-	{
+
+	/**
+	 * Tạo lớp học phần cho một lớp hành chính hoặc nhóm người học.
+	 *
+	 * @param   string  $targetType   'group' hoặc 'cohort'
+	 * @param   int     $targetId     ID của lớp hành chính hoặc nhóm
+	 * @param   int     $subjectId    ID môn học
+	 * @param   int     $term         Học kỳ
+	 * @param   int     $academicyear Năm học (encoded INT, ví dụ: 2025)
+	 *
+	 * @return  void
+	 * @throws  Exception
+	 * @since   2.0.4
+	 */
+	public function addForGroupOrCohort(
+		string $targetType,
+		int $targetId,
+		int $subjectId,
+		int $term,
+		int $academicyear
+	): void {
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		//1. Get target code and learners
-		if($targetType==='group')
-		{
-			//1.1. Get group code
-			$db->setQuery('SELECT code FROM #__eqa_groups WHERE id='.$targetId);
+		// 1. Lấy mã và danh sách người học của target
+		if ($targetType === 'group') {
+			$query = $db->getQuery(true)
+				->select($db->quoteName('code'))
+				->from($db->quoteName('#__eqa_groups'))
+				->where('id = ' . $targetId);
+			$db->setQuery($query);
 			$targetCode = $db->loadResult();
 
-			//1.2. Get learners
-			$db->setQuery('SELECT id FROM #__eqa_learners WHERE group_id='.$targetId);
+			$query = $db->getQuery(true)
+				->select($db->quoteName('id'))
+				->from($db->quoteName('#__eqa_learners'))
+				->where('group_id = ' . $targetId);
+			$db->setQuery($query);
 			$learnerIds = $db->loadColumn();
-		}
-		elseif ($targetType==='cohort')
-		{
-			//1.1. Get cohort code
-			$db->setQuery('SELECT code FROM #__eqa_cohorts WHERE id='.$targetId);
+
+		} elseif ($targetType === 'cohort') {
+			$query = $db->getQuery(true)
+				->select($db->quoteName('code'))
+				->from($db->quoteName('#__eqa_cohorts'))
+				->where('id = ' . $targetId);
+			$db->setQuery($query);
 			$targetCode = $db->loadResult();
 
-			//1.2. Get learners
-			$db->setQuery('SELECT learner_id FROM #__eqa_cohort_learner WHERE cohort_id='.$targetId);
+			$query = $db->getQuery(true)
+				->select($db->quoteName('learner_id'))
+				->from($db->quoteName('#__eqa_cohort_learner'))
+				->where('cohort_id = ' . $targetId);
+			$db->setQuery($query);
 			$learnerIds = $db->loadColumn();
-		}
-		else
+
+		} else {
 			throw new Exception('Invalid target type');
+		}
 
-		//2. Get subject code
-		$db->setQuery('SELECT code, name FROM #__eqa_subjects WHERE id='.$subjectId);
+		// 2. Lấy mã và tên môn học
+		$query = $db->getQuery(true)
+			->select($db->quoteName(['code', 'name']))
+			->from($db->quoteName('#__eqa_subjects'))
+			->where('id = ' . $subjectId);
+		$db->setQuery($query);
 		$subject = $db->loadObject();
 
-		//3. Get academic year code
-		$db->setQuery('SELECT code FROM #__eqa_academicyears WHERE id='.$academicyearId);
-		$academicYearCode = $db->loadResult();
-		$firstYear = substr($academicYearCode,2, 2);       //Get last two digits of academic year code
+		// 3. Tính 2 chữ số cuối của năm học trực tiếp từ INT
+		//    Ví dụ: 2025 % 100 = 25
+		$firstYear = $academicyear % 100;
 
-		//4. Calculate class code and class name
-		$classCode = Text::sprintf('%s-%d-%s(%s-01)', $subject->code, $term, $firstYear, $targetCode);
-		$className = Text::sprintf('%s-%d-%s(%s-01)', $subject->name, $term, $firstYear, $targetCode);
+		// 4. Tính mã và tên lớp học phần
+		$classCode = sprintf('%s-%d-%02d(%s-01)', $subject->code, $term, $firstYear, $targetCode);
+		$className = sprintf('%s-%d-%02d(%s-01)', $subject->name, $term, $firstYear, $targetCode);
 
 		$db->transactionStart();
-		try
-		{
-			//5. Create a new class and get its ID
-			$columns = $db->quoteName(array('coursegroup','code','name','subject_id','term','academicyear_id','size'));
-			$values=[
-				$db->quote($targetCode),
-				$db->quote($classCode),
-				$db->quote($className),
-				$subjectId,
-				$term,
-				$academicyearId,
-				count($learnerIds)
-			];
-			$tupe = implode(',', $values);
+		try {
+			// 5. Tạo lớp học phần mới
 			$query = $db->getQuery(true)
-				->insert('#__eqa_classes')
-				->columns($columns)
-				->values($tupe);
+				->insert($db->quoteName('#__eqa_classes'))
+				->columns($db->quoteName(['coursegroup', 'code', 'name', 'subject_id', 'term', 'academicyear', 'size']))
+				->values(implode(',', [
+					$db->quote($targetCode),
+					$db->quote($classCode),
+					$db->quote($className),
+					(int) $subjectId,
+					(int) $term,
+					(int) $academicyear,
+					count($learnerIds),
+				]));
 			$db->setQuery($query);
-			if(!$db->execute()){
+			if (!$db->execute()) {
 				throw new Exception('Tạo lớp học phần mới thất bại');
 			}
 			$classId = $db->insertid();
 
-			//6. Add learners to the class
-			$tupes = [];
-			foreach ($learnerIds as $learnerId){
-				$tupes[] = $classId.",".$learnerId;
-			}
-			$query = $db->getQuery(true)
-				->insert('#__eqa_class_learner')
+			// 6. Thêm người học vào lớp
+			$tuples = array_map(fn($id) => $classId . ',' . (int) $id, $learnerIds);
+			$query  = $db->getQuery(true)
+				->insert($db->quoteName('#__eqa_class_learner'))
 				->columns('class_id, learner_id')
-				->values($tupes);
+				->values($tuples);
 			$db->setQuery($query);
-			if(!$db->execute()){
+			if (!$db->execute()) {
 				throw new Exception('Thêm HVSV vào lớp học phần mới thất bại');
 			}
 
-			//7. Commit transaction
 			$db->transactionCommit();
-		}
-		catch(Exception $e)
-		{
-			//Roll back transaction
+
+		} catch (Exception $e) {
 			$db->transactionRollback();
 			throw $e;
 		}

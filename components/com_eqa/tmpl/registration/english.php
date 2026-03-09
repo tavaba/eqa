@@ -37,7 +37,7 @@ if(!$this->user->guest)
 
 if(!$enabled || $deadlineOver)
 {
-	echo 'Không có kỳ thi để đăng k hoặc đã hết hạn đăng ký';
+	echo 'Không có kỳ thi để đăng ký hoặc đã hết hạn đăng ký';
 	return;
 }
 

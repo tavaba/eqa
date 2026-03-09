@@ -8,7 +8,10 @@ use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');
 
-$exam = ExamInfo::cast($this->exam);
+/**
+ * @var ExamInfo $exam
+ */
+$exam = $this->exam;
 $form = $this->form;
 ?>
 <div class="accordion">

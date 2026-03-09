@@ -52,64 +52,84 @@ class ExamseasonModel extends AdminModel{
         $ids = $db->loadColumn();
         return $ids;
     }
-    public function getSubjectIdsByTerm(int $academicyear_id, int $term)
-    {
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->from('#__eqa_classes')
-            ->select('subject_id')
-            ->where('academicyear_id = '.(int)$academicyear_id . ' AND term = '.$term);
-        $db->setQuery($query);
-        $ids = $db->loadColumn();
-        return array_unique($ids, SORT_NUMERIC);
-    }
-    public function addExams($examseasonId, $cid){
-        $app = Factory::getApplication();
-	    $db = DatabaseHelper::getDatabaseDriver();
 
-        if(empty($cid)){
-            $msg = Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED');
-            $app->enqueueMessage($msg,'warning');
-            return;
-        }
-        $db->transactionStart();
-        try{
-            foreach ($cid as $subjectId){
+	/**
+	 * Lấy danh sách subject_id của các lớp học phần thuộc một năm học và học kỳ.
+	 *
+	 * @param   int  $academicyear  Năm học (encoded, ví dụ: 2025).
+	 * @param   int  $term          Học kỳ.
+	 *
+	 * @return  array
+	 * @since   2.0.4
+	 */
+	public function getSubjectIdsByTerm(int $academicyear, int $term): array
+	{
+		$db    = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('subject_id'))
+			->from($db->quoteName('#__eqa_classes'))
+			->where($db->quoteName('academicyear') . ' = ' . (int) $academicyear)
+			->where($db->quoteName('term') . ' = ' . (int) $term);
+		$db->setQuery($query);
+		$ids = $db->loadColumn();
 
-                //1. Create an exam and get the exam id
-                $db->setQuery('SELECT * FROM #__eqa_subjects WHERE id = '.$subjectId);
-                $subject = $db->loadObject();
-                $exam = [
-                    'subject_id' => $subjectId,
-                    'examseason_id' => $examseasonId,
-                    'code' => $subject->code,
-                    'name' => $subject->name,
-                    'testtype' => $subject->finaltesttype,
-                    'duration' => $subject->finaltestduration,
-                    'kmonitor' => $subject->kmonitor,
-                    'kassess' => $subject->kassess,
-                    'allowed_rooms' => $subject->allowed_rooms,
-                    'usetestbank' => empty($subject->testbankyear)?0:1,
-                    'status' => ExamStatus::Unknown->value
-                ];
-                $table = $this->getTable('exam');
-                $table->save($exam);
-                $examId = $db->insertid();
+		return array_unique($ids, SORT_NUMERIC);
+	}
+	public function addExams($examseasonId, $cid){
+		$app = Factory::getApplication();
+		$db = DatabaseHelper::getDatabaseDriver();
 
-                //2. Get all the leaners in all the credit classes of this subject in this academic year and term
-                //2.1. Load academic year and term
-                $db->setQuery('SELECT * FROM #__eqa_examseasons WHERE id='.(int)$examseasonId);
-                $examseason = $db->loadObject();
-                //2.2. Get all the credit classes of this subject in this academic year and term
-                $db->setQuery('SELECT id FROM #__eqa_classes WHERE academicyear_id='
-                    . $examseason->academicyear_id
-                    . ' AND term='.$examseason->term
-                    . ' AND subject_id='.$subjectId);
-                $classIds = $db->loadColumn();
+		if(empty($cid)){
+			$msg = Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED');
+			$app->enqueueMessage($msg,'warning');
+			return;
+		}
+		$db->transactionStart();
+		try{
+			foreach ($cid as $subjectId){
 
-                //2.3. Get all learners (with their class)
-	            $classIds = array_map('intval', $classIds);
-	            $classIdSet = '(' . implode(',', $classIds) . ')';
+				//1. Create an exam and get the exam id
+				$db->setQuery('SELECT * FROM #__eqa_subjects WHERE id = '.$subjectId);
+				$subject = $db->loadObject();
+				$exam = [
+					'subject_id' => $subjectId,
+					'examseason_id' => $examseasonId,
+					'code' => $subject->code,
+					'name' => $subject->name,
+					'testtype' => $subject->finaltesttype,
+					'duration' => $subject->finaltestduration,
+					'kmonitor' => $subject->kmonitor,
+					'kassess' => $subject->kassess,
+					'allowed_rooms' => $subject->allowed_rooms,
+					'usetestbank' => empty($subject->testbankyear)?0:1,
+					'status' => ExamStatus::Unknown->value
+				];
+				$table = $this->getTable('exam');
+				$table->save($exam);
+				$examId = $db->insertid();
+
+				//2. Get all the leaners in all the credit classes of this subject in this academic year and term
+				//2.1. Load examseason
+				$query = $db->getQuery(true)
+					->select('*')
+					->from($db->quoteName('#__eqa_examseasons'))
+					->where($db->quoteName('id') . ' = ' . (int) $examseasonId);
+				$db->setQuery($query);
+				$examseason = $db->loadObject();
+
+				//2.2. Get all the credit classes of this subject in this academic year and term
+				$query = $db->getQuery(true)
+					->select($db->quoteName('id'))
+					->from($db->quoteName('#__eqa_classes'))
+					->where($db->quoteName('academicyear') . ' = ' . (int) $examseason->academicyear)
+					->where($db->quoteName('term') . ' = ' . (int) $examseason->term)
+					->where($db->quoteName('subject_id') . ' = ' . (int) $subjectId);
+				$db->setQuery($query);
+				$classIds = $db->loadColumn();
+
+				//2.3. Get all learners (with their class)
+				$classIds = array_map('intval', $classIds);
+				$classIdSet = '(' . implode(',', $classIds) . ')';
 				$columns = $db->quoteName(
 					array('a.learner_id', 'a.class_id', 'b.debtor'),
 					array('learner_id', 'class_id', 'debtor')
@@ -120,37 +140,37 @@ class ExamseasonModel extends AdminModel{
 					->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
 					->where('class_id IN ' . $classIdSet);
 				$db->setQuery($query);
-                $learners = $db->loadObjectList();
+				$learners = $db->loadObjectList();
 
-                //3. Add the leaners to this exam
-                $columns = $db->quoteName(['exam_id','class_id', 'learner_id', 'debtor', 'attempt']);
-                $attempt = $examseason->attempt;
-                $values = array();
-                foreach ($learners as $learner){
-                    $classId = (int)$learner->class_id;
-                    $learnerId = (int)$learner->learner_id;
+				//3. Add the leaners to this exam
+				$columns = $db->quoteName(['exam_id','class_id', 'learner_id', 'debtor', 'attempt']);
+				$attempt = $examseason->attempt;
+				$values = array();
+				foreach ($learners as $learner){
+					$classId = (int)$learner->class_id;
+					$learnerId = (int)$learner->learner_id;
 					$debtor = (int)$learner->debtor;
-                    $values[] = implode(',',[$examId,$classId,$learnerId, $debtor,$attempt]);
-                }
-                $query = $db->getQuery(true)
-                    ->insert('#__eqa_exam_learner')
-                    ->columns($columns)
-                    ->values($values);
-                $db->setQuery($query);
-                $db->execute();
-            }
+					$values[] = implode(',',[$examId,$classId,$learnerId, $debtor,$attempt]);
+				}
+				$query = $db->getQuery(true)
+					->insert('#__eqa_exam_learner')
+					->columns($columns)
+					->values($values);
+				$db->setQuery($query);
+				$db->execute();
+			}
 
-            //Commit
-            $db->transactionCommit();
+			//Commit
+			$db->transactionCommit();
 			$msg = Text::sprintf('Thêm thành công %d môn thi', sizeof($cid));
-            $app->enqueueMessage($msg, 'success');
-        }
-        catch (Exception $e){
-            $db->transactionRollback();
-            $msg = Text::_('COM_EQA_MSG_DATABASE_ERROR');
-            $app->enqueueMessage($msg,'error');
-        }
-    }
+			$app->enqueueMessage($msg, 'success');
+		}
+		catch (Exception $e){
+			$db->transactionRollback();
+			$msg = Text::_('COM_EQA_MSG_DATABASE_ERROR');
+			$app->enqueueMessage($msg,'error');
+		}
+	}
 	public function addRetakeExams($examseasonId)
 	{
 		$app = Factory::getApplication();

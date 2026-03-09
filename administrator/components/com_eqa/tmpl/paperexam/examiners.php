@@ -8,7 +8,10 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
 
 HTMLHelper::_('behavior.formvalidator');
-$exam = ExamInfo::cast($this->exam);
+/**
+ * @var ExamInfo $exam
+ */
+$exam = $this->exam;
 $packages = $this->packages;
 $field = new EmployeeField();
 

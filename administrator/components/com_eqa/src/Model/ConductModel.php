@@ -10,10 +10,10 @@ defined('_JEXEC') or die();
 
 class ConductModel extends AdminModel
 {
-	public function importItem(int $academicyearId, int $term, object $item, bool $importMark, bool $importCredits, bool $updateExisting=true):void
+	public function importItem(int $academicyearCode, int $term, object $item, bool $importMark, bool $importCredits, bool $updateExisting=true):void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
-		$user = Factory::getApplication()->getIdentity();
+		$userId = (int)Factory::getApplication()->getIdentity()->id;
 
 		//Load learner id
 		$quotedLearnerCode = $db->quote($item->learnerCode);
@@ -22,8 +22,8 @@ class ConductModel extends AdminModel
 		if (!$learnerId)
 			throw new Exception('Không tìm thấy HVSV với mã: '.htmlspecialchars($item->learnerCode));
 
-		//Check if the record (learner_id, academicyear_id, term) exists in database.
-		$db->setQuery("SELECT * FROM #__eqa_conducts WHERE `learner_id`={$learnerId} AND `academicyear_id`={$academicyearId} AND `term`={$term} LIMIT 1");
+		//Check if the record (learner_id, academicyear, term) exists in database.
+		$db->setQuery("SELECT * FROM #__eqa_conducts WHERE `learner_id`={$learnerId} AND `academicyear`={$academicyearCode} AND `term`={$term} LIMIT 1");
 		$obj = $db->loadObject();
 		if ($obj)
 		{
@@ -40,7 +40,7 @@ class ConductModel extends AdminModel
 			$setClause[] = 'conduct_score = '.$item->conductScore;
 			$setClause[] = 'conduct_rating = '. $db->quote($item->conductRating);
 			$setClause[] = 'note = '. $quotedNote;
-			$setClause[] = 'updated_by=' . $db->quote($user->username);
+			$setClause[] = 'updated_by=' . $userId;
 			$setClause[] = 'updated_at = NOW()';
 			if ($importMark)
 			{
@@ -68,13 +68,13 @@ class ConductModel extends AdminModel
 
 		//Insert
 		$quotedNote = empty($item->note) ? $db->quote('') : $db->quote($item->note);
-		$columns = ['learner_id','academicyear_id','term','excused_absence_count','unexcused_absence_count',
+		$columns = ['learner_id','academicyear','term','excused_absence_count','unexcused_absence_count',
 			'award_count','disciplinary_action_count','conduct_score','conduct_rating','note', 'created_at', 'created_by'];
-		$values = [$learnerId,$academicyearId,$term,
+		$values = [$learnerId,$academicyearCode,$term,
 			$item->excusedAbsenceCount,$item->unexcusedAbsenceCount,
 			$item->awardCount,$item->disciplinaryCount,
 			$item->conductScore,$item->conductRating,$quotedNote,
-			$db->quote(date('Y-m-d H:i:s')),$db->quote($user->username)
+			$db->quote(date('Y-m-d H:i:s')), $userId
 		];
 
 		if($importMark)
@@ -101,7 +101,7 @@ class ConductModel extends AdminModel
 			throw new Exception($msg);
 		}
 	}
-	public function getLearnerExams(int $learnerId, int $academicyearId, int $term): array
+	public function getLearnerExams(int $learnerId, int $academicyearCode, int $term): array
 	{
 		$db      = DatabaseHelper::getDatabaseDriver();
 		$columns = [
@@ -123,7 +123,7 @@ class ConductModel extends AdminModel
 			->leftJoin('#__eqa_subjects AS d', 'd.id=b.subject_id')
 			->where([
 				'a.learner_id=' . $learnerId,
-				'c.academicyear_id=' . $academicyearId
+				'c.academicyear=' . $academicyearCode
 			]);
 		if($term != TermHelper::TERM_NONE)
 			$query->where('c.term=' . $term);

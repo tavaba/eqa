@@ -29,7 +29,10 @@ if(empty($this->examInfo) || empty($this->learnerInfo))
 </div>
 
 <?php
-$examInfo = ExamInfo::cast($this->examInfo);
+/**
+ * @var ExamInfo $examInfo
+ */
+$examInfo = $this->examInfo;
 $learnerInfo = LearnerInfo::cast($this->learnerInfo);
 $action = 'index.php?option=com_eqa';
 $hiddenFields = [
