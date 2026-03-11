@@ -121,33 +121,74 @@
 		</fieldset>
 		<fieldset
 				name="threshold"
-				label="Ngưỡng"
-				description="Cấu hình ngưỡng điểm đạt"
+				label="Ngưỡng thi KTHP"
+				description="Cấu hình ngưỡng điểm đạt trong thi KTHP"
 		>
 			<field	name="threshold_pam1"
-					type="number"
-					default="4.0"
-					label="Ngưỡng điểm đạt TP1"
+					  type="number"
+					  default="4.0"
+					  label="Ngưỡng điểm đạt TP1"
 			/>
 			<field	name="threshold_pam2"
-					type="number"
-					default="4.0"
-					label="Ngưỡng điểm đạt TP2"
+					  type="number"
+					  default="4.0"
+					  label="Ngưỡng điểm đạt TP2"
 			/>
 			<field	name="threshold_pam"
-					type="number"
-					default="4.0"
-					label="Ngưỡng điểm đạt quá trình"
+					  type="number"
+					  default="4.0"
+					  label="Ngưỡng điểm đạt quá trình"
 			/>
 			<field	name="threshold_final_exam_mark"
-					type="number"
-					default="4.0"
-					label="Ngưỡng điểm đạt thi KTHP"
+					  type="number"
+					  default="4.0"
+					  label="Ngưỡng điểm đạt thi KTHP"
+			/>
+			<field	name="threshold_module_mark"
+					  type="number"
+					  default="4.0"
+					  label="Ngưỡng điểm đạt học phần"
 			/>
 			<field	name="threshold_pass_fail"
 					  type="number"
 					  default="4.0"
 					  label="Ngưỡng điểm đạt đối với môn điều kiện"
+			/>
+		</fieldset>
+		<fieldset
+				name="threshold"
+				label="Ngưỡng thi khác"
+				description="Cấu hình ngưỡng điểm đạt trong thi tốt nghiệp và các kỳ thi khác"
+		>
+			<field	name="threshold_graduation_pam1"
+					  type="number"
+					  default="0"
+					  label="Ngưỡng điểm đạt TP1"
+			/>
+			<field	name="threshold_graduation_pam2"
+					  type="number"
+					  default="0"
+					  label="Ngưỡng điểm đạt TP2"
+			/>
+			<field	name="threshold_graduation_pam"
+					  type="number"
+					  default="0"
+					  label="Ngưỡng điểm đạt quá trình"
+			/>
+			<field	name="threshold_graduation_final_exam_mark"
+					  type="number"
+					  default="5.0"
+					  label="Ngưỡng điểm đạt bài thi tốt nghiệp"
+			/>
+			<field	name="threshold_graduation_module_mark"
+					  type="number"
+					  default="5.0"
+					  label="Ngưỡng điểm đạt môn thi tốt nghiệp"
+			/>
+			<field	name="threshold_toeic"
+					  type="number"
+					  default="450"
+					  label="Ngưỡng điểm đạt đầu ra TOEIC"
 			/>
 		</fieldset>
 		<fieldset

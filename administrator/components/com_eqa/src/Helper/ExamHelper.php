@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\ExamType;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Enum\SpecialMark;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
@@ -128,15 +129,25 @@ abstract class ExamHelper
 	}
 	static public function calculateModuleMark(int $subjectId, float $pam, float $examMark, int $attempt, int $admissionYear)
 	{
-		//Nothing to do with $subjectId for now
-		//TODO: Xử lý trường hợp môn thi có các hệ số khác nhau
 		$precision = ConfigHelper::getModuleMarkPrecision();
 		$limit = ConfigHelper::getSecondAttemptMarkLimitMode();
-		$moduleMark = 0.3*$pam + 0.7*$examMark;
+		$finalTestWeight = self::loadFinalTestWeight($subjectId);
+		$pamWeight = 1.0 - $finalTestWeight;
+		$moduleMark = $pamWeight*$pam + $finalTestWeight*$examMark;
 		$moduleMark = round($moduleMark, $precision);
 		if($attempt>1 && $admissionYear>=2021 && $limit==SecondAttemptMarkLimitMode::OnModuleMark)
 			$moduleMark = min([$moduleMark, 6.9]);
 		return $moduleMark;
+	}
+	static private function loadFinalTestWeight(int $subjectId): float|null
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->from('#__eqa_subjects')
+			->select('finaltestweight')
+			->where('id = ' . $subjectId);
+		$db->setQuery($query);
+		return $db->loadResult();
 	}
 	static public function calculateBase4Mark(float $moduleMark): float
 	{
@@ -191,7 +202,8 @@ abstract class ExamHelper
 		if(!empty($learner->pam) && $learner->pam<0)
 			$learner->pam = SpecialMark::from($learner->pam)->getLabel();
 	}
-	static public function calculateConclusion($moduleMark, $finalExamMark, $anomaly, $attempt): Conclusion
+	static public function calculateConclusion($moduleMark, $finalExamMark, $anomaly, $attempt,
+		ExamType $examType=ExamType::SubjectFinalTest): Conclusion
 	{
 		if($anomaly == Anomaly::Suspended->value)
 			return Conclusion::RetakeCourse;
@@ -201,12 +213,22 @@ abstract class ExamHelper
 
 		//TODO: Tính toán ngưỡng khác nhau cho Đại học và Cao học
 		//      Đưa ngưỡng điểm tổng vào cấu hình
+		$configService = new ConfigService();
 
-		$minFinalExamMark = ConfigHelper::getThresholdForFinalExamMark();
-
-		if ($finalExamMark < $minFinalExamMark || $moduleMark < 4.0)
+		if($examType === ExamType::SubjectFinalTest)
 		{
-			$maxAttempts = ConfigHelper::getMaxExamAttempts();
+			$minFinalExamMark = $configService->getThresholdForFinalExamMark();
+			$minModuleMark = $configService->getThresholdForModuleMark();
+		}
+		elseif ($examType === ExamType::Graduation)
+		{
+			$minFinalExamMark = $configService->getThresholdForGraduationFinalExamMark();
+			$minModuleMark = $configService->getThresholdForGraduationModuleMark();
+		}
+
+		if ($finalExamMark < $minFinalExamMark || $moduleMark < $minModuleMark)
+		{
+			$maxAttempts = $configService->getMaxExamAttempts();
 			if($attempt>=$maxAttempts)
 				return Conclusion::RetakeCourse;
 			return Conclusion::RetakeExam;

@@ -242,7 +242,7 @@ class ConfigService
 	}
 
 	/**
-	 * Trả về ngưỡng điểm thi tối thiểu để được cộng điểm khuyến khích.
+	 * Trả về ngưỡng điểm thi tối thiểu.
 	 *
 	 * @return  float
 	 * @since   2.1.0
@@ -250,6 +250,17 @@ class ConfigService
 	public function getThresholdForFinalExamMark(): float
 	{
 		return (float) $this->params->get('params.threshold_final_exam_mark', 4.0);
+	}
+
+	/**
+	 * Trả về ngưỡng điểm thi tối thiểu.
+	 *
+	 * @return  float
+	 * @since   2.1.0
+	 */
+	public function getThresholdForModuleMark(): float
+	{
+		return (float) $this->params->get('params.threshold_module_mark', 4.0);
 	}
 
 	/**
@@ -261,6 +272,75 @@ class ConfigService
 	public function getThresholdForPassFailSubject(): float
 	{
 		return (float) $this->params->get('params.threshold_pass_fail', 4.0);
+	}
+
+	// ----------------------------------------------
+	// GIÁ TRỊ NGƯỠNG CHO CÁC KỲ THI KHÁC
+	// ----------------------------------------------
+	/**
+	 * Trả về ngưỡng điểm đạt thành phần 1 (PAM1) trong thi tốt nghiệp.
+	 *
+	 * @return  float
+	 * @since   2.0.5
+	 */
+	public function getThresholdForGraduationPam1(): float
+	{
+		return (float) $this->params->get('params.threshold_graduation_pam1', 0.0);
+	}
+
+	/**
+	 * Trả về ngưỡng điểm đạt thành phần 2 (PAM2) trong thi tốt nghiệp.
+	 *
+	 * @return  float
+	 * @since   2.0.5
+	 */
+	public function getThresholdForGraduationPam2(): float
+	{
+		return (float) $this->params->get('params.threshold_graduation_pam2', 0.0);
+	}
+
+	/**
+	 * Trả về ngưỡng điểm đạt quá trình (PAM) trong thi tốt nghiệp.
+	 *
+	 * @return  float
+	 * @since   2.0.5
+	 */
+	public function getThresholdForGraduationPam(): float
+	{
+		return (float) $this->params->get('params.threshold_graduation_pam', 0.0);
+	}
+
+	/**
+	 * Trả về ngưỡng điểm đạt bài thi (final exam mark) trong thi tốt nghiệp.
+	 *
+	 * @return  float
+	 * @since   2.0.5
+	 */
+	public function getThresholdForGraduationFinalExamMark(): float
+	{
+		return (float) $this->params->get('params.threshold_graduation_final_exam_mark', 5.0);
+	}
+
+	/**
+	 * Trả về ngưỡng điểm đạt môn thi tốt nghiệp (module mark).
+	 *
+	 * @return  float
+	 * @since   2.0.5
+	 */
+	public function getThresholdForGraduationModuleMark(): float
+	{
+		return (float) $this->params->get('params.threshold_graduation_module_mark', 5.0);
+	}
+
+	/**
+	 * Trả về ngưỡng điểm đạt đầu ra TOEIC.
+	 *
+	 * @return  int
+	 * @since   2.0.5
+	 */
+	public function getThresholdForToeic(): int
+	{
+		return (int) $this->params->get('params.threshold_toeic', 450);
 	}
 
 	/**

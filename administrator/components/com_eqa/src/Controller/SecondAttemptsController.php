@@ -51,6 +51,43 @@ class SecondAttemptsController extends AdminController
         );
     }
 
+	/**
+	 * Bổ sung các trường hợp mới vào danh sách thi lần hai (không xóa bản ghi cũ).
+	 *
+	 * @return void
+	 * @since 2.0.5
+	 */
+	public function addNew(): void
+	{
+		$redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('core.create', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+			}
+
+			/** @var \Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel $model */
+			$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+			$result = $model->addNew();
+
+			$added = $result['added'];
+			if ($added === 0) {
+				$this->setMessage('Không có trường hợp mới nào cần bổ sung.', 'info');
+			} else {
+				$this->setMessage(
+					sprintf('Đã bổ sung <b>%d</b> trường hợp thi lần 2 mới.', $added),
+					'success'
+				);
+			}
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+
+		$this->setRedirect($redirectUrl);
+	}
+
     /**
      * Hiển thị form upload bản sao kê ngân hàng.
      *

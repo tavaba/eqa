@@ -276,6 +276,54 @@ class SecondAttemptsModel extends ListModel
     // Chức năng "Làm mới"
     // =========================================================================
 
+	/**
+	 * Chỉ bổ sung các trường hợp mới vào #__eqa_secondattempts, không xóa bất cứ
+	 * bản ghi nào đang có.
+	 *
+	 * Thuật toán:
+	 *   1. Xây dựng $newList từ dữ liệu hiện tại (giống refresh).
+	 *   2. Load các triple key (class_id:learner_id:last_exam_id) đang tồn tại.
+	 *   3. Loại khỏi $newList những entry đã có → chỉ còn các entry thực sự mới.
+	 *   4. Insert phần còn lại.
+	 *
+	 * @return array{added: int}
+	 * @throws Exception
+	 * @since 2.0.5
+	 */
+	public function addNew(): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$db->transactionStart();
+
+		try {
+			$newList = $this->buildNewList($db);
+
+			// Load các triple key đang tồn tại trong bảng
+			$db->setQuery(
+				$db->getQuery(true)
+					->select([
+						$db->quoteName('class_id'),
+						$db->quoteName('learner_id'),
+						$db->quoteName('last_exam_id'),
+					])
+					->from($db->quoteName('#__eqa_secondattempts'))
+			);
+			foreach ($db->loadObjectList() as $existing) {
+				$tripleKey = $existing->class_id . ':' . $existing->learner_id . ':' . $existing->last_exam_id;
+				unset($newList[$tripleKey]);
+			}
+
+			$addedCount = $this->insertNewRecords($db, $newList);
+			$db->transactionCommit();
+
+		} catch (Exception $e) {
+			$db->transactionRollback();
+			throw $e;
+		}
+
+		return ['added' => $addedCount];
+	}
+
     /**
      * Làm mới bảng #__eqa_secondattempts theo thuật toán an toàn, bảo toàn thông
      * tin đóng phí của những thí sinh đã thanh toán.
@@ -388,7 +436,7 @@ class SecondAttemptsModel extends ListModel
      * @throws Exception
      * @since 2.0.2
      */
-    private function removeStaleRecords(DatabaseDriver $db, array $newList): array
+    private function removeStaleRecords_bak(DatabaseDriver $db, array $newList): array
     {
         // Đọc toàn bộ bảng hiện tại (chỉ 3 cột cần thiết để so sánh)
         $db->setQuery(
@@ -426,6 +474,132 @@ class SecondAttemptsModel extends ListModel
 
         return [count($staleIds), $survivingKeys];
     }
+
+
+	/**
+	 * Xóa các bản ghi lỗi thời khỏi #__eqa_secondattempts.
+	 *
+	 * Quy tắc quyết định cho từng record R(class_id, learner_id, last_exam_id):
+	 *
+	 * 1. Nếu cặp (class_id, learner_id) CÓ trong $newList:
+	 *    - last_exam_id khớp với $newList  → KEEP
+	 *    - last_exam_id khác $newList      → DELETE
+	 *
+	 * 2. Nếu cặp (class_id, learner_id) KHÔNG có trong $newList:
+	 *    Tra cứu MAX(exam_id) và conclusion tương ứng trong #__eqa_exam_learner:
+	 *    - maxExamId > last_exam_id VÀ conclusion IS NULL → KEEP
+	 *      (thí sinh đang trong kỳ thi mới, chưa có kết quả)
+	 *    - Tất cả trường hợp còn lại                     → DELETE
+	 *
+	 * Toàn bộ dữ liệu cần thiết được load bằng 2 query (không có N+1 query).
+	 *
+	 * @since 2.0.2
+	 */
+	private function removeStaleRecords(object $db, array $newList): array
+	{
+		// --- Bước 1: Xây dựng lookup map từ $newList ---
+		// "class_id:learner_id" → last_exam_id, tra cứu O(1)
+		$newPairMap = [];
+		foreach ($newList as $entry) {
+			$pairKey              = $entry->class_id . ':' . $entry->learner_id;
+			$newPairMap[$pairKey] = (int) $entry->last_exam_id;
+		}
+
+		// --- Bước 2: Load toàn bộ secondattempts ---
+		$db->setQuery(
+			$db->getQuery(true)
+				->select([
+					$db->quoteName('id'),
+					$db->quoteName('class_id'),
+					$db->quoteName('learner_id'),
+					$db->quoteName('last_exam_id'),
+				])
+				->from($db->quoteName('#__eqa_secondattempts'))
+		);
+		$saRecords = $db->loadObjectList();
+
+		// --- Bước 3: Load MAX(exam_id) và conclusion tương ứng trong exam_learner ---
+		// Chỉ cần cho các cặp (class_id, learner_id) KHÔNG có trong $newList,
+		// nhưng để đơn giản và tránh N+1 query, ta load tất cả trong 1 query.
+		//
+		// Kỹ thuật: JOIN #__eqa_exam_learner với subquery lấy MAX(exam_id)
+		// theo từng (class_id, learner_id), rồi lấy conclusion của bản ghi MAX đó.
+		$maxExamQuery = $db->getQuery(true)
+			->select([
+				$db->quoteName('el.class_id'),
+				$db->quoteName('el.learner_id'),
+				'MAX(' . $db->quoteName('el.exam_id') . ') AS ' . $db->quoteName('max_exam_id'),
+			])
+			->from($db->quoteName('#__eqa_exam_learner', 'el'))
+			->group([$db->quoteName('el.class_id'), $db->quoteName('el.learner_id')]);
+
+		$latestExamQuery = $db->getQuery(true)
+			->select([
+				$db->quoteName('el2.class_id'),
+				$db->quoteName('el2.learner_id'),
+				$db->quoteName('mx.max_exam_id'),
+				$db->quoteName('el2.conclusion'),
+			])
+			->from($db->quoteName('#__eqa_exam_learner', 'el2'))
+			->innerJoin(
+				'(' . $maxExamQuery . ') AS ' . $db->quoteName('mx') .
+				' ON ' . $db->quoteName('mx.class_id') . ' = ' . $db->quoteName('el2.class_id') .
+				' AND ' . $db->quoteName('mx.learner_id') . ' = ' . $db->quoteName('el2.learner_id') .
+				' AND ' . $db->quoteName('mx.max_exam_id') . ' = ' . $db->quoteName('el2.exam_id')
+			);
+
+		$db->setQuery($latestExamQuery);
+
+		// $latestExamMap: "class_id:learner_id" → {max_exam_id, conclusion}
+		$latestExamMap = [];
+		foreach ($db->loadObjectList() as $row) {
+			$pairKey                = $row->class_id . ':' . $row->learner_id;
+			$latestExamMap[$pairKey] = $row;
+		}
+
+		// --- Bước 4: Phân loại từng record ---
+		$idsToDelete   = [];
+		$survivingKeys = [];
+
+		foreach ($saRecords as $record) {
+			$pairKey   = $record->class_id . ':' . $record->learner_id;
+			$tripleKey = $pairKey . ':' . $record->last_exam_id;
+
+			if (isset($newPairMap[$pairKey])) {
+				// Trường hợp 1: cặp CÓ trong $newList
+				if ((int) $record->last_exam_id === $newPairMap[$pairKey]) {
+					$survivingKeys[$tripleKey] = true;  // last_exam_id khớp → KEEP
+				} else {
+					$idsToDelete[] = (int) $record->id; // last_exam_id lệch → DELETE
+				}
+			} else {
+				// Trường hợp 2: cặp KHÔNG có trong $newList
+				// KEEP nếu: đang có kỳ thi mới (maxExamId > last_exam_id)
+				//           VÀ kết quả kỳ thi đó chưa có (conclusion IS NULL)
+				$latest = $latestExamMap[$pairKey] ?? null;
+				if (
+					$latest !== null &&
+					(int) $latest->max_exam_id > (int) $record->last_exam_id &&
+					$latest->conclusion === null
+				) {
+					$survivingKeys[$tripleKey] = true;  // đang thi → KEEP
+				} else {
+					$idsToDelete[] = (int) $record->id; // không còn hợp lệ → DELETE
+				}
+			}
+		}
+
+		// --- Bước 5: Thực hiện xóa ---
+		if (!empty($idsToDelete)) {
+			$db->setQuery(
+				'DELETE FROM ' . $db->quoteName('#__eqa_secondattempts') .
+				' WHERE ' . $db->quoteName('id') . ' IN (' . implode(',', $idsToDelete) . ')'
+			);
+			$db->execute();
+		}
+
+		return [count($idsToDelete), $survivingKeys];
+	}
 
     /**
      * Thêm mới vào #__eqa_secondattempts các bản ghi trong $newList chưa tồn tại trong DB.

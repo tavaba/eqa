@@ -127,11 +127,21 @@ class HtmlView extends ItemsHtmlView
         ToolbarHelper::title('Danh sách thi lần 2');
         ToolbarHelper::appendGoHome();
         $msg = 'Làm mới danh sách: loại bỏ các trường hợp không còn hợp lệ và bổ sung các trường hợp mới';
-        ToolbarHelper::appendConfirmButton('core.create', $msg, 'loop', 'Làm mới', 'secondattempts.refresh', false, null);
+//        ToolbarHelper::appendConfirmButton('core.create', $msg, 'loop', 'Làm mới', 'secondattempts.refresh', false, null);
 
 		//ToolbarHelper::deleteList('Bạn có chắc muốn xóa các bản ghi đã chọn? Hành động này không thể hoàn tác.', 'secondattempts.delete', 'Xóa');
 
-        // Nút Nhập sao kê — chuyển sang layout importstatement
+	    // Nút "Thêm vào": chỉ bổ sung trường hợp mới, không xóa bản ghi cũ
+	    ToolbarHelper::appendButton(
+		    'core.create',
+		    'plus-circle',
+		    'Thêm vào',
+		    'secondattempts.addNew',
+		    false,
+		    'btn btn-success'
+	    );
+
+	    // Nút Nhập sao kê — chuyển sang layout importstatement
         $importUrl = Route::_('index.php?option=com_eqa&view=secondattempts&layout=importstatement', false);
         ToolbarHelper::appendLink('core.edit', $importUrl, 'Nhập sao kê', 'file');
 

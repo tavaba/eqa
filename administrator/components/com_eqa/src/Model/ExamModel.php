@@ -8,6 +8,7 @@ use Joomla\Database\DatabaseDriver;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\ExamType;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -1708,6 +1709,19 @@ class ExamModel extends AdminModel{
 		return $db->execute();
 	}
 
+	public function getExamType(int $examId): ExamType
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('b.type')
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_examseasons AS b', 'b.id = a.examseason_id')
+			->where('a.id='.$examId);
+		$db->setQuery($query);
+		$typeValue = $db->loadResult();
+		return ExamType::from($typeValue);
+	}
+
 	public function getExamStatus(int $examId): ExamStatus
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -1816,12 +1830,14 @@ class ExamModel extends AdminModel{
 	 */
 	public function conclude(int $examId, bool $disciplineAlreadyApplied): ExamStatus
 	{
+		$examType = $this->getExamType($examId);
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		// Lấy toàn bộ thí sinh của môn thi, kèm thông tin cần thiết để tính toán
 		$columns = [
 			$db->quoteName('el.learner_id',       'learnerId'),
 			$db->quoteName('el.class_id',         'classId'),
+			$db->quoteName('el.debtor',           'isDebtor'),
 			$db->quoteName('el.attempt',          'attempt'),
 			$db->quoteName('el.anomaly',          'anomaly'),
 			$db->quoteName('el.mark_orig',        'markOrig'),
@@ -1875,6 +1891,7 @@ class ExamModel extends AdminModel{
 			foreach ($examinees as $examinee) {
 				$learnerId       = (int) $examinee->learnerId;
 				$classId         = (int) $examinee->classId;
+				$isDebtor        = (bool) $examinee->isDebtor;
 				$attempt         = (int) $examinee->attempt;
 				$anomaly         = (int) $examinee->anomaly;
 				$subjectId       = (int) $examinee->subjectId;
@@ -1891,6 +1908,7 @@ class ExamModel extends AdminModel{
 				// ----------------------------------------------------------------
 				// BƯỚC 1: Không đủ điều kiện dự thi
 				// ----------------------------------------------------------------
+				// a) Trường hợp không đạt điểm quá trình
 				if (!$allowed) {
 					$this->updateExamLearnerConclusion(
 						$db, $examId, $learnerId,
@@ -1900,13 +1918,35 @@ class ExamModel extends AdminModel{
 					continue;
 				}
 
+				// b) Trường hợp nợ phí
+				if($isDebtor)
+				{
+					$markOrig = 0;
+					$markFinal = 0;
+					$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt, $admissionYear);
+					$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
+					$conclusion = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt, $examType);
+					$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
+						'mark_orig'         => $markOrig,
+						'mark_final'        => $markFinal,
+						'module_mark'       => $moduleMark,
+						'module_base4_mark' => $moduleBase4Mark,
+						'module_grade'      => $db->quote($moduleGrade),
+						'conclusion'        => $conclusion->value,
+					]);
+					$expired   = in_array($conclusion, [Conclusion::Passed, Conclusion::RetakeCourse], true) ? 1 : 0;
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, $expired);
+					continue;
+				}
+
 				// ----------------------------------------------------------------
 				// BƯỚC 2: Khuyến khích quy đổi điểm (TYPE_TRANS)
 				// ----------------------------------------------------------------
-				if ($stimulationId !== null && $stimulationType === StimulationHelper::TYPE_TRANS) {
+				if (!$isDebtor && $stimulationId !== null && $stimulationType === StimulationHelper::TYPE_TRANS) {
 					$moduleMark      = $stimulationValue;
 					$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-					$conclusion      = ExamHelper::calculateConclusion($moduleMark, $stimulationValue, $anomaly, $attempt);
+					$conclusion      = ExamHelper::calculateConclusion($moduleMark, $stimulationValue, $anomaly, $attempt, $examType);
 					$moduleGrade     = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
 					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
@@ -1925,11 +1965,11 @@ class ExamModel extends AdminModel{
 				// ----------------------------------------------------------------
 				// BƯỚC 3: Khuyến khích miễn thi (TYPE_EXEMPT)
 				// ----------------------------------------------------------------
-				if ($stimulationId !== null && $stimulationType === StimulationHelper::TYPE_EXEMPT) {
+				if (!$isDebtor && $stimulationId !== null && $stimulationType === StimulationHelper::TYPE_EXEMPT) {
 					$markFinal       = $stimulationValue;
 					$moduleMark      = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt, $admissionYear);
 					$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-					$conclusion      = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt);
+					$conclusion      = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt, $examType);
 					$moduleGrade     = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
 					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
@@ -1948,7 +1988,7 @@ class ExamModel extends AdminModel{
 				// ----------------------------------------------------------------
 				// BƯỚC 4: Hoãn thi (DELAY) hoặc làm lại bài (REDO)
 				// ----------------------------------------------------------------
-				if (in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true)) {
+				if (!$isDebtor && in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true)) {
 					// conclude() với mark = 0 sẽ trả về Conclusion::Deferred
 					$conclusion  = ExamHelper::calculateConclusion(0, 0, $anomaly, $attempt);
 					$moduleGrade = ExamHelper::calculateModuleGrade(0, $conclusion);
@@ -1997,7 +2037,7 @@ class ExamModel extends AdminModel{
 				$markFinal       = ExamHelper::calculateFinalMark($examMark, $anomalyForCalculationFinalMark, $attempt, $addValue, $admissionYear);
 				$moduleMark      = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt, $admissionYear);
 				$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-				$conclusion      = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt);
+				$conclusion      = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt, $examType);
 				$moduleGrade     = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
 				// 6.4. Cập nhật #__eqa_exam_learner
