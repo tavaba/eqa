@@ -1908,35 +1908,12 @@ class ExamModel extends AdminModel{
 				// ----------------------------------------------------------------
 				// BƯỚC 1: Không đủ điều kiện dự thi
 				// ----------------------------------------------------------------
-				// a) Trường hợp không đạt điểm quá trình
 				if (!$allowed) {
 					$this->updateExamLearnerConclusion(
 						$db, $examId, $learnerId,
 						elUpdates: ['conclusion' => Conclusion::Ineligible->value]
 					);
 					$this->updateClassLearnerExpired($db, $classId, $learnerId, expired: true);
-					continue;
-				}
-
-				// b) Trường hợp nợ phí
-				if($isDebtor)
-				{
-					$markOrig = 0;
-					$markFinal = 0;
-					$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt, $admissionYear);
-					$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-					$conclusion = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt, $examType);
-					$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
-					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
-						'mark_orig'         => $markOrig,
-						'mark_final'        => $markFinal,
-						'module_mark'       => $moduleMark,
-						'module_base4_mark' => $moduleBase4Mark,
-						'module_grade'      => $db->quote($moduleGrade),
-						'conclusion'        => $conclusion->value,
-					]);
-					$expired   = in_array($conclusion, [Conclusion::Passed, Conclusion::RetakeCourse], true) ? 1 : 0;
-					$this->updateClassLearnerExpired($db, $classId, $learnerId, $expired);
 					continue;
 				}
 
@@ -2006,14 +1983,39 @@ class ExamModel extends AdminModel{
 				}
 
 				// ----------------------------------------------------------------
-				// BƯỚC 5: Chưa có điểm thi → bỏ qua
+				// BƯỚC 5: Nợ phí, Vắng thi, Đình chỉ thi
+				// ==> Không có bài thi, phải nhận điểm 0
+				// ----------------------------------------------------------------
+				if($isDebtor || $anomaly==Anomaly::Absent->value || $anomaly == Anomaly::Suspended->value)
+				{
+					$markOrig = 0;
+					$markFinal = 0;
+					$moduleMark = ExamHelper::calculateModuleMark($subjectId, $pam, $markFinal, $attempt, $admissionYear);
+					$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
+					$conclusion = ExamHelper::calculateConclusion($moduleMark, $markFinal, $anomaly, $attempt, $examType);
+					$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
+					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [
+						'mark_orig'         => $markOrig,
+						'mark_final'        => $markFinal,
+						'module_mark'       => $moduleMark,
+						'module_base4_mark' => $moduleBase4Mark,
+						'module_grade'      => $db->quote($moduleGrade),
+						'conclusion'        => $conclusion->value,
+					]);
+					$expired   = in_array($conclusion, [Conclusion::Passed, Conclusion::RetakeCourse], true) ? 1 : 0;
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, $expired);
+					continue;
+				}
+
+				// ----------------------------------------------------------------
+				// BƯỚC 6: Chưa có điểm thi → bỏ qua
 				// ----------------------------------------------------------------
 				if ($markOrig === null) {
 					continue;
 				}
 
 				// ----------------------------------------------------------------
-				// BƯỚC 6: Đã có điểm thi – trường hợp thông thường
+				// BƯỚC 7: Đã có điểm thi – trường hợp thông thường
 				// ----------------------------------------------------------------
 
 				// 6.1. Xác định điểm cộng khuyến khích (nếu có)
