@@ -1110,7 +1110,7 @@ class SecondAttemptsModel extends ListModel
 			$description = trim((string) ($row[4] ?? ''));
 
 			// Normalize khoảng trắng và ký tự xuống dòng thừa trong nội dung CK
-			$description = trim(preg_replace('/\s+/', '', $description));
+			$description = trim(preg_replace('/\s+/', ' ', $description));
 
 			if ($description === '') {
 				continue;
