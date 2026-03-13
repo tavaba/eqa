@@ -1200,32 +1200,44 @@ class Com_EqaInstallerScript extends InstallerScript
 	 * Migration 2.0.4: Thay thế academicyear_id (FK → #__eqa_academicyears)
 	 * bằng academicyear (INT encoded = năm đầu tiên của năm học).
 	 *
-	 * Thứ tự thực hiện (idempotent — kiểm tra cột tồn tại trước mỗi bước):
-	 *   1. Build mapping id → startYear từ #__eqa_academicyears
-	 *   2. Với mỗi bảng [classes, examseasons, conducts]:
-	 *      a. Populate cột academicyear từ mapping
-	 *      b. SET NOT NULL
-	 *      c. DROP FOREIGN KEY
-	 *      d. DROP COLUMN academicyear_id
-	 *   3. Với bảng conducts: tái tạo UNIQUE constraint
-	 *   4. DROP TABLE #__eqa_academicyears
+	 * Thứ tự cho classes và examseasons:
+	 *   a. Populate cột academicyear từ mapping
+	 *   b. SET NOT NULL
+	 *   c. DROP FK trên academicyear_id (tra cứu động)
+	 *   d. DROP COLUMN academicyear_id
+	 *
+	 * Thứ tự cho conducts (phức tạp hơn vì có FK learner_id và UNIQUE index):
+	 *   a. Populate cột academicyear từ mapping
+	 *   b. SET NOT NULL
+	 *   c. DROP FK trên academicyear_id (tra cứu động)
+	 *   d. DROP tất cả FK còn lại trên bảng (kể cả fk_eqa_conducts_learner)
+	 *      — cần thiết để có thể DROP UNIQUE index chứa learner_id ở bước tiếp
+	 *   e. DROP tất cả UNIQUE index (trừ PRIMARY)
+	 *   f. DROP COLUMN academicyear_id
+	 *   g. Xử lý dữ liệu trùng (learner_id, academicyear, term): hợp nhất
+	 *      các trường đếm (MAX), giữ bản ghi id lớn nhất, xóa bản ghi cũ hơn
+	 *   h. Tạo lại index thường idx_eqa_conducts_learner (learner_id)
+	 *   i. Tạo lại FK fk_eqa_conducts_learner → #__eqa_learners(id)
+	 *   j. Tạo UNIQUE mới (learner_id, academicyear, term)
+	 *
+	 * Idempotent: kiểm tra sự tồn tại trước mỗi bước.
 	 *
 	 * @return bool
 	 */
 	private function runMigration204(): bool
 	{
-		$db     = Factory::getDbo();
-		$prefix = $db->getPrefix();
+		$db = Factory::getDbo();
 
-		$classesTable    = $db->replacePrefix('#__eqa_classes');
-		$seasonsTable    = $db->replacePrefix('#__eqa_examseasons');
-		$conductsTable   = $db->replacePrefix('#__eqa_conducts');
-		$academicTable   = $db->replacePrefix('#__eqa_academicyears');
+		$classesTable  = $db->replacePrefix('#__eqa_classes');
+		$seasonsTable  = $db->replacePrefix('#__eqa_examseasons');
+		$conductsTable = $db->replacePrefix('#__eqa_conducts');
+		$learnersTable = $db->replacePrefix('#__eqa_learners');
+		$academicTable = $db->replacePrefix('#__eqa_academicyears');
 
 		try {
 			// =================================================================
-			// Bước 1: Kiểm tra bảng #__eqa_academicyears còn tồn tại không.
-			// Nếu không còn → migration đã chạy trước đó, bỏ qua (idempotent).
+			// Bước 1: Idempotent check — nếu bảng academicyears không còn
+			// tồn tại thì migration đã chạy xong trước đó, bỏ qua.
 			// =================================================================
 			$tables = $db->setQuery("SHOW TABLES LIKE '{$academicTable}'")->loadColumn();
 			if (empty($tables)) {
@@ -1234,197 +1246,303 @@ class Com_EqaInstallerScript extends InstallerScript
 			}
 
 			// =================================================================
-			// Bước 2: Build mapping academicyear_id → startYear (INT)
-			//   code có dạng "YYYY-YYYY", lấy 4 ký tự đầu
+			// Bước 2: Build mapping id → startYear từ #__eqa_academicyears
+			//   code có dạng "YYYY-YYYY" → lấy 4 ký tự đầu làm INT
 			// =================================================================
-			$rows = $db->setQuery(
+			$yearMap = $db->setQuery(
 				"SELECT `id`, CAST(LEFT(`code`, 4) AS UNSIGNED) AS `startyear`
-             FROM `{$academicTable}`"
+				 FROM `{$academicTable}`"
 			)->loadAssocList('id', 'startyear');
 
-			if (empty($rows)) {
+			if (empty($yearMap)) {
 				$this->logInfo('Migration 2.0.4: Không có dữ liệu trong academicyears, tiếp tục dọn dẹp.');
 			} else {
-				$this->logInfo('Migration 2.0.4: Tìm thấy ' . count($rows) . ' năm học cần migrate.');
+				$this->logInfo('Migration 2.0.4: Tìm thấy ' . count($yearMap) . ' năm học cần migrate.');
 			}
 
 			// =================================================================
-			// Bước 3: Populate + dọn dẹp từng bảng
+			// Bước 3: classes và examseasons — xử lý đơn giản
 			// =================================================================
-			$tablesToMigrate = [
-				[
-					'table'      => $classesTable,
-					'unique_old' => null,
-					'unique_new' => null,
-				],
-				[
-					'table'      => $seasonsTable,
-					'unique_old' => null,
-					'unique_new' => null,
-				],
-				[
-					'table'      => $conductsTable,
-					// conducts có UNIQUE(learner_id, academicyear_id, term) cần tái tạo
-					'unique_old' => 'learner_id',   // signal để xử lý riêng
-					'unique_new' => 'unique_learner_academicyear_term',
-				],
-			];
-
-			foreach ($tablesToMigrate as $cfg) {
-				$table   = $cfg['table'];
-
+			foreach ([$classesTable, $seasonsTable] as $table) {
 				$this->logInfo("Migration 2.0.4: Đang xử lý bảng `{$table}`...");
 
-				// --- 3a. Kiểm tra cột academicyear_id còn tồn tại không ---
-				$cols = $db->setQuery(
-					"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE()
-                   AND TABLE_NAME   = '{$table}'
-                   AND COLUMN_NAME  = 'academicyear_id'"
-				)->loadColumn();
+				// 3a. Idempotent check
+				$colExists = $db->setQuery(
+					"SELECT COUNT(1) FROM INFORMATION_SCHEMA.COLUMNS
+					 WHERE TABLE_SCHEMA = DATABASE()
+					   AND TABLE_NAME   = '{$table}'
+					   AND COLUMN_NAME  = 'academicyear_id'"
+				)->loadResult();
 
-				if (empty($cols)) {
+				if (!$colExists) {
 					$this->logInfo("Migration 2.0.4: Cột academicyear_id không còn trong `{$table}`, bỏ qua.");
 					continue;
 				}
 
-				// --- 3b. Populate academicyear từ mapping ---
-				if (!empty($rows)) {
-					foreach ($rows as $id => $startYear) {
+				// 3b. Populate
+				if (!empty($yearMap)) {
+					foreach ($yearMap as $id => $startYear) {
 						$db->setQuery(
 							"UPDATE `{$table}`
-                         SET `academicyear` = " . (int) $startYear . "
-                         WHERE `academicyear_id` = " . (int) $id . "
-                           AND `academicyear` IS NULL"
+							 SET `academicyear` = " . (int) $startYear . "
+							 WHERE `academicyear_id` = " . (int) $id . "
+							   AND `academicyear` IS NULL"
 						)->execute();
 					}
 					$this->logInfo("Migration 2.0.4: Đã populate `academicyear` trong `{$table}`.");
 				}
 
-				// --- 3c. SET NOT NULL ---
-				// Xác định kiểu cột gốc để MODIFY đúng
+				// 3c. SET NOT NULL
 				$db->setQuery(
 					"ALTER TABLE `{$table}`
-                 MODIFY COLUMN `academicyear` INT NOT NULL
-                     COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)'"
+					 MODIFY COLUMN `academicyear` INT NOT NULL
+					     COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)'"
 				)->execute();
 				$this->logInfo("Migration 2.0.4: Đã SET NOT NULL cho `academicyear` trong `{$table}`.");
 
-				// --- 3d. DROP tất cả FK trên cột academicyear_id (tra cứu động) ---
+				// 3d. DROP FK trên academicyear_id (tra cứu động)
 				$fkNames = $db->setQuery(
 					"SELECT kcu.CONSTRAINT_NAME
 					 FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
 					 INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-						 ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
-						AND tc.TABLE_SCHEMA    = kcu.TABLE_SCHEMA
-						AND tc.TABLE_NAME      = kcu.TABLE_NAME
-					 WHERE kcu.TABLE_SCHEMA  = DATABASE()
-					   AND kcu.TABLE_NAME    = '{$table}'
-					   AND kcu.COLUMN_NAME   = 'academicyear_id'
-					   AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY'"
+					     ON  tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+					     AND tc.TABLE_SCHEMA    = kcu.TABLE_SCHEMA
+					     AND tc.TABLE_NAME      = kcu.TABLE_NAME
+					 WHERE kcu.TABLE_SCHEMA    = DATABASE()
+					   AND kcu.TABLE_NAME      = '{$table}'
+					   AND kcu.COLUMN_NAME     = 'academicyear_id'
+					   AND tc.CONSTRAINT_TYPE  = 'FOREIGN KEY'"
 				)->loadColumn();
 
-				if (!empty($fkNames)) {
-					foreach ($fkNames as $fkName) {
-						$db->setQuery(
-							"ALTER TABLE `{$table}` DROP FOREIGN KEY `{$fkName}`"
-						)->execute();
-						$this->logInfo(
-							"Migration 2.0.4: Đã DROP FOREIGN KEY `{$fkName}` trên `{$table}`."
-						);
-					}
-				} else {
-					$this->logInfo(
-						"Migration 2.0.4: Không tìm thấy FOREIGN KEY nào trên cột academicyear_id"
-						. " trong `{$table}`, bỏ qua."
-					);
+				foreach ($fkNames as $fkName) {
+					$db->setQuery("ALTER TABLE `{$table}` DROP FOREIGN KEY `{$fkName}`")->execute();
+					$this->logInfo("Migration 2.0.4: Đã DROP FOREIGN KEY `{$fkName}` trên `{$table}`.");
 				}
-				
-				// --- 3e. DROP COLUMN academicyear_id ---
+
+				// 3e. DROP COLUMN
 				$db->setQuery("ALTER TABLE `{$table}` DROP COLUMN `academicyear_id`")->execute();
 				$this->logInfo("Migration 2.0.4: Đã DROP COLUMN `academicyear_id` trong `{$table}`.");
+			}
 
-				// --- 3f. Xử lý riêng UNIQUE constraint cho conducts ---
-				if ($table === $conductsTable) {
+			// =================================================================
+			// Bước 4: conducts — xử lý đặc biệt
+			// =================================================================
+			$this->logInfo("Migration 2.0.4: Đang xử lý bảng `{$conductsTable}`...");
 
-					// Lấy danh sách tất cả UNIQUE index (trừ PRIMARY)
-					$oldUniqueIndexes = $db->setQuery(
-						"SELECT DISTINCT INDEX_NAME
-						 FROM INFORMATION_SCHEMA.STATISTICS
-						 WHERE TABLE_SCHEMA = DATABASE()
-						   AND TABLE_NAME   = '{$conductsTable}'
-						   AND NON_UNIQUE   = 0
-						   AND INDEX_NAME  != 'PRIMARY'"
-					)->loadColumn();
+			$colExists = $db->setQuery(
+				"SELECT COUNT(1) FROM INFORMATION_SCHEMA.COLUMNS
+				 WHERE TABLE_SCHEMA = DATABASE()
+				   AND TABLE_NAME   = '{$conductsTable}'
+				   AND COLUMN_NAME  = 'academicyear_id'"
+			)->loadResult();
 
-					// Lấy danh sách các index đang được FK sử dụng (không được DROP)
-					$indexesUsedByFk = $db->setQuery(
-						"SELECT DISTINCT INDEX_NAME
-						 FROM INFORMATION_SCHEMA.STATISTICS AS s
-						 WHERE s.TABLE_SCHEMA = DATABASE()
-						   AND s.TABLE_NAME   = '{$conductsTable}'
-						   AND s.COLUMN_NAME IN (
-							   SELECT kcu.COLUMN_NAME
-							   FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
-							   INNER JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
-								   ON  tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
-								   AND tc.TABLE_SCHEMA    = kcu.TABLE_SCHEMA
-								   AND tc.TABLE_NAME      = kcu.TABLE_NAME
-							   WHERE kcu.TABLE_SCHEMA   = DATABASE()
-								 AND kcu.TABLE_NAME     = '{$conductsTable}'
-								 AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
-						   )"
-					)->loadColumn();
+			if (!$colExists) {
+				$this->logInfo("Migration 2.0.4: Cột academicyear_id không còn trong conducts, bỏ qua.");
+			} else {
+				// 4a. Populate
+				if (!empty($yearMap)) {
+					foreach ($yearMap as $id => $startYear) {
+						$db->setQuery(
+							"UPDATE `{$conductsTable}`
+							 SET `academicyear` = " . (int) $startYear . "
+							 WHERE `academicyear_id` = " . (int) $id . "
+							   AND `academicyear` IS NULL"
+						)->execute();
+					}
+					$this->logInfo('Migration 2.0.4: Đã populate `academicyear` trong conducts.');
+				}
 
-					$protectedIndexes = array_flip($indexesUsedByFk);
+				// 4b. SET NOT NULL
+				$db->setQuery(
+					"ALTER TABLE `{$conductsTable}`
+					 MODIFY COLUMN `academicyear` INT NOT NULL
+					     COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)'"
+				)->execute();
+				$this->logInfo('Migration 2.0.4: Đã SET NOT NULL cho `academicyear` trong conducts.');
 
-					foreach ($oldUniqueIndexes as $indexName) {
-						if (isset($protectedIndexes[$indexName])) {
-							$this->logInfo(
-								"Migration 2.0.4: Bỏ qua DROP INDEX `{$indexName}` trên conducts"
-								. " vì đang được FK sử dụng."
-							);
-							continue;
+				// 4c. DROP TẤT CẢ FK trên bảng conducts (tra cứu động)
+				// — bao gồm cả FK academicyear lẫn FK learner_id —
+				// vì bước tiếp theo cần DROP UNIQUE index có cột learner_id,
+				// mà MySQL không cho DROP index đang được FK tham chiếu.
+				$allFkNames = $db->setQuery(
+					"SELECT CONSTRAINT_NAME
+					 FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+					 WHERE TABLE_SCHEMA    = DATABASE()
+					   AND TABLE_NAME      = '{$conductsTable}'
+					   AND CONSTRAINT_TYPE = 'FOREIGN KEY'"
+				)->loadColumn();
+
+				foreach ($allFkNames as $fkName) {
+					$db->setQuery(
+						"ALTER TABLE `{$conductsTable}` DROP FOREIGN KEY `{$fkName}`"
+					)->execute();
+					$this->logInfo("Migration 2.0.4: Đã DROP FOREIGN KEY `{$fkName}` trên conducts.");
+				}
+
+				// 4d. DROP tất cả UNIQUE index (trừ PRIMARY)
+				$uniqueIndexes = $db->setQuery(
+					"SELECT DISTINCT INDEX_NAME
+					 FROM INFORMATION_SCHEMA.STATISTICS
+					 WHERE TABLE_SCHEMA = DATABASE()
+					   AND TABLE_NAME   = '{$conductsTable}'
+					   AND NON_UNIQUE   = 0
+					   AND INDEX_NAME  != 'PRIMARY'"
+				)->loadColumn();
+
+				foreach ($uniqueIndexes as $indexName) {
+					$db->setQuery(
+						"ALTER TABLE `{$conductsTable}` DROP INDEX `{$indexName}`"
+					)->execute();
+					$this->logInfo("Migration 2.0.4: Đã DROP UNIQUE index `{$indexName}` trên conducts.");
+				}
+
+				// 4e. DROP COLUMN academicyear_id
+				$db->setQuery(
+					"ALTER TABLE `{$conductsTable}` DROP COLUMN `academicyear_id`"
+				)->execute();
+				$this->logInfo('Migration 2.0.4: Đã DROP COLUMN `academicyear_id` trong conducts.');
+
+				// 4f. Xử lý dữ liệu trùng (learner_id, academicyear, term)
+				// Chiến lược: hợp nhất các trường đếm (MAX), giữ bản ghi id
+				// lớn nhất, xóa các bản ghi cũ hơn trong mỗi nhóm trùng.
+				$this->logInfo('Migration 2.0.4: Kiểm tra dữ liệu trùng trong conducts...');
+
+				$duplicates = $db->setQuery(
+					"SELECT learner_id, academicyear, term, COUNT(*) AS cnt
+					 FROM `{$conductsTable}`
+					 GROUP BY learner_id, academicyear, term
+					 HAVING cnt > 1"
+				)->loadObjectList();
+
+				if (empty($duplicates)) {
+					$this->logInfo('Migration 2.0.4: Không có dữ liệu trùng trong conducts.');
+				} else {
+					$this->logInfo(
+						'Migration 2.0.4: Phát hiện ' . count($duplicates)
+						. ' nhóm bản ghi trùng, đang xử lý...'
+					);
+
+					foreach ($duplicates as $dup) {
+						$learnerId    = (int) $dup->learner_id;
+						$academicyear = (int) $dup->academicyear;
+						$term         = (int) $dup->term;
+
+						$dupRows = $db->setQuery(
+							"SELECT * FROM `{$conductsTable}`
+							 WHERE learner_id   = {$learnerId}
+							   AND academicyear = {$academicyear}
+							   AND term         = {$term}
+							 ORDER BY id ASC"
+						)->loadObjectList();
+
+						$keepRow   = end($dupRows);
+						$keepId    = (int) $keepRow->id;
+						$deleteIds = array_map(
+							fn($r) => (int) $r->id,
+							array_slice($dupRows, 0, count($dupRows) - 1)
+						);
+
+						// Hợp nhất: lấy MAX các trường đếm/điểm
+						$mergedFields = [
+							'excused_absence_count'     => max(array_column($dupRows, 'excused_absence_count')),
+							'unexcused_absence_count'   => max(array_column($dupRows, 'unexcused_absence_count')),
+							'resit_count'               => max(array_column($dupRows, 'resit_count')),
+							'retake_count'              => max(array_column($dupRows, 'retake_count')),
+							'award_count'               => max(array_column($dupRows, 'award_count')),
+							'disciplinary_action_count' => max(array_column($dupRows, 'disciplinary_action_count')),
+							'total_credits'             => max(array_column($dupRows, 'total_credits')),
+							'academic_score'            => max(array_column($dupRows, 'academic_score')),
+							'academic_rating'           => max(array_column($dupRows, 'academic_rating')),
+							'conduct_score'             => max(array_column($dupRows, 'conduct_score')),
+							'conduct_rating'            => max(array_column($dupRows, 'conduct_rating')),
+						];
+
+						$setClauses = [];
+						foreach ($mergedFields as $col => $val) {
+							$setClauses[] = "`{$col}` = " . ($val === null ? 'NULL' : (float) $val);
 						}
 
 						$db->setQuery(
-							"ALTER TABLE `{$conductsTable}` DROP INDEX `{$indexName}`"
+							"UPDATE `{$conductsTable}` SET " . implode(', ', $setClauses)
+							. " WHERE id = {$keepId}"
 						)->execute();
-						$this->logInfo(
-							"Migration 2.0.4: Đã DROP UNIQUE index `{$indexName}` trên conducts."
-						);
-					}
 
-					// Kiểm tra UNIQUE mới đã tồn tại chưa (idempotent)
-					$newIndexExists = $db->setQuery(
-						"SELECT COUNT(1)
-						 FROM INFORMATION_SCHEMA.STATISTICS
-						 WHERE TABLE_SCHEMA = DATABASE()
-						   AND TABLE_NAME   = '{$conductsTable}'
-						   AND INDEX_NAME   = 'unique_learner_academicyear_term'"
-					)->loadResult();
-
-					if (!$newIndexExists) {
 						$db->setQuery(
-							"ALTER TABLE `{$conductsTable}`
-							 ADD UNIQUE KEY `unique_learner_academicyear_term`
-								 (`learner_id`, `academicyear`, `term`)"
+							"DELETE FROM `{$conductsTable}`
+							 WHERE id IN (" . implode(', ', $deleteIds) . ")"
 						)->execute();
+
 						$this->logInfo(
-							'Migration 2.0.4: Đã tái tạo UNIQUE constraint'
-							. ' (learner_id, academicyear, term) trên conducts.'
-						);
-					} else {
-						$this->logInfo(
-							'Migration 2.0.4: UNIQUE constraint unique_learner_academicyear_term'
-							. ' đã tồn tại, bỏ qua.'
+							"Migration 2.0.4: Đã hợp nhất " . count($deleteIds) . " bản ghi trùng"
+							. " (learner_id={$learnerId}, academicyear={$academicyear}, term={$term}),"
+							. " giữ lại id={$keepId}."
 						);
 					}
+				}
+
+				// 4g. Tạo lại index thường cho learner_id (hỗ trợ FK)
+				$idxExists = $db->setQuery(
+					"SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS
+					 WHERE TABLE_SCHEMA = DATABASE()
+					   AND TABLE_NAME   = '{$conductsTable}'
+					   AND INDEX_NAME   = 'idx_eqa_conducts_learner'"
+				)->loadResult();
+
+				if (!$idxExists) {
+					$db->setQuery(
+						"ALTER TABLE `{$conductsTable}`
+						 ADD INDEX `idx_eqa_conducts_learner` (`learner_id`)"
+					)->execute();
+					$this->logInfo('Migration 2.0.4: Đã tạo lại index idx_eqa_conducts_learner trên conducts.');
+				}
+
+				// 4h. Tạo lại FK fk_eqa_conducts_learner
+				$fkExists = $db->setQuery(
+					"SELECT COUNT(1)
+					 FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+					 WHERE TABLE_SCHEMA    = DATABASE()
+					   AND TABLE_NAME      = '{$conductsTable}'
+					   AND CONSTRAINT_NAME = 'fk_eqa_conducts_learner'
+					   AND CONSTRAINT_TYPE = 'FOREIGN KEY'"
+				)->loadResult();
+
+				if (!$fkExists) {
+					$db->setQuery(
+						"ALTER TABLE `{$conductsTable}`
+						 ADD CONSTRAINT `fk_eqa_conducts_learner`
+						     FOREIGN KEY (`learner_id`)
+						     REFERENCES `{$learnersTable}` (`id`)
+						     ON DELETE RESTRICT"
+					)->execute();
+					$this->logInfo('Migration 2.0.4: Đã tạo lại FK fk_eqa_conducts_learner trên conducts.');
+				}
+
+				// 4i. Tạo UNIQUE mới (learner_id, academicyear, term)
+				$uniqueExists = $db->setQuery(
+					"SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS
+					 WHERE TABLE_SCHEMA = DATABASE()
+					   AND TABLE_NAME   = '{$conductsTable}'
+					   AND INDEX_NAME   = 'unique_learner_academicyear_term'"
+				)->loadResult();
+
+				if (!$uniqueExists) {
+					$db->setQuery(
+						"ALTER TABLE `{$conductsTable}`
+						 ADD UNIQUE KEY `unique_learner_academicyear_term`
+						     (`learner_id`, `academicyear`, `term`)"
+					)->execute();
+					$this->logInfo(
+						'Migration 2.0.4: Đã tạo UNIQUE constraint (learner_id, academicyear, term) trên conducts.'
+					);
+				} else {
+					$this->logInfo(
+						'Migration 2.0.4: UNIQUE constraint unique_learner_academicyear_term đã tồn tại, bỏ qua.'
+					);
 				}
 			}
 
 			// =================================================================
-			// Bước 4: DROP TABLE #__eqa_academicyears
+			// Bước 5: DROP TABLE #__eqa_academicyears
 			// =================================================================
 			$db->setQuery("DROP TABLE IF EXISTS `{$academicTable}`")->execute();
 			$this->logInfo('Migration 2.0.4: Đã DROP TABLE academicyears.');

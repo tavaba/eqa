@@ -15,11 +15,15 @@
  *   Ví dụ: 2025 → năm học 2025-2026.
  *   Giải mã bằng DatetimeHelper::decodeAcademicYear(int $year): string
  */
+ 
+-- Tắt kiểm tra khóa ngoại để xóa sạch không bị lỗi ràng buộc
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- =============================================================================
 -- Tòa nhà
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_buildings`(
+DROP TABLE IF EXISTS `#__eqa_buildings`;
+CREATE TABLE `#__eqa_buildings`(
     `id`          INT AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu tòa nhà. Ví dụ: TA1, TB1...',
     `description` TEXT,
@@ -38,7 +42,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_buildings`(
 -- =============================================================================
 -- Phòng học (vật lý)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_rooms`(
+DROP TABLE IF EXISTS `#__eqa_rooms`;
+CREATE TABLE `#__eqa_rooms`(
     `id`          INT AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu phòng. Ví dụ: 104, 401-TA2...',
     `building_id` INT NOT NULL,
@@ -63,7 +68,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_rooms`(
 -- =============================================================================
 -- Đơn vị (khoa, phòng, ban, bộ môn...)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_units` (
+DROP TABLE IF EXISTS `#__eqa_units`;
+CREATE TABLE `#__eqa_units` (
     `id`          INT AUTO_INCREMENT,
     `parent_id`   INT NOT NULL DEFAULT 0 COMMENT 'Đơn vị cấp trên; 0 nếu trực thuộc Học viện',
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu, ví dụ: K.ATTT, BM.ATGDDT',
@@ -85,7 +91,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_units` (
 -- =============================================================================
 -- Cán bộ, giảng viên, nhân viên
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_employees` (
+DROP TABLE IF EXISTS `#__eqa_employees`;
+CREATE TABLE `#__eqa_employees` (
     `id`          INT AUTO_INCREMENT,
     `code`        VARCHAR(255) DEFAULT NULL COMMENT 'Mã cán bộ, nhân viên',
     `lastname`    VARCHAR(255) NOT NULL COMMENT 'Họ Đệm',
@@ -112,7 +119,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_employees` (
 -- =============================================================================
 -- Ngành đào tạo
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_specialities`(
+DROP TABLE IF EXISTS `#__eqa_specialities`;
+CREATE TABLE `#__eqa_specialities`(
     `id`          INT AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu',
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên ngành đào tạo',
@@ -131,7 +139,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_specialities`(
 -- =============================================================================
 -- Chương trình đào tạo
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_programs`(
+DROP TABLE IF EXISTS `#__eqa_programs`;
+CREATE TABLE `#__eqa_programs`(
     `id`          INT AUTO_INCREMENT,
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên của chương trình đào tạo',
     `spec_id`     INT NOT NULL COMMENT 'FK: Ngành đào tạo',
@@ -158,7 +167,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_programs`(
 -- =============================================================================
 -- Khóa đào tạo
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_courses` (
+DROP TABLE IF EXISTS `#__eqa_courses`;
+CREATE TABLE `#__eqa_courses` (
     `id`            INT AUTO_INCREMENT,
     `prog_id`       INT NOT NULL COMMENT 'FK: Chương trình ĐT',
     `code`          VARCHAR(255) NOT NULL COMMENT 'Ký hiệu. Ví dụ: AT20',
@@ -182,7 +192,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_courses` (
 -- =============================================================================
 -- Lớp hành chính
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_groups` (
+DROP TABLE IF EXISTS `#__eqa_groups`;
+CREATE TABLE `#__eqa_groups` (
     `id`          INT AUTO_INCREMENT,
     `course_id`   INT COMMENT 'FK: Khóa đào tạo. NULL với lớp ngắn hạn...',
     `code`        VARCHAR(255) NOT NULL COMMENT 'Tên lớp. Ví dụ: AT20A',
@@ -213,7 +224,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_groups` (
 -- =============================================================================
 -- Học viên, sinh viên
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_learners` (
+DROP TABLE IF EXISTS `#__eqa_learners`;
+CREATE TABLE `#__eqa_learners` (
     `id`          INT AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Mã HVSV. Ví dụ: AT010101',
     `lastname`    VARCHAR(255) NOT NULL COMMENT 'Họ Đệm',
@@ -239,7 +251,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_learners` (
 -- =============================================================================
 -- Nhóm người học (cohort)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_cohorts` (
+DROP TABLE IF EXISTS `#__eqa_cohorts`;
+CREATE TABLE `#__eqa_cohorts` (
     `id`          INT AUTO_INCREMENT,
     `code`        VARCHAR(20) NOT NULL COMMENT 'Ký hiệu nhóm. Ví dụ: H30L',
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên nhóm: H30 Lào',
@@ -255,7 +268,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_cohorts` (
     UNIQUE (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Nhóm HVSV';
 
-CREATE TABLE IF NOT EXISTS `#__eqa_cohort_learner` (
+DROP TABLE IF EXISTS `#__eqa_cohort_learner`;
+CREATE TABLE `#__eqa_cohort_learner` (
     `cohort_id`  INT NOT NULL,
     `learner_id` INT NOT NULL,
     PRIMARY KEY (`cohort_id`, `learner_id`),
@@ -270,7 +284,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_cohort_learner` (
 -- =============================================================================
 -- Môn học
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_subjects` (
+DROP TABLE IF EXISTS `#__eqa_subjects`;
+CREATE TABLE `#__eqa_subjects` (
     `id`                INT AUTO_INCREMENT,
     `code`              VARCHAR(255) NOT NULL COMMENT 'Mã môn học',
     `name`              VARCHAR(255) NOT NULL COMMENT 'Tên môn học',
@@ -309,7 +324,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_subjects` (
 -- Thay đổi 2.0.4: academicyear_id INT FK → academicyear INT NOT NULL
 --   Lưu trực tiếp năm đầu tiên của năm học (ví dụ: 2025 cho 2025-2026)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_classes` (
+DROP TABLE IF EXISTS `#__eqa_classes`;
+CREATE TABLE `#__eqa_classes` (
     `id`            INT AUTO_INCREMENT,
     `coursegroup`   VARCHAR(255) COMMENT 'Đối tượng người học',
     `code`          CHAR(40) COMMENT 'Mã lớp học phần',
@@ -351,7 +367,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_classes` (
 -- =============================================================================
 -- Chế độ khuyến khích
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_stimulations`(
+DROP TABLE IF EXISTS `#__eqa_stimulations`;
+CREATE TABLE `#__eqa_stimulations`(
     `id`          INT AUTO_INCREMENT,
     `subject_id`  INT NOT NULL COMMENT 'FK: Môn học',
     `learner_id`  INT NOT NULL COMMENT 'FK: Người học',
@@ -378,7 +395,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_stimulations`(
 -- =============================================================================
 -- HVSV trong lớp học phần
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_class_learner` (
+DROP TABLE IF EXISTS `#__eqa_class_learner`;
+CREATE TABLE `#__eqa_class_learner` (
     `id`          INT AUTO_INCREMENT,
     `class_id`    INT NOT NULL,
     `learner_id`  INT NOT NULL,
@@ -407,7 +425,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_class_learner` (
 -- Kỳ thi
 -- Thay đổi 2.0.4: academicyear_id INT FK → academicyear INT NOT NULL
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_examseasons`(
+DROP TABLE IF EXISTS `#__eqa_examseasons`;
+CREATE TABLE `#__eqa_examseasons`(
     `id`                  INT AUTO_INCREMENT,
     `name`                VARCHAR(255) NOT NULL COMMENT 'Tên đợt thi',
     `academicyear`        INT NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
@@ -436,7 +455,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_examseasons`(
 -- =============================================================================
 -- Ca thi
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_examsessions`(
+DROP TABLE IF EXISTS `#__eqa_examsessions`;
+CREATE TABLE `#__eqa_examsessions`(
     `id`            INT AUTO_INCREMENT,
     `examseason_id` INT NOT NULL COMMENT 'Khóa ngoại: Đợt/kỳ thi',
     `name`          VARCHAR(255) NOT NULL COMMENT 'Tên ca thi',
@@ -462,7 +482,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_examsessions`(
 -- =============================================================================
 -- Môn thi
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_exams`(
+DROP TABLE IF EXISTS `#__eqa_exams`;
+CREATE TABLE `#__eqa_exams`(
     `id`            INT AUTO_INCREMENT,
     `subject_id`    INT NOT NULL COMMENT 'Khóa ngoại: Môn học',
     `examseason_id` INT NOT NULL COMMENT 'Khóa ngoại: Kỳ thi',
@@ -494,7 +515,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_exams`(
 -- =============================================================================
 -- Phòng thi (vật lý và logic)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_examrooms`(
+DROP TABLE IF EXISTS `#__eqa_examrooms`;
+CREATE TABLE `#__eqa_examrooms`(
     `id`             INT AUTO_INCREMENT,
     `name`           VARCHAR(255) NOT NULL COMMENT 'Tên phòng thi',
     `room_id`        INT NOT NULL COMMENT 'Khóa ngoại: Phòng học (địa điểm thi)',
@@ -519,10 +541,10 @@ CREATE TABLE IF NOT EXISTS `#__eqa_examrooms`(
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`room_id`, `examsession_id`),
-    FOREIGN KEY (`room_id`)
+    CONSTRAINT fk_eqa_examrooms_room FOREIGN KEY (`room_id`)
         REFERENCES `#__eqa_rooms`(`id`)
         ON DELETE RESTRICT,
-    FOREIGN KEY (`examsession_id`)
+    CONSTRAINT fk_eqa_examrooms_examsession FOREIGN KEY (`examsession_id`)
         REFERENCES `#__eqa_examsessions`(`id`)
         ON DELETE RESTRICT
         ON UPDATE RESTRICT
@@ -531,7 +553,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_examrooms`(
 -- =============================================================================
 -- Kết quả thi của thí sinh
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_exam_learner`(
+DROP TABLE IF EXISTS `#__eqa_exam_learner`;
+CREATE TABLE `#__eqa_exam_learner`(
     `exam_id`            INT NOT NULL COMMENT 'Khóa ngoại: môn thi',
     `learner_id`         INT NOT NULL COMMENT 'Khóa ngoại: học viên, sinh viên',
     `class_id`           INT COMMENT 'Khóa ngoại: lớp học phần',
@@ -576,7 +599,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_exam_learner`(
 -- =============================================================================
 -- Túi bài thi viết
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_packages`(
+DROP TABLE IF EXISTS `#__eqa_packages`;
+CREATE TABLE `#__eqa_packages`(
     `id`            INT AUTO_INCREMENT,
     `number`        INT NOT NULL COMMENT 'Số hiệu túi (trong phạm vi 1 môn thi)',
     `examiner1_id`  INT COMMENT 'Khóa ngoại: CBChT 1',
@@ -606,7 +630,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_packages`(
 -- =============================================================================
 -- Bài thi viết
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_papers`(
+DROP TABLE IF EXISTS `#__eqa_papers`;
+CREATE TABLE `#__eqa_papers`(
     `exam_id`    INT NOT NULL COMMENT 'FK: môn thi',
     `learner_id` INT NOT NULL COMMENT 'FK: thí sinh',
     `nsheet`     INT NOT NULL DEFAULT 0 COMMENT 'Số tờ giấy thi',
@@ -628,7 +653,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_papers`(
 -- =============================================================================
 -- Phúc khảo bài thi
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_regradings`(
+DROP TABLE IF EXISTS `#__eqa_regradings`;
+CREATE TABLE `#__eqa_regradings`(
     `id`           INT AUTO_INCREMENT,
     `exam_id`      INT NOT NULL COMMENT 'FK: mã môn thi',
     `learner_id`   INT NOT NULL COMMENT 'FK: thí sinh',
@@ -660,7 +686,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_regradings`(
 -- =============================================================================
 -- Đính chính điểm thi
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_gradecorrections`(
+DROP TABLE IF EXISTS `#__eqa_gradecorrections`;
+CREATE TABLE `#__eqa_gradecorrections`(
     `id`          INT AUTO_INCREMENT,
     `exam_id`     INT NOT NULL COMMENT 'FK: mã môn thi',
     `learner_id`  INT NOT NULL COMMENT 'FK: thí sinh',
@@ -692,7 +719,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_gradecorrections`(
 -- =============================================================================
 -- Machine Marking Productions
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_mmproductions`(
+DROP TABLE IF EXISTS `#__eqa_mmproductions`;
+CREATE TABLE `#__eqa_mmproductions`(
     `id`          INT AUTO_INCREMENT,
     `exam_id`     INT NOT NULL COMMENT 'FK: mã môn thi',
     `examiner_id` INT NOT NULL COMMENT 'FK: CBChT',
@@ -712,7 +740,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_mmproductions`(
 -- Thay đổi 2.0.4: academicyear_id INT FK → academicyear INT NOT NULL
 --   UNIQUE(learner_id, academicyear_id, term) → UNIQUE(learner_id, academicyear, term)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_conducts`(
+DROP TABLE IF EXISTS `#__eqa_conducts`;
+CREATE TABLE `#__eqa_conducts`(
     `id`                       INT AUTO_INCREMENT,
     `learner_id`               INT NOT NULL,
     `academicyear`             INT NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
@@ -745,7 +774,8 @@ CREATE TABLE IF NOT EXISTS `#__eqa_conducts`(
 -- =============================================================================
 -- Danh sách thi lần hai
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS `#__eqa_secondattempts`(
+DROP TABLE IF EXISTS `#__eqa_secondattempts`;
+CREATE TABLE `#__eqa_secondattempts`(
     `id`                INT AUTO_INCREMENT,
     `class_id`          INT NOT NULL,
     `learner_id`        INT NOT NULL,
@@ -760,3 +790,6 @@ CREATE TABLE IF NOT EXISTS `#__eqa_secondattempts`(
     UNIQUE (`class_id`, `learner_id`),
     UNIQUE (`payment_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Danh sách thi lần hai';
+
+-- Bật lại kiểm tra khóa ngoại
+SET FOREIGN_KEY_CHECKS = 1;
