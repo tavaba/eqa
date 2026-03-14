@@ -30,7 +30,7 @@ class BankNapasCodeField extends ListField
 		970403 => 'Ngân hàng TMCP Sài Gòn Thương Tín (Sacombank)',
 		970459 => 'Ngân hàng TMCP An Bình (ABBank)',
 		970421 => 'Ngân hàng Liên doanh Việt Nga',
-		686868 => 'Ngân hàng TMCP Ngoại Thương Việt Nam (VCB)',
+		970436 => 'Ngân hàng TMCP Ngoại Thương Việt Nam (VCB)',
 		970416 => 'Ngân hàng TMCP Á Châu (ACB)',
 		452999 => 'Ngân hàng TMCP Xuất nhập khẩu Việt Nam (Eximbank)',
 		970423 => 'Ngân hàng TMCP Tiên Phong (TPBank)',

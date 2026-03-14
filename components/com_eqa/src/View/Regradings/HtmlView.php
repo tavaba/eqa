@@ -47,8 +47,7 @@ class HtmlView extends ItemsHtmlView{
 			 * Create an instance of the backend model and set it as the default
 			 * @var RegradingsModel $model
 			 */
-			$mvcFactory= ComponentHelper::getMVCFactory();
-			$model = $mvcFactory->createModel('Regradings', 'Administrator');
+			$model = ComponentHelper::createModel('Regradings', 'Administrator');
 			$this->setModel($model, true);
 
 			//Gọi phương thức lớp cha

@@ -57,8 +57,7 @@ class HtmlView extends ItemsHtmlView
 	     * Load the examseason item
 	     * @var ExamseasonModel $itemModel
 	     **/
-	    $mvcFactory = ComponentHelper::getMVCFactory();
-		$itemModel = $mvcFactory->createModel('Examseason');
+		$itemModel = ComponentHelper::createModel('Examseason');
 		$this->item = $itemModel->getItem($examseasonId);
 
 	    /**

@@ -35,8 +35,7 @@ class HtmlView extends ItemHtmlView
          * We'll utilize the 'Respondents' model to retrieve all members of this respondent group.
          * @var RespondentsModel $listModel
          */
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $listModel = $mvcFactory->createModel('Respondents');
+        $listModel = ComponentHelper::createModel('Respondents');
         $isPersonList = $listModel->getState('filter.is_person');
 
 

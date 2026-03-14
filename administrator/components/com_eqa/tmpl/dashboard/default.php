@@ -145,6 +145,11 @@ JHtml::_('bootstrap.framework');
                 <div class="tab-pane fade" id="tab3" role="tabpanel">
                     <div class="row g-3">
                         <div class="col-md-6 d-grid">
+                            <a href="<?php echo Route::_('index.php?option=com_eqa&view=assessments'); ?>" class="btn btn-outline-primary">
+                                <i class="fas fa-passport me-1"></i> Thi sát hạch
+                            </a>
+                        </div>
+                        <div class="col-md-6 d-grid">
                             <a href="<?php echo Route::_('index.php?option=com_eqa&view=SecondAttempts'); ?>" class="btn btn-outline-primary">
                                 <i class="fas fa-file-alt me-1"></i> Danh sách thi lần 2
                             </a>

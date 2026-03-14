@@ -48,8 +48,7 @@ class HtmlView extends ItemsHtmlView{
 			 * Set a model from the backend
 			 * @var LearnerexamsModel $model
 			 */
-			$mvcFactory = ComponentHelper::getMVCFactory();
-			$model = $mvcFactory->createModel('Learnerexams','Administrator');
+			$model = ComponentHelper::createModel('Learnerexams','Administrator');
 			$this->setModel($model,true);
 
 			//Check if a learner is specified. If not, use signed in user

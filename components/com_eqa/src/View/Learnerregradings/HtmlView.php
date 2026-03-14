@@ -4,7 +4,10 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Factory;
+use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
+use Kma\Component\Eqa\Administrator\DataObject\LearnerInfo;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -16,9 +19,9 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class HtmlView extends ItemsHtmlView
 {
-	protected $examseason;
-	protected $learner;
-	protected $errorMessage;
+	protected ?ExamseasonInfo $examseason;
+	protected ?LearnerInfo $learner;
+	protected ?string $errorMessage;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 
@@ -38,9 +41,11 @@ class HtmlView extends ItemsHtmlView
 		try{
 			$app = Factory::getApplication();
 
-			//Get model 'Regradings' from the backend
-			$mvcFactory = ComponentHelper::getMVCFactory();
-			$model = $mvcFactory->createModel('Regradings', 'Administrator');
+			/**
+			 * Get model 'Regradings' from the backend
+			 * @var RegradingsModel $model
+			 */
+			$model = ComponentHelper::createModel('Regradings', 'Administrator');
 			$this->setModel($model, true);
 
 			//Check if a learner is specified. If not, use signed in user

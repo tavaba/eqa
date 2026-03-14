@@ -68,7 +68,7 @@ class CampaignModel extends AdminModel {
             /**
              * @var SurveyModel $surveyModel
              */
-            $surveyModel = ComponentHelper::getMVCFactory()->createModel('Survey');
+            $surveyModel = ComponentHelper::createModel('Survey');
             foreach ($surveyIds as $surveyId)
                 $surveyModel->delete($surveyId);
         }

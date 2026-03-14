@@ -1,10 +1,13 @@
 <?php
 
 use Kma\Library\Kma\Helper\ViewHelper;
-use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
+use Kma\Component\Eqa\Administrator\DataObject\ExamroomInfo;
 
 defined('_JEXEC') or die();
-$examroom = ExamroomInfo::cast($this->examroom);
+/**
+ * @var \Kma\Component\Eqa\Administrator\View\Examroom\HtmlView $this
+ */
+$examroom = $this->examroom;
 ?>
 <div>
     <?php echo $examroom->getHtml(); ?>

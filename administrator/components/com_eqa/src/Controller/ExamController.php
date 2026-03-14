@@ -797,7 +797,7 @@ class ExamController extends  FormController
 			 * @var LearnerModel $learnerModel
 			 */
 			$examModel = $this->getModel();
-			$learnerModel = ComponentHelper::getMVCFactory()->createModel('Learner');
+			$learnerModel = ComponentHelper::createModel('Learner');
 			foreach ($paidIds as $paidId)
 			{
 				$ok = $examModel->setDebt($examId, $paidId, $value);

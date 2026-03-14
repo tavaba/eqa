@@ -5,6 +5,8 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use JRoute;
+use Kma\Component\Eqa\Administrator\DataObject\ExamroomInfo;
+use Kma\Component\Eqa\Administrator\Model\ExamroomModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Library\Kma\Helper\FormHelper;
@@ -17,9 +19,9 @@ use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamroomexamineesModel;
 
 class HtmlView extends ItemHtmlView {
-    protected $examroom;
+    protected ?ExamroomInfo $examroom;
 	protected $examineeAnomalies;
-	protected $anomalyField;
+	protected ?ExamineeanomalyField $anomalyField;
     protected function prepareDataForLayoutExaminees() : void
     {
         $examroomId = Factory::getApplication()->input->getInt('examroom_id');
@@ -33,8 +35,7 @@ class HtmlView extends ItemHtmlView {
          * Prepare model
          * @var ExamroomexamineesModel $model
          */
-        $factory = ComponentHelper::getMVCFactory();
-        $model = $factory->createModel('examroomexaminees');
+        $model = ComponentHelper::createModel('examroomexaminees');
         $this->setModel($model,true);
         $model->setState('filter.examroom_id',$examroomId);   //Để dùng trong $model->getsListQuery()
 
@@ -142,7 +143,10 @@ class HtmlView extends ItemHtmlView {
 		//Init
 		$app = Factory::getApplication();
 
-		//Get data
+		/**
+		 * Get data
+		 * @var ExamroomModel $model
+		 */
 		$examroomId = $app->input->getInt('examroom_id',0);
 		$model = $this->getModel();
 		$this->examroom = DatabaseHelper::getExamroomInfo($examroomId);

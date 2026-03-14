@@ -76,7 +76,7 @@ class HtmlView extends ItemsHtmlView
              * Load admin model for access checking
              * @var SurveyModel $surveyModel
              */
-            $surveyModel = ComponentHelper::getMVCFactory()->createModel('Survey');
+            $surveyModel = ComponentHelper::createModel('Survey');
             $progressBarService = new InlineProgressBar();
 
             foreach ($this->layoutData->items as $item)

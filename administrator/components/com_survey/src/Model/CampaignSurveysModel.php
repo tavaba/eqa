@@ -135,8 +135,7 @@ class CampaignSurveysModel extends ListModel
         /**
          * @var CampaignModel $campaignModel
          */
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $campaignModel = $mvcFactory->createModel('Campaign');
+        $campaignModel = ComponentHelper::createModel('Campaign');
         return $campaignModel->canEdit($campaignId);
     }
 
@@ -165,8 +164,7 @@ class CampaignSurveysModel extends ListModel
         /**
          * @var CampaignModel $campaignModel
          */
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $campaignModel = $mvcFactory->createModel('Campaign');
+        $campaignModel = ComponentHelper::createModel('Campaign');
         return $campaignModel->canEdit($campaignId);
     }
 }

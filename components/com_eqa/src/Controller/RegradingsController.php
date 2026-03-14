@@ -7,6 +7,7 @@ use Exception;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -30,9 +31,11 @@ class RegradingsController extends AdminController
 			if(!$this->app->getIdentity()->authorise('eqa.supervise','com_eqa'))
 				throw new Exception('Bạn không có quyền truy cập chức năng này');
 
-			//Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
-			$mvcFactory = ComponentHelper::getMVCFactory();
-			$model = $mvcFactory->createModel('Regradings', 'Administrator');
+			/**
+			 * Bước 2. Lấy thông tin kỳ thi trong trạng thái hiện thời của model
+			 * @var RegradingsModel $model
+			 */
+			$model = ComponentHelper::createModel('Regradings', 'Administrator');
 			$examseasonId = $model->getSelectedExamseasonId();
 			if(empty($examseasonId))
 				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');

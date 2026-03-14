@@ -13,7 +13,7 @@ use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
-use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
+use Kma\Component\Eqa\Administrator\DataObject\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\RegradingModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
@@ -77,7 +77,7 @@ class RegradingsController extends AdminController {
 			 * 3. Load Exam Model and check where can add PPAA requests
 			 * @var ExamModel $examModel
 			 */
-			$examModel = ComponentHelper::getMVCFactory()->createModel('Exam');
+			$examModel = ComponentHelper::createModel('Exam');
 			if(!$examModel->canRequestPpaa($examId))
 				throw new Exception('Không thể tạo yêu cầu phúc khảo đối với môn thi.
 				Hãy kiểm tra xem đã mở phúc khảo kỳ thi hay chưa, thời hạn phúc khảo đã qua

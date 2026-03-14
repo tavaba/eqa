@@ -23,12 +23,6 @@ class ItemHtmlView extends BaseHtmlView{
 	    $this->wa = ComponentHelper::getDocument()->getWebAssetManager();
         $this->toolbarOption = new ToolbarOption();
     }
-
-    public static function cast($obj) : ItemHtmlView
-    {
-        return $obj;
-    }
-
     protected function loadCommonListLayoutData(ListLayoutData &$data, ListModel $listModel): void
     {
         $data->taskPrefixItem = $this->getName();

@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 

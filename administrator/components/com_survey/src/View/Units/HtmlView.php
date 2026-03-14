@@ -44,7 +44,7 @@ class HtmlView extends ItemsHtmlView
              * Load item model for access permission checking
              * @var UnitModel $itemModel
              */
-            $itemModel = ComponentHelper::getMVCFactory()->createModel('Unit');
+            $itemModel = ComponentHelper::createModel('Unit');
 
             foreach ($this->layoutData->items as $item)
             {

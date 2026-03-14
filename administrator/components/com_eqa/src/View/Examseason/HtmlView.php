@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
+use Kma\Component\Eqa\Administrator\Model\SubjectsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Library\Kma\Helper\DatetimeHelper;
@@ -36,14 +37,16 @@ class HtmlView extends ItemHtmlView {
 		$itemModel = $this->getModel('examseason');
 		$this->examseason = $itemModel->getItem($examseasonId);
 
-		//Set up the DEFAULT model, namely the list model 'subjects'
-		//This model allow the layout to utilize ViewHelper to display a list of subjects
-		//that the user can select to 'import' exams
+		/**
+		 * Set up the DEFAULT model, namely the list model 'subjects'
+		 * This model allow the layout to utilize ViewHelper to display a list of subjects
+		 * that the user can select to 'import' exams
+		 * @var SubjectsModel $listModel
+		 */
 		$existingSubjectIds = $itemModel->getSubjectIdsByExamseasonId($examseasonId);
 		$termSubjectIds = $itemModel->getSubjectIdsByTerm($this->examseason->academicyear, $this->examseason->term);
 		$limitSubjectIds = array_diff($termSubjectIds, $existingSubjectIds);
-		$factory = ComponentHelper::getMVCFactory();
-		$listModel = $factory->createModel('subjects');
+		$listModel = ComponentHelper::createModel('subjects');
 		$listModel->setState('filter.limit_subject_ids',$limitSubjectIds);
 		$this->setModel($listModel, true);
 
@@ -112,10 +115,11 @@ class HtmlView extends ItemHtmlView {
 		$itemModel = $this->getModel('examseason');
 		$this->examseason = $itemModel->getItem($examseasonId);
 
-		//Setup the list model
-		/** @var ClassesModel $listModel */
-		$factory = ComponentHelper::getMVCFactory();
-		$listModel = $factory->createModel('classes');
+		/**
+		 * Setup the list model
+		 * @var ClassesModel $listModel
+		 */
+		$listModel = ComponentHelper::createModel('classes');
 		$listModel->setState('filter.academicyear', $this->examseason->academicyear);
 		$listModel->setState('filter.term', $this->examseason->term);
 		$this->setModel($listModel, true);

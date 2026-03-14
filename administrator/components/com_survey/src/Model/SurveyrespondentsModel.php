@@ -112,8 +112,7 @@ class SurveyrespondentsModel extends ListModel
          * @var SurveyModel $model
          */
         $surveyId = (int)$this->getState('filter.survey_id');
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $model = $mvcFactory->createModel('Survey');
+        $model = ComponentHelper::createModel('Survey');
         return $model->canEdit($surveyId);
     }
 }

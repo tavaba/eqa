@@ -5,8 +5,10 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Model\GradecorrectionsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -15,7 +17,8 @@ use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 
 class HtmlView extends ItemsHtmlView{
-	protected $errorMessage;
+	protected ?ExamseasonInfo $examseason;
+	protected ?string $errorMessage;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 
@@ -41,9 +44,11 @@ class HtmlView extends ItemsHtmlView{
 			if(!Factory::getApplication()->getIdentity()->authorise('eqa.supervise','com_eqa'))
 				throw new Exception("Bạn không có quyền truy cập thông tin này");
 
-			//Create and set default model
-			$mvcFactory = ComponentHelper::getMVCFactory();
-			$model = $mvcFactory->createModel('Gradecorrections', 'Administrator');
+			/**
+			 * Create and set default model
+			 * @var GradecorrectionsModel $model
+			 */
+			$model = ComponentHelper::createModel('Gradecorrections', 'Administrator');
 			$this->setModel($model, true);
 
 			//Gọi phương thức lớp cha

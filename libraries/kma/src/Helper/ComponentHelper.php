@@ -9,6 +9,7 @@ use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactory;
 use Joomla\CMS\Component\ComponentHelper as JoomlaComponentHelper;
+use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Registry\Registry;
 
 abstract class ComponentHelper
@@ -121,4 +122,11 @@ abstract class ComponentHelper
         $componentName = self::getName();
         return $app->bootComponent($componentName)->getMVCFactory();
     }
+	public static function createModel($name, $prefix = '', array $config = [])
+	{
+		$app = Factory::getApplication();
+		$componentName = self::getName();
+		$mvcFactory = $app->bootComponent($componentName)->getMVCFactory();
+		return $mvcFactory->createModel($name, $prefix, $config);
+	}
 }

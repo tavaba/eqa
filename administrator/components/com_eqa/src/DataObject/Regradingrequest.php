@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 
 defined('_JEXEC') or die();
 class Regradingrequest extends ObjectInfo
@@ -15,9 +15,4 @@ class Regradingrequest extends ObjectInfo
 	public string $courseCode;
 	public int $statusCode;
 	public float $orginalMark;
-
-	static public function cast($instance): LearnerInfo
-	{
-		return $instance;
-	}
 }

@@ -1,7 +1,7 @@
 <?php
 
 use Joomla\CMS\HTML\HTMLHelper;
-use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
+use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
 
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');

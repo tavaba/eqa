@@ -65,7 +65,7 @@ class HtmlView extends ItemsHtmlView
          * Get campaign item
          * @var CampaignModel $itemModel
          */
-        $itemModel = ComponentHelper::getMVCFactory()->createModel('Campaign');
+        $itemModel = ComponentHelper::createModel('Campaign');
         $this->item = $itemModel->getItem($campaignId);
         if(empty($this->item))
             die('Invalid request');

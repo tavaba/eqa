@@ -328,7 +328,7 @@ class ExamroomModel extends AdminModel {
 		/**
 		 * @var ExamModel $examModel
 		 */
-		$examModel = ComponentHelper::getMVCFactory()->createModel('exam', 'Administrator');
+		$examModel = ComponentHelper::createModel('exam', 'Administrator');
 
 		$db->transactionStart();
 		try

@@ -4,11 +4,11 @@ namespace Kma\Component\Eqa\Administrator\Helper;
 
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
-use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
-use Kma\Component\Eqa\Administrator\Interface\ExamroomInfo;
-use Kma\Component\Eqa\Administrator\Interface\ExamseasonInfo;
-use Kma\Component\Eqa\Administrator\Interface\GradeCorrectionInfo;
-use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
+use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
+use Kma\Component\Eqa\Administrator\DataObject\ExamroomInfo;
+use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
+use Kma\Component\Eqa\Administrator\DataObject\GradeCorrectionInfo;
+use Kma\Component\Eqa\Administrator\DataObject\LearnerInfo;
 use Kma\Library\Kma\Helper\DatabaseHelper as DatabaseHelperBase;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 

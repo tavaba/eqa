@@ -261,7 +261,7 @@ class ConductsController extends AdminController {
 					/**
 					 * @var LearnerModel $learnerModel
 					 */
-					$learnerModel = ComponentHelper::getMVCFactory()->createModel('Learner');
+					$learnerModel = ComponentHelper::createModel('Learner');
 					$learner = $learnerModel->getItem($learnerId);
 					$msg = sprintf('Lỗi tính điểm TB cho %s (%s). Hãy đảm bảo HVSV đã có kết quả thi ở Học kỳ %d Năm học %s',
 						implode(' ', [$learner->lastname, $learner->firstname]),

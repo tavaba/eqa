@@ -1826,7 +1826,7 @@ class ExamModel extends AdminModel{
 	 *
 	 * @return ExamStatus
 	 * @throws Exception
-	 * @since 2.1.0
+	 * @since 2.0.5
 	 */
 	public function conclude(int $examId, bool $disciplineAlreadyApplied): ExamStatus
 	{

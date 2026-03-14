@@ -454,7 +454,7 @@ class ClassController extends  FormController
 			 * Set a sussess message
 			 * @var LearnerModel $learnerModel
 			 */
-			$learnerModel = ComponentHelper::getMVCFactory()->createModel('Learner');
+			$learnerModel = ComponentHelper::createModel('Learner');
 			$learner      = $learnerModel->getItem($learnerId);
 			$name         = implode(' ', [$learner->lastname, $learner->firstname]);
 			$name = htmlspecialchars($name);

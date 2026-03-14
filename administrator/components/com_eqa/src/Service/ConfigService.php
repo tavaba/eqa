@@ -25,7 +25,7 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
  *   $config = new ConfigService();
  *   $org    = $config->getOrganization();
  *
- * @since 2.1.0
+ * @since 2.0.5
  */
 class ConfigService
 {
@@ -33,14 +33,14 @@ class ConfigService
 	 * Tham số cấu hình của component com_eqa.
 	 *
 	 * @var    Registry
-	 * @since  2.1.0
+	 * @since  2.0.5
 	 */
 	private Registry $params;
 
 	/**
 	 * Constructor — tự động nạp tham số cấu hình của com_eqa.
 	 *
-	 * @since  2.1.0
+	 * @since  2.0.5
 	 */
 	public function __construct()
 	{
@@ -51,7 +51,7 @@ class ConfigService
 	 * Trả về tên tổ chức cấp trên (cơ quan chủ quản).
 	 *
 	 * @return  string
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getParentOrganization(): string
 	{
@@ -62,7 +62,7 @@ class ConfigService
 	 * Trả về tên tổ chức (nhà trường).
 	 *
 	 * @return  string
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getOrganization(): string
 	{
@@ -73,7 +73,7 @@ class ConfigService
 	 * Trả về tên đơn vị phụ trách tổ chức thi.
 	 *
 	 * @return  string
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getExaminationUnit(): string
 	{
@@ -84,7 +84,7 @@ class ConfigService
 	 * Trả về tên thành phố/địa điểm.
 	 *
 	 * @return  string
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getCity(): string
 	{
@@ -123,7 +123,7 @@ class ConfigService
 	 * Trả về số lần dự thi tối đa cho phép đối với một môn thi.
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getMaxExamAttempts(): int
 	{
@@ -134,7 +134,7 @@ class ConfigService
 	 * Trả về số chữ số thập phân dùng khi làm tròn điểm quá trình (PAM).
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getProgressMarkPrecision(): int
 	{
@@ -145,7 +145,7 @@ class ConfigService
 	 * Trả về số chữ số thập phân dùng khi làm tròn điểm thi (exam mark).
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getExamMarkPrecision(): int
 	{
@@ -156,7 +156,7 @@ class ConfigService
 	 * Trả về số chữ số thập phân dùng khi làm tròn điểm học phần (module mark).
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getModuleMarkPrecision(): int
 	{
@@ -167,7 +167,7 @@ class ConfigService
 	 * Chế độ giới hạn điểm thi lần 2.
 	 *
 	 * @return  SecondAttemptMarkLimitMode
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getSecondAttemptMarkLimitMode(): SecondAttemptMarkLimitMode
 	{
@@ -179,7 +179,7 @@ class ConfigService
 	 * Trả về số bắt đầu của dãy số báo danh thí sinh.
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getExamineeCodeStart(): int
 	{
@@ -190,7 +190,7 @@ class ConfigService
 	 * Trả về số bắt đầu của dãy số phách thí sinh.
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getExamineeMaskStart(): int
 	{
@@ -201,7 +201,7 @@ class ConfigService
 	 * Trả về khoảng cách giữa các số phách liên tiếp.
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getExamineeMaskInterval(): int
 	{
@@ -212,7 +212,7 @@ class ConfigService
 	 * Trả về ngưỡng điểm đạt của thành phần 1 (PAM1) để được dự thi.
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getThresholdForPam1(): float
 	{
@@ -223,7 +223,7 @@ class ConfigService
 	 * Trả về ngưỡng điểm đạt của thành phần 2 (PAM2) để được dự thi.
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getThresholdForPam2(): float
 	{
@@ -234,7 +234,7 @@ class ConfigService
 	 * Trả về ngưỡng điểm đạt của điểm quá trình (PAM) để được dự thi.
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getThresholdForPam(): float
 	{
@@ -245,7 +245,7 @@ class ConfigService
 	 * Trả về ngưỡng điểm thi tối thiểu.
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getThresholdForFinalExamMark(): float
 	{
@@ -256,7 +256,7 @@ class ConfigService
 	 * Trả về ngưỡng điểm thi tối thiểu.
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getThresholdForModuleMark(): float
 	{
@@ -267,7 +267,7 @@ class ConfigService
 	 * Trả về ngưỡng điểm đạt áp dụng cho môn học dạng điều kiện (pass/fail).
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getThresholdForPassFailSubject(): float
 	{
@@ -347,7 +347,7 @@ class ConfigService
 	 * Trả về hệ số nhân khi tính thù lao coi thi vào ngày cuối tuần.
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getKWeekendMonitoring(): float
 	{
@@ -359,7 +359,7 @@ class ConfigService
 	 * Giá trị tương ứng với các hằng số REGRADING_FEE_MODE_* của ExamHelper.
 	 *
 	 * @return  int
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getRegradingFeeMode(): FeeMode
 	{
@@ -371,7 +371,7 @@ class ConfigService
 	 * Trả về mức phí phúc khảo (đơn vị: VNĐ).
 	 *
 	 * @return  float
-	 * @since   2.1.0
+	 * @since   2.0.5
 	 */
 	public function getRegradingFeeRate(): float
 	{

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form definition cho kỳ sát hạch (bảng #__eqa_assessments).
+    Tên file phải khớp với tên model (AdminModel::getForm() tự suy ra): assessment.xml
+-->
+<form>
+    <!-- ================================================================== -->
+    <!-- Fieldset 1: Thông tin cơ bản                                       -->
+    <!-- ================================================================== -->
+    <fieldset name="basic" label="Thông tin cơ bản"  addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field  name="id"
+                type="hidden"
+        />
+
+        <field  name="title"
+                type="text"
+                required="true"
+                maxlength="255"
+                label="Tên kỳ sát hạch"
+                description="Ví dụ: Sát hạch tiếng Anh đầu ra năm 2025 – Đợt 3"
+        />
+
+        <field  name="type"
+                type="assessmentType"
+                required="true"
+                label="Loại sát hạch"
+        />
+
+        <field  name="result_type"
+                type="assessmentResultType"
+                required="true"
+                label="Kiểu kết quả"
+                description="Xác định cách biểu diễn kết quả sát hạch của thí sinh"
+        />
+
+        <field  name="start_date"
+                type="calendar"
+                showtime="false"
+                required="true"
+                label="Ngày bắt đầu"
+                singleheader="true"
+                translateformat="true"
+        />
+
+        <field  name="end_date"
+                type="calendar"
+                showtime="false"
+                required="true"
+                label="Ngày kết thúc"
+                description="Có thể trùng với ngày bắt đầu nếu thi trong 1 ngày"
+                singleheader="true"
+                translateformat="true"
+        />
+
+        <field  name="fee"
+                type="number"
+                required="true"
+                default="0"
+                min="0"
+                step="1000"
+                filter="integer"
+                label="Phí sát hạch (VNĐ)"
+                description="Nhập 0 nếu miễn phí"
+        />
+
+        <field  name="max_candidates"
+                type="number"
+                required="false"
+                default="0"
+                min="0"
+                step="1"
+                filter="integer"
+                label="Số thí sinh tối đa"
+                description="Nhập 0 nếu không giới hạn"
+        />
+
+    </fieldset>
+
+    <!-- ================================================================== -->
+    <!-- Fieldset 2: Đăng ký                                                -->
+    <!-- ================================================================== -->
+    <fieldset name="registration" label="Cấu hình đăng ký">
+
+        <field  name="allow_registration"
+                type="radio"
+                required="true"
+                default="0"
+                label="Mở đăng ký"
+                description="Cho phép thí sinh tự đăng ký qua cổng thông tin"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field  name="registration_start"
+                type="calendar"
+                showtime="true"
+                format="%Y-%m-%d %H:%M:%S"
+                required="false"
+                label="Bắt đầu nhận đăng ký"
+                singleheader="false"
+                translateformat="true"
+        />
+
+        <field  name="registration_end"
+                type="calendar"
+                showtime="true"
+                format="%Y-%m-%d %H:%M:%S"
+                required="false"
+                label="Hết hạn đăng ký"
+                singleheader="false"
+                translateformat="true"
+        />
+
+    </fieldset>
+
+    <!-- ================================================================== -->
+    <!-- Fieldset 3: Thu phí qua ngân hàng                                  -->
+    <!-- ================================================================== -->
+    <fieldset name="payment" label="Thu phí qua ngân hàng" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field  name="bank_napas_code"
+                type="banknapascode"
+                required="false"
+                label="Ngân hàng thu phí"
+                description="Chọn ngân hàng nhận thanh toán phí sát hạch (dùng để tạo mã VietQR)"
+                class="select2-basic"
+                default=""
+        />
+
+        <field  name="bank_account_number"
+                type="text"
+                required="false"
+                maxlength="50"
+                label="Số tài khoản"
+                description="Số tài khoản ngân hàng nhận phí. Kiểm tra cẩn thận — phần mềm không thể xác minh tính chính xác."
+        />
+
+        <field  name="bank_account_owner"
+                type="text"
+                required="false"
+                maxlength="255"
+                label="Chủ tài khoản"
+                description="Tên chủ tài khoản (hiển thị cho thí sinh khi quét mã QR)"
+        />
+
+    </fieldset>
+
+    <!-- ================================================================== -->
+    <!-- Fieldset 4: Trạng thái & Quản lý                                   -->
+    <!-- ================================================================== -->
+    <fieldset name="options" label="Trạng thái">
+
+        <field  name="completed"
+                type="radio"
+                required="true"
+                default="0"
+                label="Đã hoàn thành"
+                description="Đánh dấu kỳ sát hạch đã hoàn tất (đã có kết quả)"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field  name="published"
+                type="list"
+                required="true"
+                default="1"
+                label="JSTATUS"
+        >
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+        </field>
+
+        <field  name="ordering"
+                type="number"
+                readonly="true"
+                label="JFIELD_ORDERING_LABEL"
+                default="0"
+        />
+
+        <field  name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field  name="created_at"
+                type="text"
+                readonly="true"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+        />
+
+        <field  name="updated_by"
+                type="user"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field  name="updated_at"
+                type="text"
+                readonly="true"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+        />
+
+    </fieldset>
+
+</form>

@@ -20,9 +20,8 @@ class HtmlView extends ItemHtmlView
          * @var SurveyModel $surveyModel
          * @var FormModel $formModel
          */
-        $mvcFactory = ComponentHelper::getMVCFactory();
         $surveyModel = $this->getModel();
-        $formModel = $mvcFactory->createModel('Form', 'Administrator');
+        $formModel = ComponentHelper::createModel('Form', 'Administrator');
 
         /**
          * Load the survey item. The survey may be specified by an 'id' or a 'token'.

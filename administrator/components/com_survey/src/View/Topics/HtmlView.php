@@ -44,7 +44,7 @@ class HtmlView extends ItemsHtmlView
              * Load admin (item) model for access control
              * @var TopicModel $model
              */
-            $model = ComponentHelper::getMVCFactory()->createModel('Topic');
+            $model = ComponentHelper::createModel('Topic');
 
             foreach ($this->layoutData->items as &$item)
             {

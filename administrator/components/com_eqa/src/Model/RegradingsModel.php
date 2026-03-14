@@ -12,8 +12,8 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
-use Kma\Component\Eqa\Administrator\Interface\PpaaEntryInfo;
-use Kma\Component\Eqa\Administrator\Interface\Regradingrequest;
+use Kma\Component\Eqa\Administrator\DataObject\PpaaEntryInfo;
+use Kma\Component\Eqa\Administrator\DataObject\Regradingrequest;
 use stdClass;
 
 defined('_JEXEC') or die();
@@ -606,7 +606,6 @@ class RegradingsModel extends ListModel
 		$masks = [];
 		foreach ($regradingData as $entry)
 		{
-			$entry = PpaaEntryInfo::cast($entry);
 			$masks[] = $entry->mask;
 		}
 		$columns = $db->quoteName(
@@ -629,7 +628,6 @@ class RegradingsModel extends ListModel
 		//Xử lý từng entry
 		foreach ($regradingData as $entry)
 		{
-			$entry = PpaaEntryInfo::cast($entry);
 			$examinee = $examinees[$entry->mask]; //Lấy thông tin của thí sinh dựa trên mask
 			$addValue = $examinee->stimulType==StimulationHelper::TYPE_ADD ? $examinee->stimulValue : 0;
 			$this->applyRegradingResult($examId, $examinee->id, $examinee->classId, $examinee->pam, $examinee->attempt, $addValue, $examinee->anomaly, $entry->oldMark, $examinee->conclusion, $entry->newMark, $entry->changeDescription);

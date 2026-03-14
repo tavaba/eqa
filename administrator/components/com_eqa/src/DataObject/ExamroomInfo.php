@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
@@ -26,10 +26,6 @@ class ExamroomInfo extends ObjectInfo
 	public int|null $examiner1Id;
 	public int|null $examiner2Id;
 
-	static public function cast($obj): ExamroomInfo
-	{
-		return $obj;
-	}
 	public function getHtml(array $options=[]): string
 	{
 		$html = '';

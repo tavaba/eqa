@@ -46,7 +46,7 @@ class HtmlView extends ItemsHtmlView
              * Load admin model for access checking
              * @var RespondentgroupModel $model
              */
-            $model = ComponentHelper::getMVCFactory()->createModel('Respondentgroup');
+            $model = ComponentHelper::createModel('Respondentgroup');
             foreach ($this->layoutData->items as &$item) {
                 $item->typeText = RespondentHelper::decodeType($item->type);
                 $item->date = DatetimeHelper::getFullDate($item->creationTime);

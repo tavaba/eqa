@@ -95,8 +95,7 @@ class RespondentgroupmembersModel extends ListModel
          * @var RespondentgroupModel $model
          */
         $groupId = (int)$this->getState('filter.group_id');
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $model = $mvcFactory->createModel('Respondentgroup');
+        $model = ComponentHelper::createModel('Respondentgroup');
         return $model->canEdit($groupId);
     }
 }

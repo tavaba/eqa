@@ -66,9 +66,11 @@ class HtmlView extends ItemsHtmlView
         if(empty($campaignId))
             die('Invalid request');
 
-        //Load the campaign object
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $itemModel = $mvcFactory->createModel('Campaign');
+	    /**
+	     * Load the campaign object
+	     * @var CampaignModel $itemModel
+	     */
+        $itemModel = ComponentHelper::createModel('Campaign');
         $this->item = $itemModel->getItem($campaignId);
         if(empty($this->item))
             die('Cannot load campaign');
@@ -87,7 +89,7 @@ class HtmlView extends ItemsHtmlView
              * Load survey model for access permission checking
              * @var SurveyModel $surveyModel
              */
-            $surveyModel = $mvcFactory->createModel('Survey');
+            $surveyModel = ComponentHelper::createModel('Survey');
             $progressBarService = new InlineProgressBar();
             foreach ($this->layoutData->items as $item)
             {
@@ -116,10 +118,8 @@ class HtmlView extends ItemsHtmlView
     {
         /**
          * @var CampaignModel $campaignModel
-         * @var SurveysModel $surveysModel
          */
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $campaignModel = $mvcFactory->createModel('Campaign');
+        $campaignModel = ComponentHelper::createModel('Campaign');
         $campaign = $this->item;
         ToolbarHelper::title('Danh sách cuộc khảo sát của đợt khảo sát');
         ToolbarHelper::appendGoHome();

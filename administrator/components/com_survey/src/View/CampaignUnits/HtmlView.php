@@ -48,8 +48,7 @@ class HtmlView extends ItemsHtmlView
          * Load the campaign object
          * @var CampaignModel $itemModel
          */
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $itemModel = $mvcFactory->createModel('Campaign');
+        $itemModel = ComponentHelper::createModel('Campaign');
         $this->item = $itemModel->getItem($campaignId);
         if(empty($this->item))
             die('Cannot load campaign');

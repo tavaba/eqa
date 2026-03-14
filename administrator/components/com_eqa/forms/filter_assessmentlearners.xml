@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Filter form cho view AssessmentLearners.
+    Tên file theo quy tắc: filter_{view_name_lowercase}.xml
+-->
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field  name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="Mã HVSV, Họ tên"
+                class="js-stools-search-string"
+        />
+
+        <!-- Lọc theo trạng thái nộp phí -->
+        <field  name="payment_completed"
+                type="list"
+                label="Nộp phí"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-- Tất cả --</option>
+            <option value="1">Đã nộp</option>
+            <option value="0">Chưa nộp</option>
+        </field>
+
+        <!-- Lọc theo bất thường -->
+        <field  name="anomaly"
+                type="anomaly"
+                label="Bất thường"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-- Bất thường --</option>
+        </field>
+
+        <!-- Lọc theo kết quả đạt/không đạt -->
+        <field  name="passed"
+                type="list"
+                label="Kết quả"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-- Kết quả --</option>
+            <option value="1">Đạt</option>
+            <option value="0">Không đạt</option>
+        </field>
+
+    </fields>
+
+    <fields name="list">
+        <field  name="fullordering"
+                type="hidden"
+                value=""
+        />
+        <field  name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();"
+        />
+    </fields>
+
+</form>

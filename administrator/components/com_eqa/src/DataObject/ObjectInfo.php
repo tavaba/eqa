@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 defined('_JEXEC') or die();
 class ObjectInfo
 {

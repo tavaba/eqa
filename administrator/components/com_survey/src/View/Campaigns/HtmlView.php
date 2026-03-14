@@ -73,8 +73,7 @@ class HtmlView extends ItemsHtmlView
              * Load model for access permission checking
              * @var CampaignModel $campainModel
              */
-            $mvcFactory = ComponentHelper::getMVCFactory();
-            $campainModel = $mvcFactory->createModel('Campaign');
+            $campainModel = ComponentHelper::createModel('Campaign');
             foreach ($this->layoutData->items as $item)
             {
                 $item->form = '<span class="fa fa-eye"></span>';

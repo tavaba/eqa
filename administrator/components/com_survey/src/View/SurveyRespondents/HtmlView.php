@@ -59,9 +59,11 @@ class HtmlView extends ItemsHtmlView
         $model = $this->getModel();
         $model->setState('filter.survey_id',$surveyId);
 
-        //Get survey item
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $surveyModel = $mvcFactory->createModel('Survey', 'Administrator');
+	    /**
+	     * Get survey item
+	     * @var SurveyModel $surveyModel
+	     */
+        $surveyModel = ComponentHelper::createModel('Survey', 'Administrator');
         $this->item = $surveyModel->getItem($surveyId);
         if(empty($this->item))
             die('Invalid request');
@@ -114,7 +116,7 @@ class HtmlView extends ItemsHtmlView
          * A user can add/remove respondents only if he/she has permission to edit the survey.
          * @var SurveyModel $model
          */
-        $model = ComponentHelper::getMVCFactory()->createModel('Survey');
+        $model = ComponentHelper::createModel('Survey');
         $survey = $this->item;
         if($model->canEdit($survey))
         {

@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Regradingemployees; //The namespa
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
+use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -42,9 +43,11 @@ class HtmlView extends ItemsHtmlView {
 			return;
 		}
 
-		//Khởi tạo model 'regradings'
-		$factory = ComponentHelper::getMVCFactory();
-		$model = $factory->createModel('regradings');
+		/**
+		 * Khởi tạo model 'regradings'
+		 * @var RegradingsModel $model
+		 */
+		$model = ComponentHelper::createModel('regradings');
 
 		//Setup layout data
 		$this->layoutData->items = $model->getRegradingExams($examseasonId);

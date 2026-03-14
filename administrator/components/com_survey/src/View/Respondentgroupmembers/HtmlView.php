@@ -86,8 +86,7 @@ class HtmlView extends ItemsHtmlView
         $model->setState('filter.group_id', null);
 
         //Get information of respondent group
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $model = $mvcFactory->createModel('Respondentgroup', 'Administrator');
+        $model = ComponentHelper::createModel('Respondentgroup', 'Administrator');
         $this->respondentGroup = $model->getItem($groupId);
 
         //Set form action params to keep the URL not changed
@@ -102,7 +101,7 @@ class HtmlView extends ItemsHtmlView
          * Load model for access permission checking
          * @var RespondentgroupModel $model
          */
-        $model = ComponentHelper::getMVCFactory()->createModel('Respondentgroup');
+        $model = ComponentHelper::createModel('Respondentgroup');
 
         ToolbarHelper::title('Quản lý thành viên nhóm khảo sát');
         ToolbarHelper::appendGoHome();

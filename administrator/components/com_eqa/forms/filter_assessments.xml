@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Filter form cho danh sách kỳ sát hạch (AssessmentsModel).
+    Joomla sẽ tự tìm file này khi ListModel::getFilterForm() được gọi.
+    Tên file theo quy tắc: filter_{view_name_lowercase}.xml
+-->
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <!-- Tìm kiếm theo tên -->
+        <field  name="search"
+                type="text"
+                label="JSEARCH_FILTER"
+                hint="JSEARCH_FILTER"
+                class="js-stools-search-string"
+        />
+
+        <!-- Lọc theo loại sát hạch -->
+        <field  name="type"
+                type="assessmentType"
+                label="Loại sát hạch"
+                default=""
+                onchange="this.form.submit();"
+        />
+
+        <!-- Lọc theo năm (extract từ start_date — không cần cột riêng) -->
+        <field  name="year"
+                type="list"
+                label="Năm"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-- Tất cả năm --</option>
+        </field>
+
+        <!-- Lọc theo trạng thái hoàn thành -->
+        <field  name="completed"
+                type="list"
+                label="Hoàn thành"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-- Tất cả --</option>
+            <option value="1">Đã hoàn thành</option>
+            <option value="0">Chưa hoàn thành</option>
+        </field>
+
+        <!-- Lọc theo trạng thái published -->
+        <field  name="published"
+                type="list"
+                label="COM_EQA_FILTER_STATE_LABEL"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FILTER_STATE_MSG</option>
+            <option value="1">COM_EQA_FILTER_STATE_OPTION_PUBLISHED</option>
+            <option value="0">COM_EQA_FILTER_STATE_OPTION_UNPUBLISHED</option>
+        </field>
+
+    </fields>
+
+    <fields name="list">
+        <field  name="fullordering"
+                type="hidden"
+                value=""
+        />
+        <field  name="limit"
+                type="limitbox"
+                label="JGLOBAL_LIST_LIMIT"
+                onchange="this.form.submit();"
+        />
+    </fields>
+
+</form>

@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 
 defined('_JEXEC') or die();
 class LearnerInfo extends ObjectInfo
@@ -22,8 +22,4 @@ class LearnerInfo extends ObjectInfo
 		return $this->lastname . ' ' . $this->firstname;
 	}
 
-	static public function cast($obj): LearnerInfo
-	{
-		return $obj;
-	}
 }

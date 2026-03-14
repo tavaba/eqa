@@ -5,6 +5,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Base\ItemHtmlView;
 use Kma\Component\Survey\Administrator\Model\CampaignModel;
+use Kma\Component\Survey\Administrator\Model\ClassesModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\View\ListLayoutData;
@@ -39,9 +40,11 @@ class HtmlView extends ItemHtmlView
         $this->itemFields->customFieldset1[] = new ListLayoutItemFieldOption('startDate', 'Bắt đầu',true);
         $this->itemFields->customFieldset1[] = new ListLayoutItemFieldOption('endDate', 'Kết thúc',true);
 
-        //Set up the list model
-        $mvcFactory = ComponentHelper::getMVCFactory();
-        $listModel = $mvcFactory->createModel('classes');
+	    /**
+	     * Set up the list model
+	     * @var ClassesModel $listModel
+	     */
+        $listModel = ComponentHelper::createModel('classes');
         $this->setModel($listModel,true);
 
         //Prepare data for display in layout
@@ -53,7 +56,7 @@ class HtmlView extends ItemHtmlView
         /**
          * @var CampaignModel $campaignModel
          */
-        $campaignModel = ComponentHelper::getMVCFactory()->createModel('Campaign');
+        $campaignModel = ComponentHelper::createModel('Campaign');
         $campaign = $this->item;
 
         ToolbarHelper::title('Thêm khảo sát lớp học phần');

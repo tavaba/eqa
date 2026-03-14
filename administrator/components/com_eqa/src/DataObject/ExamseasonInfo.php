@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 use DateTime;
 use DateTimeZone;
 
@@ -26,9 +26,4 @@ class ExamseasonInfo
 		}
 		return true;
 	}
-	static public function cast($obj): ExamseasonInfo
-	{
-		return $obj;
-	}
-
 }

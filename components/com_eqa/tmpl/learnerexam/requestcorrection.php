@@ -1,8 +1,8 @@
 <?php
 
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
-use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
+use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
+use Kma\Component\Eqa\Administrator\DataObject\LearnerInfo;
 use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
@@ -31,9 +31,11 @@ if(empty($this->examInfo) || empty($this->learnerInfo))
 <?php
 /**
  * @var ExamInfo $examInfo
+ * @var LearnerInfo $learnerInfo
+ *
  */
 $examInfo = $this->examInfo;
-$learnerInfo = LearnerInfo::cast($this->learnerInfo);
+$learnerInfo = $this->learnerInfo;
 $action = 'index.php?option=com_eqa';
 $hiddenFields = [
 	'task' => 'learnerexam.RequestCorrection',

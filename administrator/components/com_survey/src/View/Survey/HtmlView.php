@@ -6,6 +6,8 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Base\ItemHtmlView;
 use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
+use Kma\Component\Survey\Administrator\Model\CampaignModel;
+use Kma\Component\Survey\Administrator\Model\RespondentsModel;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\FormHelper;
@@ -26,16 +28,21 @@ class HtmlView extends ItemHtmlView
         $surveyId = Factory::getApplication()->input->getInt('survey_id');
         if(empty($surveyId))
             throw new Exception('Invalid request');
-        $mvcFactory = ComponentHelper::getMVCFactory();
 
-        //Load current surrvey
-        $itemModel = $mvcFactory->createModel('Survey');
+	    /**
+	     * Load current surrvey
+	     * @var SurveyModel $itemModel
+	     */
+        $itemModel = ComponentHelper::createModel('Survey');
         $this->item = $itemModel->getItem($surveyId);
         if(empty($this->item))
             throw new Exception('Invalid request');
 
-        //Load data for list
-        $listModel = $mvcFactory->createModel('Respondents');
+	    /**
+	     * Load data for list
+	     * @var RespondentsModel $listModel
+	     */
+        $listModel = ComponentHelper::createModel('Respondents');
         if(empty($listModel))
             throw new Exception('Cannot load list model');
         $this->listLayoutData = new ListLayoutData();
@@ -133,14 +140,14 @@ class HtmlView extends ItemHtmlView
             throw new Exception('You do not have permission to access this page.');
 
 
-            /*
-             * Determine the campaign id if there is
-             */
+		/**
+		 * Determine the campaign id if there is
+		 * @var CampaignModel $campaignModel
+		 */
         $campaignId = $this->item->campaign_id;
         if($campaignId)
         {
-            $mvcFactory = ComponentHelper::getMVCFactory();
-            $campaignModel = $mvcFactory->createModel('Campaign');
+            $campaignModel = ComponentHelper::createModel('Campaign');
             $this->campaign = $campaignModel->getItem($campaignId);
             if(empty($this->campaign))
                 die('Invalid request');

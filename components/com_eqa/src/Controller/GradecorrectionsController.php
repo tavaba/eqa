@@ -6,6 +6,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\GradecorrectionsModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -21,9 +22,11 @@ class GradecorrectionsController extends AdminController
 			if(!$this->app->getIdentity()->authorise('eqa.supervise','com_eqa'))
 				throw new Exception("Bạn không có quyền truy cập vào mục này");
 
-			//Create an instance of the backend model
-			$mvcFactory = ComponentHelper::getMVCFactory();
-			$model = $mvcFactory->createModel('gradecorrections', 'Administrator');
+			/**
+			 * Create an instance of the backend model
+			 * @var GradecorrectionsModel $model
+			 */
+			$model = ComponentHelper::createModel('gradecorrections', 'Administrator');
 			$items = $model->getAllItems();
 			if(empty($items))
 				throw new Exception("Không tìm thấy danh sách đính chính");

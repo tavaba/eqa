@@ -1,15 +1,18 @@
 <?php
 
 use Kma\Library\Kma\Helper\ViewHelper;
-use Kma\Component\Eqa\Administrator\Interface\LearnerInfo;
+use Kma\Component\Eqa\Administrator\DataObject\LearnerInfo;
 
 defined('_JEXEC') or die();
+/**
+ * @var \Kma\Component\Eqa\Site\View\Learnerregradings\HtmlView $this
+ */
 if($this->errorMessage)
 {
 	echo '<div class="alert alert-danger">' . $this->errorMessage . '</div>';
 	return;
 }
-$learner = LearnerInfo::cast($this->learner);
+$learner = $this->learner;
 $examseason = $this->examseason;
 ?>
 	<div>

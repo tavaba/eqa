@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Thi sát hạch">
+        <message>
+            <![CDATA[Hiển thị danh sách kỳ sát hạch cho HVSV: xem kết quả đã tham gia và đăng ký các kỳ thi sắp diễn ra.]]>
+        </message>
+    </layout>
+
+    <fields name="params">
+        <fieldset name="basic">
+        </fieldset>
+    </fields>
+</metadata>

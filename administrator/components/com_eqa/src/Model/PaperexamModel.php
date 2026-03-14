@@ -11,7 +11,7 @@ use Kma\Library\Kma\Model\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
-use Kma\Component\Eqa\Administrator\Interface\PackageInfo;
+use Kma\Component\Eqa\Administrator\DataObject\PackageInfo;
 
 defined('_JEXEC') or die();
 

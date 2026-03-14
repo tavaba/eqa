@@ -66,8 +66,7 @@ class HtmlView extends ItemsHtmlView
             /**
              * @var FormModel $formModel
              */
-            $mvcFactory = ComponentHelper::getMVCFactory();
-            $formModel = $mvcFactory->createModel('Form');
+            $formModel = ComponentHelper::createModel('Form');
             $user = new User();
 
             foreach ($this->layoutData->items as $item)

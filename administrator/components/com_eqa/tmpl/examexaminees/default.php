@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
-use Kma\Component\Eqa\Administrator\Interface\ExamInfo;
+use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
 
 /**
  * @var ExamInfo $exam

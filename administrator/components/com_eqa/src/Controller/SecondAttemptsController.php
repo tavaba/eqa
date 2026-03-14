@@ -32,7 +32,7 @@ class SecondAttemptsController extends AdminController
             }
 
             /** @var SecondAttemptsModel $model */
-            $model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+            $model  = ComponentHelper::createModel('SecondAttempts');
             $result = $model->refresh();
 
             $msg = sprintf(
@@ -69,7 +69,7 @@ class SecondAttemptsController extends AdminController
 			}
 
 			/** @var \Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel $model */
-			$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+			$model  = ComponentHelper::createModel('SecondAttempts');
 			$result = $model->addNew();
 
 			$added = $result['added'];
@@ -167,7 +167,7 @@ class SecondAttemptsController extends AdminController
             try {
                 // ── Gọi model xử lý đối chiếu ────────────────────────────────
                 /** @var SecondAttemptsModel $model */
-                $model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+                $model  = ComponentHelper::createModel('SecondAttempts');
                 $result = $model->importBankStatement($tmpFile);
 
             } finally {
@@ -265,7 +265,7 @@ class SecondAttemptsController extends AdminController
 			}
 
 			/** @var SecondAttemptsModel $model */
-			$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+			$model  = ComponentHelper::createModel('SecondAttempts');
 			$result = $model->savePaymentStatus($id, $paymentCompleted, $description);
 
 			$statusLabel = $result['paymentCompleted']

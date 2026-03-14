@@ -29,7 +29,7 @@ class SurveyModel extends AdminModel
             $record = $this->getItem($record);
         if(empty($record->campaign_id))
             return false;
-        $campaignModel = ComponentHelper::getMVCFactory()->createModel('Campaign');
+        $campaignModel = ComponentHelper::createModel('Campaign');
         return $campaignModel->canEdit($record->campaign_id);
     }
     public function canMonitor(object $surveyItem):bool
@@ -49,7 +49,7 @@ class SurveyModel extends AdminModel
          */
         if(empty($surveyItem->campaign_id))
             return false;
-        $campaignModel = ComponentHelper::getMVCFactory()->createModel('Campaign');
+        $campaignModel = ComponentHelper::createModel('Campaign');
         $campaignItem = $campaignModel->getItem($surveyItem->campaign_id);
         return $campaignModel->canAnalyse($campaignItem);
     }

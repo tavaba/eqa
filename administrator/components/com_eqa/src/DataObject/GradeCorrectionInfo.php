@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 defined('_JEXEC') or die();
 class GradeCorrectionInfo extends ObjectInfo
 {
@@ -14,9 +14,4 @@ class GradeCorrectionInfo extends ObjectInfo
 	public string|null $reason;
 	public int $status;
 	public string|null $description;
-
-	static public function cast($obj): GradeCorrectionInfo
-	{
-		return $obj;
-	}
 }

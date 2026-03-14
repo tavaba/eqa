@@ -28,7 +28,7 @@ class HtmlView extends ItemHtmlView{
 		$this->toolbarOption->clearAllTask();
 		$this->toolbarOption->title = Text::_('COM_EQA_EXAMINEES_OF_EXAM');
 		$this->toolbarOption->taskCancel = true;
-		$this->form = FormHelper::getBackendForm('com_eqa.addexamexaminees','addexamexaminees.xml');
+		$this->form = FormHelper::getBackendForm('com_eqa.addexamexaminees','addexamexaminees.xml', []);
 	}
 	protected function addToolbarForLayoutAddexaminees() : void
 	{

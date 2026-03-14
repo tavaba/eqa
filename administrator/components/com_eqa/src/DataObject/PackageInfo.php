@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 defined('_JEXEC') or die();
 class PackageInfo extends ObjectInfo
 {
@@ -17,11 +17,6 @@ class PackageInfo extends ObjectInfo
 	public string $examseasonName;
 	public int $term;
 	public string $academicyearCode;
-
-	static public function cast($obj): PackageInfo
-	{
-		return $obj;
-	}
 
 	public function getHtml(array $options=[]): string
 	{

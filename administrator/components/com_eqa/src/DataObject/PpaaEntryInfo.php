@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Interface;
+namespace Kma\Component\Eqa\Administrator\DataObject;
 
 defined('_JEXEC') or die();
 class PpaaEntryInfo extends ObjectInfo
@@ -10,8 +10,4 @@ class PpaaEntryInfo extends ObjectInfo
 	public ?float $newMark;
 	public ?string $requestReason;
 	public ?string $changeDescription;
-	static public function cast($obj): PpaaEntryInfo
-	{
-		return $obj;
-	}
 }

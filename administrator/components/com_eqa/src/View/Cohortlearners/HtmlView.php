@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Cohortlearners; //The namespace m
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
+use Kma\Component\Eqa\Administrator\Model\CohortModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -36,9 +37,11 @@ class HtmlView extends ItemsHtmlView {
             'cohort_id'=>$cohortId
         ];
 
-        //Cohort Item
-	    $mvcFactory = ComponentHelper::getMVCFactory();
-		$cohortModel = $mvcFactory->createModel('Cohort', 'Administrator');
+        /**
+         * Cohort Item
+         * @var CohortModel $cohortModel
+         */
+		$cohortModel = ComponentHelper::createModel('Cohort', 'Administrator');
 	    $this->cohort = $cohortModel->getItem($cohortId);
 
     }
