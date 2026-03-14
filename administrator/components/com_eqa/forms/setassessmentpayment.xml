@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form cập nhật thông tin thanh toán thí sinh sát hạch.
+    Sử dụng tại layout 'setpayment' của view AssessmentLearners.
+    Task xử lý: assessmentlearners.savePaymentInfo
+-->
+<form>
+    <fieldset name="setassessmentpayment">
+
+        <field  name="id"
+                type="hidden"
+        />
+
+        <field  name="assessment_id"
+                type="hidden"
+        />
+
+        <field  name="payment_amount"
+                type="number"
+                required="true"
+                default="0"
+                min="0"
+                step="1000"
+                filter="integer"
+                label="Phí sát hạch (VNĐ)"
+                description="Số tiền phải nộp. Nhập 0 nếu miễn phí."
+        />
+
+        <field  name="payment_completed"
+                type="radio"
+                required="true"
+                default="0"
+                label="Trạng thái nộp phí"
+                class="btn-group btn-group-yesno"
+        >
+            <option value="1">Đã nộp phí</option>
+            <option value="0">Chưa nộp phí</option>
+        </field>
+
+        <field  name="note"
+                type="textarea"
+                rows="4"
+                label="Ghi chú"
+                description="Ví dụ: nội dung chuyển khoản trong bảng sao kê. Để trống để xóa ghi chú hiện tại."
+        />
+
+    </fieldset>
+</form>

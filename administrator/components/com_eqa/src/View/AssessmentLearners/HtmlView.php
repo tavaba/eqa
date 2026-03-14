@@ -13,6 +13,8 @@ use Kma\Component\Eqa\Administrator\Enum\AssessmentResultLevel;
 use Kma\Component\Eqa\Administrator\Enum\AssessmentResultType;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
+use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
+use Kma\Component\Eqa\Administrator\Model\AssessmentModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -22,7 +24,7 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
  *
  * URL truy cập: index.php?option=com_eqa&view=assessmentlearners&assessment_id=X
  *
- * @since 2.0.5
+ * @since 2.1.0
  */
 class HtmlView extends ItemsHtmlView
 {
@@ -31,6 +33,9 @@ class HtmlView extends ItemsHtmlView
 
     /** @var object|null Số liệu thống kê tổng hợp. */
     protected ?object $statistics = null;
+
+    /** @var bool Kỳ sát hạch còn được phép chỉnh sửa không (chưa kết thúc + chưa hoàn tất). */
+    protected bool $isEditable = false;
 
     // =========================================================================
     // Cấu hình cột
@@ -41,14 +46,14 @@ class HtmlView extends ItemsHtmlView
      * Các cột kết quả (score, level, passed) được xác định linh hoạt
      * dựa trên result_type của kỳ sát hạch — xem prepareDataForLayoutDefault().
      *
-     * @since 2.0.5
+     * @since 2.1.0
      */
     protected function configureItemFieldsForLayoutDefault(): void
     {
         $fields = new ListLayoutItemFields();
 
         $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
-        // Không có check vì view này không có tác vụ batch
+        $fields->check    = ListLayoutItemFields::defaultFieldCheck(); // cần cho batch action
 
         $fields->customFieldset1 = [];
 
@@ -63,6 +68,11 @@ class HtmlView extends ItemsHtmlView
         );
         $fields->customFieldset1[] = new ListLayoutItemFieldOption(
             'learner_fullname', 'Họ và tên'
+        );
+
+        // Mã nộp tiền
+        $fields->customFieldset1[] = new ListLayoutItemFieldOption(
+            'payment_code', 'Mã nộp tiền', false, false, 'text-center font-monospace'
         );
 
         // Phí
@@ -90,7 +100,7 @@ class HtmlView extends ItemsHtmlView
     // =========================================================================
 
     /**
-     * @since 2.0.5
+     * @since 2.1.0
      */
     protected function prepareDataForLayoutDefault(): void
     {
@@ -100,14 +110,20 @@ class HtmlView extends ItemsHtmlView
             die('Không xác định được kỳ sát hạch.');
         }
 
-        // 2. Load thông tin kỳ sát hạch (dùng AssessmentModel)
+	    /**
+	     * 2. Load thông tin kỳ sát hạch (dùng AssessmentModel)
+	     * @var AssessmentModel $assessmentModel
+	     */
         $assessmentModel  = ComponentHelper::createModel('Assessment');
         $this->assessment = $assessmentModel->getItem($assessmentId);
         if (empty($this->assessment)) {
             die('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId . '.');
         }
 
-        // 3. Set filter assessment_id cho list model TRƯỚC khi gọi parent
+	    /**
+	     * 3. Set filter assessment_id cho list model TRƯỚC khi gọi parent
+	     * @var AssessmentLearnersModel $listModel
+	     */
         $listModel = $this->getModel();
         $listModel->setState('filter.assessment_id', $assessmentId);
 
@@ -116,6 +132,9 @@ class HtmlView extends ItemsHtmlView
 
         // 5. Số liệu thống kê (tính sau khi state đã được set)
         $this->statistics = $listModel->getStatistics();
+
+        // 5b. Kiểm tra kỳ sát hạch còn được phép chỉnh sửa không
+        $this->isEditable = $listModel->isAssessmentEditable($assessmentId);
 
         // 6. Ghim assessment_id vào formActionParams để pagination/filter giữ đúng context
         $this->layoutData->formActionParams = [
@@ -149,7 +168,9 @@ class HtmlView extends ItemsHtmlView
                 }
 
                 // Bất thường
-                $item->anomaly_label =  Anomaly::from($item->anomaly)->getLabel();
+                $item->anomaly_label = $item->anomaly != Anomaly::None->value
+                    ? Anomaly::from($item->anomaly)->getLabel()
+                    : '';
 
                 // Kết quả — score
                 if (isset($item->score) && $item->score !== null) {
@@ -184,7 +205,7 @@ class HtmlView extends ItemsHtmlView
     // =========================================================================
 
     /**
-     * @since 2.0.5
+     * @since 2.1.0
      */
     protected function addToolbarForLayoutDefault(): void
     {
@@ -195,10 +216,119 @@ class HtmlView extends ItemsHtmlView
 
         ToolbarHelper::title($title);
         ToolbarHelper::appendGoHome();
+	    // Nút quay về danh sách kỳ sát hạch
+	    $backUrl = Route::_('index.php?option=com_eqa&view=assessments', false);
+	    ToolbarHelper::appendLink('core.manage', $backUrl,'Kỳ sát hạch','arrow-up-2');
 
-        // Nút quay về danh sách kỳ sát hạch
-        $backUrl = Route::_('index.php?option=com_eqa&view=assessments', false);
-        ToolbarHelper::appendLink('core.manage', $backUrl, 'Kỳ sát hạch', 'arrow-up-2');
+        if ($this->isEditable) {
+            // Nút Thêm thí sinh
+            $assessmentId = (int) ($this->assessment->id ?? 0);
+            $addUrl = Route::_(
+                'index.php?option=com_eqa&view=assessmentlearners&layout=addlearners&assessment_id=' . $assessmentId,
+                false
+            );
+            ToolbarHelper::appendLink('core.edit', $addUrl, 'Thêm thí sinh', 'plus');
+
+            // Nút Đổi trạng thái nộp phí (yêu cầu chọn ít nhất 1 bản ghi)
+            ToolbarHelper::appendButton(
+                'core.edit',
+                'flag',
+                'Đổi trạng thái nộp phí',
+                'assessmentlearners.setPaymentInfo',
+                true,
+                'btn btn-primary'
+            );
+        }
+	}
+
+    // =========================================================================
+    // Layout: addlearners
+    // =========================================================================
+
+    /**
+     * Chuẩn bị dữ liệu cho layout nhập danh sách thí sinh thủ công.
+     *
+     * @since 2.1.0
+     */
+    protected function prepareDataForLayoutAddlearners(): void
+    {
+        $assessmentId = Factory::getApplication()->input->getInt('assessment_id');
+        if (empty($assessmentId)) {
+            die('Không xác định được kỳ sát hạch.');
+        }
+
+        $mvcFactory       = ComponentHelper::getMVCFactory();
+        $assessmentModel  = $mvcFactory->createModel('Assessment');
+        $this->assessment = $assessmentModel->getItem($assessmentId);
+    }
+
+    /**
+     * @since 2.1.0
+     */
+    protected function addToolbarForLayoutAddlearners(): void
+    {
+        $title = 'Thêm thí sinh';
+        if (!empty($this->assessment->title)) {
+            $title .= ' — ' . $this->assessment->title;
+        }
+        ToolbarHelper::title($title);
+        ToolbarHelper::save('assessmentlearners.addLearners');
+
+        $assessmentId = (int) ($this->assessment->id ?? 0);
+        $cancelUrl    = Route::_(
+            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            false
+        );
+        ToolbarHelper::appendCancelLink($cancelUrl);
+    }
+
+    // =========================================================================
+    // Layout: setpayment
+    // =========================================================================
+
+    /**
+     * Chuẩn bị dữ liệu cho layout cập nhật thông tin thanh toán.
+     *
+     * @since 2.1.0
+     */
+    protected function prepareDataForLayoutSetpayment(): void
+    {
+        $id = Factory::getApplication()->input->getInt('id');
+        if ($id <= 0) {
+            die('ID bản ghi không hợp lệ.');
+        }
+
+        /** @var \Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel $model */
+        $model      = $this->getModel();
+        $this->item = $model->getItemById($id);
+
+        // Load form XML và pre-fill giá trị hiện tại
+        $this->form = \Kma\Library\Kma\Helper\FormHelper::getBackendForm(
+            'com_eqa.assessmentlearner.setpayment',
+            'setassessmentpayment.xml',
+            []
+        );
+
+        $this->form->setValue('id',                null, $this->item->id);
+        $this->form->setValue('payment_amount',    null, $this->item->payment_amount);
+        $this->form->setValue('payment_completed', null, (int) $this->item->payment_completed);
+        $this->form->setValue('note',              null, $this->item->note ?? '');
+    }
+
+    /**
+     * @since 2.1.0
+     */
+    protected function addToolbarForLayoutSetpayment(): void
+    {
+        ToolbarHelper::title('Cập nhật thông tin thanh toán');
+        ToolbarHelper::appendButton('core.edit', 'save', 'Lưu', 'assessmentlearners.savePaymentInfo', false, 'btn btn-success');
+
+        $assessmentId = (int) ($this->item->assessment_id ?? 0);
+        $cancelUrl    = Route::_(
+            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            false
+        );
+        ToolbarHelper::appendCancelLink($cancelUrl);
     }
 
     // =========================================================================
@@ -209,7 +339,7 @@ class HtmlView extends ItemsHtmlView
      * Bổ sung các cột kết quả vào $this->itemFields dựa trên result_type.
      *
      * @param  int  $resultType  Giá trị của AssessmentResultType enum.
-     * @since 2.0.5
+     * @since 2.1.0
      */
     private function addResultColumns(int $resultType): void
     {
