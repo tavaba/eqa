@@ -17,7 +17,7 @@ class ExamsessionsModel extends ListModel{
     }
     public function getListQuery()
     {
-        $db = $this->getDatabase();
+	    $db = $this->getDatabase();
         $columns = $db->quoteName(
             array('a.id',  'b.name',  'a.name', 'a.start', 'a.flexible', 'a.monitor_ids','a.examiner_ids', 'a.description'),
             array('id',  'examseason', 'name',    'start',  'flexible',   'monitor_ids',  'examiner_ids',   'description')
@@ -35,9 +35,9 @@ class ExamsessionsModel extends ListModel{
             $query->where('a.name LIKE '.$like);
         }
 
-        $examseason_id = $this->getState('filter.examseason_id');
-        if(is_numeric($examseason_id))
-            $query->where('a.examseason_id='.(int)$examseason_id);
+	    $examseasonId = $this->getState('filter.examseason_id');
+	    if(is_numeric($examseasonId))
+            $query->where('a.examseason_id='.(int)$examseasonId);
 
         $flexible = $this->getState('filter.flexible');
         if(is_numeric($flexible))

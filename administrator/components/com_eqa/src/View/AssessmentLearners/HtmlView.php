@@ -6,6 +6,7 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
@@ -16,6 +17,7 @@ use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
 use Kma\Component\Eqa\Administrator\Model\AssessmentModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 
@@ -36,6 +38,8 @@ class HtmlView extends ItemsHtmlView
 
     /** @var bool Kỳ sát hạch còn được phép chỉnh sửa không (chưa kết thúc + chưa hoàn tất). */
     protected bool $isEditable = false;
+
+	protected Form $uploadStatementForm;
 
     // =========================================================================
     // Cấu hình cột
@@ -63,22 +67,18 @@ class HtmlView extends ItemsHtmlView
         );
 
         // Thông tin người học
-        $fields->customFieldset1[] = new ListLayoutItemFieldOption(
-            'learner_code', 'Mã HVSV', true, false, 'text-center font-monospace'
-        );
-        $fields->customFieldset1[] = new ListLayoutItemFieldOption(
-            'learner_fullname', 'Họ và tên'
-        );
-
-        // Mã nộp tiền
-        $fields->customFieldset1[] = new ListLayoutItemFieldOption(
-            'payment_code', 'Mã nộp tiền', false, false, 'text-center font-monospace'
-        );
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_code', 'Mã HVSV', true, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_lastname', 'Họ đệm');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_firstname', 'Tên', true);
 
         // Phí
         $f = new ListLayoutItemFieldOption('payment_amount_html', 'Phí', false, false, 'text-end');
         $f->printRaw = true;
         $fields->customFieldset1[] = $f;
+
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption(
+		    'payment_code', 'Mã nộp tiền', false, false, 'text-center font-monospace'
+	    );
 
         $f = new ListLayoutItemFieldOption('payment_completed_html', 'Nộp phí', false, false, 'text-center');
         $f->printRaw = true;
@@ -89,7 +89,12 @@ class HtmlView extends ItemsHtmlView
             'anomaly_label', 'Bất thường', false, false, 'text-center'
         );
 
-        // Cột kết quả — sẽ được bổ sung động trong prepareDataForLayoutDefault()
+		//Cancelled
+	    $f = new ListLayoutItemFieldOption('cancelled', 'Trạng thái', true, false, 'text-center');
+	    $f->printRaw = true;
+	    $fields->customFieldset1[] = $f;
+
+	    // Cột kết quả — sẽ được bổ sung động trong prepareDataForLayoutDefault()
         // tuỳ theo result_type của kỳ sát hạch
 
         $this->itemFields = $fields;
@@ -148,11 +153,6 @@ class HtmlView extends ItemsHtmlView
         // 8. Preprocessing từng item
         if (!empty($this->layoutData->items)) {
             foreach ($this->layoutData->items as &$item) {
-                // Họ và tên đầy đủ
-                $item->learner_fullname = trim(
-                    ($item->learner_lastname ?? '') . ' ' . ($item->learner_firstname ?? '')
-                ) ?: '—';
-
                 // Phí
                 $amount = (int) $item->payment_amount;
                 if ($amount <= 0) {
@@ -163,8 +163,8 @@ class HtmlView extends ItemsHtmlView
                         . number_format($amount, 0, ',', '.') . ' đ</span>';
 
                     $item->payment_completed_html = $item->payment_completed
-                        ? '<span class="icon-check text-success" aria-label="Đã nộp"></span>'
-                        : '<span class="icon-times text-danger" aria-label="Chưa nộp"></span>';
+                        ? '<span class="badge bg-success">Đã nộp</span>'
+                        : '<span class="badge bg-danger">Chưa nộp</span>';
                 }
 
                 // Bất thường
@@ -195,6 +195,10 @@ class HtmlView extends ItemsHtmlView
                 } else {
                     $item->passed_html = '<span class="badge bg-danger">Không đạt</span>';
                 }
+
+				//Cancelled label
+	            $item->cancelled = $item->cancelled ?
+		            '<span class="badge bg-danger">Đã hủy</span>' : '';
             }
             unset($item);
         }
@@ -228,6 +232,13 @@ class HtmlView extends ItemsHtmlView
                 false
             );
             ToolbarHelper::appendLink('core.edit', $addUrl, 'Thêm thí sinh', 'plus');
+
+	        // Nút Nhập sao kê
+	        $importUrl = Route::_(
+		        'index.php?option=com_eqa&view=assessmentlearners&layout=importstatement&assessment_id=' . $assessmentId,
+		        false
+	        );
+	        ToolbarHelper::appendLink('core.edit', $importUrl, 'Nhập sao kê', 'file');
 
             // Nút Đổi trạng thái nộp phí (yêu cầu chọn ít nhất 1 bản ghi)
             ToolbarHelper::appendButton(
@@ -282,7 +293,54 @@ class HtmlView extends ItemsHtmlView
         ToolbarHelper::appendCancelLink($cancelUrl);
     }
 
-    // =========================================================================
+	// =========================================================================
+	// Layout: importstatement
+	// =========================================================================
+
+	/**
+	 * Chuẩn bị dữ liệu cho layout nhập sao kê ngân hàng.
+	 *
+	 * @since 2.0.5
+	 */
+	protected function prepareDataForLayoutImportstatement(): void
+	{
+		$assessmentId = Factory::getApplication()->input->getInt('assessment_id');
+		if (empty($assessmentId)) {
+			die('Không xác định được kỳ sát hạch.');
+		}
+
+		/**
+		 * @var AssessmentModel $assessmentModel
+		 */
+		$assessmentModel  = ComponentHelper::createModel('Assessment');
+		$this->assessment = $assessmentModel->getItem($assessmentId);
+
+		/**
+		 * Load the upload form
+		 * and then inject a hidden 'assessment_id' field into the form
+		 */
+		$this->uploadStatementForm = FormHelper::getBackendForm('eqa.assessmentlearners.importstatement','upload_statement.xml', []);
+		$this->uploadStatementForm->setField(new \SimpleXMLElement('<field name="assessment_id" type="hidden" default="' . (int) $assessmentId . '" />'), null, true, 'upload');
+
+	}
+
+	/**
+	 * @since 2.1.0
+	 */
+	protected function addToolbarForLayoutImportstatement(): void
+	{
+		ToolbarHelper::title('Nhập sao kê ngân hàng');
+		ToolbarHelper::appendUpload('assessmentlearners.importStatement', 'Đối chiếu & Cập nhật', 'upload', 'core.edit', true);
+
+		$assessmentId = (int) ($this->assessment->id ?? 0);
+		$cancelUrl    = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		ToolbarHelper::appendCancelLink($cancelUrl);
+	}
+
+	// =========================================================================
     // Layout: setpayment
     // =========================================================================
 

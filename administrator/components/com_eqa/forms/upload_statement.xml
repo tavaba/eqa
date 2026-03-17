@@ -4,8 +4,15 @@
     dùng cho chức năng đối chiếu và ghi nhận thanh toán thi lần hai.
 -->
 <form>
-    <fieldset name="upload">
+    <fieldset name="upload" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
 
+        <field
+            name="napas_code"
+            type="BankNapasCode"
+            label="Ngân hàng"
+            required="true"
+            class="select2-basic"
+        />
         <field
             name="bank_statement"
             type="file"

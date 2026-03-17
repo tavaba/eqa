@@ -9,6 +9,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamseasonsModel;
+use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
@@ -122,74 +123,71 @@ class SecondAttemptsController extends AdminController
      * @return void
      * @since 2.0.3
      */
-    public function importStatement(): void
-    {
-        $redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+	public function importStatement(): void
+	{
+		$redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
 
-        try {
-            $this->checkToken();
+		try {
+			$this->checkToken();
 
-            if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
-                throw new Exception('Bạn không có quyền thực hiện chức năng này');
-            }
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+			}
 
-            // ── Validate file upload ─────────────────────────────────────────
-            $uploadedFile = $this->input->files->get('bank_statement');
+			// ── Lấy NAPAS code ───────────────────────────────────────────────────
+			$napasCode = trim($this->input->post->getString('napas_code', ''));
+			if (empty($napasCode)) {
+				throw new Exception('Vui lòng chọn ngân hàng.');
+			}
+			if (!BankStatementHelper::isSupported($napasCode)) {
+				$supported = implode(', ', BankStatementHelper::getSupportedBankNames());
+				throw new Exception(
+					sprintf('Ngân hàng này chưa được hỗ trợ. Hỗ trợ: %s.', $supported)
+				);
+			}
 
-            if (empty($uploadedFile) || empty($uploadedFile['tmp_name'])) {
-                throw new Exception('Vui lòng chọn file bản sao kê ngân hàng (.xlsx).');
-            }
+			// ── Validate file upload ─────────────────────────────────────────────
+			$uploadedFile = $this->input->files->get('bank_statement');
 
-            if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception(
-                    'Lỗi upload file (mã lỗi: ' . $uploadedFile['error'] . '). ' .
-                    'Vui lòng thử lại.'
-                );
-            }
+			if (empty($uploadedFile) || empty($uploadedFile['tmp_name'])) {
+				throw new Exception('Vui lòng chọn file bản sao kê ngân hàng (.xlsx).');
+			}
+			if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
+				throw new Exception('Lỗi upload file (mã lỗi: ' . $uploadedFile['error'] . '). Vui lòng thử lại.');
+			}
+			$ext = strtolower(pathinfo($uploadedFile['name'] ?? '', PATHINFO_EXTENSION));
+			if ($ext !== 'xlsx') {
+				throw new Exception('Định dạng file không hợp lệ. Chỉ chấp nhận file Excel (.xlsx).');
+			}
 
-            $originalName = $uploadedFile['name'] ?? '';
-            $ext          = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            if ($ext !== 'xlsx') {
-                throw new Exception(
-                    'Định dạng file không hợp lệ. Chỉ chấp nhận file Excel (.xlsx) ' .
-                    'bản sao kê MB Bank.'
-                );
-            }
+			// ── Lưu file tạm ─────────────────────────────────────────────────────
+			$tmpDir  = Factory::getApplication()->get('tmp_path');
+			$tmpFile = $tmpDir . '/eqa_statement_' . uniqid('', true) . '.xlsx';
+			if (!move_uploaded_file($uploadedFile['tmp_name'], $tmpFile)) {
+				throw new Exception('Không thể lưu file upload. Vui lòng kiểm tra quyền ghi thư mục tmp.');
+			}
 
-            // ── Lưu file tạm ─────────────────────────────────────────────────
-            $tmpDir  = Factory::getApplication()->get('tmp_path');
-            $tmpFile = $tmpDir . '/eqa_statement_' . uniqid('', true) . '.xlsx';
+			try {
+				/** @var SecondAttemptsModel $model */
+				$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+				$result = $model->importBankStatement($tmpFile, $napasCode);  // <- thêm $napasCode
+			} finally {
+				if (file_exists($tmpFile)) {
+					@unlink($tmpFile);
+				}
+			}
 
-            if (!move_uploaded_file($uploadedFile['tmp_name'], $tmpFile)) {
-                throw new Exception('Không thể lưu file upload. Vui lòng kiểm tra quyền ghi thư mục tmp.');
-            }
+			$this->setMessage(
+				$this->buildImportResultMessage($result),
+				($result['updated'] > 0 || empty($result['amountMismatch'])) ? 'success' : 'warning'
+			);
 
-            try {
-                // ── Gọi model xử lý đối chiếu ────────────────────────────────
-                /** @var SecondAttemptsModel $model */
-                $model  = ComponentHelper::createModel('SecondAttempts');
-                $result = $model->importBankStatement($tmpFile);
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
 
-            } finally {
-                // Luôn xóa file tạm dù thành công hay thất bại
-                if (file_exists($tmpFile)) {
-                    @unlink($tmpFile);
-                }
-            }
-
-            // ── Build thông báo kết quả ───────────────────────────────────────
-            $this->setMessage(
-                $this->buildImportResultMessage($result),
-                ($result['updated'] > 0 || empty($result['amountMismatch'])) ? 'success' : 'warning'
-            );
-
-        } catch (Exception $e) {
-            $this->setMessage($e->getMessage(), 'error');
-        }
-
-        $this->setRedirect($redirectUrl);
-    }
-
+		$this->setRedirect($redirectUrl);
+	}
 	// =========================================================================
 	// Quản lý trạng thái thanh toán (thủ công) — POST → REDIRECT → POST
 	// =========================================================================

@@ -12,7 +12,7 @@ defined('_JEXEC') or die();
 
 use Kma\Library\Kma\Helper\ViewHelper;
 
-/** @var \Kma\Component\Eqa\Administrator\View\SecondAttempts\HtmlView $this */
+/** @var \Kma\Component\Eqa\Administrator\View\AssessmentLearners\HtmlView $this */
 ?>
 
 <div class="row justify-content-center">
@@ -34,7 +34,7 @@ use Kma\Library\Kma\Helper\ViewHelper;
         </div>
 
         <!-- Form upload -->
-        <?php ViewHelper::printUploadForm($this->form, 'secondattempts.importStatement'); ?>
+        <?php ViewHelper::printUploadForm($this->uploadStatementForm, 'assessmentlearners.importStatement'); ?>
 
     </div>
 </div>

@@ -31,7 +31,6 @@ class ExamseasonField extends ListField
         $items = $db->loadObjectList();
         $options = [];
 	    $options[] = HTMLHelper::_('select.option', null, ' -Chọn kỳ thi- ');
-	    $options[] = HTMLHelper::_('select.option', 0, '(Kỳ thi mặc định)');
         foreach ($items as $item)
         {
             $options[] = HTMLHelper::_('select.option', $item->id, $item->name);

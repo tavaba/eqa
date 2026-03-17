@@ -6,6 +6,7 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Library\Kma\Model\ListModel;
 
 /**
@@ -23,6 +24,7 @@ class AssessmentLearnersModel extends ListModel
         $config['filter_fields'] = [
             'al.id', 'al.code', 'lr.code', 'lr.lastname', 'lr.firstname',
             'al.payment_completed', 'al.anomaly', 'al.passed', 'al.score', 'al.level',
+	        'al.cancelled'
         ];
         parent::__construct($config, $factory);
     }
@@ -74,7 +76,8 @@ class AssessmentLearnersModel extends ListModel
                 $db->quoteName('al.note'),
                 $db->quoteName('lr.code',               'learner_code'),
                 $db->quoteName('lr.lastname',            'learner_lastname'),
-                $db->quoteName('lr.firstname',           'learner_firstname'),
+	            $db->quoteName('lr.firstname',           'learner_firstname'),
+	            $db->quoteName('al.cancelled'),
             ])
             ->where($db->quoteName('al.assessment_id') . ' = ' . $assessmentId);
 
@@ -110,6 +113,11 @@ class AssessmentLearnersModel extends ListModel
         if (is_numeric($passed)) {
             $query->where($db->quoteName('al.passed') . ' = ' . (int) $passed);
         }
+
+		$cancelled = $this->getState('filter.cancelled');
+		if (is_numeric($cancelled)) {
+			$query->where($db->quoteName('al.cancelled') . ' = ' . (int) $cancelled);
+		}
 
         // ----- Ordering -----
         $orderingCol = $db->escape($this->getState('list.ordering', 'lr.lastname'));
@@ -196,8 +204,9 @@ class AssessmentLearnersModel extends ListModel
      *   - end_date < ngày hôm nay theo giờ hệ thống (kỳ thi đã kết thúc)
      *
      * @param  int  $assessmentId
+     *
      * @return bool  TRUE nếu còn được phép chỉnh sửa.
-     * @throws \Exception
+     * @throws Exception
      * @since 2.1.0
      */
     public function isAssessmentEditable(int $assessmentId): bool
@@ -211,7 +220,7 @@ class AssessmentLearnersModel extends ListModel
         $a = $db->loadObject();
 
         if ($a === null) {
-            throw new \Exception('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId);
+            throw new Exception('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId);
         }
 
         if ((bool) $a->completed) {
@@ -235,8 +244,9 @@ class AssessmentLearnersModel extends ListModel
      * Lấy thông tin một bản ghi thí sinh sát hạch theo id, kèm thông tin người học.
      *
      * @param  int  $id
+     *
      * @return object
-     * @throws \Exception
+     * @throws Exception
      * @since 2.1.0
      */
     public function getItemById(int $id): object
@@ -265,7 +275,7 @@ class AssessmentLearnersModel extends ListModel
         $record = $db->loadObject();
 
         if ($record === null) {
-            throw new \Exception('Không tìm thấy bản ghi có id = ' . $id);
+	        throw new Exception('Không tìm thấy bản ghi có id = ' . $id);
         }
 
         return $record;
@@ -281,8 +291,9 @@ class AssessmentLearnersModel extends ListModel
      * @param  int     $assessmentId
      * @param  string  $rawCodes     Chuỗi codes phân tách bởi space/newline/comma/semicolon.
      * @param  int     $operatorId   ID người dùng (created_by / updated_by).
+     *
      * @return array{added: string[], skipped: string[], notFound: string[]}
-     * @throws \Exception
+     * @throws Exception
      * @since 2.1.0
      */
     public function addLearners(int $assessmentId, string $rawCodes, int $operatorId): array
@@ -296,7 +307,7 @@ class AssessmentLearnersModel extends ListModel
         )));
 
         if (empty($codes)) {
-            throw new \Exception('Không có mã HVSV nào được nhập.');
+	        throw new Exception('Không có mã HVSV nào được nhập.');
         }
 
         // Lấy thông tin kỳ sát hạch
@@ -307,7 +318,7 @@ class AssessmentLearnersModel extends ListModel
         $db->setQuery($query);
         $assessment = $db->loadObject();
         if ($assessment === null) {
-            throw new \Exception('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId);
+	        throw new Exception('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId);
         }
         $fee    = (int) $assessment->fee;
         $isFree = ($fee === 0);
@@ -420,8 +431,9 @@ class AssessmentLearnersModel extends ListModel
      * @param  bool        $paymentCompleted
      * @param  string|null $note
      * @param  int         $operatorId
+     *
      * @return string  learner_code của bản ghi đã cập nhật (dùng cho thông báo).
-     * @throws \Exception
+     * @throws Exception
      * @since 2.1.0
      */
     public function savePaymentInfo(
@@ -450,7 +462,109 @@ class AssessmentLearnersModel extends ListModel
         return $record->learner_code ?? ('id=' . $id);
     }
 
-    // =========================================================================
+	// =========================================================================
+	// Nhập sao kê ngân hàng
+	// =========================================================================
+
+	/**
+	 * Đối chiếu sao kê ngân hàng với danh sách thí sinh sát hạch,
+	 * cập nhật payment_completed cho các bản ghi hợp lệ.
+	 *
+	 * @param  string  $filePath      Đường dẫn tuyệt đối đến file .xlsx.
+	 * @param  string  $napasCode     Mã NAPAS ngân hàng (dùng để chọn parser).
+	 * @param  int     $assessmentId  ID kỳ sát hạch.
+	 * @param  int     $operatorId    ID người dùng (updated_by).
+	 *
+	 * @return array{
+	 *     updated:       int,
+	 *     alreadyPaid:   int,
+	 *     notFound:      int,
+	 *     amountMismatch: array,
+	 *     duplicate:     array,
+	 *     updatedCodes:  string[]
+	 * }
+	 * @throws Exception
+	 * @since 2.0.5
+	 */
+	public function importBankStatement(
+		string $filePath,
+		string $napasCode,
+		int $assessmentId,
+		int $operatorId
+	): array {
+		// 1. Parse file theo ngân hàng
+		$parser       = BankStatementHelper::getParser($napasCode);
+		$transactions = $parser->parse($filePath);
+
+		if (empty($transactions)) {
+			throw new Exception(
+				sprintf(
+					'File sao kê %s không có giao dịch Credit nào hợp lệ. Vui lòng kiểm tra lại định dạng file.',
+					$parser->getBankName()
+				)
+			);
+		}
+
+		// 2. Load bản ghi DB cần đối chiếu
+		$db    = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('al.id'),
+				$db->quoteName('al.payment_code'),
+				$db->quoteName('al.payment_amount'),
+				$db->quoteName('al.payment_completed'),
+				$db->quoteName('lr.code',      'learner_code'),
+				$db->quoteName('lr.lastname',  'learner_lastname'),
+				$db->quoteName('lr.firstname', 'learner_firstname'),
+			])
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('al.learner_id')
+			)
+			->where($db->quoteName('al.assessment_id')   . ' = ' . $assessmentId)
+			->where($db->quoteName('al.payment_amount')  . ' > 0')
+			->where($db->quoteName('al.payment_code')    . ' IS NOT NULL')
+			->where($db->quoteName('al.cancelled')       . ' = 0');
+		$db->setQuery($query);
+		$dbRecords = $db->loadObjectList();
+
+		// 3. Đối chiếu (thuật toán dùng chung)
+		$reconciled = BankStatementHelper::reconcile($transactions, $dbRecords);
+
+		// 4. Thực hiện UPDATE cho các bản ghi hợp lệ
+		$now          = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+		$updatedCodes = [];
+
+		foreach ($reconciled['matched'] as $pair) {
+			$rec  = $pair['record'];
+			$tx   = $pair['transaction'];
+			$note = $tx['description'];
+
+			$query = $db->getQuery(true)
+				->update($db->quoteName('#__eqa_assessment_learner'))
+				->set($db->quoteName('payment_completed') . ' = 1')
+				->set($db->quoteName('note')       . ' = ' . $db->quote($note))
+				->set($db->quoteName('updated_at') . ' = ' . $db->quote($now))
+				->set($db->quoteName('updated_by') . ' = ' . $operatorId)
+				->where($db->quoteName('id') . ' = ' . (int) $rec->id);
+			$db->setQuery($query);
+			$db->execute();
+
+			$updatedCodes[] = $rec->learner_code ?? ('id=' . $rec->id);
+		}
+
+		return [
+			'updated'        => count($reconciled['matched']),
+			'alreadyPaid'    => $reconciled['alreadyPaid'],
+			'notFound'       => $reconciled['notFound'],
+			'amountMismatch' => $reconciled['amountMismatch'],
+			'duplicate'      => $reconciled['duplicate'],
+			'updatedCodes'   => $updatedCodes,
+		];
+	}
+
+	// =========================================================================
     // Private helper
     // =========================================================================
 
@@ -458,7 +572,8 @@ class AssessmentLearnersModel extends ListModel
      * Sinh payment_code ngẫu nhiên 8 ký tự [A-Z0-9] không trùng tập đã có.
      *
      * @param  array<string, mixed>  $existingCodes  Map (flip) các code đã dùng.
-     * @throws \Exception
+     *
+     * @throws Exception
      */
     private function generateUniqueCode(array $existingCodes): string
     {

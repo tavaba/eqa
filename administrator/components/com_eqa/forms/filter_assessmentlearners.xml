@@ -20,7 +20,7 @@
                 default=""
                 onchange="this.form.submit();"
         >
-            <option value="">-- Tất cả --</option>
+            <option value="">-- Nộp phí --</option>
             <option value="1">Đã nộp</option>
             <option value="0">Chưa nộp</option>
         </field>
@@ -47,8 +47,18 @@
             <option value="0">Không đạt</option>
         </field>
 
-    </fields>
+        <field  name="cancelled"
+                type="list"
+                label="Nộp phí"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-- Hủy đăng ký --</option>
+            <option value="1">Đã hủy đăng ký</option>
+            <option value="0">Bình thường</option>
+        </field>
 
+    </fields>
     <fields name="list">
         <field  name="fullordering"
                 type="hidden"

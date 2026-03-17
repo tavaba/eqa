@@ -7,7 +7,7 @@
  *
  * @package     Com_Eqa
  * @subpackage  tmpl/assessmentlearners
- * @since       2.1.0
+ * @since       2.0.5
  */
 
 defined('_JEXEC') or die();

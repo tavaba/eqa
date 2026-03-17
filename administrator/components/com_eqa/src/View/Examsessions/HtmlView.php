@@ -2,8 +2,10 @@
 namespace Kma\Component\Eqa\Administrator\View\Examsessions; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
+use JFactory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Model\ExamsessionsModel;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -50,10 +52,14 @@ class HtmlView extends ItemsHtmlView {
     {
         parent::prepareDataForLayoutDefault();
 
-        //Load examseason
+        /**
+         * Load examseason info
+         * @var ExamsessionsModel $model
+         */
         $model = $this->getModel();
-        $examseasonId = $model->getState('filter.examseason_id');
-        $this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);       //Maybe null
+        $examseasonId = (int)$model->getState('filter.examseason_id');
+		if($examseasonId)
+            $this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);       //Maybe null
 
         //Preprocessing
         if(!empty($this->layoutData->items)){
