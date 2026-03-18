@@ -26,20 +26,6 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery($query);
 		return $db->loadResult();
 	}
-	static public function getAcademicyearCode(int $academicyear_id)
-	{
-		static $academicyears;
-		if(empty($academicyears))
-		{
-			$db = DatabaseHelper::getDatabaseDriver();
-			$query = $db->getQuery(true)
-				->select('id, code')
-				->from('#__eqa_academicyears');
-			$db->setQuery($query);
-			$academicyears = $db->loadAssocList('id','code');
-		}
-		return $academicyears[$academicyear_id];
-	}
 
 	/**
 	 * Lấy thông tin tóm tắt của một lớp học phần theo ID.

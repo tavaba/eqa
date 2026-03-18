@@ -3,14 +3,17 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 
 defined('_JEXEC') or die();
+require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 /**
  * Items Controller cho danh sách thí sinh sát hạch.
@@ -566,5 +569,77 @@ class AssessmentLearnersController extends AdminController
 
 		return implode('<br>', $lines);
 	}
+// =========================================================================
+// exportItest — xuất ca thi iTest cho kỳ sát hạch
+// =========================================================================
 
+	/**
+	 * Xuất file Excel "Ca thi iTest" cho một kỳ sát hạch.
+	 *
+	 * Phạm vi: tất cả thí sinh đã được đánh SBD (cancelled = 0,
+	 * examroom_id IS NOT NULL, code IS NOT NULL) của kỳ sát hạch.
+	 *
+	 * Cấu trúc file giống hệt chức năng xuất ca iTest của ExamExaminees,
+	 * dùng chung IOHelper::writeITestSheet().
+	 *
+	 * @since 2.0.6
+	 */
+	public function exportItest(): void
+	{
+		// 1. Kiểm tra CSRF token
+		$this->checkToken();
+
+		// 2. Kiểm tra quyền truy cập
+		if (!$this->app->getIdentity()->authorise('core.manage', $this->option)) {
+			$this->app->enqueueMessage('Bạn không có quyền thực hiện chức năng này.', 'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=assessments', false));
+			return;
+		}
+
+		// 3. Xác định assessment_id
+		$assessmentId = $this->input->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		if ($assessmentId <= 0) {
+			$this->setMessage('Không xác định được kỳ sát hạch.', 'error');
+			return;
+		}
+
+		try {
+			// 4. Lấy thông tin kỳ sát hạch (để đặt tên file)
+			/** @var \Kma\Component\Eqa\Administrator\Model\AssessmentModel $assessmentModel */
+			$assessmentModel = ComponentHelper::createModel('Assessment');
+			$assessment      = $assessmentModel->getItem($assessmentId);
+
+			if (empty($assessment)) {
+				throw new Exception('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId . '.');
+			}
+
+			// 5. Lấy dữ liệu thí sinh từ model
+			/** @var AssessmentLearnersModel $model */
+			$model = ComponentHelper::createModel('AssessmentLearners');
+			$items = $model->getITestData($assessmentId);
+
+			if (empty($items)) {
+				throw new Exception('Không có thí sinh nào đã được đánh số báo danh trong kỳ sát hạch này.');
+			}
+
+			// 6. Tạo spreadsheet và ghi dữ liệu
+			$spreadsheet = new Spreadsheet();
+			$sheet       = $spreadsheet->getSheet(0);
+			IOHelper::writeITestSheet($sheet, $items);
+
+			// 7. Gửi file cho người dùng
+			$fileName = 'Ca thi iTest. ' . ($assessment->title ?? ('assessment-' . $assessmentId)) . '.xlsx';
+			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+			$this->app->close();
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
 }

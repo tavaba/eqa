@@ -547,104 +547,106 @@ class ExamController extends  FormController
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();
 	}
-	public function exportitest()
+
+	/**
+	 * Xuất file Excel "Ca thi iTest" cho một môn thi trắc nghiệm.
+	 *
+	 * Chỉ áp dụng cho các môn thi có hình thức thi trên máy
+	 * (MachineObjective, MachineHybrid, ComboObjectiveAndPractice).
+	 * Sử dụng IOHelper::writeITestSheet() dùng chung với AssessmentLearners.
+	 *
+	 * @since 1.0.0
+	 * @updated 2.0.5  Refactor: tách logic ghi Excel ra IOHelper::writeITestSheet().
+	 */
+	public function exportitest(): void
 	{
-		$app = $this->app;
+		// 1. CSRF
 		$this->checkToken();
-		if(!$app->getIdentity()->authorise('core.manage', $this->option))
-		{
-			echo Text::_('COM_EQA_MSG_UNAUTHORISED');
-			exit();
-		}
 
-		//Prepare data
-		$examId = $this->input->getInt('exam_id');
-		if(empty($examId))
-		{
-			$this->setMessage(Text::_('COM_EQA_MSG_ERORR_OCCURRED'), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false));
-			return;
-		}
-		$exam = DatabaseHelper::getExamInfo($examId);
-
-		//Nếu không phải thi trắc nghiệm thì bỏ
-		$testType = TestType::from($exam->testtype);
-		if($testType != TestType::MachineObjective && $testType!=TestType::MachineHybrid && $testType!=TestType::ComboObjectiveAndPractice)
-		{
-			$this->setMessage(Text::_('COM_EQA_MSG_NOT_MACHINE_TEST'), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false));
+		// 2. Quyền truy cập
+		if (!$this->app->getIdentity()->authorise('core.manage', $this->option)) {
+			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees', false));
 			return;
 		}
 
-
-		//Get info about all the examinees of the exam, ordering by exam time
-		$db = DatabaseHelper::getDatabaseDriver();
-		$columms = $db->quoteName(
-			array('d.start', 'b.name', 'c.code',       'a.code'),
-			array('start',   'room',   'learner_code', 'code')
+		// 3. Xác định exam_id — đặt redirect mặc định
+		$examId  = $this->input->getInt('exam_id', 0);
+		$listUrl = Route::_(
+			'index.php?option=com_eqa&view=examexaminees&exam_id=' . $examId,
+			false
 		);
-		$query = $db->getQuery(true)
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_examrooms AS b', 'a.examroom_id=b.id')
-			->leftJoin('#__eqa_learners AS c', 'a.learner_id=c.id')
-			->leftJoin('#__eqa_examsessions AS d', 'b.examsession_id=d.id')
-			->select($columms)
-			->where('a.examroom_id>0 AND a.exam_id='.$examId)
-			->order(array(
-				$db->quoteName('start') . ' ASC',
-				'code ASC'
-			));
-		$db->setQuery($query);
-		$items = $db->loadObjectList();
+		$this->setRedirect($listUrl);
 
-		// Prepare the spreadsheet
-		$spreadsheet = new Spreadsheet();
-		$sheet = $spreadsheet->getSheet(0);
+		if ($examId <= 0) {
+			$this->setMessage(Text::_('COM_EQA_MSG_ERORR_OCCURRED'), 'error');
+			return;
+		}
 
-		//Write the header row
-		$sheet->setCellValue('A1', 'Đợt thi');
-		$sheet->setCellValue('B1', 'Ngày thi');
-		$sheet->setCellValue('C1', 'Ca/Tiết');
-		$sheet->setCellValue('D1', 'Phòng thi');
-		$sheet->setCellValue('E1', 'Mã TS/TĐN');
-		$sheet->setCellValue('F1', 'SBD');
-		$sheet->setCellValue('G1', 'Ghi chú 1');
-		$sheet->setCellValue('H1', 'Ghi chú 2');
-		$sheet->getStyle('A1:H1')->getFont()->setBold(true);
+		try {
+			// 4. Lấy thông tin môn thi và kiểm tra hình thức thi
+			$exam     = DatabaseHelper::getExamInfo($examId);
+			$testType = TestType::from($exam->testtype);
 
-		/*
-		 * Ghi thông tin thí sinh. Ca thi sớm nhất được đánh số là 1.
-		 * Khi có sự thay đổi 'start' thì tăng ca thêm 1
-		 * Riêng "Đợt thi" thì luôn đặt là 1
-		 */
-		$lastStart='';
-		$row=2;
-		$session = 0;
-		foreach ($items as $item)
-		{
-			//Xác định ca thi
-			if($item->start !== $lastStart)
-			{
-				$session++;
-				$lastStart = $item->start;
+			if (
+				$testType !== TestType::MachineObjective
+				&& $testType !== TestType::MachineHybrid
+				&& $testType !== TestType::ComboObjectiveAndPractice
+			) {
+				throw new \Exception(Text::_('COM_EQA_MSG_NOT_MACHINE_TEST'));
 			}
 
-			//Ghi các cột
-			$sheet->setCellValue('A'.$row, 1);
-			$sheet->setCellValue('B'.$row, DatetimeHelper::getFullDate($item->start));
-			$sheet->setCellValue('C'.$row, $session);
-			$sheet->setCellValue('D'.$row, $item->room);
-			$sheet->setCellValue('E'.$row, $item->learner_code);
-			$sheet->setCellValue('F'.$row, $item->code);
+			// 5. Truy vấn dữ liệu thí sinh — chuẩn hóa alias khớp với
+			//    contract của IOHelper::writeITestSheet(): start, room, learner_code, code
+			$db    = DatabaseHelper::getDatabaseDriver();
+			$query = $db->getQuery(true)
+				->select([
+					$db->quoteName('d.start',  'start'),
+					$db->quoteName('b.name',   'room'),
+					$db->quoteName('c.code',   'learner_code'),
+					$db->quoteName('a.code',   'code'),
+				])
+				->from($db->quoteName('#__eqa_exam_learner', 'a'))
+				->join(
+					'INNER',
+					$db->quoteName('#__eqa_examrooms', 'b') .
+					' ON ' . $db->quoteName('b.id') . ' = ' . $db->quoteName('a.examroom_id')
+				)
+				->join(
+					'INNER',
+					$db->quoteName('#__eqa_learners', 'c') .
+					' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('a.learner_id')
+				)
+				->join(
+					'INNER',
+					$db->quoteName('#__eqa_examsessions', 'd') .
+					' ON ' . $db->quoteName('d.id') . ' = ' . $db->quoteName('b.examsession_id')
+				)
+				->where($db->quoteName('a.examroom_id') . ' > 0')
+				->where($db->quoteName('a.exam_id')     . ' = ' . $examId)
+				->order($db->quoteName('d.start') . ' ASC')
+				->order($db->quoteName('a.code')  . ' ASC');
 
-			//Next
-			$row++;
+			$db->setQuery($query);
+			$items = $db->loadObjectList();
+
+			if (empty($items)) {
+				throw new \Exception('Không có thí sinh nào đã được xếp phòng trong môn thi này.');
+			}
+
+			// 6. Tạo spreadsheet và ghi dữ liệu qua helper dùng chung
+			$spreadsheet = new Spreadsheet();
+			$sheet       = $spreadsheet->getSheet(0);
+			IOHelper::writeITestSheet($sheet, $items);
+
+			// 7. Gửi file và kết thúc
+			$fileName = 'Ca thi iTest. ' . $exam->name . '.xlsx';
+			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+			$this->app->close();
+
+		} catch (\Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
 		}
-
-		//Let user download the file
-		$fileName = "Ca thi iTest. {$exam->name}.xlsx";
-		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-		exit();
 	}
 
 	/**

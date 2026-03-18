@@ -1083,6 +1083,74 @@ class AssessmentLearnersModel extends ListModel
 	}
 
 	// =========================================================================
+	// Xuất ca iTest
+	// =========================================================================
+
+	/**
+	 * Lấy dữ liệu thí sinh đã được đánh số báo danh để xuất ca iTest.
+	 *
+	 * Điều kiện lọc:
+	 *   - Thuộc kỳ sát hạch có assessment_id = $assessmentId
+	 *   - Chưa bị hủy (cancelled = 0)
+	 *   - Đã được xếp phòng (examroom_id IS NOT NULL)
+	 *   - Đã được cấp SBD (al.code IS NOT NULL)
+	 *
+	 * Sắp xếp: theo thời gian bắt đầu ca thi ASC, sau đó SBD ASC.
+	 *
+	 * @param  int  $assessmentId
+	 *
+	 * @return object[]  Mảng object, mỗi phần tử có fields:
+	 *                     start        (datetime UTC),
+	 *                     room         (tên phòng thi — er.name),
+	 *                     learner_code (mã HVSV — lr.code),
+	 *                     code         (SBD — al.code)
+	 * @throws \Exception
+	 * @since 2.0.5
+	 */
+	public function getITestData(int $assessmentId): array
+	{
+		if ($assessmentId <= 0) {
+			throw new \Exception('assessment_id không hợp lệ.');
+		}
+
+		$db = $this->getDatabase();
+
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('es.start',  'start'),
+				$db->quoteName('er.name',   'room'),
+				$db->quoteName('lr.code',   'learner_code'),
+				$db->quoteName('al.code',   'code'),
+			])
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->join(
+				'INNER',
+				$db->quoteName('#__eqa_examrooms', 'er') .
+				' ON ' . $db->quoteName('er.id') . ' = ' . $db->quoteName('al.examroom_id')
+			)
+			->join(
+				'INNER',
+				$db->quoteName('#__eqa_examsessions', 'es') .
+				' ON ' . $db->quoteName('es.id') . ' = ' . $db->quoteName('er.examsession_id')
+			)
+			->join(
+				'INNER',
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('al.learner_id')
+			)
+			->where($db->quoteName('al.assessment_id') . ' = ' . $assessmentId)
+			->where($db->quoteName('al.cancelled')     . ' = 0')
+			->where($db->quoteName('al.examroom_id')   . ' IS NOT NULL')
+			->where($db->quoteName('al.code')          . ' IS NOT NULL')
+			->order($db->quoteName('es.start') . ' ASC')
+			->order($db->quoteName('al.code')  . ' ASC');
+
+		$db->setQuery($query);
+
+		return $db->loadObjectList();
+	}
+
+	// =========================================================================
     // Private helper
     // =========================================================================
 

@@ -1763,6 +1763,66 @@ abstract class IOHelper extends BaseIOHelper
 		}
 	}
 
+	/**
+	 * Ghi dữ liệu xuất ca iTest vào một Worksheet.
+	 *
+	 * Cấu trúc cột:
+	 *   A: Đợt thi   — luôn là 1
+	 *   B: Ngày thi  — định dạng ngày đầy đủ (lấy từ es.start)
+	 *   C: Ca/Tiết   — số thứ tự ca thi (tăng mỗi khi start thay đổi)
+	 *   D: Phòng thi — tên phòng thi (er.name)
+	 *   E: Mã TS/TĐN — mã người học (lr.code)
+	 *   F: SBD       — số báo danh (al.code hoặc el.code)
+	 *   G: Ghi chú 1 — để trống (iTest tự điền)
+	 *   H: Ghi chú 2 — để trống (iTest tự điền)
+	 *
+	 * Method này dùng chung cho cả ExamExaminees (exam_learner)
+	 * và AssessmentLearners (assessment_learner).
+	 *
+	 * @param  Worksheet  $sheet  Sheet đích để ghi dữ liệu.
+	 * @param  object[]   $items  Mảng các object có fields:
+	 *                              - start       : datetime string của ca thi (es.start)
+	 *                              - room        : tên phòng thi (er.name)
+	 *                              - learner_code: mã người học (lr.code / c.code)
+	 *                              - code        : số báo danh (al.code / a.code)
+	 * @since 2.0.5
+	 */
+	public static function writeITestSheet(Worksheet $sheet, array $items): void
+	{
+		// Header row
+		$sheet->setCellValue('A1', 'Đợt thi');
+		$sheet->setCellValue('B1', 'Ngày thi');
+		$sheet->setCellValue('C1', 'Ca/Tiết');
+		$sheet->setCellValue('D1', 'Phòng thi');
+		$sheet->setCellValue('E1', 'Mã TS/TĐN');
+		$sheet->setCellValue('F1', 'SBD');
+		$sheet->setCellValue('G1', 'Ghi chú 1');
+		$sheet->setCellValue('H1', 'Ghi chú 2');
+		$sheet->getStyle('A1:H1')->getFont()->setBold(true);
+
+		// Data rows
+		// Ca thi sớm nhất được đánh số 1; tăng thêm 1 mỗi khi trường 'start' thay đổi.
+		// "Đợt thi" luôn đặt là 1.
+		$lastStart = '';
+		$sessionNumber = 0;
+		$row = 2;
+
+		foreach ($items as $item) {
+			if ($item->start !== $lastStart) {
+				$sessionNumber++;
+				$lastStart = $item->start;
+			}
+
+			$sheet->setCellValue('A' . $row, 1);
+			$sheet->setCellValue('B' . $row, \Kma\Library\Kma\Helper\DatetimeHelper::getFullDate($item->start));
+			$sheet->setCellValue('C' . $row, $sessionNumber);
+			$sheet->setCellValue('D' . $row, $item->room);
+			$sheet->setCellValue('E' . $row, $item->learner_code);
+			$sheet->setCellValue('F' . $row, $item->code);
+
+			$row++;
+		}
+	}
 	static public function writeRegradingFee(Spreadsheet $spreadsheet, array $regradingRequets): void
 	{
 

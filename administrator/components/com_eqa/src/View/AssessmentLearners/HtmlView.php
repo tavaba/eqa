@@ -278,6 +278,9 @@ class HtmlView extends ItemsHtmlView
 	    $backUrl = Route::_('index.php?option=com_eqa&view=assessments', false);
 	    ToolbarHelper::appendLink('core.manage', $backUrl,'Kỳ sát hạch','arrow-up-2');
 
+	    // Nút Xuất ca iTest (luôn hiển thị, không cần quyền edit)
+	    ToolbarHelper::appendButton('core.manage', 'download', 'Xuất ca iTest', 'assessmentlearners.exportItest');
+
         if ($this->isEditable) {
             // Nút Thêm thí sinh
             $assessmentId = (int) ($this->assessment->id ?? 0);
