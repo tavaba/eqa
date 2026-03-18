@@ -1,14 +1,52 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <form>
     <fieldset name="examsessions" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <!--
+            Trường UI để chọn loại ca thi.
+            Không lưu vào DB — chỉ dùng để điều khiển hiển thị có điều kiện
+            của examseason_id (loại 1) và assessment_id (loại 2).
+        -->
+        <field  name="session_type"
+                type="list"
+                default="1"
+                required="true"
+                label="Loại ca thi"
+        >
+            <option value="1">Thi KTHP / thi tốt nghiệp</option>
+            <option value="2">Thi sát hạch</option>
+        </field>
+
+        <!--
+            Kỳ thi (examseason): chỉ hiển thị khi loại ca thi = 1.
+            Không còn required ở mức XML; validation thực hiện trong Model.
+        -->
         <field
                 name="examseason_id"
                 type="examseason"
-                required="true"
+                required="false"
                 default=""
                 class="select2-basic"
                 label="COM_EQA_EXAMSEASON"
+                showon="session_type:1"
         />
+
+        <!--
+            Kỳ sát hạch (assessment): chỉ hiển thị khi loại ca thi = 2.
+        -->
+        <field  name="assessment_id"
+                type="sql"
+                class="select2-basic"
+                label="Kỳ sát hạch"
+                required="false"
+                showon="session_type:2"
+                query="SELECT id, title FROM #__eqa_assessments WHERE published = 1 ORDER BY title"
+                key_field="id"
+                value_field="title"
+        >
+            <option value="">- Chọn kỳ sát hạch -</option>
+        </field>
+
         <field
                 name="examsessions"
                 type="subform"

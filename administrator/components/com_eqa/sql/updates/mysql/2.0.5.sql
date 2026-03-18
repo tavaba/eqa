@@ -59,3 +59,18 @@ CREATE TABLE `#__eqa_assessment_learner` (
     CONSTRAINT `fk_eqa_assessment_learner_learner` FOREIGN KEY (`learner_id`)
         REFERENCES `#__eqa_learners`(`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Thí sinh sát hạch';
+
+
+-- =============================================================================
+-- Bổ sung cột assessment_id vào #__eqa_examsessions
+-- Cho phép ca thi thuộc một kỳ sát hạch thay vì một kỳ thi KTHP.
+-- Đúng một trong hai (examseason_id, assessment_id) phải có giá trị.
+-- =============================================================================
+ALTER TABLE `#__eqa_examsessions`
+    ADD COLUMN `assessment_id` INT NULL DEFAULT NULL
+        COMMENT 'FK: Kỳ sát hạch (nếu là ca thi sát hạch)'
+        AFTER `examseason_id`,
+    ADD CONSTRAINT `fk_eqa_examsessions_assessment`
+        FOREIGN KEY (`assessment_id`)
+            REFERENCES `#__eqa_assessments` (`id`)
+            ON DELETE RESTRICT;

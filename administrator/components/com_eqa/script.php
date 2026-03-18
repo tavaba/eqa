@@ -1629,14 +1629,81 @@ class Com_EqaInstallerScript extends InstallerScript
 		$db = Factory::getDbo();
 
 		try {
-			$this->logInfo('Migration 2.0.5: Bắt đầu chuẩn hóa tên foreign key...');
+			$this->logInfo('Migration 2.0.5: Bắt đầu...');
+
+			$examsessionsTable = $db->replacePrefix('#__eqa_examsessions');
 
 			// =================================================================
-			// Danh sách tất cả FK cần chuẩn hóa.
+			// Nhiệm vụ 1: Thêm cột `assessment_id` vào #__eqa_examsessions
+			// nếu chưa tồn tại. Phải chạy TRƯỚC vòng lặp FK bên dưới vì
+			// normalizeForeignKey() sẽ ADD CONSTRAINT trên cột này.
+			// Idempotent: kiểm tra INFORMATION_SCHEMA trước khi ALTER.
+			// =================================================================
+			$colExists = (int) $db->setQuery(
+				"SELECT COUNT(*)
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME   = " . $db->quote($examsessionsTable) . "
+                   AND COLUMN_NAME  = 'assessment_id'"
+			)->loadResult();
+
+			if ($colExists === 0) {
+				$db->setQuery(
+					"ALTER TABLE `{$examsessionsTable}`
+                     ADD COLUMN `assessment_id` INT NULL DEFAULT NULL
+                         COMMENT 'FK: Kỳ sát hạch (nếu là ca thi sát hạch)'
+                         AFTER `examseason_id`"
+				)->execute();
+				$this->logInfo(
+					'Migration 2.0.5: Đã ADD COLUMN `assessment_id` vào ' .
+					"`{$examsessionsTable}`."
+				);
+			} else {
+				$this->logInfo(
+					'Migration 2.0.5: Cột `assessment_id` đã tồn tại trong ' .
+					"`{$examsessionsTable}`, bỏ qua."
+				);
+			}
+
+			// =================================================================
+			// Nhiệm vụ 2: Bỏ ràng buộc NOT NULL của `examseason_id`.
+			// Idempotent: kiểm tra IS_NULLABLE trước khi ALTER.
+			// MODIFY COLUMN không ảnh hưởng đến FK hiện có trên cột.
+			// =================================================================
+			$isNullable = $db->setQuery(
+				"SELECT IS_NULLABLE
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME   = " . $db->quote($examsessionsTable) . "
+                   AND COLUMN_NAME  = 'examseason_id'"
+			)->loadResult();
+
+			if ($isNullable === null) {
+				$this->logWarning(
+					'Migration 2.0.5: Không tìm thấy cột `examseason_id` ' .
+					"trong `{$examsessionsTable}`. Bỏ qua bước DROP NOT NULL."
+				);
+			} elseif ($isNullable === 'YES') {
+				$this->logInfo(
+					'Migration 2.0.5: `examseason_id` đã là NULL, bỏ qua.'
+				);
+			} else {
+				$db->setQuery(
+					"ALTER TABLE `{$examsessionsTable}`
+                     MODIFY COLUMN `examseason_id` INT NULL
+                         COMMENT 'Khóa ngoại: Đợt/kỳ thi (NULL nếu là ca thi sát hạch)'"
+				)->execute();
+				$this->logInfo(
+					'Migration 2.0.5: Đã bỏ NOT NULL của `examseason_id` ' .
+					"trong `{$examsessionsTable}`."
+				);
+			}
+
+			// =================================================================
+			// Nhiệm vụ 3: Chuẩn hóa tên tất cả foreign key.
 			//
 			// Format mỗi phần tử:
-			//   [table, column, refTable, refColumn, targetConstraintName, onDelete, mustExist]
-			//
+			//   [table, column, refTable, refColumn, targetName, onDelete, mustExist]
 			//   mustExist = true  → FK phải tồn tại; không tìm thấy = warning, bỏ qua
 			//   mustExist = false → Nếu không tìm thấy thì ADD mới
 			// =================================================================
@@ -1667,6 +1734,8 @@ class Com_EqaInstallerScript extends InstallerScript
 
 				// --- eqa_examsessions ---
 				['#__eqa_examsessions',     'examseason_id',  '#__eqa_examseasons',  'id', 'fk_eqa_examsessions_examseason',     'RESTRICT', true],
+				// 2.0.5: cột assessment_id vừa được ADD ở nhiệm vụ 1 → mustExist=false
+				['#__eqa_examsessions',     'assessment_id',  '#__eqa_assessments',  'id', 'fk_eqa_examsessions_assessment',     'RESTRICT', false],
 
 				// --- eqa_exams ---
 				['#__eqa_exams',            'subject_id',     '#__eqa_subjects',     'id', 'fk_eqa_exams_subject',               'RESTRICT', true],
@@ -1693,7 +1762,7 @@ class Com_EqaInstallerScript extends InstallerScript
 				['#__eqa_exam_learner',     'exam_id',        '#__eqa_exams',        'id', 'fk_eqa_exam_learner_exam',           'RESTRICT', false],
 				['#__eqa_exam_learner',     'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_exam_learner_learner',        'RESTRICT', false],
 				['#__eqa_exam_learner',     'class_id',       '#__eqa_classes',      'id', 'fk_eqa_exam_learner_class',          'RESTRICT', false],
-				// 1.1.0.sql đặt tên tường minh 'fk_eqa_exam_learner_stimulation' → vẫn kiểm tra
+				// 1.1.0.sql đặt tên tường minh → vẫn kiểm tra
 				['#__eqa_exam_learner',     'stimulation_id', '#__eqa_stimulations', 'id', 'fk_eqa_exam_learner_stimulation',    'RESTRICT', false],
 				['#__eqa_exam_learner',     'examroom_id',    '#__eqa_examrooms',    'id', 'fk_eqa_exam_learner_examroom',       'RESTRICT', false],
 
@@ -1747,52 +1816,9 @@ class Com_EqaInstallerScript extends InstallerScript
 			}
 
 			$this->logInfo(
-				"Migration 2.0.5: Hoàn tất chuẩn hóa foreign key. "
-				. "Đổi tên: {$renamed}, Thêm mới: {$added}, Bỏ qua (đã đúng/không có): {$skipped}."
+				"Migration 2.0.5: Hoàn tất. " .
+				"FK — Đổi tên: {$renamed}, Thêm mới: {$added}, Bỏ qua: {$skipped}."
 			);
-
-			// =================================================================
-			// Nhiệm vụ 2: Bỏ ràng buộc NOT NULL của `examseason_id`
-			// trong bảng #__eqa_examsessions.
-			//
-			// Idempotent: kiểm tra IS_NULLABLE trước khi ALTER.
-			// Lưu ý kỹ thuật: MODIFY COLUMN phải khai báo lại đầy đủ kiểu dữ
-			// liệu và COMMENT, nhưng KHÔNG cần khai báo lại FK — MySQL giữ
-			// nguyên FK khi chỉ thay đổi nullability của cột.
-			// =================================================================
-			$examsessionsTable = $db->replacePrefix('#__eqa_examsessions');
-
-			$isNullable = $db->setQuery(
-				"SELECT IS_NULLABLE
-                 FROM INFORMATION_SCHEMA.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE()
-                   AND TABLE_NAME   = " . $db->quote($examsessionsTable) . "
-                   AND COLUMN_NAME  = 'examseason_id'"
-			)->loadResult();
-
-			if ($isNullable === null) {
-				// Cột không tồn tại — tình huống bất thường, ghi warning và bỏ qua
-				$this->logWarning(
-					'Migration 2.0.5: Không tìm thấy cột `examseason_id` '
-					. "trong `{$examsessionsTable}`. Bỏ qua bước DROP NOT NULL."
-				);
-			} elseif ($isNullable === 'YES') {
-				$this->logInfo(
-					'Migration 2.0.5: `examseason_id` đã là NULL, bỏ qua bước DROP NOT NULL.'
-				);
-			} else {
-				// IS_NULLABLE = 'NO' → cần bỏ NOT NULL
-				$db->setQuery(
-					"ALTER TABLE `{$examsessionsTable}`
-                     MODIFY COLUMN `examseason_id` INT NULL
-                         COMMENT 'Khóa ngoại: Đợt/kỳ thi'"
-				)->execute();
-
-				$this->logInfo(
-					'Migration 2.0.5: Đã bỏ NOT NULL của `examseason_id` '
-					. "trong `{$examsessionsTable}`."
-				);
-			}
 
 			return true;
 

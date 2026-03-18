@@ -42,7 +42,7 @@ class HtmlView extends ItemHtmlView{
 	protected function prepareDataForLayoutDistribute(){
 		$examId = Factory::getApplication()->input->getInt('exam_id');
 		$this->exam = DatabaseHelper::getExamInfo($examId);
-		$this->form = FormHelper::getBackendForm('com_eqa.examrooms','examrooms.xml');
+		$this->form = FormHelper::getBackendForm('com_eqa.exam.distribution1','distribution1.xml');
 	}
 	protected function addToolbarForLayoutDistribute():void
 	{

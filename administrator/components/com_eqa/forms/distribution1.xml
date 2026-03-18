@@ -44,7 +44,7 @@
                 type="subform"
                 required="true"
                 validate="Subform"
-                formsource="administrator/components/com_eqa/forms/examrooms_sub1.xml"
+                formsource="administrator/components/com_eqa/forms/distribution1_sub1.xml"
                 multiple="true"
                 layout="joomla.form.field.subform.repeatable"
                 label="COM_EQA_EXAMSESSION"

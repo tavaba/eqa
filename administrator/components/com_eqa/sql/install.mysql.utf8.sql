@@ -458,7 +458,8 @@ CREATE TABLE `#__eqa_examseasons`(
 DROP TABLE IF EXISTS `#__eqa_examsessions`;
 CREATE TABLE `#__eqa_examsessions`(
     `id`            INT AUTO_INCREMENT,
-    `examseason_id` INT NULL COMMENT 'Khóa ngoại: Đợt/kỳ thi',
+    `examseason_id` INT NULL    COMMENT 'Khóa ngoại: Đợt/kỳ thi (NULL nếu là ca thi sát hạch)',
+    `assessment_id` INT NULL    COMMENT 'Khóa ngoại: Kỳ sát hạch (NULL nếu là ca thi KTHP/TN)',
     `name`          VARCHAR(255) NOT NULL COMMENT 'Tên ca thi',
     `start`         DATETIME NOT NULL COMMENT 'Ngày, giờ bắt đầu làm bài thi',
     `flexible`      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Ca thi linh hoạt về thời gian (thực hành, báo cáo...)',
@@ -476,6 +477,9 @@ CREATE TABLE `#__eqa_examsessions`(
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_examsessions_examseason FOREIGN KEY (`examseason_id`)
         REFERENCES `#__eqa_examseasons`(`id`)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_eqa_examsessions_assessment FOREIGN KEY (`assessment_id`)
+        REFERENCES `#__eqa_assessments`(`id`)
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Ca thi';
 

@@ -14,7 +14,7 @@
             name="rooms"
             type="subform"
             validate="Subform"
-            formsource="administrator/components/com_eqa/forms/examrooms_sub2.xml"
+            formsource="administrator/components/com_eqa/forms/distribution1_sub2.xml"
             multiple="true"
             layout="joomla.form.field.subform.repeatable-table"
             label="COM_EQA_EXAMROOM"
