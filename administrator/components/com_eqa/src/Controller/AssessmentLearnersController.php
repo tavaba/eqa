@@ -20,7 +20,7 @@ use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
  *   - setPaymentInfo      : POST 1 — nhận id từ checkbox, redirect sang layout setpayment.
  *   - savePaymentInfo     : POST 2 — lưu thông tin thanh toán đã nhập.
  *
- * @since 2.1.0
+ * @since 2.0.5
  */
 class AssessmentLearnersController extends AdminController
 {
@@ -32,13 +32,13 @@ class AssessmentLearnersController extends AdminController
      * Tiếp nhận danh sách mã HVSV từ form layout 'addlearners',
      * thêm vào bảng #__eqa_assessment_learner, redirect về list view với thông báo.
      *
-     * @since 2.1.0
+     * @since 2.0.5
      */
     public function addLearners(): void
     {
         $this->checkToken();
 
-        $assessmentId = $this->input->post->getInt('assessment_id');
+        $assessmentId = $this->input->getInt('assessment_id');
         $listUrl      = Route::_(
             'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
             false
@@ -58,7 +58,7 @@ class AssessmentLearnersController extends AdminController
             $operatorId = (int) $this->app->getIdentity()->id;
 
             /** @var AssessmentLearnersModel $model */
-            $model = ComponentHelper::getMVCFactory()->createModel('AssessmentLearners');
+            $model = ComponentHelper::createModel('AssessmentLearners');
 
             if (!$model->isAssessmentEditable($assessmentId)) {
                 throw new Exception('Kỳ sát hạch đã kết thúc hoặc đã được đánh dấu hoàn tất — không thể chỉnh sửa danh sách thí sinh.');
@@ -99,7 +99,121 @@ class AssessmentLearnersController extends AdminController
         }
     }
 
-    // =========================================================================
+	// =========================================================================
+	// removeLearners — xóa thí sinh khỏi kỳ sát hạch
+	// =========================================================================
+
+	/**
+	 * Xóa hẳn các thí sinh được chọn khỏi kỳ sát hạch.
+	 * Yêu cầu chọn ít nhất 1 bản ghi (listCheck = true).
+	 *
+	 * @since 2.0.5
+	 */
+	public function removeLearners(): void
+	{
+		$assessmentId = $this->input->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			$ids = array_values(array_filter(
+				(array) $this->input->post->get('cid', [], 'int')
+			));
+
+			if (empty($ids)) {
+				throw new Exception('Vui lòng chọn ít nhất một thí sinh để xóa.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model = ComponentHelper::createModel('AssessmentLearners');
+
+			if (!$model->isAssessmentEditable($assessmentId)) {
+				throw new Exception(
+					'Kỳ sát hạch đã kết thúc hoặc đã được đánh dấu hoàn tất — không thể xóa thí sinh.'
+				);
+			}
+
+			$operatorId = (int) $this->app->getIdentity()->id;
+			$deleted    = $model->removeLearners($assessmentId, $ids, $operatorId);
+
+			$this->setMessage(
+				sprintf('Đã xóa <b>%d</b> thí sinh khỏi kỳ sát hạch.', $deleted),
+				'success'
+			);
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
+	public function delete()
+	{
+		$assessmentId = $this->input->post->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			$ids = array_values(array_filter(
+				(array) $this->input->post->get('cid', [], 'int')
+			));
+
+			if (empty($ids)) {
+				throw new Exception('Vui lòng chọn ít nhất một thí sinh để xóa.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model = ComponentHelper::createModel('AssessmentLearners');
+
+			if (!$model->isAssessmentEditable($assessmentId)) {
+				throw new Exception(
+					'Kỳ sát hạch đã kết thúc hoặc đã được đánh dấu hoàn tất — không thể xóa thí sinh.'
+				);
+			}
+
+			$operatorId = (int) $this->app->getIdentity()->id;
+			$deleted    = $model->removeLearners($assessmentId, $ids, $operatorId);
+
+			$this->setMessage(
+				sprintf('Đã xóa <b>%d</b> thí sinh khỏi kỳ sát hạch.', $deleted),
+				'success'
+			);
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+			if($assessmentId<=0)
+			{
+				$listUrl = Route::_('index.php?option=com_eqa&view=assessments',false);
+				$this->setRedirect($listUrl);
+			}
+		}
+	}
+
+	// =========================================================================
     // setPaymentInfo — POST 1: nhận checkbox, redirect sang layout setpayment
     // =========================================================================
 
@@ -107,7 +221,7 @@ class AssessmentLearnersController extends AdminController
      * POST 1: Nhận danh sách id được chọn, lấy id đầu tiên,
      * redirect đến layout 'setpayment'.
      *
-     * @since 2.1.0
+     * @since 2.0.5
      */
     public function setPaymentInfo(): void
     {
@@ -135,7 +249,7 @@ class AssessmentLearnersController extends AdminController
             // Lấy assessment_id từ bản ghi đầu tiên để kiểm tra điều kiện
             $id = (int) $ids[0];
             /** @var AssessmentLearnersModel $model */
-            $model = ComponentHelper::getMVCFactory()->createModel('AssessmentLearners');
+            $model = ComponentHelper::createModel('AssessmentLearners');
             $item  = $model->getItemById($id);
 
             if (!$model->isAssessmentEditable((int) $item->assessment_id)) {
@@ -155,7 +269,113 @@ class AssessmentLearnersController extends AdminController
         $this->setRedirect($listUrl);
     }
 
-    // =========================================================================
+	// =========================================================================
+	// distributeRooms — chia phòng thi (2 phase)
+	// =========================================================================
+
+	/**
+	 * Phase 1: Nhận cid[] từ form list, lưu vào session, redirect sang layout distributerooms.
+	 * Phase 2: Nhận jform từ layout distributerooms, gọi model, redirect về list.
+	 *
+	 * Phase được xác định qua hidden field 'phase':
+	 *   - Không có / giá trị khác 'getdata' → phase 1 (showform)
+	 *   - 'getdata'                           → phase 2 (process)
+	 *
+	 * @since 2.0.5
+	 */
+	public function distributeRooms(): void
+	{
+		$assessmentId = $this->input->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model = ComponentHelper::createModel('AssessmentLearners');
+
+			if (!$model->isAssessmentEditable($assessmentId)) {
+				throw new Exception(
+					'Kỳ sát hạch đã kết thúc hoặc đã được đánh dấu hoàn tất — không thể chia phòng thi.'
+				);
+			}
+
+			$phase = $this->input->getAlnum('phase', '');
+
+			// ------------------------------------------------------------------
+			// PHASE 1: lưu selectedIds vào session, redirect sang layout
+			// ------------------------------------------------------------------
+			if ($phase !== 'getdata') {
+				$selectedIds = array_values(array_filter(
+					(array) $this->input->post->get('cid', [], 'int')
+				));
+
+				// Lưu vào session (key gắn assessment_id để tránh xung đột)
+				$this->app->setUserState(
+					'com_eqa.assessmentlearners.distributerooms.selectedIds.' . $assessmentId,
+					$selectedIds
+				);
+
+				$this->setRedirect(Route::_(
+					'index.php?option=com_eqa&view=assessmentlearners' .
+					'&layout=distributerooms&assessment_id=' . $assessmentId,
+					false
+				));
+				return;
+			}
+
+			// ------------------------------------------------------------------
+			// PHASE 2: xử lý form, gọi model
+			// ------------------------------------------------------------------
+			$this->checkToken();
+
+			$data = $this->input->get('jform', [], 'array');
+
+			// Lấy selectedIds từ session (đã được lưu ở phase 1)
+			$selectedIds = array_values(array_filter(array_map(
+				'intval',
+				(array) $this->app->getUserState(
+					'com_eqa.assessmentlearners.distributerooms.selectedIds.' . $assessmentId,
+					[]
+				)
+			)));
+
+			// Xóa session sau khi đã lấy
+			$this->app->setUserState(
+				'com_eqa.assessmentlearners.distributerooms.selectedIds.' . $assessmentId,
+				null
+			);
+
+			$operatorId = (int) $this->app->getIdentity()->id;
+			$model->setState('filter.assessment_id', $assessmentId);
+			$model->distributeAssessmentLearners($assessmentId, $data, $selectedIds, $operatorId);
+
+			$scopeLabel = empty($selectedIds)
+				? 'toàn bộ thí sinh'
+				: count($selectedIds) . ' thí sinh được chọn';
+
+			$this->setMessage(
+				sprintf('Đã chia phòng thi và đánh số báo danh thành công cho %s.', $scopeLabel),
+				'success'
+			);
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
+
+
+	// =========================================================================
     // savePaymentInfo — POST 2: lưu thông tin thanh toán
     // =========================================================================
 
@@ -163,7 +383,7 @@ class AssessmentLearnersController extends AdminController
      * POST 2: Tiếp nhận dữ liệu từ form layout 'setpayment',
      * gọi model cập nhật DB, redirect về list view với thông báo.
      *
-     * @since 2.1.0
+     * @since 2.0.5
      */
     public function savePaymentInfo(): void
     {
@@ -193,7 +413,7 @@ class AssessmentLearnersController extends AdminController
             }
 
             /** @var AssessmentLearnersModel $model */
-            $model = ComponentHelper::getMVCFactory()->createModel('AssessmentLearners');
+            $model = ComponentHelper::createModel('AssessmentLearners');
 
             // Lấy assessment_id từ bản ghi để kiểm tra điều kiện
             $item = $model->getItemById($id);
@@ -221,7 +441,7 @@ class AssessmentLearnersController extends AdminController
 	/**
 	 * Nhận file sao kê, đối chiếu payment_code và cập nhật trạng thái nộp phí.
 	 *
-	 * @since 2.1.0
+	 * @since 2.0.5
 	 */
 	public function importStatement(): void
 	{
@@ -244,7 +464,7 @@ class AssessmentLearnersController extends AdminController
 			}
 
 			/** @var AssessmentLearnersModel $model */
-			$model = ComponentHelper::getMVCFactory()->createModel('AssessmentLearners');
+			$model = ComponentHelper::createModel('AssessmentLearners');
 			if (!$model->isAssessmentEditable($assessmentId)) {
 				throw new Exception('Kỳ sát hạch đã kết thúc hoặc đã hoàn tất — không thể cập nhật.');
 			}
@@ -299,7 +519,7 @@ class AssessmentLearnersController extends AdminController
 	/**
 	 * Tạo thông báo HTML tổng hợp kết quả đối chiếu sao kê.
 	 *
-	 * @since 2.1.0
+	 * @since 2.0.5
 	 */
 	private function buildImportResultMessage(array $result): string
 	{

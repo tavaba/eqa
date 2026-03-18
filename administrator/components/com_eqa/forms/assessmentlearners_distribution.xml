@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="examrooms" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field  name="require_payment"
+                type="radio"
+                required="true"
+                default="1"
+                label="Chỉ chia thí sinh đã đóng phí"
+                description="Nếu chọn CÓ, chỉ những thí sinh đã đóng phí (hoặc được miễn phí) mới được xếp phòng thi."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field  name="create_new_examrooms"
+                type="radio"
+                required="true"
+                default="1"
+                label="Tạo phòng thi mới"
+                description="Nếu chọn CÓ, hệ thống sẽ báo lỗi nếu phòng vật lý đã được sử dụng trong ca thi. Chỉ chọn KHÔNG khi cần ghép nhiều kỳ sát hạch vào một phòng thi."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field  name="count_distributed"
+                id="count_distributed"
+                type="text"
+                default="0"
+                readonly="true"
+                size="10"
+                required="true"
+                label="Số thí sinh sẽ được chia"
+        />
+
+        <field  name="examinee_code_start"
+                type="number"
+                default="1"
+                min="1"
+                required="true"
+                label="SBD bắt đầu từ"
+        />
+
+        <field
+                name="examsessions"
+                type="subform"
+                required="true"
+                validate="Subform"
+                formsource="administrator/components/com_eqa/forms/assessmentlearners_distribution_sub1.xml"
+                multiple="true"
+                layout="joomla.form.field.subform.repeatable"
+                label="Ca thi"
+        />
+
+    </fieldset>
+</form>

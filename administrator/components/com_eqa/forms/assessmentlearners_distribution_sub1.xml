@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Subform cấp 1: một ca thi -->
+<form>
+    <field
+            name="examsession_id"
+            type="examsession"
+            label="Ca thi"
+            default=""
+            required="true"
+    >
+        <option value="">-- Chọn ca thi --</option>
+    </field>
+
+    <field
+            name="rooms"
+            type="subform"
+            validate="Subform"
+            formsource="administrator/components/com_eqa/forms/assessmentlearners_distribution_sub2.xml"
+            multiple="true"
+            layout="joomla.form.field.subform.repeatable-table"
+            label="Phòng thi"
+    />
+</form>

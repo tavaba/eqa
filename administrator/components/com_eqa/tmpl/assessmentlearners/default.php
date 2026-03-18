@@ -58,8 +58,13 @@ $fmt = static fn(int $amount): string => number_format($amount, 0, ',', '.') . '
     <div class="col-6 col-md-4 col-xl-2">
         <div class="card text-center border-secondary h-100">
             <div class="card-body py-2 px-1">
-                <div class="fs-4 fw-bold text-secondary"><?php echo (int) $stats->total; ?></div>
-                <div class="small text-muted">Tổng thí sinh</div>
+                <div class="fs-4 fw-bold text-secondary"><?php echo (int) $stats->active; ?></div>
+                <div class="small text-muted">Thí sinh</div>
+                <?php if ((int) $stats->cancelled > 0): ?>
+                <div class="small text-danger mt-1">
+                    <?php echo (int) $stats->cancelled; ?> đã hủy
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

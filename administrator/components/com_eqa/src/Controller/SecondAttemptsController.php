@@ -169,7 +169,7 @@ class SecondAttemptsController extends AdminController
 
 			try {
 				/** @var SecondAttemptsModel $model */
-				$model  = ComponentHelper::getMVCFactory()->createModel('SecondAttempts');
+				$model  = ComponentHelper::createModel('SecondAttempts');
 				$result = $model->importBankStatement($tmpFile, $napasCode);  // <- thêm $napasCode
 			} finally {
 				if (file_exists($tmpFile)) {

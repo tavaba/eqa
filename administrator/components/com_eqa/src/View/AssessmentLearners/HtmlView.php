@@ -26,7 +26,7 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
  *
  * URL truy cập: index.php?option=com_eqa&view=assessmentlearners&assessment_id=X
  *
- * @since 2.1.0
+ * @since 2.0.5
  */
 class HtmlView extends ItemsHtmlView
 {
@@ -39,6 +39,15 @@ class HtmlView extends ItemsHtmlView
     /** @var bool Kỳ sát hạch còn được phép chỉnh sửa không (chưa kết thúc + chưa hoàn tất). */
     protected bool $isEditable = false;
 
+    /** @var object|null Thống kê phục vụ layout distributerooms. */
+    protected ?object $distributionStats = null;
+
+    /** @var int[] Danh sách al.id được chọn cho layout distributerooms; [] = toàn bộ. */
+    protected array $selectedIds = [];
+
+    /** @var \Joomla\CMS\Form\Form|null Form chia phòng thi. */
+    protected $form = null;
+
 	protected Form $uploadStatementForm;
 
     // =========================================================================
@@ -50,7 +59,7 @@ class HtmlView extends ItemsHtmlView
      * Các cột kết quả (score, level, passed) được xác định linh hoạt
      * dựa trên result_type của kỳ sát hạch — xem prepareDataForLayoutDefault().
      *
-     * @since 2.1.0
+     * @since 2.0.5
      */
     protected function configureItemFieldsForLayoutDefault(): void
     {
@@ -61,17 +70,26 @@ class HtmlView extends ItemsHtmlView
 
         $fields->customFieldset1 = [];
 
-        // Số báo danh
-        $fields->customFieldset1[] = new ListLayoutItemFieldOption(
-            'examinee_code', 'SBD', false, false, 'text-center'
-        );
-
         // Thông tin người học
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_code', 'Mã HVSV', true, false, 'text-center');
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_lastname', 'Họ đệm');
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_firstname', 'Tên', true);
 
-        // Phí
+	    // Ca thi
+	    $f = new ListLayoutItemFieldOption('examsession_name', 'Ca thi', true, false, 'text-center');
+	    $f->printRaw = true;
+	    $fields->customFieldset1[] = $f;
+
+	    // Phòng thi
+	    $f = new ListLayoutItemFieldOption('room_code', 'Phòng thi', false, false, 'text-center');
+	    $fields->customFieldset1[] = $f;
+
+	    // Số báo danh
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption(
+		    'examinee_code', 'SBD', false, false, 'text-center'
+	    );
+
+	    // Phí
         $f = new ListLayoutItemFieldOption('payment_amount_html', 'Phí', false, false, 'text-end');
         $f->printRaw = true;
         $fields->customFieldset1[] = $f;
@@ -105,7 +123,7 @@ class HtmlView extends ItemsHtmlView
     // =========================================================================
 
     /**
-     * @since 2.1.0
+     * @since 2.0.5
      */
     protected function prepareDataForLayoutDefault(): void
     {
@@ -142,17 +160,53 @@ class HtmlView extends ItemsHtmlView
         $this->isEditable = $listModel->isAssessmentEditable($assessmentId);
 
         // 6. Ghim assessment_id vào formActionParams để pagination/filter giữ đúng context
+	    //    và vào hidden fiels để lấy qua POST khi cần
         $this->layoutData->formActionParams = [
             'view'          => 'assessmentlearners',
             'assessment_id' => $assessmentId,
         ];
+		$this->layoutData->formHiddenFields = [
+			'assessment_id' => $assessmentId,
+		];
 
         // 7. Bổ sung cột kết quả động theo result_type
         $this->addResultColumns((int) $this->assessment->result_type);
 
         // 8. Preprocessing từng item
         if (!empty($this->layoutData->items)) {
-            foreach ($this->layoutData->items as &$item) {
+	        // --- Xây dựng map examsession_id → badge class trước vòng lặp chính ---
+	        // Mỗi ca thi (duy nhất theo examsession_id) được gán một màu badge Bootstrap
+	        // khác nhau, xoay vòng trong tập màu theo thứ tự xuất hiện đầu tiên.
+	        $sessionBadgePalette = [
+		        'bg-primary',
+		        'bg-danger',
+		        'bg-secondary',
+		        'bg-warning text-dark',
+		        'bg-success',
+		        'bg-dark',
+		        'bg-info text-dark',
+	        ];
+	        $sessionColorMap = [];  // examsession_id (int) → badge css class (string)
+	        foreach ($this->layoutData->items as $item) {
+		        $sid = (int) ($item->examsession_id ?? 0);
+		        if ($sid > 0 && !isset($sessionColorMap[$sid])) {
+			        //$idx               = count($sessionColorMap) % count($sessionBadgePalette);
+			        $idx               = $sid % count($sessionBadgePalette);
+			        $sessionColorMap[$sid] = $sessionBadgePalette[$idx];
+		        }
+	        }
+
+	        foreach ($this->layoutData->items as &$item) {
+		        // Ca thi — badge màu phân biệt theo từng ca thi
+		        if (!empty($item->examsession_name)) {
+			        $sid        = (int) ($item->examsession_id ?? 0);
+			        $badgeClass = $sessionColorMap[$sid] ?? 'bg-secondary';
+			        $item->examsession_name = '<span class="badge ' . $badgeClass . '">'
+				        . htmlspecialchars($item->examsession_name) . '</span>';
+		        } else {
+			        $item->examsession_name = '<span class="text-muted">—</span>';
+		        }
+
                 // Phí
                 $amount = (int) $item->payment_amount;
                 if ($amount <= 0) {
@@ -199,7 +253,7 @@ class HtmlView extends ItemsHtmlView
 				//Cancelled label
 	            $item->cancelled = $item->cancelled ?
 		            '<span class="badge bg-danger">Đã hủy</span>' : '';
-            }
+			}
             unset($item);
         }
     }
@@ -209,7 +263,7 @@ class HtmlView extends ItemsHtmlView
     // =========================================================================
 
     /**
-     * @since 2.1.0
+     * @since 2.0.5
      */
     protected function addToolbarForLayoutDefault(): void
     {
@@ -233,6 +287,9 @@ class HtmlView extends ItemsHtmlView
             );
             ToolbarHelper::appendLink('core.edit', $addUrl, 'Thêm thí sinh', 'plus');
 
+	        // Nút Xóa thí sinh (yêu cầu chọn ít nhất 1 bản ghi)
+	        ToolbarHelper::appendButton('core.edit','trash','Xóa thí sinh','assessmentlearners.removeLearners',true,'btn btn-danger');
+
 	        // Nút Nhập sao kê
 	        $importUrl = Route::_(
 		        'index.php?option=com_eqa&view=assessmentlearners&layout=importstatement&assessment_id=' . $assessmentId,
@@ -249,6 +306,15 @@ class HtmlView extends ItemsHtmlView
                 true,
                 'btn btn-primary'
             );
+            // Nút Chia phòng thi (không yêu cầu chọn bắt buộc)
+            ToolbarHelper::appendButton(
+                'core.edit',
+                'grid-2',
+                'Chia phòng thi',
+                'assessmentlearners.distributeRooms',
+                false,
+                'btn btn-secondary'
+            );
         }
 	}
 
@@ -259,7 +325,7 @@ class HtmlView extends ItemsHtmlView
     /**
      * Chuẩn bị dữ liệu cho layout nhập danh sách thí sinh thủ công.
      *
-     * @since 2.1.0
+     * @since 2.0.5
      */
     protected function prepareDataForLayoutAddlearners(): void
     {
@@ -268,13 +334,12 @@ class HtmlView extends ItemsHtmlView
             die('Không xác định được kỳ sát hạch.');
         }
 
-        $mvcFactory       = ComponentHelper::getMVCFactory();
-        $assessmentModel  = $mvcFactory->createModel('Assessment');
+        $assessmentModel  = ComponentHelper::createModel('Assessment');
         $this->assessment = $assessmentModel->getItem($assessmentId);
     }
 
     /**
-     * @since 2.1.0
+     * @since 2.0.5
      */
     protected function addToolbarForLayoutAddlearners(): void
     {
@@ -325,7 +390,7 @@ class HtmlView extends ItemsHtmlView
 	}
 
 	/**
-	 * @since 2.1.0
+	 * @since 2.0.5
 	 */
 	protected function addToolbarForLayoutImportstatement(): void
 	{
@@ -347,7 +412,7 @@ class HtmlView extends ItemsHtmlView
     /**
      * Chuẩn bị dữ liệu cho layout cập nhật thông tin thanh toán.
      *
-     * @since 2.1.0
+     * @since 2.0.5
      */
     protected function prepareDataForLayoutSetpayment(): void
     {
@@ -374,7 +439,7 @@ class HtmlView extends ItemsHtmlView
     }
 
     /**
-     * @since 2.1.0
+     * @since 2.0.5
      */
     protected function addToolbarForLayoutSetpayment(): void
     {
@@ -390,6 +455,80 @@ class HtmlView extends ItemsHtmlView
     }
 
     // =========================================================================
+    // Layout: distributerooms
+    // =========================================================================
+
+    /**
+     * Chuẩn bị dữ liệu cho layout chia phòng thi.
+     *
+     * Nhận selectedIds từ request (được nhúng dưới dạng hidden fields bởi phase 1 controller),
+     * load thống kê, tạo form XML.
+     *
+     * @since 2.0.5
+     */
+    protected function prepareDataForLayoutDistributerooms(): void
+    {
+        $app          = Factory::getApplication();
+        $assessmentId = $app->input->getInt('assessment_id');
+        if (empty($assessmentId)) {
+            die('Không xác định được kỳ sát hạch.');
+        }
+
+        /** @var AssessmentModel $assessmentModel */
+        $assessmentModel  = ComponentHelper::createModel('Assessment');
+        $this->assessment = $assessmentModel->getItem($assessmentId);
+        if (empty($this->assessment)) {
+            die('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId . '.');
+        }
+
+        // Lấy selectedIds được truyền từ controller phase 1 qua session
+        $this->selectedIds = (array) $app->getUserState(
+            'com_eqa.assessmentlearners.distributerooms.selectedIds.' . $assessmentId,
+            []
+        );
+
+        /** @var AssessmentLearnersModel $listModel */
+        $listModel = $this->getModel();
+        $listModel->setState('filter.assessment_id', $assessmentId);
+
+        $this->distributionStats = $listModel->getDistributionStats($assessmentId, $this->selectedIds);
+
+        $this->form = \Kma\Library\Kma\Helper\FormHelper::getBackendForm(
+            'com_eqa.assessmentlearners.distributerooms',
+            'assessmentlearners_distribution.xml'
+        );
+    }
+
+    /**
+     * @since 2.0.5
+     */
+    protected function addToolbarForLayoutDistributerooms(): void
+    {
+        $assessmentId = (int) ($this->assessment->id ?? 0);
+        $title        = 'Chia phòng thi';
+        if (!empty($this->assessment->title)) {
+            $title .= ' — ' . $this->assessment->title;
+        }
+        ToolbarHelper::title($title);
+
+        ToolbarHelper::appendButton(
+            'core.edit',
+            'save',
+            'Lưu',
+            'assessmentlearners.distributeRooms',
+            false,
+            'btn btn-success',
+            true  // formValidate
+        );
+
+        $cancelUrl = Route::_(
+            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            false
+        );
+        ToolbarHelper::appendCancelLink($cancelUrl);
+    }
+
+    // =========================================================================
     // Private helpers
     // =========================================================================
 
@@ -397,7 +536,7 @@ class HtmlView extends ItemsHtmlView
      * Bổ sung các cột kết quả vào $this->itemFields dựa trên result_type.
      *
      * @param  int  $resultType  Giá trị của AssessmentResultType enum.
-     * @since 2.1.0
+     * @since 2.0.5
      */
     private function addResultColumns(int $resultType): void
     {

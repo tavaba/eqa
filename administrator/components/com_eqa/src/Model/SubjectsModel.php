@@ -154,8 +154,8 @@ class SubjectsModel extends ListModel{
 							'credits='.$credits,
 							'finaltesttype='.$finaltesttype,
 							'testbankyear='.$testbankyear,
-							'updated_by='.$userId,
-							'updated_at='.$db->quote($time)
+							'modified_by='.$userId,
+							'modified_at='.$db->quote($time)
 						])
 						->where('id='.$subjectId);
 					$db->setQuery($query);

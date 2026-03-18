@@ -6,6 +6,7 @@ use DateTime;
 use Joomla\CMS\Date\Date;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Library\Kma\Helper\DatabaseHelper;
 
 /**
  * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
@@ -24,7 +25,7 @@ class ExamsessionField extends ListField
      */
     protected function getOptions()
     {
-        $db = $this->getDatabase();
+        $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
             array('a.id', 'a.start', 'a.name'),
             array('id',   'start',   'name')
@@ -32,8 +33,12 @@ class ExamsessionField extends ListField
         $query = $db->getQuery(true)
             ->select($columns)
             ->from('#__eqa_examsessions AS a')
-            ->leftJoin('#__eqa_examseasons AS b', 'a.examseason_id=b.id')
-            ->where('b.completed=0')
+	        ->leftJoin('#__eqa_examseasons AS b', 'a.examseason_id=b.id')
+	        ->leftJoin('#__eqa_assessments AS c', 'a.assessment_id=c.id')
+            ->where([
+	            'b.completed IS NULL OR b.completed=0',
+	            'c.completed IS NULL OR c.completed=0',
+            ])
             ->order('`start` DESC');
         $db->setQuery($query);
         $items = $db->loadObjectList();

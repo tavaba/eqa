@@ -268,8 +268,8 @@ class ConductsModel extends ListModel {
 				continue;
 			$updateFields[] = $db->quoteName($col) . '=VALUES('.$db->quoteName($col).')';
 		}
-		$updateFields[] = $db->quoteName('updated_at').'='.$quotedTime;
-		$updateFields[] = $db->quoteName('updated_by').'='.$userId;
+		$updateFields[] = $db->quoteName('modified_at').'='.$quotedTime;
+		$updateFields[] = $db->quoteName('modified_by').'='.$userId;
 		$updatePart = implode(', ', $updateFields);
 
 		$query = "INSERT INTO #__eqa_conducts ($columnPart) 

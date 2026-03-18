@@ -13,6 +13,16 @@
                 class="js-stools-search-string"
         />
 
+        <!-- Lọc theo ca thi -->
+        <field  name="examsession_id"
+                type="examsession"
+                label="Ca thi"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">-- Ca thi --</option>
+        </field>
+
         <!-- Lọc theo trạng thái nộp phí -->
         <field  name="payment_completed"
                 type="list"

@@ -303,8 +303,8 @@ class ClassModel extends AdminModel {
 				'pam='.$pam,
 				'allowed='.intval($allowed),
 				'expired='.intval($expired),
-				'updated_by='.$userId,
-				'updated_at=' . $db->quote($currentTime),
+				'modified_by='.$userId,
+				'modified_at=' . $db->quote($currentTime),
 			])
 			->where('class_id = '.$classId.' AND learner_id = '.$learnerId);
 		$db->setQuery($query);

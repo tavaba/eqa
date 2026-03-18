@@ -282,8 +282,8 @@ class GradecorrectionModel extends AdminModel {
 			'changed = ' . (int)$changed,
 			'description = ' . $db->quote($description),
 			'status = ' . ($isCompleted ? PpaaStatus::Done->value : PpaaStatus::RequireInfo->value),
-			'updated_by = ' . $currentUserId,
-			'updated_at = ' . $db->quote($currentTime)
+			'modified_by = ' . $currentUserId,
+			'modified_at = ' . $db->quote($currentTime)
 		];
 		$query = $db->getQuery(true)
 			->update('#__eqa_gradecorrections')

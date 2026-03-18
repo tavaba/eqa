@@ -40,8 +40,8 @@ class ConductModel extends AdminModel
 			$setClause[] = 'conduct_score = '.$item->conductScore;
 			$setClause[] = 'conduct_rating = '. $db->quote($item->conductRating);
 			$setClause[] = 'note = '. $quotedNote;
-			$setClause[] = 'updated_by=' . $userId;
-			$setClause[] = 'updated_at = NOW()';
+			$setClause[] = 'modified_by=' . $userId;
+			$setClause[] = 'modified_at = NOW()';
 			if ($importMark)
 			{
 				$setClause[] = 'academic_score = '.$item->academicScore;

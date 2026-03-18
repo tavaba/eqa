@@ -1,6 +1,7 @@
 -- Tắt kiểm tra khóa ngoại để xóa sạch không bị lỗi ràng buộc
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `#__eqa_assessment_learner`;
 DROP TABLE IF EXISTS `#__eqa_secondattempts`;
 DROP TABLE IF EXISTS `#__eqa_conducts`;
 DROP TABLE IF EXISTS `#__eqa_mmproductions`;
@@ -24,6 +25,7 @@ DROP TABLE IF EXISTS `#__eqa_rooms`;
 DROP TABLE IF EXISTS `#__eqa_buildings`;
 DROP TABLE IF EXISTS `#__eqa_examsessions`;
 DROP TABLE IF EXISTS `#__eqa_examseasons`;
+DROP TABLE IF EXISTS `#__eqa_assessments`;
 DROP TABLE IF EXISTS `#__eqa_classes`;
 DROP TABLE IF EXISTS `#__eqa_subjects`;
 DROP TABLE IF EXISTS `#__eqa_employees`;
