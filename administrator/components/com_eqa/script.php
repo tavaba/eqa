@@ -206,6 +206,11 @@ class Com_EqaInstallerScript extends InstallerScript
 		    }
 	    }
 
+	    if (version_compare($this->previousVersion, '2.0.5', '<')) {
+		    if (!$this->runMigration205()) {
+			    return false;
+		    }
+	    }
 		return true;
     }
 
@@ -1589,7 +1594,321 @@ class Com_EqaInstallerScript extends InstallerScript
         return $data['version'] ?? '0.0.0';
     }
 
-    // =========================================================================
+	// =========================================================================
+	// Migration 2.0.5
+	// =========================================================================
+
+	/**
+	 * Migration 2.0.5: Chuẩn hóa tên foreign key và sửa nullability cột.
+	 *
+	 * Nhiệm vụ 1 — Chuẩn hóa tên tất cả foreign key về đúng tên
+	 * được định nghĩa trong file install.mysql.utf8.sql.
+	 *
+	 * Vấn đề: Khi component được cài đặt lần đầu qua các file SQL update cũ
+	 * (trước khi áp dụng quy ước đặt tên tường minh), MySQL tự sinh tên FK
+	 * dạng random như `employees_ibfk_1`, `eqa_examrooms_fk_examsession`, v.v.
+	 *
+	 * Giải pháp: Với mỗi FK trong danh sách chuẩn, truy vấn INFORMATION_SCHEMA
+	 * để tìm tên thực tế, sau đó:
+	 *   - Nếu tên đúng  → bỏ qua
+	 *   - Nếu tên sai   → DROP + ADD CONSTRAINT với tên chuẩn (một lệnh ALTER)
+	 *   - Nếu không có FK (mustExist=false) → ADD CONSTRAINT mới
+	 *   - Nếu không có FK (mustExist=true)  → log warning, bỏ qua
+	 *
+	 * Nhiệm vụ 2 — Bỏ ràng buộc NOT NULL của `examseason_id`
+	 * trong bảng `#__eqa_examsessions`.
+	 *
+	 * Lý do: Ca thi có thể tồn tại độc lập, không bắt buộc phải thuộc
+	 * một kỳ thi cụ thể. FK vẫn được giữ nguyên (MySQL hỗ trợ FK nullable).
+	 * Idempotent: kiểm tra IS_NULLABLE trong INFORMATION_SCHEMA trước khi ALTER.
+	 *
+	 * @return bool true nếu thành công, false nếu lỗi nghiêm trọng.
+	 */
+	private function runMigration205(): bool
+	{
+		$db = Factory::getDbo();
+
+		try {
+			$this->logInfo('Migration 2.0.5: Bắt đầu chuẩn hóa tên foreign key...');
+
+			// =================================================================
+			// Danh sách tất cả FK cần chuẩn hóa.
+			//
+			// Format mỗi phần tử:
+			//   [table, column, refTable, refColumn, targetConstraintName, onDelete, mustExist]
+			//
+			//   mustExist = true  → FK phải tồn tại; không tìm thấy = warning, bỏ qua
+			//   mustExist = false → Nếu không tìm thấy thì ADD mới
+			// =================================================================
+			$fkList = [
+				// --- eqa_employees ---
+				['#__eqa_employees',        'unit_id',        '#__eqa_units',        'id', 'fk_eqa_employees_unit',              'RESTRICT', true],
+
+				// --- eqa_programs ---
+				['#__eqa_programs',         'spec_id',        '#__eqa_specialities', 'id', 'fk_eqa_programs_spec',               'RESTRICT', true],
+
+				// --- eqa_courses ---
+				['#__eqa_courses',          'prog_id',        '#__eqa_programs',     'id', 'fk_eqa_courses_prog',                'RESTRICT', true],
+
+				// --- eqa_groups ---
+				['#__eqa_groups',           'course_id',      '#__eqa_courses',      'id', 'fk_eqa_groups_course',               'RESTRICT', true],
+				['#__eqa_groups',           'homeroom_id',    '#__eqa_employees',    'id', 'fk_eqa_groups_hoomroom',             'RESTRICT', true],
+				['#__eqa_groups',           'adviser_id',     '#__eqa_employees',    'id', 'fk_eqa_groups_adviser',              'RESTRICT', true],
+
+				// --- eqa_learners ---
+				['#__eqa_learners',         'group_id',       '#__eqa_groups',       'id', 'fk_eqa_learners_group',              'RESTRICT', true],
+
+				// --- eqa_cohort_learner ---
+				['#__eqa_cohort_learner',   'cohort_id',      '#__eqa_cohorts',      'id', 'fk_eqa_cohort_learner_cohort',       'CASCADE',  true],
+				['#__eqa_cohort_learner',   'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_cohort_learner_learner',      'RESTRICT', true],
+
+				// --- eqa_subjects ---
+				['#__eqa_subjects',         'unit_id',        '#__eqa_units',        'id', 'fk_eqa_subjects_unit',               'RESTRICT', true],
+
+				// --- eqa_examsessions ---
+				['#__eqa_examsessions',     'examseason_id',  '#__eqa_examseasons',  'id', 'fk_eqa_examsessions_examseason',     'RESTRICT', true],
+
+				// --- eqa_exams ---
+				['#__eqa_exams',            'subject_id',     '#__eqa_subjects',     'id', 'fk_eqa_exams_subject',               'RESTRICT', true],
+				['#__eqa_exams',            'examseason_id',  '#__eqa_examseasons',  'id', 'fk_eqa_exams_examseason',            'RESTRICT', true],
+
+				// --- eqa_examrooms ---
+				['#__eqa_examrooms',        'room_id',        '#__eqa_rooms',        'id', 'fk_eqa_examrooms_room',              'RESTRICT', true],
+				// Chú ý: 1.0.9.sql đặt tên 'eqa_examrooms_fk_examsession' → cần đổi
+				['#__eqa_examrooms',        'examsession_id', '#__eqa_examsessions', 'id', 'fk_eqa_examrooms_examsession',       'RESTRICT', true],
+
+				// --- eqa_classes ---
+				['#__eqa_classes',          'subject_id',     '#__eqa_subjects',     'id', 'fk_eqa_classes_subject',             'RESTRICT', true],
+				['#__eqa_classes',          'lecturer_id',    '#__eqa_employees',    'id', 'fk_eqa_classes_lecturer',            'RESTRICT', true],
+
+				// --- eqa_stimulations ---
+				['#__eqa_stimulations',     'subject_id',     '#__eqa_subjects',     'id', 'fk_eqa_stimulations_subject',        'RESTRICT', true],
+				['#__eqa_stimulations',     'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_stimulations_learner',        'RESTRICT', true],
+
+				// --- eqa_class_learner (1.0.2.sql tạo không có tên → mustExist=false) ---
+				['#__eqa_class_learner',    'class_id',       '#__eqa_classes',      'id', 'fk_eqa_class_learner_class',         'RESTRICT', false],
+				['#__eqa_class_learner',    'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_class_learner_learner',       'RESTRICT', false],
+
+				// --- eqa_exam_learner (1.0.3.sql tạo không có tên → mustExist=false) ---
+				['#__eqa_exam_learner',     'exam_id',        '#__eqa_exams',        'id', 'fk_eqa_exam_learner_exam',           'RESTRICT', false],
+				['#__eqa_exam_learner',     'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_exam_learner_learner',        'RESTRICT', false],
+				['#__eqa_exam_learner',     'class_id',       '#__eqa_classes',      'id', 'fk_eqa_exam_learner_class',          'RESTRICT', false],
+				// 1.1.0.sql đặt tên tường minh 'fk_eqa_exam_learner_stimulation' → vẫn kiểm tra
+				['#__eqa_exam_learner',     'stimulation_id', '#__eqa_stimulations', 'id', 'fk_eqa_exam_learner_stimulation',    'RESTRICT', false],
+				['#__eqa_exam_learner',     'examroom_id',    '#__eqa_examrooms',    'id', 'fk_eqa_exam_learner_examroom',       'RESTRICT', false],
+
+				// --- eqa_packages ---
+				['#__eqa_packages',         'examiner1_id',   '#__eqa_employees',    'id', 'fk_eqa_packages_examiner1',          'RESTRICT', true],
+				['#__eqa_packages',         'examiner2_id',   '#__eqa_employees',    'id', 'fk_eqa_packages_examiner2',          'RESTRICT', true],
+
+				// --- eqa_papers ---
+				['#__eqa_papers',           'exam_id',        '#__eqa_exams',        'id', 'fk_eqa_papers_exam',                 'RESTRICT', true],
+				['#__eqa_papers',           'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_papers_learner',              'RESTRICT', true],
+				['#__eqa_papers',           'package_id',     '#__eqa_packages',     'id', 'fk_eqa_papers_package',              'RESTRICT', true],
+
+				// --- eqa_regradings ---
+				['#__eqa_regradings',       'exam_id',        '#__eqa_exams',        'id', 'fk_eqa_regradings_exam',             'RESTRICT', true],
+				['#__eqa_regradings',       'examiner1_id',   '#__eqa_employees',    'id', 'fk_eqa_regradings_examiner1',        'RESTRICT', true],
+				['#__eqa_regradings',       'examiner2_id',   '#__eqa_employees',    'id', 'fk_eqa_regradings_examiner2',        'RESTRICT', true],
+				['#__eqa_regradings',       'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_regradings_learner',          'RESTRICT', true],
+
+				// --- eqa_gradecorrections ---
+				['#__eqa_gradecorrections', 'exam_id',        '#__eqa_exams',        'id', 'fk_eqa_gradecorrections_exam',       'RESTRICT', true],
+				['#__eqa_gradecorrections', 'reviewer_id',    '#__eqa_employees',    'id', 'fk_eqa_gradecorrections_reviewer',   'RESTRICT', true],
+				['#__eqa_gradecorrections', 'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_gradecorrections_learner',    'RESTRICT', true],
+
+				// --- eqa_mmproductions ---
+				['#__eqa_mmproductions',    'exam_id',        '#__eqa_exams',        'id', 'fk_eqa_mmproductions_exam',          'RESTRICT', true],
+				['#__eqa_mmproductions',    'examiner_id',    '#__eqa_employees',    'id', 'fk_eqa_mmproductions_examiner',      'RESTRICT', true],
+
+				// --- eqa_conducts ---
+				['#__eqa_conducts',         'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_conducts_learner',            'RESTRICT', true],
+
+				// --- eqa_secondattempts (2.0.0.sql tạo không có FK → mustExist=false) ---
+				['#__eqa_secondattempts',   'class_id',       '#__eqa_classes',      'id', 'fk_eqa_secondattempts_class',        'RESTRICT', false],
+				['#__eqa_secondattempts',   'learner_id',     '#__eqa_learners',     'id', 'fk_eqa_secondattempts_learner',      'RESTRICT', false],
+				['#__eqa_secondattempts',   'last_exam_id',   '#__eqa_exams',        'id', 'fk_eqa_secondattempts_lastexam',     'RESTRICT', false],
+			];
+
+			$renamed = 0;
+			$added   = 0;
+			$skipped = 0;
+
+			foreach ($fkList as [$table, $column, $refTable, $refCol, $targetName, $onDelete, $mustExist]) {
+				$result = $this->normalizeForeignKey(
+					$db, $table, $column, $refTable, $refCol, $targetName, $onDelete, $mustExist
+				);
+
+				match ($result) {
+					'renamed' => $renamed++,
+					'added'   => $added++,
+					default   => $skipped++,
+				};
+			}
+
+			$this->logInfo(
+				"Migration 2.0.5: Hoàn tất chuẩn hóa foreign key. "
+				. "Đổi tên: {$renamed}, Thêm mới: {$added}, Bỏ qua (đã đúng/không có): {$skipped}."
+			);
+
+			// =================================================================
+			// Nhiệm vụ 2: Bỏ ràng buộc NOT NULL của `examseason_id`
+			// trong bảng #__eqa_examsessions.
+			//
+			// Idempotent: kiểm tra IS_NULLABLE trước khi ALTER.
+			// Lưu ý kỹ thuật: MODIFY COLUMN phải khai báo lại đầy đủ kiểu dữ
+			// liệu và COMMENT, nhưng KHÔNG cần khai báo lại FK — MySQL giữ
+			// nguyên FK khi chỉ thay đổi nullability của cột.
+			// =================================================================
+			$examsessionsTable = $db->replacePrefix('#__eqa_examsessions');
+
+			$isNullable = $db->setQuery(
+				"SELECT IS_NULLABLE
+                 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME   = " . $db->quote($examsessionsTable) . "
+                   AND COLUMN_NAME  = 'examseason_id'"
+			)->loadResult();
+
+			if ($isNullable === null) {
+				// Cột không tồn tại — tình huống bất thường, ghi warning và bỏ qua
+				$this->logWarning(
+					'Migration 2.0.5: Không tìm thấy cột `examseason_id` '
+					. "trong `{$examsessionsTable}`. Bỏ qua bước DROP NOT NULL."
+				);
+			} elseif ($isNullable === 'YES') {
+				$this->logInfo(
+					'Migration 2.0.5: `examseason_id` đã là NULL, bỏ qua bước DROP NOT NULL.'
+				);
+			} else {
+				// IS_NULLABLE = 'NO' → cần bỏ NOT NULL
+				$db->setQuery(
+					"ALTER TABLE `{$examsessionsTable}`
+                     MODIFY COLUMN `examseason_id` INT NULL
+                         COMMENT 'Khóa ngoại: Đợt/kỳ thi'"
+				)->execute();
+
+				$this->logInfo(
+					'Migration 2.0.5: Đã bỏ NOT NULL của `examseason_id` '
+					. "trong `{$examsessionsTable}`."
+				);
+			}
+
+			return true;
+
+		} catch (\Throwable $e) {
+			$msg = 'Migration 2.0.5 thất bại: ' . $e->getMessage();
+			Log::add('com_eqa: ' . $msg, Log::ERROR, 'com_eqa');
+			$this->logError($msg);
+			return false;
+		}
+	}
+
+	/**
+	 * Chuẩn hóa tên một foreign key cụ thể về đúng tên chuẩn.
+	 *
+	 * Thuật toán:
+	 *   1. Truy vấn INFORMATION_SCHEMA để tìm tên FK thực tế dựa trên
+	 *      (TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME).
+	 *      Một cặp (bảng, cột) chỉ có thể có tối đa 1 FK → kết quả 0 hoặc 1 dòng.
+	 *   2. Không tìm thấy FK:
+	 *      - mustExist = true  → log warning, return 'skipped'
+	 *      - mustExist = false → ADD CONSTRAINT mới, return 'added'
+	 *   3. Tìm thấy FK, tên đã đúng → log info, return 'skipped'
+	 *   4. Tìm thấy FK, tên sai    → DROP cũ + ADD mới (1 lệnh ALTER), return 'renamed'
+	 *
+	 * @param  \Joomla\Database\DatabaseInterface $db
+	 * @param  string $table       Tên bảng Joomla-prefixed (ví dụ: '#__eqa_groups')
+	 * @param  string $column      Tên cột chứa FK
+	 * @param  string $refTable    Bảng được tham chiếu (Joomla-prefixed)
+	 * @param  string $refCol      Cột được tham chiếu (thường là 'id')
+	 * @param  string $targetName  Tên FK chuẩn (không kèm Joomla prefix)
+	 * @param  string $onDelete    ON DELETE action: 'RESTRICT' | 'CASCADE'
+	 * @param  bool   $mustExist   true = chỉ rename; false = ADD nếu chưa có
+	 * @return string 'renamed' | 'added' | 'skipped'
+	 * @throws \Exception nếu câu lệnh ALTER TABLE thất bại
+	 */
+	private function normalizeForeignKey(
+		\Joomla\Database\DatabaseInterface $db,
+		string $table,
+		string $column,
+		string $refTable,
+		string $refCol,
+		string $targetName,
+		string $onDelete,
+		bool $mustExist
+	): string {
+		// Resolve tên bảng thực (thay thế Joomla prefix '#__' → prefix thực)
+		$realTable    = $db->replacePrefix($table);
+		$realRefTable = $db->replacePrefix($refTable);
+
+		// Tìm tên FK hiện tại trên (realTable, column, realRefTable)
+		// JOIN với REFERENTIAL_CONSTRAINTS để chỉ lấy FK thực sự (loại trừ UNIQUE key, v.v.)
+		$currentName = $db->setQuery(
+			"SELECT kcu.CONSTRAINT_NAME
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
+             INNER JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS rc
+                 ON  rc.CONSTRAINT_NAME   = kcu.CONSTRAINT_NAME
+                 AND rc.CONSTRAINT_SCHEMA = kcu.TABLE_SCHEMA
+             WHERE kcu.TABLE_SCHEMA          = DATABASE()
+               AND kcu.TABLE_NAME            = " . $db->quote($realTable) . "
+               AND kcu.COLUMN_NAME           = " . $db->quote($column) . "
+               AND kcu.REFERENCED_TABLE_NAME = " . $db->quote($realRefTable) . "
+             LIMIT 1"
+		)->loadResult();
+
+		if ($currentName === null) {
+			// FK không tồn tại trên cặp (bảng, cột) này
+			if ($mustExist) {
+				$this->logWarning(
+					"Migration 2.0.5: Không tìm thấy FK trên `{$realTable}`.`{$column}` "
+					. "→ `{$realRefTable}`. Bỏ qua."
+				);
+				return 'skipped';
+			}
+
+			// ADD CONSTRAINT mới
+			$db->setQuery(
+				"ALTER TABLE `{$realTable}`
+                 ADD CONSTRAINT `{$targetName}`
+                     FOREIGN KEY (`{$column}`)
+                     REFERENCES `{$realRefTable}` (`{$refCol}`)
+                     ON DELETE {$onDelete}"
+			)->execute();
+
+			$this->logInfo(
+				"Migration 2.0.5: ADD `{$targetName}` trên `{$realTable}`.`{$column}`."
+			);
+			return 'added';
+		}
+
+		if ($currentName === $targetName) {
+			// Tên đã đúng chuẩn
+			$this->logInfo(
+				"Migration 2.0.5: `{$targetName}` trên `{$realTable}`.`{$column}` đã đúng, bỏ qua."
+			);
+			return 'skipped';
+		}
+
+		// Đổi tên: DROP FK cũ và ADD CONSTRAINT mới trong cùng 1 lệnh ALTER TABLE
+		// (Tránh trạng thái trung gian không có FK, an toàn hơn 2 lệnh riêng)
+		$db->setQuery(
+			"ALTER TABLE `{$realTable}`
+             DROP FOREIGN KEY `{$currentName}`,
+             ADD CONSTRAINT `{$targetName}`
+                 FOREIGN KEY (`{$column}`)
+                 REFERENCES `{$realRefTable}` (`{$refCol}`)
+                 ON DELETE {$onDelete}"
+		)->execute();
+
+		$this->logInfo(
+			"Migration 2.0.5: Đổi tên FK `{$currentName}` → `{$targetName}` "
+			. "trên `{$realTable}`.`{$column}`."
+		);
+		return 'renamed';
+	}
+
+	// =========================================================================
     // Logging helpers
     // =========================================================================
 

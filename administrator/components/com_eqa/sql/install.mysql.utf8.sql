@@ -458,7 +458,7 @@ CREATE TABLE `#__eqa_examseasons`(
 DROP TABLE IF EXISTS `#__eqa_examsessions`;
 CREATE TABLE `#__eqa_examsessions`(
     `id`            INT AUTO_INCREMENT,
-    `examseason_id` INT NOT NULL COMMENT 'Khóa ngoại: Đợt/kỳ thi',
+    `examseason_id` INT NULL COMMENT 'Khóa ngoại: Đợt/kỳ thi',
     `name`          VARCHAR(255) NOT NULL COMMENT 'Tên ca thi',
     `start`         DATETIME NOT NULL COMMENT 'Ngày, giờ bắt đầu làm bài thi',
     `flexible`      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Ca thi linh hoạt về thời gian (thực hành, báo cáo...)',
