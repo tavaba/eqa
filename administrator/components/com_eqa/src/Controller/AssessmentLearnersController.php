@@ -377,6 +377,183 @@ class AssessmentLearnersController extends AdminController
 		}
 	}
 
+	// =========================================================================
+	// distributeUnassignedRooms — chia phòng cho thí sinh chưa được chia phòng
+	// =========================================================================
+
+	/**
+	 * Tương tự distributeRooms, nhưng phạm vi thí sinh là toàn bộ thí sinh
+	 * chưa được chia phòng (examroom_id IS NULL) của kỳ sát hạch.
+	 * Không phụ thuộc vào checkbox người dùng chọn trước khi bấm nút.
+	 *
+	 * Phase 1: Query lấy danh sách id thí sinh chưa chia phòng, lưu session,
+	 *           redirect sang layout distributerooms.
+	 * Phase 2: Giống hệt distributeRooms phase 2.
+	 *
+	 * @since 2.0.5
+	 */
+	public function distributeUnassignedRooms(): void
+	{
+		$assessmentId = $this->input->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model = ComponentHelper::createModel('AssessmentLearners');
+
+			if (!$model->isAssessmentEditable($assessmentId)) {
+				throw new Exception(
+					'Kỳ sát hạch đã kết thúc hoặc đã được đánh dấu hoàn tất — không thể chia phòng thi.'
+				);
+			}
+
+			$phase = $this->input->getAlnum('phase', '');
+
+			// ------------------------------------------------------------------
+			// PHASE 1: lấy danh sách thí sinh chưa chia phòng, lưu session, redirect
+			// ------------------------------------------------------------------
+			if ($phase !== 'getdata') {
+				$unassignedIds = $model->getUnassignedIds($assessmentId);
+
+				if (empty($unassignedIds)) {
+					throw new Exception('Tất cả thí sinh của kỳ sát hạch này đã được chia phòng thi.');
+				}
+
+				// Lưu vào session (dùng cùng key với distributeRooms để tái dụng layout)
+				$this->app->setUserState(
+					'com_eqa.assessmentlearners.distributerooms.selectedIds.' . $assessmentId,
+					$unassignedIds
+				);
+
+				$this->setRedirect(Route::_(
+					'index.php?option=com_eqa&view=assessmentlearners' .
+					'&layout=distributerooms&assessment_id=' . $assessmentId,
+					false
+				));
+				return;
+			}
+
+			// ------------------------------------------------------------------
+			// PHASE 2: xử lý form (giống distributeRooms)
+			// ------------------------------------------------------------------
+			$this->checkToken();
+
+			$data = $this->input->get('jform', [], 'array');
+
+			$selectedIds = array_values(array_filter(array_map(
+				'intval',
+				(array) $this->app->getUserState(
+					'com_eqa.assessmentlearners.distributerooms.selectedIds.' . $assessmentId,
+					[]
+				)
+			)));
+
+			$this->app->setUserState(
+				'com_eqa.assessmentlearners.distributerooms.selectedIds.' . $assessmentId,
+				null
+			);
+
+			$operatorId = (int) $this->app->getIdentity()->id;
+			$model->setState('filter.assessment_id', $assessmentId);
+			$model->distributeAssessmentLearners($assessmentId, $data, $selectedIds, $operatorId);
+
+			$this->setMessage(
+				sprintf(
+					'Đã chia phòng thi và đánh số báo danh thành công cho %d thí sinh chưa được chia phòng.',
+					count($selectedIds)
+				),
+				'success'
+			);
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
+
+	// =========================================================================
+	// clearRoomAssignments — xóa thông tin chia phòng thi
+	// =========================================================================
+
+	/**
+	 * Xóa thông tin chia phòng thi (examroom_id, code) của thí sinh.
+	 * - Nếu có thí sinh được chọn (cid[]) → chỉ xóa thí sinh được chọn.
+	 * - Nếu không có thí sinh được chọn → xóa toàn bộ thí sinh của kỳ sát hạch.
+	 * Sau khi xóa, tự động dọn các phòng thi rỗng trong bảng #__eqa_examrooms.
+	 *
+	 * @since 2.0.5
+	 */
+	public function clearRoomAssignments(): void
+	{
+		$assessmentId = $this->input->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model = ComponentHelper::createModel('AssessmentLearners');
+
+			if (!$model->isAssessmentEditable($assessmentId)) {
+				throw new Exception(
+					'Kỳ sát hạch đã kết thúc hoặc đã được đánh dấu hoàn tất — không thể xóa thông tin chia phòng thi.'
+				);
+			}
+
+			// Lấy danh sách id được chọn (nếu có)
+			$scopeIds = array_values(array_filter(
+				(array) $this->input->post->get('cid', [], 'int')
+			));
+
+			$operatorId = (int) $this->app->getIdentity()->id;
+			$result     = $model->clearRoomAssignments($assessmentId, $scopeIds, $operatorId);
+
+			$scopeLabel = empty($scopeIds)
+				? 'toàn bộ thí sinh'
+				: count($scopeIds) . ' thí sinh được chọn';
+
+			$msg = sprintf(
+				'Đã xóa thông tin chia phòng thi của %s (%d bản ghi được cập nhật).',
+				$scopeLabel,
+				$result['cleared']
+			);
+
+			if ($result['roomsDeleted'] > 0) {
+				$msg .= sprintf(
+					' Đã xóa %d phòng thi rỗng.',
+					$result['roomsDeleted']
+				);
+			}
+
+			$this->setMessage($msg, 'success');
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
 
 	// =========================================================================
     // savePaymentInfo — POST 2: lưu thông tin thanh toán
@@ -582,7 +759,7 @@ class AssessmentLearnersController extends AdminController
 	 * Cấu trúc file giống hệt chức năng xuất ca iTest của ExamExaminees,
 	 * dùng chung IOHelper::writeITestSheet().
 	 *
-	 * @since 2.0.6
+	 * @since 2.0.5
 	 */
 	public function exportItest(): void
 	{

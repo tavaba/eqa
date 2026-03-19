@@ -12,7 +12,6 @@ use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\AssessmentResultLevel;
 use Kma\Component\Eqa\Administrator\Enum\AssessmentResultType;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
 use Kma\Component\Eqa\Administrator\Model\AssessmentModel;
@@ -86,7 +85,7 @@ class HtmlView extends ItemsHtmlView
 
 	    // Số báo danh
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption(
-		    'examinee_code', 'SBD', false, false, 'text-center'
+		    'examinee_code', 'SBD', true, false, 'text-center'
 	    );
 
 	    // Phí
@@ -278,9 +277,6 @@ class HtmlView extends ItemsHtmlView
 	    $backUrl = Route::_('index.php?option=com_eqa&view=assessments', false);
 	    ToolbarHelper::appendLink('core.manage', $backUrl,'Kỳ sát hạch','arrow-up-2');
 
-	    // Nút Xuất ca iTest (luôn hiển thị, không cần quyền edit)
-	    ToolbarHelper::appendButton('core.manage', 'download', 'Xuất ca iTest', 'assessmentlearners.exportItest');
-
         if ($this->isEditable) {
             // Nút Thêm thí sinh
             $assessmentId = (int) ($this->assessment->id ?? 0);
@@ -318,7 +314,31 @@ class HtmlView extends ItemsHtmlView
                 false,
                 'btn btn-secondary'
             );
+
+	        // Nút Chia phòng thi cho thí sinh chưa được chia phòng (không cần checkbox)
+	        ToolbarHelper::appendButton(
+		        'core.edit',
+		        'grid-2',
+		        'Chia phòng (chưa chia)',
+		        'assessmentlearners.distributeUnassignedRooms',
+		        false,
+		        'btn btn-secondary'
+	        );
+
+	        // Nút Xóa thông tin chia phòng thi (có xác nhận; không bắt buộc chọn)
+	        ToolbarHelper::appendConfirmButton(
+		        'core.edit',
+		        'Bạn có chắc muốn xóa thông tin chia phòng thi? Các phòng thi rỗng sau khi xóa cũng sẽ bị xóa theo.',
+		        'cancel-2',
+		        'Xóa chia phòng',
+		        'assessmentlearners.clearRoomAssignments',
+		        false,
+		        'btn btn-danger'
+	        );
         }
+
+	    // Nút Xuất ca iTest (luôn hiển thị, không cần quyền edit)
+	    ToolbarHelper::appendButton('core.manage', 'download', 'Xuất ca iTest', 'assessmentlearners.exportItest');
 	}
 
     // =========================================================================
@@ -429,7 +449,7 @@ class HtmlView extends ItemsHtmlView
         $this->item = $model->getItemById($id);
 
         // Load form XML và pre-fill giá trị hiện tại
-        $this->form = \Kma\Library\Kma\Helper\FormHelper::getBackendForm(
+        $this->form = FormHelper::getBackendForm(
             'com_eqa.assessmentlearner.setpayment',
             'setassessmentpayment.xml',
             []
@@ -496,7 +516,7 @@ class HtmlView extends ItemsHtmlView
 
         $this->distributionStats = $listModel->getDistributionStats($assessmentId, $this->selectedIds);
 
-        $this->form = \Kma\Library\Kma\Helper\FormHelper::getBackendForm(
+        $this->form = FormHelper::getBackendForm(
             'com_eqa.assessmentlearners.distributerooms',
             'assessmentlearners_distribution.xml'
         );

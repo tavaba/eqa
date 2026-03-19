@@ -765,6 +765,27 @@ class AssessmentLearnersModel extends ListModel
 		$eligibleLearners = $db->loadObjectList();
 
 		// ----------------------------------------------------------------
+		// C2. Kiểm tra không có thí sinh nào đã có kết quả thi
+		// ----------------------------------------------------------------
+		$hasResultQuery = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from($db->quoteName('#__eqa_assessment_learner'))
+			->where($db->quoteName('assessment_id') . ' = ' . $assessmentId)
+			->where($db->quoteName('cancelled')     . ' = 0')
+			->where('('. $db->quoteName('score') . ' IS NOT NULL OR ' . $db->quoteName('passed') . ' IS NOT NULL)');
+
+		if (!empty($selectedIds)) {
+			$hasResultQuery->where(
+				$db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $selectedIds)) . ')'
+			);
+		}
+
+		$db->setQuery($hasResultQuery);
+		if ((int) $db->loadResult() > 0) {
+			throw new Exception('Không thể chia phòng thi: một hoặc nhiều thí sinh trong phạm vi đã có kết quả thi.');
+		}
+
+		// ----------------------------------------------------------------
 		// D. Kiểm tra tổng số khớp với count_distributed
 		// ----------------------------------------------------------------
 		$eligibleCount = count($eligibleLearners);
@@ -1148,6 +1169,150 @@ class AssessmentLearnersModel extends ListModel
 		$db->setQuery($query);
 
 		return $db->loadObjectList();
+	}
+
+	// =========================================================================
+	// getUnassignedIds — lấy danh sách id thí sinh chưa được chia phòng
+	// =========================================================================
+
+	/**
+	 * Trả về danh sách al.id của các thí sinh thuộc kỳ sát hạch chưa được chia phòng thi
+	 * (examroom_id IS NULL), không bị hủy (cancelled = 0).
+	 *
+	 * @param  int  $assessmentId  ID kỳ sát hạch.
+	 *
+	 * @return int[]
+	 * @since 2.0.5
+	 */
+	public function getUnassignedIds(int $assessmentId): array
+	{
+		$db    = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('id'))
+			->from($db->quoteName('#__eqa_assessment_learner'))
+			->where($db->quoteName('assessment_id') . ' = ' . $assessmentId)
+			->where($db->quoteName('cancelled')     . ' = 0')
+			->where($db->quoteName('examroom_id')   . ' IS NULL');
+
+		$db->setQuery($query);
+
+		return array_map('intval', $db->loadColumn());
+	}
+
+	// =========================================================================
+	// clearRoomAssignments — xóa thông tin chia phòng thi
+	// =========================================================================
+
+	/**
+	 * Xóa thông tin chia phòng thi (examroom_id, code) của thí sinh trong phạm vi chỉ định.
+	 * Sau khi xóa, tự động dọn dẹp các phòng thi rỗng (không còn thí sinh nào).
+	 *
+	 * @param  int    $assessmentId  ID kỳ sát hạch.
+	 * @param  int[]  $scopeIds      Danh sách al.id cần xóa; [] = toàn bộ kỳ sát hạch.
+	 * @param  int    $operatorId    ID người thực hiện.
+	 *
+	 * @return array{cleared:int, roomsDeleted:int}
+	 * @throws \Exception
+	 * @since 2.0.5
+	 */
+	public function clearRoomAssignments(int $assessmentId, array $scopeIds, int $operatorId): array
+	{
+		$db  = $this->getDatabase();
+		$now = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+
+		// Kiểm tra không có thí sinh nào đã có kết quả thi
+		$hasResultQuery = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from($db->quoteName('#__eqa_assessment_learner'))
+			->where($db->quoteName('assessment_id') . ' = ' . $assessmentId)
+			->where($db->quoteName('cancelled')     . ' = 0')
+			->where('('. $db->quoteName('score') . ' IS NOT NULL OR ' . $db->quoteName('passed') . ' IS NOT NULL)');
+
+		if (!empty($scopeIds)) {
+			$hasResultQuery->where(
+				$db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $scopeIds)) . ')'
+			);
+		}
+
+		$db->setQuery($hasResultQuery);
+		if ((int) $db->loadResult() > 0) {
+			throw new Exception('Không thể xóa chia phòng thi: một hoặc nhiều thí sinh trong phạm vi đã có kết quả thi.');
+		}
+
+		$db->transactionStart();
+		try {
+			// B1. Lấy danh sách examroom_id bị ảnh hưởng (để kiểm tra phòng rỗng sau khi xóa)
+			$affectedRoomQuery = $db->getQuery(true)
+				->select('DISTINCT ' . $db->quoteName('examroom_id'))
+				->from($db->quoteName('#__eqa_assessment_learner'))
+				->where($db->quoteName('assessment_id') . ' = ' . $assessmentId)
+				->where($db->quoteName('examroom_id')   . ' IS NOT NULL');
+
+			if (!empty($scopeIds)) {
+				$affectedRoomQuery->where(
+					$db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $scopeIds)) . ')'
+				);
+			}
+
+			$db->setQuery($affectedRoomQuery);
+			$affectedRoomIds = array_map('intval', array_filter($db->loadColumn()));
+
+			// B2. Reset examroom_id + code cho thí sinh trong phạm vi
+			$clearQuery = $db->getQuery(true)
+				->update($db->quoteName('#__eqa_assessment_learner'))
+				->set($db->quoteName('examroom_id') . ' = NULL')
+				->set($db->quoteName('code')        . ' = NULL')
+				->set($db->quoteName('modified_at') . ' = ' . $db->quote($now))
+				->set($db->quoteName('modified_by') . ' = ' . $operatorId)
+				->where($db->quoteName('assessment_id') . ' = ' . $assessmentId);
+
+			if (!empty($scopeIds)) {
+				$clearQuery->where(
+					$db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $scopeIds)) . ')'
+				);
+			}
+
+			$db->setQuery($clearQuery);
+			$db->execute();
+			$cleared = $db->getAffectedRows();
+
+			// B3. Xóa các phòng thi rỗng trong danh sách bị ảnh hưởng
+			$roomsDeleted = 0;
+			if (!empty($affectedRoomIds)) {
+				// Kiểm tra phòng nào còn thí sinh
+				$occupiedQuery = $db->getQuery(true)
+					->select('DISTINCT ' . $db->quoteName('examroom_id'))
+					->from($db->quoteName('#__eqa_assessment_learner'))
+					->where(
+						$db->quoteName('examroom_id') . ' IN (' . implode(',', $affectedRoomIds) . ')'
+					)
+					->where($db->quoteName('examroom_id') . ' IS NOT NULL');
+
+				$db->setQuery($occupiedQuery);
+				$occupiedRoomIds = array_map('intval', $db->loadColumn());
+
+				$emptyRoomIds = array_diff($affectedRoomIds, $occupiedRoomIds);
+
+				if (!empty($emptyRoomIds)) {
+					$deleteRoomsQuery = $db->getQuery(true)
+						->delete($db->quoteName('#__eqa_examrooms'))
+						->where(
+							$db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $emptyRoomIds)) . ')'
+						);
+					$db->setQuery($deleteRoomsQuery);
+					$db->execute();
+					$roomsDeleted = $db->getAffectedRows();
+				}
+			}
+
+			$db->transactionCommit();
+
+			return ['cleared' => $cleared, 'roomsDeleted' => $roomsDeleted];
+
+		} catch (\Exception $e) {
+			$db->transactionRollback();
+			throw $e;
+		}
 	}
 
 	// =========================================================================

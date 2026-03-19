@@ -73,7 +73,7 @@ class AssessmentPortalModel extends BaseModel
 	 *   - registrationRecord : object|null  — bản ghi #__eqa_assessment_learner (null nếu chưa đăng ký)
 	 *   - availableSlots     : int|null     — null nếu không giới hạn
 	 *   - registrationStatus : string       — một trong các STATUS_* constants
-	 *   - lastPaymentUpdate  : string|null  — MAX(updated_at) của các bản ghi đã paid
+	 *   - lastPaymentUpdate  : string|null  — MAX(modified_at) của các bản ghi đã paid
 	 *
 	 * @param  string  $learnerCode
 	 * @return object{active: object[], past: object[]}
@@ -166,11 +166,11 @@ class AssessmentPortalModel extends BaseModel
 		$db->setQuery($query);
 		$confirmedCounts = $db->loadAssocList('assessment_id', 'confirmed_count');
 
-		// 5. Lấy MAX(updated_at) của bản ghi đã paid cho từng kỳ
+		// 5. Lấy MAX(modified_at) của bản ghi đã paid cho từng kỳ
 		$query = $db->getQuery(true)
 			->select([
 				$db->quoteName('al.assessment_id'),
-				'MAX(' . $db->quoteName('al.updated_at') . ') AS ' . $db->quoteName('last_payment_update'),
+				'MAX(' . $db->quoteName('al.modified_at') . ') AS ' . $db->quoteName('last_payment_update'),
 			])
 			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
 			->leftJoin(
@@ -339,14 +339,14 @@ class AssessmentPortalModel extends BaseModel
 			if (!(bool) $existing->cancelled) {
 				throw new Exception('Bạn đã đăng ký kỳ sát hạch này rồi.');
 			}
-			// Khôi phục bản ghi đã hủy — giữ nguyên payment_code, ghi updated_by
+			// Khôi phục bản ghi đã hủy — giữ nguyên payment_code, ghi modified_by
 			$now    = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
 			$userId = (int) Factory::getApplication()->getIdentity()->id;
 			$query  = $db->getQuery(true)
 				->update($db->quoteName('#__eqa_assessment_learner'))
 				->set($db->quoteName('cancelled')   . ' = 0')
-				->set($db->quoteName('updated_at')  . ' = ' . $db->quote($now))
-				->set($db->quoteName('updated_by')  . ' = ' . $userId)
+				->set($db->quoteName('modified_at')  . ' = ' . $db->quote($now))
+				->set($db->quoteName('modified_by')  . ' = ' . $userId)
 				->where($db->quoteName('id') . ' = ' . (int) $existing->id);
 			$db->setQuery($query);
 			$db->execute();
@@ -367,7 +367,7 @@ class AssessmentPortalModel extends BaseModel
 			->columns($db->quoteName([
 				'assessment_id', 'learner_id',
 				'payment_amount', 'payment_code', 'payment_completed',
-				'cancelled', 'created_at', 'created_by', 'updated_at', 'updated_by',
+				'cancelled', 'created_at', 'created_by', 'modified_at', 'modified_by',
 			]))
 			->values(implode(',', [
 				$assessmentId,
@@ -379,7 +379,7 @@ class AssessmentPortalModel extends BaseModel
 				$db->quote($now),
 				$userId,    // created_by
 				$db->quote($now),
-				$userId,    // updated_by
+				$userId,    // modified_by
 			]));
 		$db->setQuery($query);
 		$db->execute();
@@ -421,8 +421,8 @@ class AssessmentPortalModel extends BaseModel
 		$query  = $db->getQuery(true)
 			->update($db->quoteName('#__eqa_assessment_learner'))
 			->set($db->quoteName('cancelled')  . ' = 1')
-			->set($db->quoteName('updated_at') . ' = ' . $db->quote($now))
-			->set($db->quoteName('updated_by') . ' = ' . $userId)
+			->set($db->quoteName('modified_at') . ' = ' . $db->quote($now))
+			->set($db->quoteName('modified_by') . ' = ' . $userId)
 			->where($db->quoteName('id') . ' = ' . (int) $existing->id);
 		$db->setQuery($query);
 		$db->execute();
