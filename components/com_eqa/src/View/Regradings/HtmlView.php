@@ -2,13 +2,12 @@
 namespace Kma\Component\Eqa\Site\View\Regradings;   //Must end with the View Name
 defined('_JEXEC') or die();
 
-use DateTime;
 use Exception;
+use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -16,8 +15,8 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class HtmlView extends ItemsHtmlView{
-	protected $errorMessage;
-	protected $examseason;
+	protected ?string $errorMessage=null;
+	protected ?ExamseasonInfo $examseason;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 
@@ -88,7 +87,7 @@ class HtmlView extends ItemsHtmlView{
 	{
 		//Title
 		ToolbarHelper::title('Danh sách yêu cầu phúc khảo');
-		if($this->errorMessage)
+		if(!empty($this->errorMessage))
 			return;
 
 		// Add buttons to the toolbar

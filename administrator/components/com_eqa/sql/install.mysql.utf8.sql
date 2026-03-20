@@ -1,16 +1,19 @@
 /**
  * com_eqa — Install SQL Schema
- * Version : 2.0.4
+ * Version : 2.0.6
  *
- * Thay đổi so với 2.0.4:
- * - Sửa lỗi tên cột 'updated_at' thành 'modified_at'
- *   và 'updated_by' thành 'modified_by' (script thực hiện migration lên 2.0.0)
- * - Thêm 2 bảng '#__eqa_assessments và #__eqa_assessment_learner
- * - Cập nhật bảng #__eqa_examsessions
- *      + Bỏ ràng buộc NOT NULL đối với examseason_id
- *      + Thêm cột assessment_id
+ * Thay đổi so với 2.0.5:
+ * - Đổi tên `check_out` → `checked_out`, `check_out_time` → `checked_out_time`
+ *   trên các bảng gốc (buildings, rooms, units, employees, specialities, programs,
+ *   courses, groups, learners, subjects, classes, examseasons, examsessions, exams).
+ * - Sửa #__eqa_regradings: `requested_at` → `created_at`, sửa `requested_by` → `created_by`.
+ * - Sửa #__eqa_gradecorrections: `requested_at` → `created_at`, sửa `requested_by` → `created_by`.
+ * - Bổ sung `updated_at`, `updated_by` vào #__eqa_exam_learner.
+ * - Tất cả cột kiểu số nguyên (INT, TINYINT, SMALLINT, BIGINT) được đánh dấu UNSIGNED.
+ * - Bổ sung surrogate key `id` cho các junction table:
+ *   #__eqa_cohort_learner, #__eqa_exam_learner, #__eqa_papers.
  */
- 
+
 -- Tắt kiểm tra khóa ngoại để xóa sạch không bị lỗi ràng buộc
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -19,16 +22,16 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_buildings`;
 CREATE TABLE `#__eqa_buildings`(
-    `id`          INT AUTO_INCREMENT,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu tòa nhà. Ví dụ: TA1, TB1...',
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`)
@@ -39,20 +42,20 @@ CREATE TABLE `#__eqa_buildings`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_rooms`;
 CREATE TABLE `#__eqa_rooms`(
-    `id`          INT AUTO_INCREMENT,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu phòng. Ví dụ: 104, 401-TA2...',
-    `building_id` INT NOT NULL,
-    `maxcapacity` INT COMMENT 'Số chỗ ngồi tối đa',
-    `capacity`    INT NOT NULL COMMENT 'Số chỗ ngồi được sử dụng để tổ chức thi',
+    `building_id` INT UNSIGNED NOT NULL,
+    `maxcapacity` INT UNSIGNED COMMENT 'Số chỗ ngồi tối đa',
+    `capacity`    INT UNSIGNED NOT NULL COMMENT 'Số chỗ ngồi được sử dụng để tổ chức thi',
     `description` TEXT,
-    `type`        TINYINT NOT NULL COMMENT 'Loại phòng: (0) phòng thường, (1) giảng đường có ổ cắm, (2) phòng máy',
+    `type`        TINYINT UNSIGNED NOT NULL COMMENT 'Loại phòng: (0) phòng thường, (1) giảng đường có ổ cắm, (2) phòng máy',
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_rooms_building FOREIGN KEY (`building_id`)
@@ -65,19 +68,19 @@ CREATE TABLE `#__eqa_rooms`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_units`;
 CREATE TABLE `#__eqa_units` (
-    `id`          INT AUTO_INCREMENT,
-    `parent_id`   INT NOT NULL DEFAULT 0 COMMENT 'Đơn vị cấp trên; 0 nếu trực thuộc Học viện',
+    `id`          INT UNSIGNED AUTO_INCREMENT,
+    `parent_id`   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Đơn vị cấp trên; 0 nếu trực thuộc Học viện',
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu, ví dụ: K.ATTT, BM.ATGDDT',
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên đầy đủ, ví dụ: Khoa An toàn thông tin',
-    `type`        TINYINT NOT NULL DEFAULT 0 COMMENT 'Loại đơn vị: (1) Khoa/bộ môn, (2) Phòng/ban',
+    `type`        TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Loại đơn vị: (1) Khoa/bộ môn, (2) Phòng/ban',
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`)
@@ -88,21 +91,21 @@ CREATE TABLE `#__eqa_units` (
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_employees`;
 CREATE TABLE `#__eqa_employees` (
-    `id`          INT AUTO_INCREMENT,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
     `code`        VARCHAR(255) DEFAULT NULL COMMENT 'Mã cán bộ, nhân viên',
     `lastname`    VARCHAR(255) NOT NULL COMMENT 'Họ Đệm',
     `firstname`   VARCHAR(255) NOT NULL COMMENT 'Tên',
-    `unit_id`     INT NOT NULL COMMENT 'Khóa ngoại: cơ quan/đơn vị',
+    `unit_id`     INT UNSIGNED NOT NULL COMMENT 'Khóa ngoại: cơ quan/đơn vị',
     `email`       VARCHAR(255),
     `mobile`      VARCHAR(255),
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`),
@@ -116,17 +119,17 @@ CREATE TABLE `#__eqa_employees` (
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_specialities`;
 CREATE TABLE `#__eqa_specialities`(
-    `id`          INT AUTO_INCREMENT,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu',
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên ngành đào tạo',
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Ngành đào tạo';
@@ -136,22 +139,22 @@ CREATE TABLE `#__eqa_specialities`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_programs`;
 CREATE TABLE `#__eqa_programs`(
-    `id`          INT AUTO_INCREMENT,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên của chương trình đào tạo',
-    `spec_id`     INT NOT NULL COMMENT 'FK: Ngành đào tạo',
-    `degree`      TINYINT NOT NULL COMMENT 'Trình độ: (7) Đại học, (8) Thạc sĩ, (9) Tiến sĩ',
-    `format`      TINYINT NOT NULL COMMENT 'Loại hình: Tiêu chuẩn, Liên thông, VB2',
-    `approach`    TINYINT NOT NULL COMMENT 'Hình thức: CQ, VLVH, TX',
-    `firstrelease` INT COMMENT 'Năm ban hành lần đầu',
-    `lastupdate`  INT COMMENT 'Năm sửa đổi gần nhất',
+    `spec_id`     INT UNSIGNED NOT NULL COMMENT 'FK: Ngành đào tạo',
+    `degree`      TINYINT UNSIGNED NOT NULL COMMENT 'Trình độ: (7) Đại học, (8) Thạc sĩ, (9) Tiến sĩ',
+    `format`      TINYINT UNSIGNED NOT NULL COMMENT 'Loại hình: Tiêu chuẩn, Liên thông, VB2',
+    `approach`    TINYINT UNSIGNED NOT NULL COMMENT 'Hình thức: CQ, VLVH, TX',
+    `firstrelease` INT UNSIGNED COMMENT 'Năm ban hành lần đầu',
+    `lastupdate`  INT UNSIGNED COMMENT 'Năm sửa đổi gần nhất',
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_programs_spec FOREIGN KEY (`spec_id`)
@@ -164,18 +167,18 @@ CREATE TABLE `#__eqa_programs`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_courses`;
 CREATE TABLE `#__eqa_courses` (
-    `id`            INT AUTO_INCREMENT,
-    `prog_id`       INT NOT NULL COMMENT 'FK: Chương trình ĐT',
+    `id`            INT UNSIGNED AUTO_INCREMENT,
+    `prog_id`       INT UNSIGNED NOT NULL COMMENT 'FK: Chương trình ĐT',
     `code`          VARCHAR(255) NOT NULL COMMENT 'Ký hiệu. Ví dụ: AT20',
-    `admissionyear` INT NOT NULL DEFAULT 0 COMMENT 'Năm nhập học',
+    `admissionyear` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Năm nhập học',
     `description`   VARCHAR(255) COMMENT 'Ví dụ: 9/2023 - 01/2028',
     `published`     BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`      INT NOT NULL DEFAULT 0,
+    `ordering`      INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`    DATETIME,
-    `created_by`    INT,
+    `created_by`    INT UNSIGNED,
     `modified_at`   DATETIME,
-    `modified_by`   INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`   INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`),
@@ -189,19 +192,19 @@ CREATE TABLE `#__eqa_courses` (
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_groups`;
 CREATE TABLE `#__eqa_groups` (
-    `id`          INT AUTO_INCREMENT,
-    `course_id`   INT COMMENT 'FK: Khóa đào tạo. NULL với lớp ngắn hạn...',
+    `id`          INT UNSIGNED AUTO_INCREMENT,
+    `course_id`   INT UNSIGNED COMMENT 'FK: Khóa đào tạo. NULL với lớp ngắn hạn...',
     `code`        VARCHAR(255) NOT NULL COMMENT 'Tên lớp. Ví dụ: AT20A',
-    `homeroom_id` INT COMMENT 'FK: Giáo viên chủ nhiệm',
-    `adviser_id`  INT COMMENT 'FK: Cố vấn học tập số 1',
+    `homeroom_id` INT UNSIGNED COMMENT 'FK: Giáo viên chủ nhiệm',
+    `adviser_id`  INT UNSIGNED COMMENT 'FK: Cố vấn học tập số 1',
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`),
@@ -221,20 +224,20 @@ CREATE TABLE `#__eqa_groups` (
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_learners`;
 CREATE TABLE `#__eqa_learners` (
-    `id`          INT AUTO_INCREMENT,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
     `code`        VARCHAR(255) NOT NULL COMMENT 'Mã HVSV. Ví dụ: AT010101',
     `lastname`    VARCHAR(255) NOT NULL COMMENT 'Họ Đệm',
     `firstname`   VARCHAR(255) NOT NULL COMMENT 'Tên',
-    `group_id`    INT NOT NULL COMMENT 'FK: Lớp hành chính',
+    `group_id`    INT UNSIGNED NOT NULL COMMENT 'FK: Lớp hành chính',
     `debtor`      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Có nợ học phí hay không',
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`),
@@ -248,16 +251,16 @@ CREATE TABLE `#__eqa_learners` (
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_cohorts`;
 CREATE TABLE `#__eqa_cohorts` (
-    `id`          INT AUTO_INCREMENT,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
     `code`        VARCHAR(20) NOT NULL COMMENT 'Ký hiệu nhóm. Ví dụ: H30L',
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên nhóm: H30 Lào',
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`    INT NOT NULL DEFAULT 0,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`)
@@ -265,34 +268,36 @@ CREATE TABLE `#__eqa_cohorts` (
 
 DROP TABLE IF EXISTS `#__eqa_cohort_learner`;
 CREATE TABLE `#__eqa_cohort_learner` (
-    `cohort_id`  INT NOT NULL,
-    `learner_id` INT NOT NULL,
-    PRIMARY KEY (`cohort_id`, `learner_id`),
+    `id`         INT UNSIGNED AUTO_INCREMENT,
+    `cohort_id`  INT UNSIGNED NOT NULL,
+    `learner_id` INT UNSIGNED NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE (`cohort_id`, `learner_id`),
     CONSTRAINT fk_eqa_cohort_learner_cohort FOREIGN KEY (`cohort_id`)
         REFERENCES `#__eqa_cohorts`(`id`)
         ON DELETE CASCADE,
     CONSTRAINT fk_eqa_cohort_learner_learner FOREIGN KEY (`learner_id`)
         REFERENCES `#__eqa_learners`(`id`)
         ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Junction: nhóm — người học';
 
 -- =============================================================================
 -- Môn học
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_subjects`;
 CREATE TABLE `#__eqa_subjects` (
-    `id`                INT AUTO_INCREMENT,
+    `id`                INT UNSIGNED AUTO_INCREMENT,
     `code`              VARCHAR(255) NOT NULL COMMENT 'Mã môn học',
     `name`              VARCHAR(255) NOT NULL COMMENT 'Tên môn học',
-    `degree`            INT NOT NULL COMMENT 'Bậc học',
+    `degree`            INT UNSIGNED NOT NULL COMMENT 'Bậc học',
     `credits`           REAL COMMENT 'Số tín chỉ (có thể lẻ)',
-    `unit_id`           INT COMMENT 'Khóa ngoại: Đơn vị phụ trách môn học',
+    `unit_id`           INT UNSIGNED COMMENT 'Khóa ngoại: Đơn vị phụ trách môn học',
     `is_pass_fail`      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Môn điều kiện, không tính điểm',
-    `finaltesttype`     INT NOT NULL COMMENT 'Hình thức thi mặc định (định nghĩa bằng constants)',
-    `finaltestduration` INT COMMENT 'Thời gian làm bài thi, tính bằng phút',
+    `finaltesttype`     INT UNSIGNED NOT NULL COMMENT 'Hình thức thi mặc định (định nghĩa bằng constants)',
+    `finaltestduration` INT UNSIGNED COMMENT 'Thời gian làm bài thi, tính bằng phút',
     `finaltestweight`   REAL NOT NULL COMMENT 'Trọng số điểm thi kết thúc học phần',
     `allowed_rooms`     TEXT NULL DEFAULT NULL COMMENT 'JSON: danh sách ID phòng được phép sử dụng; NULL = không giới hạn',
-    `testbankyear`      INT COMMENT 'Năm xây dựng ngân hàng cho hình thức thi mặc định (nếu có)',
+    `testbankyear`      INT UNSIGNED COMMENT 'Năm xây dựng ngân hàng cho hình thức thi mặc định (nếu có)',
     `alltestbanks`      TEXT COMMENT 'JSON String (hoặc NULL) thể hiện các ngân hàng đang có {type:, year:}',
     `allmarkelements`   TEXT COMMENT 'JSON String thể hiện các thành phần đánh giá quá trình {name:, weight:}',
     `programs`          TEXT COMMENT 'Các CTĐT có môn học',
@@ -300,12 +305,12 @@ CREATE TABLE `#__eqa_subjects` (
     `kassess`           REAL NOT NULL DEFAULT 1.0 COMMENT 'Hệ số tính sản lượng chấm thi',
     `description`       TEXT,
     `published`         BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`          INT NOT NULL DEFAULT 0,
+    `ordering`          INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`        DATETIME,
-    `created_by`        INT,
+    `created_by`        INT UNSIGNED,
     `modified_at`       DATETIME,
-    `modified_by`       INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`       INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`),
@@ -316,24 +321,22 @@ CREATE TABLE `#__eqa_subjects` (
 
 -- =============================================================================
 -- Lớp học phần
--- Thay đổi 2.0.4: academicyear_id INT FK → academicyear INT NOT NULL
---   Lưu trực tiếp năm đầu tiên của năm học (ví dụ: 2025 cho 2025-2026)
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_classes`;
 CREATE TABLE `#__eqa_classes` (
-    `id`            INT AUTO_INCREMENT,
+    `id`            INT UNSIGNED AUTO_INCREMENT,
     `coursegroup`   VARCHAR(255) COMMENT 'Đối tượng người học',
     `code`          CHAR(40) COMMENT 'Mã lớp học phần',
     `name`          VARCHAR(255) NOT NULL COMMENT 'Tên lớp học phần',
-    `subject_id`    INT NOT NULL COMMENT 'Khóa ngoại: Môn học',
-    `lecturer_id`   INT COMMENT 'Khóa ngoại: Giảng viên (phụ trách chính)',
+    `subject_id`    INT UNSIGNED NOT NULL COMMENT 'Khóa ngoại: Môn học',
+    `lecturer_id`   INT UNSIGNED COMMENT 'Khóa ngoại: Giảng viên (phụ trách chính)',
     `lecturers`     TEXT COMMENT 'JSON về tất cả giảng viên, nếu có nhiều hơn 1 GV',
-    `academicyear`  INT NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
-    `term`          TINYINT NOT NULL COMMENT 'Học kỳ (1, 2)',
+    `academicyear`  INT UNSIGNED NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
+    `term`          TINYINT UNSIGNED NOT NULL COMMENT 'Học kỳ (1, 2)',
     `start`         DATE COMMENT 'Ngày bắt đầu theo TKB',
     `finish`        DATE COMMENT 'Ngày kết thúc theo TKB',
-    `size`          INT COMMENT 'Sĩ số lớp học',
-    `npam`          INT NOT NULL DEFAULT 0 COMMENT 'Số lượng HVSV có điểm quá trình',
+    `size`          INT UNSIGNED COMMENT 'Sĩ số lớp học',
+    `npam`          INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Số lượng HVSV có điểm quá trình',
     `topicdeadline` DATE COMMENT 'Hạn gửi chủ đề đồ án/tiểu luận môn học',
     `topicdate`     DATE COMMENT 'Ngày bàn giao chủ đề đồ án/tiểu luận môn học',
     `thesisdate`    DATE COMMENT 'Ngày bàn giao sản phẩm đồ án/tiểu luận',
@@ -342,12 +345,12 @@ CREATE TABLE `#__eqa_classes` (
     `statistic`     TEXT COMMENT 'JSON thể hiện số liệu thống kê kết quả thi',
     `description`   TEXT,
     `published`     BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`      INT NOT NULL DEFAULT 0,
+    `ordering`      INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`    DATETIME,
-    `created_by`    INT,
+    `created_by`    INT UNSIGNED,
     `modified_at`   DATETIME,
-    `modified_by`   INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`   INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`code`),
@@ -364,18 +367,18 @@ CREATE TABLE `#__eqa_classes` (
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_stimulations`;
 CREATE TABLE `#__eqa_stimulations`(
-    `id`          INT AUTO_INCREMENT,
-    `subject_id`  INT NOT NULL COMMENT 'FK: Môn học',
-    `learner_id`  INT NOT NULL COMMENT 'FK: Người học',
-    `type`        INT NOT NULL COMMENT 'Loại hình',
+    `id`          INT UNSIGNED AUTO_INCREMENT,
+    `subject_id`  INT UNSIGNED NOT NULL COMMENT 'FK: Môn học',
+    `learner_id`  INT UNSIGNED NOT NULL COMMENT 'FK: Người học',
+    `type`        INT UNSIGNED NOT NULL COMMENT 'Loại hình',
     `value`       FLOAT NOT NULL COMMENT 'Điểm khuyến khích',
     `reason`      TEXT NOT NULL COMMENT 'Lý do khuyến khích',
     `used`        BOOLEAN NOT NULL DEFAULT FALSE,
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`subject_id`, `learner_id`),
@@ -392,20 +395,20 @@ CREATE TABLE `#__eqa_stimulations`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_class_learner`;
 CREATE TABLE `#__eqa_class_learner` (
-    `id`          INT AUTO_INCREMENT,
-    `class_id`    INT NOT NULL,
-    `learner_id`  INT NOT NULL,
+    `id`          INT UNSIGNED AUTO_INCREMENT,
+    `class_id`    INT UNSIGNED NOT NULL,
+    `learner_id`  INT UNSIGNED NOT NULL,
     `pam1`        FLOAT COMMENT 'Điểm quá trình TP1',
     `pam2`        FLOAT COMMENT 'Điểm quá trình TP2',
     `pam`         FLOAT COMMENT 'Điểm quá trình',
     `allowed`     BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Được phép dự thi kết thúc học phần hay không',
-    `ntaken`      TINYINT NOT NULL DEFAULT 0 COMMENT 'Số lượt đã thi',
+    `ntaken`      TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Số lượt đã thi',
     `expired`     BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Hết lượt thi',
     `description` VARCHAR(255),
     `created_at`  DATETIME,
-    `created_by`  INT,
+    `created_by`  INT UNSIGNED,
     `modified_at` DATETIME,
-    `modified_by` INT,
+    `modified_by` INT UNSIGNED,
     PRIMARY KEY (`id`),
     UNIQUE (`class_id`, `learner_id`),
     CONSTRAINT fk_eqa_class_learner_class FOREIGN KEY (`class_id`)
@@ -418,31 +421,30 @@ CREATE TABLE `#__eqa_class_learner` (
 
 -- =============================================================================
 -- Kỳ thi
--- Thay đổi 2.0.4: academicyear_id INT FK → academicyear INT NOT NULL
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_examseasons`;
 CREATE TABLE `#__eqa_examseasons`(
-    `id`                  INT AUTO_INCREMENT,
+    `id`                  INT UNSIGNED AUTO_INCREMENT,
     `name`                VARCHAR(255) NOT NULL COMMENT 'Tên đợt thi',
-    `academicyear`        INT NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
-    `term`                TINYINT COMMENT 'Học kỳ',
-    `type`                TINYINT NOT NULL COMMENT 'Loại kỳ thi: KTHP, Sát hạch, Tốt nghiệp, Khác (định nghĩa bằng constants)',
-    `attempt`             TINYINT NOT NULL COMMENT 'Lượt thi: (1) Thi lần 1, (2) Thi lần 2',
-    `default`             TINYINT NOT NULL DEFAULT FALSE COMMENT 'Là kỳ thi hiện tại (mặc định)',
+    `academicyear`        INT UNSIGNED NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
+    `term`                TINYINT UNSIGNED COMMENT 'Học kỳ',
+    `type`                TINYINT UNSIGNED NOT NULL COMMENT 'Loại kỳ thi: KTHP, Sát hạch, Tốt nghiệp, Khác (định nghĩa bằng constants)',
+    `attempt`             TINYINT UNSIGNED NOT NULL COMMENT 'Lượt thi: (1) Thi lần 1, (2) Thi lần 2',
+    `default`             TINYINT UNSIGNED NOT NULL DEFAULT FALSE COMMENT 'Là kỳ thi hiện tại (mặc định)',
     `start`               DATE COMMENT 'Ngày thi môn đầu tiên',
     `finish`              DATE COMMENT 'Ngày thi môn sau cùng',
     `ppaa_req_enabled`    BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Được gửi yêu cầu phúc khảo',
     `ppaa_req_deadline`   DATETIME NULL COMMENT 'Thời hạn gửi yêu cầu phúc khảo',
-    `completed`           TINYINT NOT NULL DEFAULT 0,
+    `completed`           TINYINT UNSIGNED NOT NULL DEFAULT 0,
     `statistic`           TEXT COMMENT 'JSON: số liệu thống kê về kỳ thi',
     `description`         TEXT,
     `published`           BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`            INT NOT NULL DEFAULT 0,
+    `ordering`            INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`          DATETIME,
-    `created_by`          INT,
+    `created_by`          INT UNSIGNED,
     `modified_at`         DATETIME,
-    `modified_by`         INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`         INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Đợt/kỳ thi';
@@ -452,9 +454,9 @@ CREATE TABLE `#__eqa_examseasons`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_examsessions`;
 CREATE TABLE `#__eqa_examsessions`(
-    `id`            INT AUTO_INCREMENT,
-    `examseason_id` INT NULL    COMMENT 'Khóa ngoại: Đợt/kỳ thi (NULL nếu là ca thi sát hạch)',
-    `assessment_id` INT NULL    COMMENT 'Khóa ngoại: Kỳ sát hạch (NULL nếu là ca thi KTHP/TN)',
+    `id`            INT UNSIGNED AUTO_INCREMENT,
+    `examseason_id` INT UNSIGNED NULL    COMMENT 'Khóa ngoại: Đợt/kỳ thi (NULL nếu là ca thi sát hạch)',
+    `assessment_id` INT UNSIGNED NULL    COMMENT 'Khóa ngoại: Kỳ sát hạch (NULL nếu là ca thi KTHP/TN)',
     `name`          VARCHAR(255) NOT NULL COMMENT 'Tên ca thi',
     `start`         DATETIME NOT NULL COMMENT 'Ngày, giờ bắt đầu làm bài thi',
     `flexible`      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Ca thi linh hoạt về thời gian (thực hành, báo cáo...)',
@@ -462,12 +464,12 @@ CREATE TABLE `#__eqa_examsessions`(
     `examiner_ids`  TEXT COMMENT 'CSV danh sách (id của) CBCTChT',
     `description`   TEXT,
     `published`     BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`      INT NOT NULL DEFAULT 0,
+    `ordering`      INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`    DATETIME,
-    `created_by`    INT,
+    `created_by`    INT UNSIGNED,
     `modified_at`   DATETIME,
-    `modified_by`   INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`   INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_examsessions_examseason FOREIGN KEY (`examseason_id`)
@@ -483,23 +485,23 @@ CREATE TABLE `#__eqa_examsessions`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_exams`;
 CREATE TABLE `#__eqa_exams`(
-    `id`            INT AUTO_INCREMENT,
-    `subject_id`    INT NOT NULL COMMENT 'Khóa ngoại: Môn học',
-    `examseason_id` INT NOT NULL COMMENT 'Khóa ngoại: Kỳ thi',
+    `id`            INT UNSIGNED AUTO_INCREMENT,
+    `subject_id`    INT UNSIGNED NOT NULL COMMENT 'Khóa ngoại: Môn học',
+    `examseason_id` INT UNSIGNED NOT NULL COMMENT 'Khóa ngoại: Kỳ thi',
     `name`          VARCHAR(255) NOT NULL COMMENT 'Tên môn thi',
     `code`          VARCHAR(50) NOT NULL COMMENT 'Mã môn thi; duy nhất trong một kỳ thi',
     `is_pass_fail`  BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Môn điều kiện, không tính điểm',
-    `testtype`      INT COMMENT 'Hình thức thi',
-    `duration`      INT COMMENT 'Thời gian làm bài, tính bằng phút',
+    `testtype`      INT UNSIGNED COMMENT 'Hình thức thi',
+    `duration`      INT UNSIGNED COMMENT 'Thời gian làm bài, tính bằng phút',
     `allowed_rooms` TEXT NULL DEFAULT NULL COMMENT 'JSON: danh sách ID phòng được phép sử dụng; NULL = không giới hạn; ghi đè allowed_rooms của subject',
     `description`   TEXT,
     `published`     BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`      INT NOT NULL DEFAULT 0,
+    `ordering`      INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`    DATETIME,
-    `created_by`    INT,
+    `created_by`    INT UNSIGNED,
     `modified_at`   DATETIME,
-    `modified_by`   INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`   INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE INDEX `uq_eqa_exams_season_code` (`examseason_id`, `code`),
@@ -516,27 +518,27 @@ CREATE TABLE `#__eqa_exams`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_examrooms`;
 CREATE TABLE `#__eqa_examrooms`(
-    `id`             INT AUTO_INCREMENT,
+    `id`             INT UNSIGNED AUTO_INCREMENT,
     `name`           VARCHAR(255) NOT NULL COMMENT 'Tên phòng thi',
-    `room_id`        INT NOT NULL COMMENT 'Khóa ngoại: Phòng học (địa điểm thi)',
-    `examsession_id` INT COMMENT 'Khóa ngoại: ca thi',
+    `room_id`        INT UNSIGNED NOT NULL COMMENT 'Khóa ngoại: Phòng học (địa điểm thi)',
+    `examsession_id` INT UNSIGNED COMMENT 'Khóa ngoại: ca thi',
     `exam_ids`       TEXT COMMENT 'Các môn thi trong phòng thi',
-    `nmonitor`       INT COMMENT 'Số lượng CBCT',
-    `nexaminer`      INT COMMENT 'Số lượng CBCTChT',
-    `monitor1_id`    INT COMMENT 'CBCT 1',
-    `monitor2_id`    INT COMMENT 'CBCT 2',
-    `monitor3_id`    INT COMMENT 'CBCT 3',
-    `examiner1_id`   INT COMMENT 'CBCTChT 1',
-    `examiner2_id`   INT COMMENT 'CBCTChT 2',
+    `nmonitor`       INT UNSIGNED COMMENT 'Số lượng CBCT',
+    `nexaminer`      INT UNSIGNED COMMENT 'Số lượng CBCTChT',
+    `monitor1_id`    INT UNSIGNED COMMENT 'CBCT 1',
+    `monitor2_id`    INT UNSIGNED COMMENT 'CBCT 2',
+    `monitor3_id`    INT UNSIGNED COMMENT 'CBCT 3',
+    `examiner1_id`   INT UNSIGNED COMMENT 'CBCTChT 1',
+    `examiner2_id`   INT UNSIGNED COMMENT 'CBCTChT 2',
     `anomaly`        TEXT COMMENT 'Bất thường phòng thi',
     `description`    TEXT,
     `published`      BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`       INT NOT NULL DEFAULT 0,
+    `ordering`       INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`     DATETIME,
-    `created_by`     INT,
+    `created_by`     INT UNSIGNED,
     `modified_at`    DATETIME,
-    `modified_by`    INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`    INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`room_id`, `examsession_id`),
@@ -551,31 +553,34 @@ CREATE TABLE `#__eqa_examrooms`(
 
 -- =============================================================================
 -- Kết quả thi của thí sinh
+-- (junction table — đã bổ sung surrogate key `id` từ v2.0.6)
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_exam_learner`;
 CREATE TABLE `#__eqa_exam_learner`(
-    `exam_id`            INT NOT NULL COMMENT 'Khóa ngoại: môn thi',
-    `learner_id`         INT NOT NULL COMMENT 'Khóa ngoại: học viên, sinh viên',
-    `class_id`           INT COMMENT 'Khóa ngoại: lớp học phần',
-    `stimulation_id`     INT COMMENT 'FK: Chế độ khuyến khích',
+    `id`                 INT UNSIGNED AUTO_INCREMENT,
+    `exam_id`            INT UNSIGNED NOT NULL COMMENT 'Khóa ngoại: môn thi',
+    `learner_id`         INT UNSIGNED NOT NULL COMMENT 'Khóa ngoại: học viên, sinh viên',
+    `class_id`           INT UNSIGNED COMMENT 'Khóa ngoại: lớp học phần',
+    `stimulation_id`     INT UNSIGNED COMMENT 'FK: Chế độ khuyến khích',
     `debtor`             BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Có nợ học phí hay không',
-    `attempt`            TINYINT COMMENT 'Lần thi: (1) Thi lần 1, (2) Thi lần 2',
-    `examroom_id`        INT COMMENT 'FK: phòng thi',
-    `code`               INT COMMENT 'Số báo danh',
-    `anomaly`            TINYINT NOT NULL DEFAULT 0 COMMENT 'Xử lý (const)',
+    `attempt`            TINYINT UNSIGNED COMMENT 'Lần thi: (1) Thi lần 1, (2) Thi lần 2',
+    `examroom_id`        INT UNSIGNED COMMENT 'FK: phòng thi',
+    `code`               INT UNSIGNED COMMENT 'Số báo danh',
+    `anomaly`            TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Xử lý (const)',
     `mark_orig`          REAL COMMENT 'Điểm thi KTHP (chấm lần 1, chưa xử lý kỷ luật nếu có)',
-    `ppaa`               TINYINT NOT NULL DEFAULT 0 COMMENT 'Post-Primary Assessment Action',
+    `ppaa`               TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Post-Primary Assessment Action',
     `mark_ppaa`          REAL COMMENT 'Điểm thi KTHP sau phúc khảo (chưa xử lý kỷ luật nếu có)',
     `mark_final`         REAL COMMENT 'Điểm thi KTHP sau khi phúc khảo và trừ kỷ luật nếu có',
     `module_mark`        REAL COMMENT 'Điểm HP; nếu là thi lần 2 thì đã áp dụng giới hạn điểm thi lần 2',
     `module_base4_mark`  REAL COMMENT 'Điểm HP quy đổi sang hệ 4',
     `module_grade`       CHAR(2) COMMENT 'Điểm HP bằng chữ',
-    `conclusion`         TINYINT COMMENT 'Kết luận (qua, làm lại bài thi, phải thi lại, phải học lại...); định nghĩa bằng constants',
+    `conclusion`         TINYINT UNSIGNED COMMENT 'Kết luận (qua, làm lại bài thi, phải thi lại, phải học lại...); định nghĩa bằng constants',
     `description`        TEXT,
     `modified_at`        DATETIME,
-    `modified_by`        INT,
+    `modified_by`        INT UNSIGNED,
     `updated_at`         DATETIME,
-    `updated_by`         INT,
+    `updated_by`         INT UNSIGNED,
+    PRIMARY KEY (`id`),
     UNIQUE (`exam_id`, `learner_id`),
     UNIQUE (`exam_id`, `code`),
     CONSTRAINT fk_eqa_exam_learner_exam FOREIGN KEY (`exam_id`)
@@ -600,10 +605,10 @@ CREATE TABLE `#__eqa_exam_learner`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_packages`;
 CREATE TABLE `#__eqa_packages`(
-    `id`                INT AUTO_INCREMENT,
-    `number`            INT NOT NULL COMMENT 'Số hiệu túi (trong phạm vi 1 môn thi)',
-    `examiner1_id`      INT COMMENT 'Khóa ngoại: CBChT 1',
-    `examiner2_id`      INT COMMENT 'Khóa ngoại: CBChT 2',
+    `id`                INT UNSIGNED AUTO_INCREMENT,
+    `number`            INT UNSIGNED NOT NULL COMMENT 'Số hiệu túi (trong phạm vi 1 môn thi)',
+    `examiner1_id`      INT UNSIGNED COMMENT 'Khóa ngoại: CBChT 1',
+    `examiner2_id`      INT UNSIGNED COMMENT 'Khóa ngoại: CBChT 2',
     `readydeadline`     DATE COMMENT 'Hạn làm phách xong',
     `readydate`         DATE COMMENT 'Ngày làm phách xong',
     `startdeadline`     DATE COMMENT 'Hạn bắt đầu chấm (bàn giao túi)',
@@ -612,10 +617,10 @@ CREATE TABLE `#__eqa_packages`(
     `finishdate`        DATE COMMENT 'Ngày chấm xong (bàn giao điểm)',
     `description`       TEXT,
     `created_at`        DATETIME,
-    `created_by`        INT,
+    `created_by`        INT UNSIGNED,
     `modified_at`       DATETIME,
-    `modified_by`       INT,
-    `checked_out`       INT DEFAULT NULL,
+    `modified_by`       INT UNSIGNED,
+    `checked_out`       INT UNSIGNED DEFAULT NULL,
     `checked_out_time`  DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_packages_examiner1 FOREIGN KEY (`examiner1_id`)
@@ -628,15 +633,18 @@ CREATE TABLE `#__eqa_packages`(
 
 -- =============================================================================
 -- Bài thi viết
+-- (junction table — đã bổ sung surrogate key `id` từ v2.0.6)
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_papers`;
 CREATE TABLE `#__eqa_papers`(
-    `exam_id`    INT NOT NULL COMMENT 'FK: môn thi',
-    `learner_id` INT NOT NULL COMMENT 'FK: thí sinh',
-    `nsheet`     INT NOT NULL DEFAULT 0 COMMENT 'Số tờ giấy thi',
-    `mask`       INT COMMENT 'Số phách',
-    `package_id` INT COMMENT 'FK: Túi bài thi',
+    `id`         INT UNSIGNED AUTO_INCREMENT,
+    `exam_id`    INT UNSIGNED NOT NULL COMMENT 'FK: môn thi',
+    `learner_id` INT UNSIGNED NOT NULL COMMENT 'FK: thí sinh',
+    `nsheet`     INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Số tờ giấy thi',
+    `mask`       INT UNSIGNED COMMENT 'Số phách',
+    `package_id` INT UNSIGNED COMMENT 'FK: Túi bài thi',
     `mark`       REAL COMMENT 'Điểm bài thi',
+    PRIMARY KEY (`id`),
     UNIQUE (`exam_id`, `learner_id`),
     CONSTRAINT fk_eqa_papers_exam FOREIGN KEY (`exam_id`)
         REFERENCES `#__eqa_exams`(`id`)
@@ -654,18 +662,19 @@ CREATE TABLE `#__eqa_papers`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_regradings`;
 CREATE TABLE `#__eqa_regradings`(
-    `id`           INT AUTO_INCREMENT,
-    `exam_id`      INT NOT NULL COMMENT 'FK: mã môn thi',
-    `learner_id`   INT NOT NULL COMMENT 'FK: thí sinh',
-    `examiner1_id` INT COMMENT 'FK: CBChT1',
-    `examiner2_id` INT COMMENT 'FK: CBChT2',
+    `id`           INT UNSIGNED AUTO_INCREMENT,
+    `exam_id`      INT UNSIGNED NOT NULL COMMENT 'FK: mã môn thi',
+    `learner_id`   INT UNSIGNED NOT NULL COMMENT 'FK: thí sinh',
+    `examiner1_id` INT UNSIGNED COMMENT 'FK: CBChT1',
+    `examiner2_id` INT UNSIGNED COMMENT 'FK: CBChT2',
     `result`       REAL COMMENT 'Điểm SAU phúc khảo',
     `description`  TEXT COMMENT 'Lý do tăng, giảm điểm (nếu có)',
-    `status`       TINYINT NOT NULL COMMENT 'Tiến độ xử lý',
+    `status`       TINYINT UNSIGNED NOT NULL COMMENT 'Tiến độ xử lý',
     `created_at`   DATETIME,
+    `created_by`   INT UNSIGNED DEFAULT NULL,
     `handled_at`   DATETIME,
     `handled_by`   VARCHAR(255),
-    `checked_out`      INT DEFAULT NULL,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_regradings_exam FOREIGN KEY (`exam_id`)
@@ -687,21 +696,22 @@ CREATE TABLE `#__eqa_regradings`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_gradecorrections`;
 CREATE TABLE `#__eqa_gradecorrections`(
-    `id`          INT AUTO_INCREMENT,
-    `exam_id`     INT NOT NULL COMMENT 'FK: mã môn thi',
-    `learner_id`  INT NOT NULL COMMENT 'FK: thí sinh',
-    `constituent` TINYINT NOT NULL COMMENT 'Điểm thành phần cần đính chính. Định nghĩa bằng const',
+    `id`          INT UNSIGNED AUTO_INCREMENT,
+    `exam_id`     INT UNSIGNED NOT NULL COMMENT 'FK: mã môn thi',
+    `learner_id`  INT UNSIGNED NOT NULL COMMENT 'FK: thí sinh',
+    `constituent` TINYINT UNSIGNED NOT NULL COMMENT 'Điểm thành phần cần đính chính. Định nghĩa bằng const',
     `reason`      TEXT COMMENT 'Mô tả yêu cầu đính chính',
     `description` TEXT COMMENT 'Mô tả sai sót (nếu có)',
-    `status`      TINYINT NOT NULL COMMENT 'Tiến độ xử lý',
+    `status`      TINYINT UNSIGNED NOT NULL COMMENT 'Tiến độ xử lý',
     `created_at`  DATETIME,
+    `created_by`  INT UNSIGNED DEFAULT NULL,
     `handled_at`  DATETIME,
     `handled_by`  VARCHAR(255),
-    `reviewer_id` INT DEFAULT NULL COMMENT 'Người xử lý',
+    `reviewer_id` INT UNSIGNED DEFAULT NULL COMMENT 'Người xử lý',
     `changed`     BOOLEAN COMMENT 'Có thay đổi điểm sau xử lý yêu cầu hay không',
     `modified_at`  DATETIME,
-    `modified_by`  INT,
-    `checked_out`      INT DEFAULT NULL,
+    `modified_by`  INT UNSIGNED,
+    `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_gradecorrections_exam FOREIGN KEY (`exam_id`)
@@ -720,10 +730,10 @@ CREATE TABLE `#__eqa_gradecorrections`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_mmproductions`;
 CREATE TABLE `#__eqa_mmproductions`(
-    `id`          INT AUTO_INCREMENT,
-    `exam_id`     INT NOT NULL COMMENT 'FK: mã môn thi',
-    `examiner_id` INT NOT NULL COMMENT 'FK: CBChT',
-    `role`        INT NOT NULL COMMENT '1: CBChT1, 2: CBChT2',
+    `id`          INT UNSIGNED AUTO_INCREMENT,
+    `exam_id`     INT UNSIGNED NOT NULL COMMENT 'FK: mã môn thi',
+    `examiner_id` INT UNSIGNED NOT NULL COMMENT 'FK: CBChT',
+    `role`        INT UNSIGNED NOT NULL COMMENT '1: CBChT1, 2: CBChT2',
     `quantity`    REAL COMMENT 'Số lượng bài',
     PRIMARY KEY (`id`),
     CONSTRAINT fk_eqa_mmproductions_exam FOREIGN KEY (`exam_id`)
@@ -736,32 +746,30 @@ CREATE TABLE `#__eqa_mmproductions`(
 
 -- =============================================================================
 -- Đánh giá rèn luyện
--- Thay đổi 2.0.4: academicyear_id INT FK → academicyear INT NOT NULL
---   UNIQUE(learner_id, academicyear_id, term) → UNIQUE(learner_id, academicyear, term)
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_conducts`;
 CREATE TABLE `#__eqa_conducts`(
-    `id`                       INT AUTO_INCREMENT,
-    `learner_id`               INT NOT NULL,
-    `academicyear`             INT NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
-    `term`                     INT NOT NULL,
-    `excused_absence_count`    INT DEFAULT 0   COMMENT 'Số buổi vắng có phép',
-    `unexcused_absence_count`  INT DEFAULT 0   COMMENT 'Số buổi vắng không phép',
-    `resit_count`              INT DEFAULT 0   COMMENT 'Số môn thi lại',
-    `retake_count`             INT DEFAULT 0   COMMENT 'Số môn học lại',
-    `award_count`              INT DEFAULT 0   COMMENT 'Số lần được khen thưởng',
-    `disciplinary_action_count` INT DEFAULT 0  COMMENT 'Số lần bị xử lý kỷ luật',
+    `id`                       INT UNSIGNED AUTO_INCREMENT,
+    `learner_id`               INT UNSIGNED NOT NULL,
+    `academicyear`             INT UNSIGNED NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
+    `term`                     INT UNSIGNED NOT NULL,
+    `excused_absence_count`    INT UNSIGNED DEFAULT 0   COMMENT 'Số buổi vắng có phép',
+    `unexcused_absence_count`  INT UNSIGNED DEFAULT 0   COMMENT 'Số buổi vắng không phép',
+    `resit_count`              INT UNSIGNED DEFAULT 0   COMMENT 'Số môn thi lại',
+    `retake_count`             INT UNSIGNED DEFAULT 0   COMMENT 'Số môn học lại',
+    `award_count`              INT UNSIGNED DEFAULT 0   COMMENT 'Số lần được khen thưởng',
+    `disciplinary_action_count` INT UNSIGNED DEFAULT 0  COMMENT 'Số lần bị xử lý kỷ luật',
     `total_credits`            FLOAT           COMMENT 'Tổng số tín chỉ',
     `academic_score`           REAL            COMMENT 'Điểm học tập trung bình',
-    `academic_rating`          TINYINT         COMMENT 'Phân loại học tập',
+    `academic_rating`          TINYINT UNSIGNED COMMENT 'Phân loại học tập',
     `conduct_score`            REAL            COMMENT 'Điểm rèn luyện bằng số',
-    `conduct_rating`           TINYINT         COMMENT 'Phân loại',
+    `conduct_rating`           TINYINT UNSIGNED COMMENT 'Phân loại',
     `note`                     VARCHAR(255),
     `description`              TEXT,
     `created_at`               DATETIME,
-    `created_by`               INT,
+    `created_by`               INT UNSIGNED,
     `modified_at`              DATETIME,
-    `modified_by`              INT,
+    `modified_by`              INT UNSIGNED,
     PRIMARY KEY (`id`),
     UNIQUE KEY `unique_learner_academicyear_term` (`learner_id`, `academicyear`, `term`),
     INDEX `idx_eqa_conducts_term` (`term`),
@@ -775,12 +783,12 @@ CREATE TABLE `#__eqa_conducts`(
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_secondattempts`;
 CREATE TABLE `#__eqa_secondattempts`(
-    `id`                INT AUTO_INCREMENT,
-    `class_id`          INT NOT NULL,
-    `learner_id`        INT NOT NULL,
-    `last_exam_id`      INT NOT NULL,
-    `last_attempt`      INT NOT NULL,
-    `last_conclusion`   INT,
+    `id`                INT UNSIGNED AUTO_INCREMENT,
+    `class_id`          INT UNSIGNED NOT NULL,
+    `learner_id`        INT UNSIGNED NOT NULL,
+    `last_exam_id`      INT UNSIGNED NOT NULL,
+    `last_attempt`      INT UNSIGNED NOT NULL,
+    `last_conclusion`   INT UNSIGNED,
     `payment_amount`    FLOAT NOT NULL,
     `payment_completed` BOOLEAN,
     `payment_code`      CHAR(8),
@@ -790,59 +798,58 @@ CREATE TABLE `#__eqa_secondattempts`(
     UNIQUE (`payment_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Danh sách thi lần hai';
 
-
 -- =============================================================================
 -- Thi sát hạch
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_assessments`;
 CREATE TABLE `#__eqa_assessments` (
-    `id`                    INT AUTO_INCREMENT,
+    `id`                    INT UNSIGNED AUTO_INCREMENT,
     `title`                 VARCHAR(255) NOT NULL,
-    `type`                  TINYINT NOT NULL COMMENT 'AssessmentType Enum',
-    `result_type`           TINYINT NOT NULL COMMENT 'AssessmentResultType Enum',
+    `type`                  TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentType Enum',
+    `result_type`           TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentResultType Enum',
     `start_date`            DATE NOT NULL,
     `end_date`              DATE NOT NULL,
-    `fee`                   INT NOT NULL DEFAULT 0 COMMENT 'Phí sát hạch (VNĐ)',
+    `fee`                   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Phí sát hạch (VNĐ)',
     `bank_napas_code`       VARCHAR(10)  DEFAULT NULL COMMENT 'Mã ngân hàng theo chuẩn NAPAS (dùng với VietQR)',
     `bank_account_number`   VARCHAR(50)  DEFAULT NULL COMMENT 'Số tài khoản ngân hàng thu phí',
     `bank_account_owner`    VARCHAR(255) DEFAULT NULL COMMENT 'Tên chủ tài khoản ngân hàng thu phí',
-    `max_candidates`        INT DEFAULT 0 COMMENT 'Giới hạn số lượng thí sinh (0 = không giới hạn)',
+    `max_candidates`        INT UNSIGNED DEFAULT 0 COMMENT 'Giới hạn số lượng thí sinh (0 = không giới hạn)',
     `registration_start`    DATETIME DEFAULT NULL,
     `registration_end`      DATETIME DEFAULT NULL,
     `allow_registration`    BOOLEAN DEFAULT false,
     `completed`             BOOLEAN DEFAULT false,
     `published`             BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`              INT NOT NULL DEFAULT 0,
+    `ordering`              INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`            DATETIME,
-    `created_by`            INT,
+    `created_by`            INT UNSIGNED,
     `modified_at`           DATETIME,
-    `modified_by`           INT,
-    `checked_out`           INT DEFAULT NULL,
+    `modified_by`           INT UNSIGNED,
+    `checked_out`           INT UNSIGNED DEFAULT NULL,
     `checked_out_time`      DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Kỳ thi sát hạch';
 
 DROP TABLE IF EXISTS `#__eqa_assessment_learner`;
 CREATE TABLE `#__eqa_assessment_learner` (
-     `id`                    INT AUTO_INCREMENT,
-     `assessment_id`         INT NOT NULL,
-     `learner_id`            INT NOT NULL,
-     `examroom_id`           INT DEFAULT NULL   COMMENT 'FK: phòng thi (nếu có)',
-     `code`                  INT DEFAULT NULL   COMMENT 'Số báo danh',
-     `payment_amount`        INT NOT NULL COMMENT 'Phí sát hạch phải nộp',
+     `id`                    INT UNSIGNED AUTO_INCREMENT,
+     `assessment_id`         INT UNSIGNED NOT NULL,
+     `learner_id`            INT UNSIGNED NOT NULL,
+     `examroom_id`           INT UNSIGNED DEFAULT NULL   COMMENT 'FK: phòng thi (nếu có)',
+     `code`                  INT UNSIGNED DEFAULT NULL   COMMENT 'Số báo danh',
+     `payment_amount`        INT UNSIGNED NOT NULL COMMENT 'Phí sát hạch phải nộp',
      `payment_code`          CHAR(8) DEFAULT NULL COMMENT 'Mã nộp tiền (8 ký tự [A-Z0-9])',
      `payment_completed`     BOOLEAN NOT NULL DEFAULT FALSE,
-     `anomaly`               TINYINT NOT NULL DEFAULT 0 COMMENT 'Bất thường (AnomalyType Enum)',
+     `anomaly`               TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Bất thường (AnomalyType Enum)',
      `raw_result`            TEXT DEFAULT NULL COMMENT 'JSON: điểm/kết quả thành phần',
      `score`                 FLOAT DEFAULT NULL COMMENT 'Điểm quy đổi (nếu result_type = Score hoặc ScoreAndLevel)',
-     `level`                 TINYINT DEFAULT NULL COMMENT 'Bậc/hạng (AssessmentResultLevel Enum, nếu result_type = Level hoặc ScoreAndLevel)',
+     `level`                 TINYINT UNSIGNED DEFAULT NULL COMMENT 'Bậc/hạng (AssessmentResultLevel Enum, nếu result_type = Level hoặc ScoreAndLevel)',
      `passed`                BOOLEAN DEFAULT NULL COMMENT 'Đạt chuẩn (nếu result_type = PassFail)',
      `note`                  TEXT DEFAULT NULL COMMENT 'Ghi chú (nếu có)',
      `cancelled`             BOOLEAN DEFAULT FALSE COMMENT 'Đã hủy đăng ký',
      `created_at`            DATETIME,
-     `created_by`            INT,
+     `created_by`            INT UNSIGNED,
      `modified_at`           DATETIME,
-     `modified_by`           INT,
+     `modified_by`           INT UNSIGNED,
      PRIMARY KEY (`id`),
      UNIQUE KEY `uq_assessment_learner` (`assessment_id`, `learner_id`),
      UNIQUE KEY `uq_payment_code` (`payment_code`),

@@ -20,9 +20,9 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class HtmlView extends ItemsHtmlView
 {
-	protected ?ExamseasonInfo $examseason;
-	protected ?LearnerInfo $learner;
-	protected ?string $errorMessage;
+	protected ?ExamseasonInfo $examseason=null;
+	protected ?LearnerInfo $learner=null;
+	protected ?string $errorMessage=null;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 
@@ -113,8 +113,7 @@ class HtmlView extends ItemsHtmlView
 			return;
 
 		// Add buttons to the toolbar
-		// Add buttons to the toolbar
-		ToolbarHelper::deleteList('Bạn có chắc muốn xóa không?','learnerregradings.delete', 'Xóa yêu cầu');
+		ToolbarHelper::deleteList('Bạn có chắc muốn xóa không?','learnergradecorrections.delete', 'Xóa yêu cầu');
 
 		// Render the toolbar
 		ToolbarHelper::render();

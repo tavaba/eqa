@@ -19,9 +19,9 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class HtmlView extends ItemsHtmlView
 {
-	protected ?ExamseasonInfo $examseason;
-	protected ?LearnerInfo $learner;
-	protected ?string $errorMessage;
+	protected ?ExamseasonInfo $examseason=null;
+	protected ?LearnerInfo $learner=null;
+	protected ?string $errorMessage=null;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 

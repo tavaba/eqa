@@ -3,7 +3,7 @@
 use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
-if($this->errorMessage)
+if(empty($this->errorMessage))
 {
 	echo '<div class="alert alert-danger">' . $this->errorMessage . '</div>';
 	return;

@@ -18,7 +18,7 @@ use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 class HtmlView extends ItemsHtmlView{
 	protected $examseason;
 	protected $learner;
-	protected $errorMessage;
+	protected ?string $errorMessage=null;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 

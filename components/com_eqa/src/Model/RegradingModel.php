@@ -27,13 +27,14 @@ class RegradingModel extends AdminModel{
 		//Chỉ có thể xóa nếu chế độ phúc khảo đang được kích hoạt và chưa quá thời hạn
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('ppaa_req_enabled', 'ppaa_req_deadline'),
+			array('b.ppaa_req_enabled', 'b.ppaa_req_deadline'),
 			array('enabled',          'deadline')
 		);
 		$query = $db->getQuery(true)
-			->from('#__eqa_examseasons')
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_examseasons AS b', 'b.id=a.examseason_id')
 			->select($columns)
-			->where('id=' . (int)$record->examseason_id);
+			->where('a.id=' . (int)$record->exam_id);
 		$db->setQuery($query);
 		$ppaa  = $db->loadObject();
 		if(empty($ppaa))

@@ -17,8 +17,8 @@ use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 
 class HtmlView extends ItemsHtmlView{
-	protected ?ExamseasonInfo $examseason;
-	protected ?string $errorMessage;
+	protected ?ExamseasonInfo $examseason=null;
+	protected ?string $errorMessage=null;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 

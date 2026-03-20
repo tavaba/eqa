@@ -192,13 +192,14 @@ class LearnerexamModel extends AdminModel{
 		}
 
 		//Ghi yêu cầu đính chính
-		//Get current time for the field 'requested_at'
+		//Get current time for the field 'created_at'
 		$time = DatetimeHelper::getCurrentHanoiDatetime();
-		$columnValues = [$examId, $learnerId, $consituent, $db->quote($reason), PpaaStatus::Init->value, $db->quote($time)];
+		$userId = Factory::getApplication()->getIdentity()->id;
+		$columnValues = [$examId, $learnerId, $consituent, $db->quote($reason), PpaaStatus::Init->value, $db->quote($time), $userId];
 		$tupe = implode(',', $columnValues);
 		$query = $db->getQuery(true)
 			->insert('#__eqa_gradecorrections')
-			->columns(['`exam_id`', '`learner_id`', '`constituent`','`reason`', '`status`', '`requested_at`'])
+			->columns(['`exam_id`', '`learner_id`', '`constituent`','`reason`', '`status`', '`created_at`', '`created_by`'])
 			->values($tupe);
 		$db->setQuery($query);
 		if(!$db->execute())

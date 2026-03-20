@@ -64,8 +64,8 @@ class RegradingsController extends AdminController {
 			$data = [
 				'exam_id'=>$examId,
 				'status' => $status->value,
-				'requested_by'=>$userId,
-				'requested_at'=>date('Y-m-d H:i:s'),
+				'created_by'=>$userId,
+				'created_at'=>date('Y-m-d H:i:s'),
 			];
 			if($accepted)
 			{
