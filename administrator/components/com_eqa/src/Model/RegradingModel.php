@@ -6,7 +6,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Utilities\ArrayHelper;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
@@ -53,7 +53,7 @@ class RegradingModel extends AdminModel {
 		return true;
 	}
 
-	public function delete(&$pks)
+	public function delete(&$pks): bool
 	{
 		//1. Clear PPAA info in the #__eqa_exam_learner table
 		$db = DatabaseHelper::getDatabaseDriver();

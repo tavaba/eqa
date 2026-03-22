@@ -3,12 +3,18 @@ namespace Kma\Library\Kma\Controller;
 defined('_JEXEC') or die();
 
 use Exception;
+use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController as BaseAdminController;
+use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\User\CurrentUserInterface;
+use Joomla\Input\Input;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\EnglishHelper;
+use Kma\Library\Kma\Service\EnglishService;
+use Kma\Library\Kma\Service\LogService;
 
 /**
  * This class will be inherited by some Items Controllers
@@ -17,6 +23,27 @@ use Kma\Library\Kma\Helper\EnglishHelper;
 
 class AdminController extends BaseAdminController
 {
+	/** An instance of LogService that is retrived from DIC by default */
+	protected ?LogService $logService=null;
+	protected ?EnglishService $englishService=null;
+	public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSWebApplicationInterface $app = null, ?Input $input = null)
+	{
+		//Call parent constructor
+		parent::__construct($config, $factory, $app, $input);
+
+		//Resolve the LogService instance
+		$this->logService = ComponentHelper::getLogService();
+		$this->englishService = ComponentHelper::getEnglishService();
+	}
+	/**
+	 * Thiêt lập LogService thay cho instance được khởi tạo mặc định trong constructor
+	 * @param   LogService  $logService
+	 * @since 1.0.3
+	 */
+	public function setLogService(LogService $logService)
+	{
+		$this->logService = $logService;
+	}
 
     /**
      * AdminController là lớp helper sẽ được thừa kế bởi các Items Controllers.
@@ -33,7 +60,9 @@ class AdminController extends BaseAdminController
     public function getModel($name = '', $prefix = '', $config = [])
     {
         $controllerName = $this->getName();
-        $modelName = EnglishHelper::pluralToSingle($controllerName);
+        $modelName = $this->englishService
+	        ? $this->englishService->pluralToSingular($controllerName)
+	        : EnglishHelper::pluralToSingular($controllerName);
         if(empty($name))
             $name = $modelName;
         return parent::getModel($name, $prefix, $config);

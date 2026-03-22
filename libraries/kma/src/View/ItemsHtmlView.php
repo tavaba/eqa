@@ -10,8 +10,10 @@ use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\Model\AdminModel;
 use Kma\Library\Kma\Model\ListModel;
+use Kma\Library\Kma\Service\EnglishService;
 
 abstract class ItemsHtmlView extends BaseHtmlView{
+	protected ?EnglishService $englishService=null;
     protected WebAssetManager $wa;
     protected ListLayoutData $layoutData;
     protected ListLayoutItemFields $itemFields;
@@ -21,6 +23,7 @@ abstract class ItemsHtmlView extends BaseHtmlView{
     {
         parent::__construct($config);
 	    $this->wa = ComponentHelper::getDocument()->getWebAssetManager();
+		$this->englishService = ComponentHelper::getEnglishService();
 	    $this->layoutData = new ListLayoutData();
         $this->itemFields = new ListLayoutItemFields();
         $this->toolbarOption = new ToolbarOption();
@@ -49,9 +52,12 @@ abstract class ItemsHtmlView extends BaseHtmlView{
 
 
         //Layout data
-        $this->layoutData->formActionParams['view'] = $this->getName();
-        $this->layoutData->taskPrefixItem = EnglishHelper::pluralToSingle($this->getName());
-        $this->layoutData->taskPrefixItems = $this->getName();
+	    $viewName = $this->getName();
+        $this->layoutData->formActionParams['view'] = $viewName;
+        $this->layoutData->taskPrefixItem = $this->englishService
+	        ? $this->englishService->pluralToSingular($viewName)
+	        : EnglishHelper::pluralToSingular($viewName);
+        $this->layoutData->taskPrefixItems = $viewName;
 
 		$model = $this->getModel();
         $this->layoutData->items = $model->getItems();
@@ -180,10 +186,13 @@ abstract class ItemsHtmlView extends BaseHtmlView{
 
     protected function init(): void
     {
+		$viewName = $this->getName();
         if(!isset($this->toolbarOption->taskPrefixItems))
-            $this->toolbarOption->taskPrefixItems = $this->getName();
+            $this->toolbarOption->taskPrefixItems = $viewName;
         if(!isset($this->toolbarOption->taskPrefixItem))
-            $this->toolbarOption->taskPrefixItem = EnglishHelper::pluralToSingle($this->getName());
+            $this->toolbarOption->taskPrefixItem = $this->englishService
+	            ? $this->englishService->pluralToSingular($viewName)
+	            : EnglishHelper::pluralToSingular($viewName);
 
         //Prepare layout specific data by calling preparation method whose name begins
         //with prefix 'prepareDataForLayout', and ends with layout name (the first letter must be capitalized).

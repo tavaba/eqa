@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 class PaperexamsModel extends ListModel{

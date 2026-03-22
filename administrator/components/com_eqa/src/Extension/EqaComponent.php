@@ -19,6 +19,8 @@ use Joomla\CMS\Extension\MVCComponent;
 use Joomla\CMS\HTML\HTMLRegistryAwareTrait;
 use Kma\Component\Eqa\Administrator\Service\ConfigService;
 use Kma\Component\Eqa\Administrator\Service\HTML\AdministratorService;
+use Kma\Library\Kma\Service\EnglishService;
+use Kma\Library\Kma\Service\LogService;
 use Psr\Container\ContainerInterface;
 use Joomla\CMS\Component\Router\RouterServiceInterface;
 
@@ -40,6 +42,18 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	 * @since  2.0.4
 	 */
 	private ConfigService $configService;
+
+	/**
+	 * Service để ghi log, được inject qua DI
+	 * @since 2.0.6
+	 */
+	private LogService $logService;
+
+	/**
+	 * Service để tự động xác định dạng số ít, số nhiều trong tiếng Anh
+	 * @since 2.0.6
+	 */
+	private EnglishService $englishService;
 
 	/**
 	 * Được Joomla gọi sau khi component được boot từ DIC.
@@ -77,5 +91,47 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	public function getConfigService(): ConfigService
 	{
 		return $this->configService;
+	}
+
+	/**
+	 * Nhận ConfigService từ DIC (được gọi trong provider.php).
+	 *
+	 * @param   LogService  $logService
+	 * @since 2.0.6
+	 */
+	public function setLogService(LogService $logService): void
+	{
+		$this->logService = $logService;
+	}
+
+	/**
+	 * Trả về LogService để các class trong component sử dụng
+	 * @return LogService
+	 *
+	 * @since 2.0.6
+	 */
+	public function getLogService(): LogService
+	{
+		return $this->logService;
+	}
+
+	/**
+	 * Phương thức để tiếp nhận EnglishService từ DIC
+	 * @param   EnglishService  $englishService
+	 * @since 2.0.6
+	 */
+	public function setEnglishService(EnglishService $englishService): void
+	{
+		$this->englishService = $englishService;
+	}
+
+	/**
+	 * Phương thức để các class trong MVC của component lấy EnglishService
+	 * @return EnglishService
+	 * @since 2.0.6
+	 */
+	public function getEnglishService(): EnglishService
+	{
+		return $this->englishService;
 	}
 }

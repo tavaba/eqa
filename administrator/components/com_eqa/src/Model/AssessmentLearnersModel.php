@@ -7,7 +7,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 
 /**
  * Model danh sách thí sinh (người học) của một kỳ sát hạch.

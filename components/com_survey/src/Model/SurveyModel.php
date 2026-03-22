@@ -2,7 +2,7 @@
 namespace Kma\Component\Survey\Site\Model;
 
 use Exception;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Survey\Administrator\Base\AdminModel;
 
 defined('_JEXEC') or die();
 

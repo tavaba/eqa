@@ -3,7 +3,7 @@ namespace Kma\Component\Survey\Administrator\Table;
 
 use Joomla\CMS\Table\Table as BaseTable;
 use Joomla\Database\DatabaseDriver;
-use Kma\Component\Survey\Administrator\Base\Table;
+use Kma\Library\Kma\Table\Table;
 
 defined('_JEXEC') or die();
 class SurveyTable extends Table{

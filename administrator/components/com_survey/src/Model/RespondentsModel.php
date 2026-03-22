@@ -7,7 +7,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Survey\Administrator\Base\ListModel;
 
 class RespondentsModel extends ListModel
 {

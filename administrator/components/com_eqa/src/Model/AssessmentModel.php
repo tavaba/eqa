@@ -4,9 +4,8 @@ namespace Kma\Component\Eqa\Administrator\Model;
 
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Object\CMSObject;
 use Kma\Library\Kma\Helper\DatetimeHelper;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use stdClass;
 
 /**
@@ -50,7 +49,7 @@ class AssessmentModel extends AdminModel
 	 * trước khi bind vào form, đảm bảo người dùng thấy đúng giờ địa phương.
 	 *
 	 * @param  int|null  $pk
-	 * @return CMSObject|bool
+	 * @return stdClass|bool
 	 * @since  2.0.5
 	 */
 	public function getItem($pk = null): stdClass|bool

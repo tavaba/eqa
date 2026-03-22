@@ -11,6 +11,8 @@ use Joomla\CMS\MVC\Factory\MVCFactory;
 use Joomla\CMS\Component\ComponentHelper as JoomlaComponentHelper;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Registry\Registry;
+use Kma\Library\Kma\Service\EnglishService;
+use Kma\Library\Kma\Service\LogService;
 
 abstract class ComponentHelper
 {
@@ -120,8 +122,48 @@ abstract class ComponentHelper
     {
         $app = Factory::getApplication();
         $componentName = self::getName();
-        return $app->bootComponent($componentName)->getMVCFactory();
+		$component = $app->bootComponent($componentName);
+        return $component->getMVCFactory();
     }
+
+	/**
+	 * Lấy LogService từ DIC, với điều kiện LogService đã được inject vào DIC
+	 * của component (trong file 'provider.php') và trong Component phải định nghĩa
+	 * phương thức getLogService() cho mục đích này.
+	 * @return LogService|null
+	 *
+	 * @throws Exception
+	 * @since version
+	 */
+	public static function getLogService(): LogService|null
+	{
+		$app = Factory::getApplication();
+		$componentName = self::getName();
+		$component = $app->bootComponent($componentName);
+		if(method_exists($component, 'getLogService'))
+			return $component->getLogService();
+		return null;
+	}
+
+	/**
+	 * Lấy EnglishService từ DIC, với điều kiện EnglishService đã được inject vào DIC
+	 * của component (trong file 'provider.php') và trong Component phải định nghĩa
+	 * phương thức getEnglishService() cho mục đích này.
+	 * @return EnglishService|null
+	 *
+	 * @throws Exception
+	 * @since version
+	 */
+	public static function getEnglishService(): EnglishService|null
+	{
+		$app = Factory::getApplication();
+		$componentName = self::getName();
+		$component = $app->bootComponent($componentName);
+		if(method_exists($component, 'getEnglishService'))
+			return $component->getEnglishService();
+		return null;
+	}
+
 	public static function createModel($name, $prefix = '', array $config = [])
 	{
 		$app = Factory::getApplication();

@@ -3,7 +3,7 @@ namespace Kma\Component\Survey\Administrator\Model;
 
 use Exception;
 use Kma\Library\Kma\Helper\DatabaseHelper;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Survey\Administrator\Base\AdminModel;
 
 defined('_JEXEC') or die();
 

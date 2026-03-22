@@ -1,7 +1,7 @@
 <?php
 namespace Kma\Component\Survey\Administrator\Model;
 
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Survey\Administrator\Base\AdminModel;
 
 defined('_JEXEC') or die();
 

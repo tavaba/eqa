@@ -25,15 +25,16 @@ use Kma\Library\Kma\Helper\IOHelper;
  */
 class MbBankStatementParser implements BankStatementParserInterface
 {
-    private const COL_DATE        = 0;
-    private const COL_DEBIT       = 2;
-    private const COL_CREDIT      = 3;
-    private const COL_DESCRIPTION = 4;
+	// Cột (0-indexed) trong file Excel TP Bank
+	private const int COL_DATE        = 0;
+	private const int COL_DESCRIPTION = 4;
+	private const int COL_CREDIT      = 3;
 
-    // Số dòng header bỏ qua từ đầu file (0-indexed: bỏ index 0–5, bắt đầu từ index 6)
-    private const HEADER_ROWS = 6;
+	// Số dòng header bỏ qua từ đầu file
+	private const int HEADER_ROWS = 6;
 
-    /**
+
+	/**
      * {@inheritDoc}
      */
     public function parse(string $filePath): array

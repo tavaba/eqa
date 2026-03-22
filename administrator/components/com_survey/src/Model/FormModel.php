@@ -4,7 +4,7 @@ namespace Kma\Component\Survey\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\Database\ParameterType;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Survey\Administrator\Base\AdminModel;
 
 defined('_JEXEC') or die();
 

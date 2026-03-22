@@ -14,7 +14,7 @@ use Joomla\Database\DatabaseDriver;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 /**

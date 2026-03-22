@@ -3,7 +3,7 @@ namespace Kma\Component\Survey\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Survey\Administrator\Base\ListModel;
 
 class FormsModel extends ListModel
 {

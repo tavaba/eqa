@@ -6,7 +6,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Library\Kma\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Survey\Administrator\Base\ListModel;
 
 class UnitsModel extends ListModel
 {

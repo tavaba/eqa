@@ -5,7 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 
 class ExamseasonExamsModel extends ListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)

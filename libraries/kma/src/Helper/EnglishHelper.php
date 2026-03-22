@@ -210,42 +210,43 @@ abstract class EnglishHelper
     /**
      * Convert singular noun to plural form
      *
-     * @param string $singleNoun The singular noun
+     * @param string  $singularNoun  The singular noun
+     *
      * @return string The plural form
      * @since 1.0.0
      */
-    public static function singleToPlural(string $singleNoun): string
+    public static function singularToPlural(string $singularNoun): string
     {
-        $word = strtolower(trim($singleNoun));
+        $word = strtolower(trim($singularNoun));
         
         if (empty($word)) {
-            return $singleNoun;
+            return $singularNoun;
         }
 
         // Check irregular plurals first
         if (isset(self::$irregularPlurals[$word])) {
-            return self::preserveCase($singleNoun, self::$irregularPlurals[$word]);
+            return self::preserveCase($singularNoun, self::$irregularPlurals[$word]);
         }
 
         // Check f/fe exceptions
         if (isset(self::$fExceptions[$word])) {
-            return self::preserveCase($singleNoun, self::$fExceptions[$word]);
+            return self::preserveCase($singularNoun, self::$fExceptions[$word]);
         }
 
         // Check consonant + o exceptions
         if (isset(self::$oExceptions[$word])) {
-            return self::preserveCase($singleNoun, self::$oExceptions[$word]);
+            return self::preserveCase($singularNoun, self::$oExceptions[$word]);
         }
 
         // Apply pluralization rules
         foreach (self::$pluralRules as $pattern => $replacement) {
             if (preg_match($pattern, $word)) {
                 $plural = preg_replace($pattern, $replacement, $word);
-                return self::preserveCase($singleNoun, $plural);
+                return self::preserveCase($singularNoun, $plural);
             }
         }
 
-        return $singleNoun;
+        return $singularNoun;
     }
 
     /**
@@ -255,7 +256,7 @@ abstract class EnglishHelper
      * @return string The singular form
      * @since 1.0.0
      */
-    public static function pluralToSingle(string $pluralNoun): string
+    public static function pluralToSingular(string $pluralNoun): string
     {
         $word = strtolower(trim($pluralNoun));
         

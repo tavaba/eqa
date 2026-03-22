@@ -6,7 +6,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 
 /**
  * Model danh sách môn thi có trong bảng #__eqa_secondattempts,

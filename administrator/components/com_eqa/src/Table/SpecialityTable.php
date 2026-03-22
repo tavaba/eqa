@@ -1,6 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Table;
 defined('_JEXEC') or die();
-use Kma\Component\Eqa\Administrator\Base\Table;
+use Kma\Library\Kma\Table\Table;
 class SpecialityTable extends Table{
 }

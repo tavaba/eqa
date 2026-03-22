@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Library\Kma\Helper\ComponentHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Survey\Administrator\Base\ListModel;
 
 class RespondentgroupmembersModel extends ListModel
 {

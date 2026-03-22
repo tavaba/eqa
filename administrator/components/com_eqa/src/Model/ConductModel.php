@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Helper\TermHelper;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 defined('_JEXEC') or die();

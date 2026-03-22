@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Table;
 defined('_JEXEC') or die();
 
 use Kma\Library\Kma\Helper\StringHelper;
-use Kma\Component\Eqa\Administrator\Base\Table;
+use Kma\Library\Kma\Table\Table;
 
 class LearnerTable extends Table{
     public function check()

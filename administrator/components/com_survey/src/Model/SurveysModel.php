@@ -5,7 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Helper\DatabaseHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Survey\Administrator\Base\ListModel;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 
 class SurveysModel extends ListModel

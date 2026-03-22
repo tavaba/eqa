@@ -5,7 +5,7 @@ use Exception;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatabaseHelper;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Survey\Administrator\Base\AdminModel;
 
 defined('_JEXEC') or die();
 

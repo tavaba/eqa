@@ -1,7 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 
 class UnitsModel extends ListModel{
     public function getListQuery()

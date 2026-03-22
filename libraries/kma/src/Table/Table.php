@@ -8,6 +8,7 @@ use Joomla\CMS\Table\Table as BaseTable;
 use Joomla\Database\DatabaseDriver;
 use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Service\EnglishService;
 
 class Table extends BaseTable{
     /**
@@ -33,6 +34,8 @@ class Table extends BaseTable{
      * @since 1.0.0
      */
     protected string $itemName;
+
+	protected ?EnglishService $englishService = null;
 
     /**
      * Timestamp fields types and their possible column names in the database
@@ -79,12 +82,15 @@ class Table extends BaseTable{
         //Initialize some properties
         $this->componentName = ComponentHelper::getName();
         $this->componentShortName = ComponentHelper::getNameWithoutPrefix();
-        $this->itemName = strtolower(substr($shortClassName,0,strlen($shortClassName)-5)); //Result: foo
+	    $this->englishService = ComponentHelper::getEnglishService();
+	    $this->itemName = strtolower(substr($shortClassName,0,strlen($shortClassName)-5)); //Result: foo
         $this->typeAlias = $this->componentName . '.' . $this->itemName;                                //Result: com_mycom.foo
 
         //Prepare table name and key to call parent constructor
         if(empty($tableName)){
-            $suffix = EnglishHelper::singleToPlural($this->itemName);
+	        $suffix = $this->englishService
+		        ? $this->englishService->singularToPlural($this->itemName)
+		        : EnglishHelper::singularToPlural($this->itemName);
             $tableName = '#__' . $this->componentShortName . '_' . $suffix;
         }
         if(empty($keyName))
@@ -380,4 +386,63 @@ class Table extends BaseTable{
     {
         return $this->_getAssetName();
     }
+
+	/**
+	 * Lấy snapshot toàn bộ dữ liệu hiện tại của row trong bộ nhớ.
+	 * Ví dụ: sau khi store() xong, lấy new_value để ghi log
+	 * $table->load($id);
+	 * $table->mark = 8.5;
+	 * $table->store();
+	 *
+	 * $newValue = $table->getSnapshot();  // ✅ Đọc trực tiếp — không cần query thêm
+	 * @since 1.0.3
+	 */
+	public function getSnapshot(): array
+	{
+		// getFields() trả về danh sách cột thực tế của bảng DB
+		// — đây là cách Joomla 5 khuyến nghị thay cho getProperties()
+		$fields = $this->getFields();
+		$snapshot = [];
+
+		foreach (array_keys($fields) as $col) {
+			$snapshot[$col] = $this->$col ?? null;
+		}
+
+		return $snapshot;
+	}
+
+	/**
+	 * Load một row và trả về snapshot, KHÔNG thay đổi trạng thái hiện tại.
+	 * Được dùng khi cần lấy trạng thái trước khi thay đổi, tức là cần đọc từ DB trong khi
+	 * $this chưa được load hoặc giá trị trong bộ nhớ đã bị ghi đè:
+	 * Ví dụ: trong save() của Model, cần lấy old_value trước khi lưu
+	 * public function save($data): bool
+	 * {
+	 *      $table = $this->getTable();
+	 *      $id    = $data['id'] ?? 0;
+	 *
+	 *      // $this->table chưa load gì — phải query DB để lấy trạng thái cũ
+	 *      $oldValue = $id ? $table->loadSnapshot($id) : null;
+	 *
+	 *      $result   = parent::save($data);
+	 *
+	 *      // Lúc này $table đã được parent::save() load và store xong
+	 *      $newValue = $table->getSnapshot();  // Đọc trực tiếp — không query thêm
+	 *
+	 *      $this->writeLog(new LogEntry(
+	 *          // ...
+	 *          oldValue: $oldValue,
+	 *          newValue: $newValue,
+	 *      ));
+	 *
+	 *      return $result;
+	 * }
+	 */
+	public function loadSnapshot(int $id): array
+	{
+		$clone = clone $this;
+		if (!$clone->load($id)) return [];
+		return $clone->getSnapshot();
+	}
+
 }

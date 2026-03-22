@@ -11,9 +11,11 @@ use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\Model\AdminModel;
+use Kma\Library\Kma\Service\EnglishService;
 
 class ItemHtmlView extends BaseHtmlView{
 	public WebAssetManager $wa;
+	protected ?EnglishService $englishService = null;
     protected $form;
     protected $item;
     protected ToolbarOption $toolbarOption;
@@ -21,12 +23,15 @@ class ItemHtmlView extends BaseHtmlView{
     {
         parent::__construct($config);
 	    $this->wa = ComponentHelper::getDocument()->getWebAssetManager();
+		$this->englishService = ComponentHelper::getEnglishService();
         $this->toolbarOption = new ToolbarOption();
     }
     protected function loadCommonListLayoutData(ListLayoutData &$data, ListModel $listModel): void
     {
         $data->taskPrefixItem = $this->getName();
-        $data->taskPrefixItems = EnglishHelper::singleToPlural($this->getName());
+        $data->taskPrefixItems = $this->englishService
+	        ? $this->englishService->singularToPlural($this->getName())
+	        : EnglishHelper::singularToPlural($this->getName());
         $data->items = $listModel->getItems();
         $data->pagination = $listModel->getPagination();
         $data->showPaginationLimitBox = true;
@@ -108,7 +113,9 @@ class ItemHtmlView extends BaseHtmlView{
         if(!isset($this->toolbarOption->taskPrefixItem))
             $this->toolbarOption->taskPrefixItem = $this->getName();
         if(!isset($this->toolbarOption->taskPrefixItems))
-            $this->toolbarOption->taskPrefixItems = EnglishHelper::singleToPlural($this->getName());
+            $this->toolbarOption->taskPrefixItems = $this->englishService
+	            ? $this->englishService->singularToPlural($this->getName())
+	            : EnglishHelper::singularToPlural($this->getName());
 
         //Prepare layout specific data by calling preparation method whose name begins
         //with prefix 'prepareDataForLayout', and ends with layout name (the first letter must be capitalized).

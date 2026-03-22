@@ -3,9 +3,15 @@ namespace Kma\Library\Kma\Controller;
 defined('_JEXEC') or die();
 
 use Exception;
+use Joomla\CMS\Application\CMSWebApplicationInterface;
+use Joomla\CMS\Form\FormFactoryInterface;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\FormController as BaseFormController;
+use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
+use Joomla\Input\Input;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Service\LogService;
 
 /**
  * Class 'FormController' sẽ được thừa kế bởi các Item Controllers
@@ -14,7 +20,34 @@ use Joomla\CMS\Router\Route;
  */
 class FormController extends BaseFormController
 {
-    protected function allowAdd($data = [], $specificPermission=null): bool
+	/**
+	 * An instance of LogService that is retrived from DIC by default
+	 * Có thể được sử dụng để xử lý log cho các action đặc biệt như export, import
+	 */
+	protected ?LogService $logService=null;
+	public function __construct(        $config = [],
+	                                    ?MVCFactoryInterface $factory = null,
+	                                    ?CMSWebApplicationInterface $app = null,
+	                                    ?Input $input = null,
+	                                    ?FormFactoryInterface $formFactory = null
+	)
+	{
+		//Call parent constructor
+		parent::__construct($config, $factory, $app, $input, $formFactory);
+	}
+
+	/**
+	 * Thiêt lập LogService thay cho instance được khởi tạo mặc định trong constructor
+	 *
+	 * @param   LogService  $logService
+	 * @since 1.0.3
+	 */
+	public function setLogService(LogService $logService)
+	{
+		$this->logService = $logService;
+	}
+
+	protected function allowAdd($data = [], $specificPermission=null): bool
     {
         if(parent::allowAdd($data))
             return true;

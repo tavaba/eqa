@@ -11,6 +11,10 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\AdminModel as BaseAdminModel;
 use Joomla\CMS\User\User;
+use Kma\Library\Kma\Constant\Action;
+use Kma\Library\Kma\DataObject\LogEntry;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Service\LogService;
 use Kma\Library\Kma\Table\Table;
 use RuntimeException;
 use stdClass;
@@ -20,9 +24,15 @@ use stdClass;
  *
  * @since 1.0
  */
-class AdminModel extends BaseAdminModel
+abstract class AdminModel extends BaseAdminModel
 {
-    /**
+	/** An instance of LogService that is retrived from DIC by default */
+	protected ?LogService $logService=null;
+
+	/** Bật/Tắt chế độ ghi log. Tự động bật trong constructor nếu tồn tại $logService */
+	protected bool $loggingEnabled=false;
+
+	/**
      * @var string|null Name of action defined in the ACL system which allows users to perform
      *                      access controll operation on their own records.
      *                      For example, if you define 'com.admin.own' here,
@@ -50,9 +60,16 @@ class AdminModel extends BaseAdminModel
     {
         parent::__construct($config, $factory, $formFactory);
 
-        /*
-         * Initialize some properties
-         */
+	    //Resolve the LogService instance
+	    $component = ComponentHelper::getComponent();
+	    if(method_exists($component, 'getLogService'))
+		    $this->logService = $component->getLogService();
+		if($this->logService)
+			$this->loggingEnabled = true;
+
+	    /*
+		 * Initialize some properties
+		 */
         $this->ownerIdField=$config['owner_id_field']??'created_by';
         $this->actionDeleteOwn=$config['action_delete_own']??'com.delete.own';
 
@@ -67,7 +84,32 @@ class AdminModel extends BaseAdminModel
         $this->getName();
     }
 
-    /**
+	/**
+	 * Thiêt lập LogService thay cho instance được khởi tạo mặc định trong constructor
+	 *
+	 * @param   LogService  $logService
+	 * @since 1.0.3
+	 */
+	public function setLogService(LogService $logService)
+	{
+		$this->logService = $logService;
+	}
+
+	/**
+	 * Subclass khai báo object_type của mình — chỉ một lần.
+	 */
+	abstract protected function getLogObjectType(): int;
+
+	/** Subclass nên override để tùy chỉnh title */
+	protected function buildObjectTitle(array $data): string
+	{
+		return $data['title'] ?? $data['name'] ?? $data['code'] ?? '';
+	}
+
+	public function enableLogging(): static  { $this->loggingEnabled = true;  return $this; }
+	public function disableLogging(): static { $this->loggingEnabled = false; return $this; }
+
+	/**
      * 'loadFormData' là hàm đã có trong lớp AdminModel nhưng nó rỗng
      * Vì thế, việc định nghĩa lại ở đây sẽ giúp tránh phải định nghĩa lại ở
      * các item model được sử dụng trong component này.
@@ -399,6 +441,110 @@ class AdminModel extends BaseAdminModel
         //6. Otherwise, we'll check for component-wide permission
         return $user->authorise('core.delete', $this->option);
     }
+
+	/**
+	 * Phương thức lớp cha được override để tự động ghi log nếu LogService được kích hoạt.
+	 * @inheritDoc
+	 * @since 1.0.3
+	 */
+	public function save($data): bool
+	{
+		$table  = $this->getTable();
+		$key    = $table->getKeyName();
+		$isNew  = empty($data[$key]);
+		$oldSnap = (!$isNew && $table instanceof Table)
+			? $table->loadSnapshot((int) $data[$key])
+			: null;
+
+		$result = parent::save($data);
+
+		if ($this->loggingEnabled && $this->logService)
+		{
+			$id = (int) ($this->getState($this->getName() . '.id') ?? 0);
+			$action = $isNew ? Action::CREATE : Action::EDIT;
+			$entry  = new LogEntry(
+				action: $action,
+				objectType: $this->getLogObjectType(),
+				isSuccess: $result,
+				objectId: $id,
+				objectTitle: $this->buildObjectTitle($data),
+				errorMessage: $result ? null : $this->getError(),
+				oldValue: $oldSnap ?: null,
+				newValue: $result ? $table->getSnapshot() : null,
+			);
+			$this->logService->write($entry);
+		}
+
+		return $result;
+	}
+
+	// ── Override delete() ───────────────────────────────────────────
+	public function delete(&$pks): bool
+	{
+		$table    = $this->getTable();
+		$snapshots = [];
+		if ($this->loggingEnabled && $table instanceof Table) {
+			foreach ((array) $pks as $id) {
+				$snapshots[$id] = $table->loadSnapshot((int) $id);
+			}
+		}
+
+		$result = parent::delete($pks);
+
+		if ($this->loggingEnabled && $this->logService) {
+			foreach ((array) $pks as $id) {
+				$snap  = $snapshots[$id] ?? [];
+				$entry = new LogEntry(
+					action: Action::DELETE,
+					objectType: $this->getLogObjectType(),
+					isSuccess: $result,
+					objectId: $id,
+					objectTitle: $snap['title'] ?? $snap['name'] ?? '',
+					errorMessage: $result ? null : $this->getError(),
+					oldValue: $snap ?: null,
+				);
+				$this->logService->write($entry);
+			}
+		}
+
+		return $result;
+	}
+
+	// ── Override publish() ──────────────────────────────────────────
+	public function publish(&$pks, $value = 1): bool
+	{
+		$result = parent::publish($pks, $value);
+
+		if ($this->loggingEnabled && $this->logService) {
+			$action = match((int) $value) {
+				1       => Action::PUBLISH,
+				0       => Action::UNPUBLISH,
+				2       => Action::ARCHIVE,
+				-2      => Action::TRASH,
+			};
+			foreach ((array) $pks as $id) {
+				$logEntry = new LogEntry(
+					action: $action,
+					objectType: $this->getLogObjectType(),
+					isSuccess: $result,
+					objectId: $id,
+				);
+				$this->logService->write($logEntry);
+			}
+		}
+
+		return $result;
+	}
+
+
+	/** Ghi log tùy chọn cho các action đặc biệt */
+	protected function writeLog(LogEntry $entry): void
+	{
+		if ($this->loggingEnabled && $this->logService) {
+			$this->logService->write($entry);
+		}
+	}
+
 
 
 	//TODO: Remove the following methods

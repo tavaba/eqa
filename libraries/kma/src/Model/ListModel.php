@@ -8,16 +8,30 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel as BaseListModel;
 use Joomla\CMS\User\User;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\EnglishHelper;
+use Kma\Library\Kma\Service\EnglishService;
+use Kma\Library\Kma\Service\LogService;
 
 /**
  * Class này sẽ được thừa kế bởi các Items Model
  *
  * @since 1.0
  */
-class ListModel extends BaseListModel
+abstract class ListModel extends BaseListModel
 {
-    /**
+	/**
+	 * An instance of LogService that is retrived from DIC by default
+	 * ListModel không thực hiện CRUD nên không ghi log trực tiếp.
+	 * Tuy nhiên cần inject LogService để subclass có thể ghi log nếu cần.
+	 */
+	protected ?LogService $logService=null;
+	protected ?EnglishService $englishService=null;
+
+	/** Bật/Tắt chế độ ghi log. Tự động bật trong constructor nếu tồn tại $logService */
+	protected bool $loggingEnabled=false;
+
+	/**
      * @var User Current logged-in user. It is initialized by the constructor.
      * @since 1.0.0
      */
@@ -59,6 +73,12 @@ class ListModel extends BaseListModel
     {
         parent::__construct($config, $factory);
 
+	    //Resolve the LogService instance
+	    $this->logService = ComponentHelper::getLogService();
+	    if($this->logService)
+		    $this->loggingEnabled = true;
+		$this->englishService = ComponentHelper::getEnglishService();
+
         /*
          * Initialize some properties
          */
@@ -73,10 +93,32 @@ class ListModel extends BaseListModel
         $this->user = Factory::getApplication()->getIdentity();
 
         //Get the entity type from the model name
-        $this->entityType=EnglishHelper::pluralToSingle($this->getName());
+        $this->entityType = $this->englishService
+	        ? $this->englishService->pluralToSingular($this->getName())
+	        : EnglishHelper::pluralToSingular($this->getName());
     }
 
-    /**
+	/**
+	 * Thiêt lập LogService thay cho instance được khởi tạo mặc định trong constructor
+	 *
+	 * @param   LogService  $logService
+	 * @since 1.0.3
+	 */
+	public function setLogService(LogService $logService)
+	{
+		$this->logService = $logService;
+	}
+
+	/**
+	 * Subclass khai báo object_type của mình — chỉ một lần.
+	 */
+	abstract protected function getLogObjectType(): int;
+
+	public function enableLogging(): static  { $this->loggingEnabled = true;  return $this; }
+	public function disableLogging(): static { $this->loggingEnabled = false; return $this; }
+
+
+	/**
      * Method to autopopulate the model state.
      * @since 1.0.0
      */

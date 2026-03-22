@@ -8,7 +8,7 @@ use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Helper\DatabaseHelper;
-use Kma\Library\Kma\Model\ListModel;
+use Kma\Component\Survey\Administrator\Base\ListModel;
 
 class CampaignSurveysModel extends ListModel
 {

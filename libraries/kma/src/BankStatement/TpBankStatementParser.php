@@ -27,13 +27,13 @@ use Kma\Library\Kma\Helper\IOHelper;
  */
 class TpBankStatementParser implements BankStatementParserInterface
 {
-    // Cột (0-indexed) trong file Excel TP Bank
-    private const COL_DATE        = 0;
-    private const COL_DESCRIPTION = 4;
-    private const COL_CREDIT      = 3;
+	// Cột (0-indexed) trong file Excel TP Bank
+	private const int COL_DATE        = 0;
+	private const int COL_DESCRIPTION = 4;
+	private const int COL_CREDIT      = 3;
 
-    // Số dòng header bỏ qua từ đầu file
-    private const HEADER_ROWS = 6;
+	// Số dòng header bỏ qua từ đầu file
+	private const int HEADER_ROWS = 6;
 
     /**
      * {@inheritDoc}

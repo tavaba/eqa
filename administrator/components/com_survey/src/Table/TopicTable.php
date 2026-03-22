@@ -1,7 +1,7 @@
 <?php
 namespace Kma\Component\Survey\Administrator\Table;
 
-use Kma\Component\Survey\Administrator\Base\Table;
+use Kma\Library\Kma\Table\Table;
 
 defined('_JEXEC') or die();
 class TopicTable extends Table{

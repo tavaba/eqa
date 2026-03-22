@@ -4,7 +4,7 @@ namespace Kma\Component\Survey\Administrator\Model;
 use Exception;
 use Joomla\Database\ParameterType;
 use Kma\Library\Kma\Helper\ComponentHelper;
-use Kma\Library\Kma\Model\AdminModel;
+use Kma\Component\Survey\Administrator\Base\AdminModel;
 
 defined('_JEXEC') or die();
 
@@ -42,7 +42,7 @@ class CampaignModel extends AdminModel {
         return $this->canDo($campaignItem,'com.analyse.survey',true);
     }
 
-    public function delete(&$pks)
+    public function delete(&$pks): bool
     {
         //1. Initialize variables
         if(is_array($pks))          //Multiple campaign selected
