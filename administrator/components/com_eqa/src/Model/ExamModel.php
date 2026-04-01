@@ -88,6 +88,73 @@ class ExamModel extends AdminModel{
 		return $item;
 	}
 
+	public function delete(&$pks): bool
+	{
+		//Step 1. Normalize the exam IDs
+		if(is_array($pks))
+			$examIds = $pks;
+		else
+			$examIds = [$pks];
+		$examIds = array_map('intval', $examIds);
+
+		//Step 2. Confirm that all the exams can be deleted
+		foreach ($examIds as $examId) {
+			if (!$this->canDelete($examId))
+			{
+				$exam = $this->getItem($examId);
+				$msg = sprintf('Không thể xóa môn thi "%s. %s". 
+				Hãy đảm bảo rằng chưa có thí sinh nào được chia phòng thi hay có kết quả thi.',
+					$exam->code, $exam->name
+				);
+				throw new Exception($msg);
+			}
+		}
+
+		//Step 3. Delete all the examinees
+		$examIdSet = '(' . implode(',', $examIds) . ')';
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->delete('#__eqa_exam_learner')
+			->where('exam_id IN ' . $examIdSet);
+		$db->setQuery($query);
+		$db->execute();
+
+		//Step 4. Call parent method
+		return parent::delete($pks);
+	}
+
+	public function canDelete($record=null): bool
+	{
+		if(!parent::canDelete($record))
+			return false;
+
+		//Xác định ID
+		if(is_object($record))
+			$examId = (int)$record->id;
+		else
+			$examId = (int)$record;
+		if(empty($examId))
+			return true;
+
+		//Nếu có bất kỳ thí sinh nào đã được chia phòng thi hoặc đã có kết quả thi thì không cho xóa
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('*')
+			->from('#__eqa_exam_learner')
+			->where([
+				'exam_id = ' . $examId,
+				'(examroom_id IS NOT NULL OR conclusion IS NOT NULL)'
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+		$result = $db->loadResult();
+		if($result>0)
+			return false;
+
+		//Return true
+		return true;
+	}
+
 	/**
 	 * Add examinees into an exam. This must search for 'ntaken', 'expired'.
 	 * This also calls updateDebt() and updateStimulation() after adding.

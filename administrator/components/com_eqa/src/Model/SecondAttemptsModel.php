@@ -139,6 +139,7 @@ class SecondAttemptsModel extends ListModel
                 ' OR CONCAT(' . $db->quoteName('lr.lastname') . ', \' \', ' . $db->quoteName('lr.firstname') . ') LIKE ' . $like .
                 ' OR ' . $db->quoteName('su.code') . ' LIKE ' . $like .
                 ' OR ' . $db->quoteName('su.name') . ' LIKE ' . $like .
+                ' OR ' . $db->quoteName('sa.payment_code') . ' LIKE ' . $like .
                 ')'
             );
         }
