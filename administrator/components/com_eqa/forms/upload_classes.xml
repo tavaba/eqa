@@ -14,14 +14,12 @@
 
         <field  name="academicyear"
                 type="academicyear"
-                required="true"
                 label="COM_EQA_ACADEMICYEAR"
                 showon="auto_year_and_term:0"
                 />
 
         <field  name="term"
                 type="term"
-                required="true"
                 label="COM_EQA_TERM"
                 showon="auto_year_and_term:0"
                 />

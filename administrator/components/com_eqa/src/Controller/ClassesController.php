@@ -142,6 +142,12 @@ class ClassesController extends AdminController
         if(!$autoYearAndTerm){
 	        $academicyearCode = $this->input->getInt('academicyear');
             $term = $this->input->getInt('term');
+			if(empty($academicyearCode) || empty($term))
+			{
+				$this->setMessage('Cần nhập Năm học và Học kỳ','error');
+				$this->setRedirect(Route::_('index.php?option=com_eqa&view=classes', false));
+				return;
+			}
         }
         $class = new Creditclass();
         $class->created_by = (int)$user->id;
@@ -628,7 +634,7 @@ class Creditclass{
     public int $size;
     public int $subject_id;
     public int|null $lecturer_id;
-    public int $academicyear_id;
+    public int $academicyear;
     public int $term;
     public int $created_by;
     public string $created_at;
