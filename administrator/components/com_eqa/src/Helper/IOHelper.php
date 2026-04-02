@@ -554,6 +554,7 @@ abstract class IOHelper extends BaseIOHelper
 		$seq=1;
 		$row=13;
 		foreach ($examinees as $examinee){
+			ExamHelper::normalizeMarks($examinee);
 			$sheet->setCellValue('A'.$row, $seq);
 			$sheet->setCellValue('B'.$row, $examinee->code);
 			$sheet->setCellValue('C'.$row, $examinee->learner_code);

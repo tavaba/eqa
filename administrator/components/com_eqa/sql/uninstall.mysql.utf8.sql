@@ -30,6 +30,7 @@ DROP TABLE IF EXISTS `#__eqa_classes`;
 DROP TABLE IF EXISTS `#__eqa_subjects`;
 DROP TABLE IF EXISTS `#__eqa_employees`;
 DROP TABLE IF EXISTS `#__eqa_units`;
+DROP TABLE IF EXISTS `#__eqa_logs`;
 
 -- Bật lại kiểm tra khóa ngoại
 SET FOREIGN_KEY_CHECKS = 1;

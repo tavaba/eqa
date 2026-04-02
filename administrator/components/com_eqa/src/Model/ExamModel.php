@@ -1980,7 +1980,7 @@ class ExamModel extends AdminModel{
 						$db, $examId, $learnerId,
 						elUpdates: ['conclusion' => Conclusion::Ineligible->value]
 					);
-					$this->updateClassLearnerExpired($db, $classId, $learnerId, expired: true);
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, $ntaken, expired: true);
 					continue;
 				}
 
@@ -2001,7 +2001,7 @@ class ExamModel extends AdminModel{
 						'module_grade'     => $db->quote($moduleGrade),
 						'conclusion'       => $conclusion->value,
 					]);
-					$this->updateClassLearnerExpired($db, $classId, $learnerId, expired: true);
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, $attempt, expired: true);
 					$this->markStimulationUsed($db, (int) $stimulationId);
 					continue;
 				}
@@ -2024,7 +2024,7 @@ class ExamModel extends AdminModel{
 						'module_grade'      => $db->quote($moduleGrade),
 						'conclusion'        => $conclusion->value,
 					]);
-					$this->updateClassLearnerExpired($db, $classId, $learnerId, expired: true);
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, $attempt, expired: true);
 					$this->markStimulationUsed($db, (int) $stimulationId);
 					continue;
 				}
@@ -2032,7 +2032,7 @@ class ExamModel extends AdminModel{
 				// ----------------------------------------------------------------
 				// BƯỚC 4: Hoãn thi (DELAY) hoặc làm lại bài (REDO)
 				// ----------------------------------------------------------------
-				if (!$isDebtor && in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true)) {
+				if (in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true)) {
 					// conclude() với mark = 0 sẽ trả về Conclusion::Deferred
 					$conclusion  = ExamHelper::calculateConclusion(0, 0, $anomaly, $attempt);
 					$moduleGrade = ExamHelper::calculateModuleGrade(0, $conclusion);
@@ -2070,7 +2070,7 @@ class ExamModel extends AdminModel{
 						'conclusion'        => $conclusion->value,
 					]);
 					$expired   = in_array($conclusion, [Conclusion::Passed, Conclusion::RetakeCourse], true) ? 1 : 0;
-					$this->updateClassLearnerExpired($db, $classId, $learnerId, $expired);
+					$this->updateClassLearnerExpired($db, $classId, $learnerId, $attempt, $expired);
 					continue;
 				}
 
@@ -2120,23 +2120,7 @@ class ExamModel extends AdminModel{
 
 				// 6.5. Cập nhật #__eqa_class_learner (ntaken, expired)
 				$expired   = in_array($conclusion, [Conclusion::Passed, Conclusion::RetakeCourse], true) ? 1 : 0;
-				$newNtaken = (!in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true))
-					? $attempt
-					: $ntaken;
-				$query = $db->getQuery(true)
-					->update($db->quoteName('#__eqa_class_learner'))
-					->set([
-						$db->quoteName('ntaken')  . ' = ' . $newNtaken,
-						$db->quoteName('expired') . ' = ' . $expired,
-					])
-					->where($db->quoteName('class_id')   . ' = ' . $classId)
-					->where($db->quoteName('learner_id') . ' = ' . $learnerId);
-				$db->setQuery($query);
-				if (!$db->execute()) {
-					throw new Exception(
-						sprintf('Lỗi cập nhật lớp học phần cho người học id=%d', $learnerId)
-					);
-				}
+				$this->updateClassLearnerExpired($db, $classId, $learnerId, $attempt, $expired);
 
 				// 6.6. Ghi nhận khuyến khích cộng điểm đã được sử dụng (nếu có và đạt)
 				if ($stimulationId !== null
@@ -2216,11 +2200,14 @@ class ExamModel extends AdminModel{
 	 * @throws Exception
 	 * @since 2.0.4
 	 */
-	private function updateClassLearnerExpired($db, int $classId, int $learnerId, bool $expired): void
+	private function updateClassLearnerExpired($db, int $classId, int $learnerId, int $ntaken, bool $expired): void
 	{
 		$query = $db->getQuery(true)
 			->update($db->quoteName('#__eqa_class_learner'))
-			->set($db->quoteName('expired') . ' = ' . (int) $expired)
+			->set([
+				$db->quoteName('ntaken') . ' = ' . $ntaken,
+				$db->quoteName('expired') . ' = ' . (int) $expired
+			])
 			->where($db->quoteName('class_id')   . ' = ' . $classId)
 			->where($db->quoteName('learner_id') . ' = ' . $learnerId);
 		$db->setQuery($query);
