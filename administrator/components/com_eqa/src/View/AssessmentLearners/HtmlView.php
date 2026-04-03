@@ -114,7 +114,13 @@ class HtmlView extends ItemsHtmlView
 	    // Cột kết quả — sẽ được bổ sung động trong prepareDataForLayoutDefault()
         // tuỳ theo result_type của kỳ sát hạch
 
-        $this->itemFields = $fields;
+
+	    //Ngày tháng
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('createdAt', 'Ngày tạo', true);
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('modifiedAt', 'Ngày sửa', true);
+
+
+	    $this->itemFields = $fields;
     }
 
     // =========================================================================

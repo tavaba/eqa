@@ -4,12 +4,14 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 
-class ClassModel extends AdminModel {
+class ClassModel extends AdminModel
+{
     protected function prepareTable($table)
     {
 	    if(empty($table->lecturer_id))
@@ -30,6 +32,65 @@ class ClassModel extends AdminModel {
 			$table->pamdate=null;
         parent::prepareTable($table);
     }
+
+	public function canDelete($record = null): bool
+	{
+		if(!parent::canDelete($record))
+			return false;
+
+		if($record==null)
+			return true;
+
+		//Chỉ có thể xóa nếu chưa có thí sinh nào có điểm quá trình
+		$classId = is_object($record) ? $record->id : (int)$record;
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->from('#__eqa_class_learner')
+			->select('*')
+			->where([
+				'class_id = '.$classId,
+				'pam IS NOT NULL'
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+		$item = $db->loadObject();
+		if(!empty($item))
+			return false;
+		return true;
+	}
+
+	public function delete(&$pks): bool
+	{
+		//Xác định mảng các ID
+		$classIds = is_array($pks) ? $pks : [$pks];
+		$classIds = array_filter($classIds);
+
+		//Xóa sinh viên của lớp học
+		$db = $this->getDatabase();
+		foreach ($classIds as $classId)
+		{
+			if(!$this->canDelete($classId))
+			{
+				$class = $this->getItem($classId);
+				$msg = sprintf('Không thể xóa lớp "%s (%s)". Hãy đảm bảo rằng chưa có sinh viên nào có điểm quá trình', $class->name, $class->code);
+				throw new Exception($msg);
+			}
+			$query = $db->getQuery(true)
+				->delete('#__eqa_class_learner')
+				->where('class_id = '.$classId);
+			$db->setQuery($query);
+			if(!$db->execute())
+				return false;
+		}
+
+		//Call parent
+		return parent::delete($pks);
+	}
+
+	public function getLogObjectType(): int
+	{
+		return ObjectType::CreditClass->value;
+	}
 
 	/**
 	 * Check whether PAM of a learner can be editted. For now a PAM record can be editted

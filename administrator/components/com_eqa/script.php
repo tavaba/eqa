@@ -1972,6 +1972,14 @@ class Com_EqaInstallerScript extends InstallerScript
 			$tablePrefix = $prefix . 'eqa\_%';
 
 			// --- 5a. Thu thập tất cả FK của component ---
+			// Dùng OR để bao gồm cả FK trên bảng con (TABLE_NAME LIKE eqa_%)
+			// lẫn FK trên bảng có prefix khác nhưng tham chiếu đến bảng eqa_%
+			// (REFERENCED_TABLE_NAME LIKE eqa_%). Điều này đảm bảo không bỏ sót
+			// các bảng như #__eqa_assessment_learner, #__eqa_rooms có FK nhưng
+			// TABLE_NAME cũng match prefix eqa_%.
+			// Nếu thiếu bảng nào → bước DROP bỏ sót FK đó → MODIFY COLUMN bị
+			// MySQL block (hoặc thành công nhưng FK bị mất kiểu không nhất quán)
+			// → bước ADD lại thất bại → FK biến mất.
 			$allFks = $db->setQuery(
 				"SELECT kcu.TABLE_NAME, kcu.CONSTRAINT_NAME,
 				        kcu.COLUMN_NAME, kcu.REFERENCED_TABLE_NAME,
@@ -1981,9 +1989,12 @@ class Com_EqaInstallerScript extends InstallerScript
 				 JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
 				      ON  rc.CONSTRAINT_SCHEMA = kcu.TABLE_SCHEMA
 				      AND rc.CONSTRAINT_NAME   = kcu.CONSTRAINT_NAME
-				 WHERE kcu.TABLE_SCHEMA            = " . $db->quote($dbName) . "
-				   AND kcu.TABLE_NAME          LIKE " . $db->quote($tablePrefix) . "
+				 WHERE kcu.TABLE_SCHEMA              = " . $db->quote($dbName) . "
 				   AND kcu.REFERENCED_TABLE_NAME IS NOT NULL
+				   AND (
+				       kcu.TABLE_NAME            LIKE " . $db->quote($tablePrefix) . "
+				    OR kcu.REFERENCED_TABLE_NAME LIKE " . $db->quote($tablePrefix) . "
+				   )
 				 ORDER BY kcu.TABLE_NAME, kcu.CONSTRAINT_NAME"
 			)->loadAssocList();
 
@@ -2065,32 +2076,24 @@ class Com_EqaInstallerScript extends InstallerScript
 			);
 
 			// --- 5d. ADD lại tất cả FK ---
-			$addedFk   = 0;
-			$skippedFk = 0;
+			// KHÔNG dùng try/catch ở đây: nếu không ADD lại được FK thì toàn bộ
+			// migration phải thất bại ngay lập tức. Bỏ qua lỗi ADD FK đồng nghĩa
+			// với việc âm thầm mất ràng buộc toàn vẹn dữ liệu mà không có cảnh báo.
+			// Exception sẽ được bắt bởi khối try/catch ngoài cùng của runMigration206().
+			$addedFk = 0;
 			foreach ($allFks as $fk) {
-				try {
-					$db->setQuery(
-						"ALTER TABLE `{$fk['TABLE_NAME']}`
-						 ADD CONSTRAINT `{$fk['CONSTRAINT_NAME']}`
-						     FOREIGN KEY (`{$fk['COLUMN_NAME']}`)
-						     REFERENCES `{$fk['REFERENCED_TABLE_NAME']}` (`{$fk['REFERENCED_COLUMN_NAME']}`)
-						     ON DELETE {$fk['DELETE_RULE']}
-						     ON UPDATE {$fk['UPDATE_RULE']}"
-					)->execute();
-					$addedFk++;
-				} catch (\Throwable $e) {
-					$skippedFk++;
-					$this->logWarning(
-						"Migration 2.0.6: Không ADD lại được FK `{$fk['CONSTRAINT_NAME']}` "
-						. "trên `{$fk['TABLE_NAME']}`: " . $e->getMessage()
-					);
-				}
+				$db->setQuery(
+					"ALTER TABLE `{$fk['TABLE_NAME']}`
+					 ADD CONSTRAINT `{$fk['CONSTRAINT_NAME']}`
+					     FOREIGN KEY (`{$fk['COLUMN_NAME']}`)
+					     REFERENCES `{$fk['REFERENCED_TABLE_NAME']}` (`{$fk['REFERENCED_COLUMN_NAME']}`)
+					     ON DELETE {$fk['DELETE_RULE']}
+					     ON UPDATE {$fk['UPDATE_RULE']}"
+				)->execute();
+				$addedFk++;
 			}
 
-			$this->logInfo(
-				"Migration 2.0.6: Đã ADD lại {$addedFk} FK"
-				. ($skippedFk > 0 ? ", bỏ qua {$skippedFk} FK (xem warning log)." : ".")
-			);
+			$this->logInfo("Migration 2.0.6: Đã ADD lại {$addedFk} FK.");
 
 			// =================================================================
 			// Nhiệm vụ 6: Surrogate key cho junction tables

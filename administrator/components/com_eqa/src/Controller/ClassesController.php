@@ -8,8 +8,11 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\DataObject\CreditClassLearnerObject;
+use Kma\Component\Eqa\Administrator\DataObject\CreditClassObject;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
+use Kma\Component\Eqa\Administrator\Service\CreditClassNameParser;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
@@ -149,11 +152,11 @@ class ClassesController extends AdminController
 				return;
 			}
         }
-        $class = new Creditclass();
+        $class = new CreditClassObject();
         $class->created_by = (int)$user->id;
         $class->created_at = $now;
-        $class_learner = new ClassLearner();
-        $parser = new ClassnameParser();
+        $class_learner = new CreditClassLearnerObject();
+        $parser = new CreditClassNameParser();
 
         //Process files
         foreach ($files as $file)
@@ -194,18 +197,16 @@ class ClassesController extends AdminController
                 }
 
                 //Nếu là lớp con thì bỏ qua
-                if(!$parser->isPrimaryClass)
+                if(!$parser->isPrimaryClass())
                 {
                     continue;
                 }
 
                 //Xác định năm học và học kỳ từ tên lớp học phần (nếu cần)
-                if($autoYearAndTerm){
-
-                    $academicyearCode = (int)$parser->year;
-					if ($academicyearCode<2000)
-						$academicyearCode += 2000;
-                    $term = $parser->term;
+                if($autoYearAndTerm)
+				{
+                    $academicyearCode = $parser->getAcademicYearCode();
+                    $term = $parser->getTerm();
                 }
                 $class->academicyear = $academicyearCode;
                 $class->term = $term;
@@ -234,7 +235,7 @@ class ClassesController extends AdminController
                 $class->code  = $subjectCode . '-' . $parser->getClassCodeTail();
 
                 //Xác định nhóm khóa đào tạo
-                $class->coursegroup = $parser->coursegroup;
+                $class->coursegroup = $parser->getCourseGroup();
 
                 //Khởi tạo sĩ số lớp
                 $class->size = 0;
@@ -256,9 +257,9 @@ class ClassesController extends AdminController
                 $db->transactionStart();
                 try{
                     //1. Tạo lớp học phần để lấy id của nó
-                    $table = $model->getTable();
+                    $classTable = $model->getTable();
                     $class->id=null;
-                    if(!$table->save($class))       //Tạo lớp học phần thất bại
+                    if(!$classTable->save($class))       //Tạo lớp học phần thất bại
                     {
                         $msg = Text::_('COM_EQA_MSG_INSERT_CLASS_FAILED');
                         $msg .= ' : ' . $file['name'] . ' : ' . $worksheet->getTitle() . ' : ' .$class->name;
@@ -266,9 +267,6 @@ class ClassesController extends AdminController
                     }
                     else                            //Tạo lớp học phần thành công
                     {
-                        //Lưu lại id của lớp học phần vừa mới được tạo
-                        $class->id = $db->insertid();
-
                         //2. Import thông tin các HVSV
                         //   Sinh viên đầu tiên ở dòng số 14 (0-based), cụ thể là ô B15
                         $countAbsence = 0;
@@ -276,7 +274,7 @@ class ClassesController extends AdminController
                         $countSuccess = 0;
                         $listAbsence='';
                         $listFail = '';
-                        $class_learner->class_id = $class->id;
+                        $class_learner->class_id = $classTable->getId();
                         for($i=14;;$i++)  //Duyệt danh sách HVSV
                         {
                             $learnerCode = trim($data[$i][1]);
@@ -300,8 +298,9 @@ class ClassesController extends AdminController
                         }
 
                         //3. Duyệt xong. Cập nhật lại sĩ số và xuất các thông báo
-                        $class->size = $countSuccess;
-                        $table->save($class);
+	                    $classTable->load();
+	                    $classTable->size = $countSuccess;
+						$classTable->store();
                         $msg = $class->name . ': ';
                         if($countAbsence==0 && $countFail==0) {
                             $format = Text::_('COM_EQA_MSG_CLASS_IMPORT_N_LEARNERS_SUCCESS');
@@ -373,7 +372,7 @@ class ClassesController extends AdminController
         $learnerMap = DatabaseHelper::getLearnerMap(); //[code]=>id
 
         //Initialize table objects
-        $parser = new ClassnameParser();
+        $parser = new CreditClassNameParser();
 
         //Process files
         foreach ($files as $file)
@@ -406,7 +405,7 @@ class ClassesController extends AdminController
                 }
 
                 //Nếu là lớp con thì bỏ qua
-                if(!$parser->isPrimaryClass)
+                if(!$parser->isPrimaryClass())
                 {
                     continue;
                 }
@@ -624,146 +623,4 @@ class ClassesController extends AdminController
 			return;
 		}
 	}
-}
-
-class Creditclass{
-    public int|null $id;
-    public string $coursegroup;
-    public string $code;
-    public string $name;
-    public int $size;
-    public int $subject_id;
-    public int|null $lecturer_id;
-    public int $academicyear;
-    public int $term;
-    public int $created_by;
-    public string $created_at;
-}
-
-class ClassLearner{
-    public int $class_id;
-    public int $learner_id;
-}
-
-class ClassnameParser{
-    public string $subject;
-    public string $term;
-    public string $year;
-    public string $subProgram;
-    public string $coursegroup;
-    public string $order;
-    public bool $isPrimaryClass;
-
-    /*
-     * Có 3 dạng PATTERN cơ bản
-     * 1) Lớp chính
-     * 2) Lớp con
-     * 3) Lớp thuần túy thực hành
-     * Mỗi PATTERN gồm 6 groups
-     * - Group1: Tên môn học
-     * - Group2: Học kỳ
-     * - Group3: Năm (năm đầu của năm học)
-     * - Group4: Nhóm khóa học
-     * - Group5(*): Phân ngành
-     * - Group6: Số hiệu lớp
-     * Ví dụ:
-     * An toàn hệ thống nhúng-2-23 (DT4-HTN-01)
-     * Giáo dục thể chất 4-2-23- bóng bàn (C7D6-.01)
-     */
-
-    protected const PATTERN1 = '/^([\s\S]+)-([1-3])-([0-9]{2})-?[\p{L}\s]*\(([A-Z0-9]+)-?([\p{L}\s]*)-?([0-9]{2})\)$/u';
-    protected const PATTERN2 = '/^([\s\S]+)-([1-3])-([0-9]{2})-?[\p{L}\s]*\(([A-Z0-9]+)-?([\p{L}\s]*)-?([0-9]{2})\.[0-9]{1,2}\)$/u';
-    protected const PATTERN3 = '/^([\s\S]+)-([1-3])-([0-9]{2})-?[\p{L}\s]*\(([A-Z0-9]+)-?([\p{L}\s]*)\.([0-9]{1,2})\)$/u';
-
-    /*
-     * Ngoài ra có PATTERN thứ 4 dành riêng cho môn Giáo dục thể chất 5
-     * Ví dụ:   Giáo dục thể chất 5-1-24 (C7D601-bóng bàn)
-     * -Groups 1-4: như trên
-     * -Group5: số hiệu lớp
-     * -Group6: phân môn
-     */
-    protected const PATTERN4 = '/^([\s\S]+)-([1-3])-([0-9]{2})\s*\(([A-Z0-9]+)\.?([0-9]{2})-([\p{L}\s0-9]*)\)$/u';
-
-	/*
-	 * Và có PARTTERN5 dành cho các lớp học lại
-	 * Ví dụ: Phân tích, thiết kế hệ thống thông tin-1-24 (học lại01)
-	 * - Groups 1-3: như trên
-	 * - Group 4: số hiệu lớp
-	 */
-	protected const PATTERN5 = '/^([\s\S]+)-([1-3])-([0-9]{2})\s*\(học lại([0-9]{2})\)$/u';
-
-    public function parse(string $name):bool
-    {
-        //init
-        $this->isPrimaryClass = true;
-
-        //Try PATTERN1 (Lớp Lý thuyết)
-        $matched = preg_match(self::PATTERN1, $name, $matches);
-
-        //Try PATTERN2 (Lớp con thực hành)
-        if(!$matched) {
-            $matched = preg_match(self::PATTERN2, $name, $matches);
-            if($matched)
-                $this->isPrimaryClass = false;
-        }
-
-        //Try PATTERN3 (Lớp thuần túy thực hành)
-        if(!$matched){
-            $matched = preg_match(self::PATTERN3, $name, $matches);
-        }
-
-        if($matched)
-        {
-            $this->subject = $matches[1];
-            $this->term = $matches[2];
-            $this->year = $matches[3];
-            $this->coursegroup = $matches[4];
-            $this->order = $matches[6];
-
-            $s = trim($matches[5]);
-            $this->subProgram = match ($s){
-                'An toàn', 'AT hệ thống TT' => 'AT',
-                'Công nghệ' => 'CN',
-                'kỹ nghệ', 'Kỹ nghệ ATM' => 'KN',
-                'HTN' => 'HTN',
-                default => ''
-            };
-            return true;
-        }
-
-
-        //Kiểm tra pattern4
-        $matched = preg_match(self::PATTERN4, $name, $matches);
-        if($matched)
-        {
-            $this->subject = $matches[1];
-            $this->term = $matches[2];
-            $this->year = $matches[3];
-            $this->coursegroup = $matches[4];
-            $this->order = $matches[5];
-            $this->subProgram='';
-            return true;
-        }
-
-	    //Kiểm tra pattern4
-	    $matched = preg_match(self::PATTERN5, $name, $matches);
-	    if($matched)
-	    {
-		    $this->subject = $matches[1];
-		    $this->term = $matches[2];
-		    $this->year = $matches[3];
-		    $this->coursegroup = 'ANY';
-		    $this->order = $matches[4];
-		    $this->subProgram='';
-		    return true;
-	    }
-
-        return false;
-    }
-    public function getClassCodeTail(){
-        $tail = $this->term . '-' . $this->year;
-        $tail .= '(' . $this->coursegroup . '-' . $this->subProgram . $this->order . ')';
-        return $tail;
-    }
-
 }

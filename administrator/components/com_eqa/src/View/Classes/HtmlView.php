@@ -64,7 +64,7 @@ class HtmlView extends ItemsHtmlView
 	    ToolbarHelper::title('Quản lý lớp học phần');
 		ToolbarHelper::appendGoHome();
 	    ToolbarHelper::appendButton(['core.create','eqa.create.class'],'plus','JTOOLBAR_NEW','class.add',false,'btn btn-success');
-	    ToolbarHelper::appendButton('core.delete','delete','JTOOLBAR_DELETE','class.delete',true,'btn btn-danger');
+	    ToolbarHelper::appendButton('core.delete','delete','JTOOLBAR_DELETE','classes.delete',true,'btn btn-danger');
 	    ToolbarHelper::appendButton(['core.create','eqa.create.class'],'upload','JTOOLBAR_UPLOAD','classes.upload');
 		ToolbarHelper::appendButton(['core.create','eqa.create.class'], 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
         $url = \JRoute::_('index.php?option=com_eqa&view=classes&layout=uploadpam',false);

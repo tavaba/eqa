@@ -125,7 +125,11 @@ abstract class ListModel extends BaseListModel
     protected function populateState($ordering = null, $direction = null): void
     {
         $ordering = $this->getUserStateFromRequest($this->context . '.ordercol', 'filter_order', $ordering);
+		if(empty($ordering))
+			$ordering = 'id';
         $direction = $this->getUserStateFromRequest($this->context . '.orderdirn', 'filter_order_Dir', $direction);
+		if(empty($direction))
+			$direction = 'ASC';
         parent::populateState($ordering, $direction);
     }
 

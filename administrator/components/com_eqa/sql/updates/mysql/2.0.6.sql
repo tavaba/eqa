@@ -35,8 +35,4 @@ CREATE TABLE IF NOT EXISTS `#__eqa_logs` (
 -- Tất cả thay đổi Phần 3 và Phần 4 đòi hỏi kiểm tra trạng thái
 -- hiện tại của CSDL trước khi thực hiện (idempotent), nên được xử lý hoàn
 -- toàn bởi script.php (runMigration206) trong bước postflight().
---
--- File này được giữ trống có chủ ý để tránh lỗi "Unknown column" khi Joomla
--- chạy SQL trước postflight() trên các production server có trạng thái cột
--- khác nhau (tuỳ lịch sử nâng cấp).
 -- =============================================================================

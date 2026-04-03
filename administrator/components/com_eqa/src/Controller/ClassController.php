@@ -232,7 +232,10 @@ class ClassController extends  FormController
             //Pha này thì cần check token
             $this->checkToken();
 
-            //Gọi model để nhập data
+	        /**
+	         * Gọi model để nhập data
+	         * @var ClassModel $model
+	         */
             $model = $this->getModel();
             $inputLearners = $this->app->input->getString('learners');
             $normalizedLearners = preg_replace('/[\s,;]+/', ' ', $inputLearners);

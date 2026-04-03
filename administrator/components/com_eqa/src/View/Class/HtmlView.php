@@ -71,7 +71,7 @@ class HtmlView extends ItemHtmlView {
         $model = $this->getModel();
         $classId = Factory::getApplication()->input->getInt('class_id');
         $this->class = $model->getItem($classId);
-	    $this->form = FormHelper::getBackendForm('com_eqa.addlearners','addlearners.xml');
+	    $this->form = FormHelper::getBackendForm('com_eqa.addlearners','addlearners.xml', []);
     }
 
     protected function addToolbarForLayoutAddlearners() : void

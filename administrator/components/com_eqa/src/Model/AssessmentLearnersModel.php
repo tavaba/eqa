@@ -87,6 +87,8 @@ class AssessmentLearnersModel extends ListModel
 				$db->quoteName('al.level'),
 				$db->quoteName('al.passed'),
 				$db->quoteName('al.note'),
+				$db->quoteName('al.created_at',         'createdAt'),
+				$db->quoteName('al.modified_at',        'modifiedAt'),
 				$db->quoteName('lr.code',               'learner_code'),
 				$db->quoteName('lr.lastname',            'learner_lastname'),
 				$db->quoteName('lr.firstname',           'learner_firstname'),
