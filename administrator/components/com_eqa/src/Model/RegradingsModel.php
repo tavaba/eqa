@@ -25,11 +25,11 @@ class RegradingsModel extends ListModel
 {
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
-		$config['filter_fields']=array('a.id');
+		$config['filter_fields']=array('id');
 		parent::__construct($config, $factory);
 	}
 
-	protected function populateState($ordering = 'a.id', $direction = 'DESC'): void
+	protected function populateState($ordering = 'id', $direction = 'DESC'): void
 	{
 		parent::populateState($ordering, $direction);
 	}
@@ -104,6 +104,8 @@ class RegradingsModel extends ListModel
 			$db->quoteName('g.bank_napas_code',     'bankNapasCode'),
 			$db->quoteName('g.bank_account_number', 'bankAccountNumber'),
 			$db->quoteName('g.bank_account_owner',  'bankAccountOwner'),
+			$db->quoteName('g.ppaa_req_enabled',    'ppaaReqEnabled'),
+			$db->quoteName('g.ppaa_req_deadline',   'ppaaReqDeadline'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -885,4 +887,40 @@ class RegradingsModel extends ListModel
 		$result->updatedCodes   = $updatedCodes;
 		return $result;
 	}
+
+	// =========================================================================
+	// Thời điểm đối soát sao kê gần nhất (2.0.7)
+	// =========================================================================
+
+	/**
+	 * Trả về thời điểm đối soát sao kê gần nhất (UTC) cho các yêu cầu phúc khảo
+	 * có thu phí (payment_amount > 0), áp dụng filter learner_id hiện tại.
+	 *
+	 * Giá trị này là MAX(handled_at) — tức là lần cuối cùng có một yêu cầu phúc
+	 * khảo nào đó được ghi nhận là đã nộp phí (payment_completed chuyển sang 1).
+	 * Trả về null nếu chưa có lần đối soát nào.
+	 *
+	 * @return string|null  Datetime string theo UTC ("Y-m-d H:i:s"), hoặc null.
+	 * @since  2.0.7
+	 */
+	public function getLastStatementUpdate(): ?string
+	{
+		$db    = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('MAX(' . $db->quoteName('a.handled_at') . ')')
+			->from('#__eqa_regradings AS a')
+			->where($db->quoteName('a.payment_amount') . ' > 0');
+
+		// Áp dụng filter learner_id nếu đang hoạt động
+		$learnerId = $this->getState('filter.learner_id');
+		if (is_int($learnerId)) {
+			$query->where($db->quoteName('a.learner_id') . ' = ' . $learnerId);
+		}
+
+		$db->setQuery($query);
+		$result = $db->loadResult();
+
+		return !empty($result) ? (string) $result : null;
+	}
+
 }

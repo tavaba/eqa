@@ -68,6 +68,11 @@ if (!empty($this->layoutData) && !empty($this->layoutData->items)) {
     sẽ không được nhận diện tự động và HVSV phải <strong>tự chịu trách nhiệm</strong>.<br>
     Trạng thái nộp phí được cán bộ Học viện duyệt thủ công sau
     <strong>1–2 ngày làm việc</strong>.
+	<?php if (!empty($this->lastStatementUpdateLocal)): ?><br>
+        <span class="icon-clock me-1" aria-hidden="true"></span>
+        Sao kê ngân hàng được đối soát lần gần nhất lúc
+        <strong><?php echo htmlspecialchars($this->lastStatementUpdateLocal); ?></strong>.
+	<?php endif; ?>
 </div>
 <?php endif; ?>
 

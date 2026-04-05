@@ -15,6 +15,7 @@ use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 
@@ -39,7 +40,15 @@ class HtmlView extends ItemsHtmlView
     /** @var string|null */
     protected ?string $errorMessage = null;
 
-    // =========================================================================
+	/**
+	 * Thời điểm đối soát sao kê gần nhất, đã chuyển sang Local Time.
+	 * NULL nếu chưa có lần đối soát nào, hoặc không có item cần hiển thị.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $lastStatementUpdateLocal = null;
+
+	// =========================================================================
     // Cấu hình cột
     // =========================================================================
 
@@ -74,13 +83,21 @@ class HtmlView extends ItemsHtmlView
     // =========================================================================
     // Chuẩn bị dữ liệu
     // =========================================================================
+	public function display($tpl = null): void
+	{
+		//Load QRCode JS
+		$this->wa->useScript('qrcode.script');
+
+		//Call parent
+		parent::display($tpl);
+	}
 
     protected function prepareDataForLayoutDefault(): void
     {
         try {
             $app = Factory::getApplication();
 
-            /** @var RegradingsModel $model */
+	        /** @var RegradingsModel $model */
             $model = ComponentHelper::createModel('Regradings', 'Administrator');
             $this->setModel($model, true);
 
@@ -150,26 +167,37 @@ class HtmlView extends ItemsHtmlView
                             . '&nbsp;đ</span>';
                     }
 
-                    // Cột "Nộp phí"
-                    $modalId = 'qr-modal-regrading-' . (int) $item->id;
+	                // Cột "Nộp phí"
+	                $modalId = 'qr-modal-regrading-' . (int) $item->id;
 
-                    if ($paymentAmount <= 0 || $paymentCompleted) {
-                        $item->paymentStatusHtml = '<span class="badge bg-success">'
-                            . '<span class="icon-check me-1" aria-hidden="true"></span>'
-                            . ($paymentCompleted ? 'Đã nộp' : 'Miễn phí')
-                            . '</span>';
-                    } elseif (!$hasBankInfo) {
-                        $item->paymentStatusHtml = '<span class="badge bg-secondary">Chưa có TK ngân hàng</span>';
-                    } else {
-                        $item->paymentStatusHtml = '<button'
-                            . ' type="button"'
-                            . ' class="btn btn-sm btn-warning"'
-                            . ' data-bs-toggle="modal"'
-                            . ' data-bs-target="#' . $modalId . '">'
-                            . '<span class="icon-credit-card me-1" aria-hidden="true"></span>'
-                            . 'Nộp phí'
-                            . '</button>';
-                    }
+	                // Kiểm tra thời hạn phúc khảo per-item (mỗi item thuộc một kỳ thi riêng)
+	                // ppaaReqEnabled=1 + ppaaReqDeadline đã qua → hết hạn nộp phí
+	                $ppaaEnabled  = (bool) ($item->ppaaReqEnabled  ?? false);
+	                $ppaaDeadline = $item->ppaaReqDeadline ?? null;
+	                $isPpaaDeadlinePassed = $ppaaEnabled
+		                && !empty($ppaaDeadline)
+		                && DatetimeHelper::isTimeOver($ppaaDeadline, true);
+
+	                if ($paymentAmount <= 0 || $paymentCompleted) {
+		                $item->paymentStatusHtml = '<span class="badge bg-success">'
+			                . '<span class="icon-check me-1" aria-hidden="true"></span>'
+			                . ($paymentCompleted ? 'Đã nộp' : 'Miễn phí')
+			                . '</span>';
+	                } elseif ($isPpaaDeadlinePassed) {
+		                // Thời hạn phúc khảo của kỳ thi này đã qua — không cho nộp phí
+		                $item->paymentStatusHtml = '<span class="badge bg-secondary">Hết hạn nộp phí</span>';
+	                } elseif (!$hasBankInfo) {
+		                $item->paymentStatusHtml = '<span class="badge bg-secondary">Chưa có TK ngân hàng</span>';
+	                } else {
+		                $item->paymentStatusHtml = '<button'
+			                . ' type="button"'
+			                . ' class="btn btn-sm btn-warning"'
+			                . ' data-bs-toggle="modal"'
+			                . ' data-bs-target="#' . $modalId . '">'
+			                . '<span class="icon-credit-card me-1" aria-hidden="true"></span>'
+			                . 'Nộp phí'
+			                . '</button>';
+	                }
 
                     // Đính kèm dữ liệu QR vào item để template render modal.
                     // Bank fields đã là property trực tiếp của $item từ model:
@@ -183,10 +211,37 @@ class HtmlView extends ItemsHtmlView
                 unset($item);
             }
 
-			//Load QRCode JS
-	        $this->wa->useScript('qrcode.script');
-
-        } catch (Exception $e) {
+	        // ─── Thời điểm đối soát sao kê gần nhất ─────────────────────────
+	        // Chỉ query khi có ít nhất 1 item chưa nộp tiền và còn trong hạn
+	        // (tức là cần hiển thị thông tin để HVSV biết khi nào được duyệt)
+	        $hasUnpaidAndActive = false;
+	        if (!empty($this->layoutData) && !empty($this->layoutData->items)) {
+		        foreach ($this->layoutData->items as $item) {
+			        $ppaaEnabled  = (bool) ($item->ppaaReqEnabled  ?? false);
+			        $ppaaDeadline = $item->ppaaReqDeadline ?? null;
+			        $deadlinePassed = $ppaaEnabled
+				        && !empty($ppaaDeadline)
+				        && DatetimeHelper::isTimeOver($ppaaDeadline, true);
+			        if ((int) ($item->_paymentAmount ?? 0) > 0
+				        && !($item->_paymentCompleted ?? false)
+				        && !$deadlinePassed
+			        ) {
+				        $hasUnpaidAndActive = true;
+				        break;
+			        }
+		        }
+	        }
+	        if ($hasUnpaidAndActive) {
+		        $utcTimestamp = $model->getLastStatementUpdate();
+		        if (!empty($utcTimestamp)) {
+			        $this->lastStatementUpdateLocal = DatetimeHelper::fromUtc(
+				        $utcTimestamp,
+				        null,
+				        'H:i, d/m/Y'
+			        );
+		        }
+	        }
+		} catch (Exception $e) {
             $this->errorMessage = $e->getMessage();
         }
     }
