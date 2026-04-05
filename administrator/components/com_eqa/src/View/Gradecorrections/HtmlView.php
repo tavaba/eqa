@@ -3,7 +3,6 @@ namespace Kma\Component\Eqa\Administrator\View\Gradecorrections; //The namespace
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
@@ -11,7 +10,6 @@ use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView {
@@ -32,7 +30,9 @@ class HtmlView extends ItemsHtmlView {
 		$option->customFieldset1[] = new ListLayoutItemFieldOption('reason', 'Mô tả');
 		$option->customFieldset1[] = new ListLayoutItemFieldOption('statusText', 'Trạng thái');
 		$option->customFieldset1[] = new ListLayoutItemFieldOption('description', 'Nội dung xử lý');
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('handlers', 'Người xử lý');
+		$f = new ListLayoutItemFieldOption('handlers', 'Người xử lý');
+		$f->printRaw = true;
+		$option->customFieldset1[] = $f;
 		$this->itemFields = $option;
 	}
 	protected function prepareDataForLayoutDefault(): void
@@ -78,12 +78,14 @@ class HtmlView extends ItemsHtmlView {
 
 				//Handlers
 				$handlers = [];
-				if(isset($item->handledBy))
-					$handlers[] = Text::sprintf('1. %s (%s)', $item->handledBy, $item->handledAt);
-				if(isset($item->reviewerLastname) || isset($item->reviewerFirstname))
-					$handlers[] = Text::sprintf('2. %s', implode(' ', [$item->reviewerLastname,$item->reviewerFirstname]));
-				if(isset($item->updatedBy))
-					$handlers[] = Text::sprintf('3. %s (%s)', $item->updatedBy, $item->updatedAt);
+				if($item->handlerName)
+					$handlers[] = sprintf('1. %s (%s)', $item->handlerName, $item->handledAt);
+				elseif($item->handlerUsername)
+					$handlers[] = sprintf('1. %s (%s)', $item->handlerUsername, $item->handledAt);
+				if($item->reviewerLastname || $item->reviewerFirstname)
+					$handlers[] = sprintf('2. %s', implode(' ', [$item->reviewerLastname,$item->reviewerFirstname]));
+				if($item->modifierName)
+					$handlers[] = sprintf('3. %s (%s)', $item->modifierName, $item->modifiedAt);
 				$item->handlers = empty($handlers) ? '': implode('<br/>',$handlers);
 			}
 		}

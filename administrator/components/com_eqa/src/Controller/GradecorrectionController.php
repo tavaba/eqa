@@ -2,10 +2,10 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Model\GradecorrectionModel;
 use Kma\Library\Kma\Controller\FormController;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpWord\PhpWord;
 
@@ -30,7 +30,10 @@ class GradecorrectionController extends  FormController {
 				throw new Exception("Chưa chọn yêu cầu đính chính nào");
 			$itemId = $cids[0];
 
-			//4. Accept the grade correction request
+			/**
+			 * 4. Accept the grade correction request
+			 * @var GradecorrectionModel $model
+			 */
 			$currentUsername = $this->app->getIdentity()->username;
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');
@@ -38,11 +41,11 @@ class GradecorrectionController extends  FormController {
 
 			//5. Redirect back
 			//   (The success message should be sent by the model)
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 		}
 		catch (Exception $e)
 		{
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -71,7 +74,7 @@ class GradecorrectionController extends  FormController {
 			if(!empty($cids))
 			{
 				$itemId = $cids[0];
-				$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrection&layout=reject&id='.$itemId, false));
+				$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrection&layout=reject&id='.$itemId, false));
 				return;
 			}
 
@@ -84,12 +87,12 @@ class GradecorrectionController extends  FormController {
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');
 			$model->reject($itemId, $description, $currentUsername, $currentTime);
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 		}
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 		}
 	}
 	public function downloadReviewForm()
@@ -133,7 +136,7 @@ class GradecorrectionController extends  FormController {
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 			return;
 		}
 	}
@@ -162,7 +165,7 @@ class GradecorrectionController extends  FormController {
 			if(!empty($cids))
 			{
 				$itemId = $cids[0];
-				$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrection&layout=correct&id='.$itemId, false));
+				$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrection&layout=correct&id='.$itemId, false));
 				return;
 			}
 
@@ -176,13 +179,13 @@ class GradecorrectionController extends  FormController {
 
 			//Redirect back
 			$this->setMessage('Đã lưu kết quả xử lý cho yêu cầu đính chính', 'success');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 			return;
 		}
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 			return;
 		}
 

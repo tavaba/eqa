@@ -1,8 +1,8 @@
 <?php
 
 namespace Kma\Component\Eqa\Administrator\Helper;
+use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\Toolbar;
-use JRoute;
 
 defined('_JEXEC') or die();
 
@@ -59,7 +59,7 @@ abstract class ToolbarHelper extends \Joomla\CMS\Toolbar\ToolbarHelper
             return;
 
         $toolbar = self::getToolbarInstance();
-        $url = JRoute::_('index.php?option=com_eqa');
+        $url = Route::_('index.php?option=com_eqa');
         $button = $toolbar->link('COM_EQA_BUTTON_GO_HOME', $url);
         $button->name('home');
     }

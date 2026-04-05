@@ -3,7 +3,6 @@ namespace Kma\Component\Eqa\Administrator\Helper;
 defined('_JEXEC') or die();
 
 use Exception;
-use JFactory;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
 
@@ -77,7 +76,7 @@ abstract class GeneralHelper{
         $path = JPATH_ADMINISTRATOR.'/components/com_eqa/access.xml';
         $xpath = "/access/section[@name='$sectionName']/";
         $actions = Access::getActionsFromFile($path,$xpath);
-        $user = JFactory::getApplication()->getIdentity();
+        $user = Factory::getApplication()->getIdentity();
         foreach ($actions as $action){
             $result[$action->name] = $user->authorise($action->name,$assetName);
         }

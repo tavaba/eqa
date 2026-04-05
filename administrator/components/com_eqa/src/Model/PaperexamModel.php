@@ -39,7 +39,7 @@ class PaperexamModel extends AdminModel{
 		$npaper = DatabaseHelper::getExamPaperCount($examId);
 		$nnopaper = DatabaseHelper::getExamNoPaperCount($examId);
 		if($npaper + $nnopaper != $nexaminee){
-			$msg = Text::sprintf('Chưa đủ thông tin thu bài (%d/%d thí sinh) nên không thể làm phách',$npaper + $nnopaper,$nexaminee);
+			$msg = sprintf('Chưa đủ thông tin thu bài (%d/%d thí sinh) nên không thể làm phách',$npaper + $nnopaper,$nexaminee);
 			$app->enqueueMessage($msg, 'error');
 			return false;
 		}
@@ -213,7 +213,7 @@ class PaperexamModel extends AdminModel{
 		}
 
 		//Finish
-		$msg = Text::sprintf('Thành công: %d bài thi, %d túi',$npaper, $npackage);
+		$msg = sprintf('Thành công: %d bài thi, %d túi',$npaper, $npackage);
 		$app->enqueueMessage($msg, 'success');
 		return true;
 	}
@@ -472,7 +472,7 @@ class PaperexamModel extends AdminModel{
 				$db->setQuery($query);
 				if(!$db->execute())
 				{
-					$msg = Text::sprintf('Lỗi cập nhật điểm bài thi cho số phách <b>%d</b>', $mask);
+					$msg = sprintf('Lỗi cập nhật điểm bài thi cho số phách <b>%d</b>', $mask);
 					throw new Exception($msg);
 				}
 
@@ -485,7 +485,7 @@ class PaperexamModel extends AdminModel{
 				$db->setQuery($query);
 				if(!$db->execute())
 				{
-					$msg = Text::sprintf('Lỗi cập nhật điểm học phần cho số phách <b>%d</b>', $mask);
+					$msg = sprintf('Lỗi cập nhật điểm học phần cho số phách <b>%d</b>', $mask);
 					throw new Exception($msg);
 				}
 			}

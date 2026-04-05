@@ -9,6 +9,7 @@ require_once JPATH_ROOT . '/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
+use Kma\Library\Kma\BankStatement\BankStatementImportResult;
 use Kma\Library\Kma\Helper\IOHelper;
 use Joomla\Database\DatabaseDriver;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
@@ -839,18 +840,11 @@ class SecondAttemptsModel extends ListModel
 	 *      - Hợp lệ → UPDATE payment_completed = 1, description = nội dung CK.
 	 *
 	 * @param  string  $filePath  Đường dẫn tuyệt đối đến file .xlsx đã upload.
-	 * @return array{
-	 *     updated:          int,
-	 *     alreadyPaid:      int,
-	 *     notFound:         int,
-	 *     amountMismatch:   array<array{payment_code: string, description: string, expected: float, actual: float}>,
-	 *     duplicate:        array<array{payment_code: string, count: int, descriptions: string[]}>,
-	 *     updatedCodes:     string[]
-	 * }
+	 * @return BankStatementImportResult
 	 * @throws Exception  Nếu file không đọc được hoặc format không đúng.
 	 * @since 2.0.3
 	 */
-	public function importBankStatement(string $filePath, string $napasCode): array
+	public function importBankStatement(string $filePath, string $napasCode): BankStatementImportResult
 	{
 		// 1. Parse file theo ngân hàng được chọn
 		$parser       = BankStatementHelper::getParser($napasCode);
@@ -896,25 +890,24 @@ class SecondAttemptsModel extends ListModel
 		foreach ($reconciled['matched'] as $pair) {
 			$rec  = $pair['record'];
 			$tx   = $pair['transaction'];
-			$db->setQuery(
-				'UPDATE ' . $db->quoteName('#__eqa_secondattempts') .
-				' SET ' .
-				$db->quoteName('payment_completed') . ' = 1, ' .
-				$db->quoteName('description') . ' = ' . $db->quote($tx['description']) .
-				' WHERE ' . $db->quoteName('id') . ' = ' . (int) $rec->id
-			);
+			$updateQuery = $db->getQuery(true)
+				->update($db->quoteName('#__eqa_secondattempts'))
+				->set($db->quoteName('payment_completed') . ' = 1')
+				->set($db->quoteName('description') . ' = ' . $db->quote($tx['description']))
+				->where($db->quoteName('id') . ' = ' . (int) $rec->id);
+			$db->setQuery($updateQuery);
 			$db->execute();
 			$updatedCodes[] = $rec->learner_code ?? ('id=' . $rec->id);
 		}
 
-		return [
-			'updated'        => count($reconciled['matched']),
-			'alreadyPaid'    => $reconciled['alreadyPaid'],
-			'notFound'       => $reconciled['notFound'],
-			'amountMismatch' => $reconciled['amountMismatch'],
-			'duplicate'      => $reconciled['duplicate'],
-			'updatedCodes'   => $updatedCodes,
-		];
+		$result                = new BankStatementImportResult();
+		$result->updated        = count($reconciled['matched']);
+		$result->alreadyPaid    = $reconciled['alreadyPaid'];
+		$result->notFound       = $reconciled['notFound'];
+		$result->amountMismatch = $reconciled['amountMismatch'];
+		$result->duplicate      = $reconciled['duplicate'];
+		$result->updatedCodes   = $updatedCodes;
+		return $result;
 	}
 
 	public function loadListForExport(bool $onlyFreeOrPaymentCompleted): array

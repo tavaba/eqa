@@ -10,13 +10,9 @@ use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\PaperexamModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\IOHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Xls;
 
 class PaperexamsController extends AdminController {
 	public function uploadMarkByMask()
@@ -79,7 +75,7 @@ class PaperexamsController extends AdminController {
 			}
 			if($row > $highestRow) //Không tìm thấy
 			{
-				$msg = Text::sprintf('Sheet <b>%s</b>: không tìm thấy môn thi', $sheet->getTitle());
+				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy môn thi', $sheet->getTitle());
 				$this->app->enqueueMessage($msg,'error');
 				continue; //Bỏ qua sheet hiện thời
 			}
@@ -98,7 +94,7 @@ class PaperexamsController extends AdminController {
 			}
 			if($row > $highestRow) //Không tìm thấy
 			{
-				$msg = Text::sprintf('Sheet <b>%s</b>: không tìm thấy phách', $sheet->getTitle());
+				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy phách', $sheet->getTitle());
 				$this->app->enqueueMessage($msg,'error');
 				continue; //Bỏ qua sheet hiện thời
 			}
@@ -137,7 +133,7 @@ class PaperexamsController extends AdminController {
 			}
 			if($invalidData)
 			{
-				$msg = Text::sprintf('Sheet <b>%s</b>, dòng %d: dữ liệu không hợp lệ', $sheet->getTitle(), $row);
+				$msg = sprintf('Sheet <b>%s</b>, dòng %d: dữ liệu không hợp lệ', $sheet->getTitle(), $row);
 				$this->app->enqueueMessage($msg,'error');
 				continue; //Bỏ qua sheet hiện thời
 			}
@@ -147,7 +143,7 @@ class PaperexamsController extends AdminController {
 			{
 				$paperExamModel->importMarkByMask($examId, $marks);
 				$examModel->conclude($examId, false);
-				$msg = Text::sprintf('<b>%s</b>: Nhập điểm thành công cho %d thí sinh', $sheet->getTitle(), sizeof($marks));
+				$msg = sprintf('<b>%s</b>: Nhập điểm thành công cho %d thí sinh', $sheet->getTitle(), sizeof($marks));
 				$this->app->enqueueMessage($msg, 'success');
 			}
 			catch(Exception $e)

@@ -2,14 +2,13 @@
 namespace Kma\Component\Eqa\Administrator\View\Subjects;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Service\RoomService;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
@@ -75,7 +74,7 @@ class HtmlView extends ItemsHtmlView
 	protected function addToolbarForLayoutDefault(): void
 	{
 		parent::addToolbarForLayoutDefault();
-		ToolbarHelper::appendImportLink(JRoute::_('index.php?option=com_eqa&view=subjects&layout=import',false));
+		ToolbarHelper::appendImportLink(Route::_('index.php?option=com_eqa&view=subjects&layout=import',false));
 	}
 
 	protected function prepareDataForLayoutImport(): void

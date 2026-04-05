@@ -1,11 +1,13 @@
 <?php
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');
 $form = $this->form;
-$urlAnomaly = JRoute::_('index.php?option=com_eqa&view=examrooms', false);
+$urlAnomaly = Route::_('index.php?option=com_eqa&view=examrooms', false);
 ?>
 <div>
     Một số lưu ý đối với việc nhập kết quả thi từ hệ thống iTest:
@@ -25,10 +27,5 @@ $urlAnomaly = JRoute::_('index.php?option=com_eqa&view=examrooms', false);
             thì cần xử lý điểm thủ công, sử dụng mẫu biên bản thi thực hành để nhập điểm</li>
     </ol>
 </div>
-<form action="<?php echo JRoute::_('index.php?option=com_eqa');?>" method="post" name="adminForm" id="adminForm" enctype="multipart/form-data" class="form-validate">
-    <input type="hidden" name="task" value="">
-    <?php
-    echo HTMLHelper::_('form.token');
-    echo $this->form->renderFieldset('upload_itest');
-    ?>
-</form>
+<?php
+ViewHelper::printUploadForm($this->form,'','upload_itest');

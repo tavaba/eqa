@@ -8,6 +8,8 @@ use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Library\Kma\BankStatement\BankStatementImportResult;
+use Kma\Library\Kma\Helper\PaymentCodeHelper;
 
 /**
  * Model danh sách thí sinh (người học) của một kỳ sát hạch.
@@ -268,7 +270,7 @@ class AssessmentLearnersModel extends ListModel
         }
 
         // end_date là DATE (không có timezone) → so sánh với ngày hôm nay theo OS timezone
-        $today = \Kma\Library\Kma\Helper\DatetimeHelper::getSystemCurrentClockTime('Y-m-d');
+        $today = \Kma\Library\Kma\Helper\DatetimeHelper::getCurrentSystemClockTime('Y-m-d');
         if ($a->end_date < $today) {
             return false;
         }
@@ -431,7 +433,7 @@ class AssessmentLearnersModel extends ListModel
             // INSERT mới
             $paymentCode = null;
             if (!$isFree) {
-                $paymentCode             = $this->generateUniqueCode($existingCodes);
+	            $paymentCode = PaymentCodeHelper::generateUniqueFromSet($existingCodes);
                 $existingCodes[$paymentCode] = true;
             }
 
@@ -1016,14 +1018,7 @@ class AssessmentLearnersModel extends ListModel
 	 * @param  int     $assessmentId  ID kỳ sát hạch.
 	 * @param  int     $operatorId    ID người dùng (modified_by).
 	 *
-	 * @return array{
-	 *     updated:       int,
-	 *     alreadyPaid:   int,
-	 *     notFound:      int,
-	 *     amountMismatch: array,
-	 *     duplicate:     array,
-	 *     updatedCodes:  string[]
-	 * }
+	 * @return BankStatementImportResult
 	 * @throws Exception
 	 * @since 2.0.5
 	 */
@@ -1032,7 +1027,8 @@ class AssessmentLearnersModel extends ListModel
 		string $napasCode,
 		int $assessmentId,
 		int $operatorId
-	): array {
+	): BankStatementImportResult
+	{
 		// 1. Parse file theo ngân hàng
 		$parser       = BankStatementHelper::getParser($napasCode);
 		$transactions = $parser->parse($filePath);
@@ -1095,14 +1091,14 @@ class AssessmentLearnersModel extends ListModel
 			$updatedCodes[] = $rec->learner_code ?? ('id=' . $rec->id);
 		}
 
-		return [
-			'updated'        => count($reconciled['matched']),
-			'alreadyPaid'    => $reconciled['alreadyPaid'],
-			'notFound'       => $reconciled['notFound'],
-			'amountMismatch' => $reconciled['amountMismatch'],
-			'duplicate'      => $reconciled['duplicate'],
-			'updatedCodes'   => $updatedCodes,
-		];
+		$result                = new BankStatementImportResult();
+		$result->updated        = count($reconciled['matched']);
+		$result->alreadyPaid    = $reconciled['alreadyPaid'];
+		$result->notFound       = $reconciled['notFound'];
+		$result->amountMismatch = $reconciled['amountMismatch'];
+		$result->duplicate      = $reconciled['duplicate'];
+		$result->updatedCodes   = $updatedCodes;
+		return $result;
 	}
 
 	// =========================================================================
@@ -1316,27 +1312,4 @@ class AssessmentLearnersModel extends ListModel
 			throw $e;
 		}
 	}
-
-	// =========================================================================
-    // Private helper
-    // =========================================================================
-
-    /**
-     * Sinh payment_code ngẫu nhiên 8 ký tự [A-Z0-9] không trùng tập đã có.
-     *
-     * @param  array<string, mixed>  $existingCodes  Map (flip) các code đã dùng.
-     *
-     * @throws Exception
-     */
-    private function generateUniqueCode(array $existingCodes): string
-    {
-        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        do {
-            $code = '';
-            for ($i = 0; $i < 8; $i++) {
-                $code .= $chars[random_int(0, strlen($chars) - 1)];
-            }
-        } while (isset($existingCodes[$code]));
-        return $code;
-    }
 }

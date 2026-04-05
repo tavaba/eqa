@@ -1,6 +1,7 @@
 <?php
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');
@@ -12,12 +13,5 @@ $urlSample = JUri::root().'media/com_eqa/xlsx/sample_mmp.xlsx';
 	sau đây: <a href="<?php echo $urlSample;?>">Phân công chấm tự luận</a>.
 	<hr/>
 </div>
-<form action="" method="post" name="adminForm" id="adminForm" enctype="multipart/form-data">
-	<?php echo JHtml::_('form.token'); ?>
-	<input type="hidden" name="task">
-	<?php
-	if(!empty($this->form))
-		echo $this->form->renderFieldset('upload');
-	?>
-
-</form>
+<?php
+ViewHelper::printUploadForm($this->form);

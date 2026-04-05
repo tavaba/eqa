@@ -1,25 +1,41 @@
 <?php
+
 namespace Kma\Component\Eqa\Administrator\Controller;
+
 defined('_JEXEC') or die();
-require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
-use JRoute;
+use Kma\Component\Eqa\Administrator\DataObject\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\PpaaType;
-use Kma\Library\Kma\Controller\AdminController;
+use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
-use Kma\Component\Eqa\Administrator\DataObject\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\RegradingModel;
+use Kma\Library\Kma\BankStatement\BankStatementHelper;
+use Kma\Library\Kma\BankStatement\BankStatementImportResultHelper;
+use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-class RegradingsController extends AdminController {
+/**
+ * Items Controller cho danh sách yêu cầu phúc khảo.
+ *
+ * Kế thừa tất cả các task hiện có từ AdminController (accept, reject, delete,
+ * downloadRegradingFee, v.v.) và bổ sung task mới:
+ *   - importStatement : đối chiếu sao kê ngân hàng, cập nhật trạng thái nộp phí
+ *                       và tự động chuyển trạng thái phúc khảo sang Accepted.
+ *
+ * @since 2.0.7
+ */
+class RegradingsController extends AdminController
+{
 	/**
 	 * This method allow the exam organizer to create a new regrading request for
 	 * some learners in one exam.
@@ -51,30 +67,21 @@ class RegradingsController extends AdminController {
 			 * PHASE 2. Save data
 			 * @var RegradingModel $regradingModel
 			 */
-			//1. Get ids of selected examinees
+			//1. Get the rest of form data
+			//a. Get ids of selected examinees
 			$learnerIds = $this->input->get('learner_ids',[],'array');
 			$learnerIds = array_filter($learnerIds,'intval');
 			if(empty($learnerIds))
 				throw new Exception('Không có thí sinh nào được chọn');
+
+			//b. Free regrading or not
+			$isFree = $this->input->getBool('is_free',false);
+
+			//c. Mark requests as accepted
 			$accepted = $this->input->getBool('accepted',false);
 
-			//2. Prepare data for saving
-			$userId = $this->app->getIdentity()->id;
-			$status = $accepted ? PpaaStatus::Accepted : PpaaStatus::Init;
-			$data = [
-				'exam_id'=>$examId,
-				'status' => $status->value,
-				'created_by'=>$userId,
-				'created_at'=>date('Y-m-d H:i:s'),
-			];
-			if($accepted)
-			{
-				$data['handled_by'] = $userId;
-				$data['handled_at'] = date('Y-m-d H:i:s');
-			}
-
 			/**
-			 * 3. Load Exam Model and check where can add PPAA requests
+			 * 2. Load Exam Model and check where can add PPAA requests
 			 * @var ExamModel $examModel
 			 */
 			$examModel = ComponentHelper::createModel('Exam');
@@ -82,6 +89,29 @@ class RegradingsController extends AdminController {
 				throw new Exception('Không thể tạo yêu cầu phúc khảo đối với môn thi.
 				Hãy kiểm tra xem đã mở phúc khảo kỳ thi hay chưa, thời hạn phúc khảo đã qua
 				hay chưa');
+
+
+			//3. Prepare data for saving
+			$user = $this->app->getIdentity();
+			$status = $accepted ? PpaaStatus::Accepted : PpaaStatus::Init;
+			$feeAmount = $isFree ? 0 :
+				$examModel->getRegradingFeeAmount($examId, ConfigHelper::getRegradingFeeMode(), ConfigHelper::getRegradingFeeRate());
+			$data = [
+				'exam_id'=>$examId,
+				'status' => $status->value,
+				'created_by'=>$user->id,
+				'created_at'=>DatetimeHelper::getCurrentUtcTime(),
+				'payment_amount'=>$feeAmount,
+			];
+			if($accepted)
+			{
+				$data['handled_by'] = $user->id;
+				$data['handled_by_username'] = $user->username;
+				$data['handled_at'] = DatetimeHelper::getCurrentUtcTime();
+				if($feeAmount>0)
+					$data['payment_completed']=1;
+			}
+
 
 			/**
 			 * 4. Load model for saving
@@ -91,7 +121,11 @@ class RegradingsController extends AdminController {
 			foreach ($learnerIds as $learnerId)
 			{
 				$data['learner_id'] = $learnerId;
-				$regradingModel->save($data);
+				if(!$regradingModel->save($data))
+				{
+					$msg = htmlspecialchars($regradingModel->getError());
+					throw new Exception($msg);
+				}
 
 				//Update 'ppaa' info in the #__eqa_exam_learner table
 				if(!$examModel->updateExamineePpaa($examId, $learnerId, PpaaType::Review->value))
@@ -112,7 +146,7 @@ class RegradingsController extends AdminController {
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 			return;
 		}
 	}
@@ -133,20 +167,23 @@ class RegradingsController extends AdminController {
 			if(empty($cid))
 				throw new Exception('Không có phần tử nào được chọn');
 
-			//4. Call model and apply change
-			$currentUsername = $this->app->getIdentity()->username;
+			/**
+			 * 4. Call model and apply change
+			 * @var RegradingModel $model
+			 */
+			$currentUser = $this->app->getIdentity();
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('regrading');
 			foreach ($cid  as $itemId)
-				$model->accept($itemId, $currentUsername, $currentTime);
+				$model->accept($itemId, $currentUser, $currentTime);
 
 			//5. Redirect
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
 	}
 	public function reject()
@@ -166,20 +203,23 @@ class RegradingsController extends AdminController {
 			if(empty($cid))
 				throw new Exception('Không có phần tử nào được chọn');
 
-			//4. Call model and apply change
-			$currentUsername = $this->app->getIdentity()->username;
+			/**
+			 * 4. Call model and apply change
+			 * @var RegradingModel $model
+			 */
+			$currentUser = $this->app->getIdentity();
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('regrading');
 			foreach ($cid  as $itemId)
-				$model->reject($itemId, $currentUsername, $currentTime);
+				$model->reject($itemId, $currentUser, $currentTime);
 
 			//5. Redirect
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
 	}
 
@@ -209,12 +249,12 @@ class RegradingsController extends AdminController {
 				throw new Exception('Vẫn chưa hết hạn gửi yêu cầu phúc khảo');
 
 			//Bước 3. Chuyển hướng sang form
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseason->id, false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseason->id, false));
 			return;
 		}
 		catch (Exception $e) {
 			$this->setMessage($e->getMessage(),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 			return;
 		}
 
@@ -247,15 +287,15 @@ class RegradingsController extends AdminController {
 			//Bước 5. Redirect đến trang tiếp theo nếu có
 			$this->setMessage('Dữ liệu đã được lưu thành công','success');
 			if($continueAssigning) {
-				$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseasonId.'&layout=default', false));
+				$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseasonId.'&layout=default', false));
 			}
 			else{
-				$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+				$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 			}
 		}
 		catch (Exception $e) {
 			$this->setMessage($e->getMessage(),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradings', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 			return;
 		}
 
@@ -312,7 +352,7 @@ class RegradingsController extends AdminController {
 			$this->app->close();
 		}
 		catch (Exception $e) {
-			$url = JRoute::_('index.php?option=com_eqa&view=regradings', false);
+			$url = Route::_('index.php?option=com_eqa&view=regradings', false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(),'error');
 		}
@@ -376,7 +416,7 @@ class RegradingsController extends AdminController {
 			$this->app->close();
 		}
 		catch (Exception $e) {
-			$url = JRoute::_('index.php?option=com_eqa&view=regradings', false);
+			$url = Route::_('index.php?option=com_eqa&view=regradings', false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(),'error');
 		}
@@ -422,7 +462,7 @@ class RegradingsController extends AdminController {
 			$this->app->close();
 		}
 		catch (Exception $e) {
-			$url = JRoute::_('index.php?option=com_eqa&view=regradings', false);
+			$url = Route::_('index.php?option=com_eqa&view=regradings', false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(),'error');
 		}
@@ -482,7 +522,7 @@ class RegradingsController extends AdminController {
 			$this->app->close();
 		}
 		catch(Exception $e){
-			$url = JRoute::_('index.php?option=com_eqa&view=regradings',false);
+			$url = Route::_('index.php?option=com_eqa&view=regradings',false);
 			$this->setRedirect($url);
 			$this->setMessage($e->getMessage(), 'error');
 		}
@@ -556,7 +596,7 @@ class RegradingsController extends AdminController {
 					}
 					if(!$examName || !$examId)
 					{
-						$msg = Text::sprintf('Không tìm thấy tên hoặc mã môn thi trong sheet <b>%s</b> của file <b>%s</b>',
+						$msg = sprintf('Không tìm thấy tên hoặc mã môn thi trong sheet <b>%s</b> của file <b>%s</b>',
 							htmlspecialchars($sheetTitle), htmlspecialchars($fileName));
 						throw new Exception($msg);
 					}
@@ -573,7 +613,7 @@ class RegradingsController extends AdminController {
 					}
 					if(is_null($headingRowIndex))
 					{
-						$msg = Text::sprintf('Không tìm thấy dòng tiêu đề của bảng điểm trong sheet <b>%s</b> của file <b>%s</b>',
+						$msg = sprintf('Không tìm thấy dòng tiêu đề của bảng điểm trong sheet <b>%s</b> của file <b>%s</b>',
 							htmlspecialchars($sheetTitle), htmlspecialchars($fileName));
 						throw new Exception($msg);
 					}
@@ -605,7 +645,7 @@ class RegradingsController extends AdminController {
 						//Check if marks are valid
 						if(!ExamHelper::isValidMark($regradingEntry->oldMark) || !ExamHelper::isValidMark($regradingEntry->newMark))
 						{
-							$msg = Text::sprintf('Điểm không hợp lệ ở dòng %d của sheet <b>%s</b> thuộc file <b>%s</s>',
+							$msg = sprintf('Điểm không hợp lệ ở dòng %d của sheet <b>%s</b> thuộc file <b>%s</s>',
 								$r,
 								htmlspecialchars($sheetTitle),
 								htmlspecialchars($fileName)
@@ -619,7 +659,7 @@ class RegradingsController extends AdminController {
 
 					if($uncomplete)
 					{
-						$msg = Text::sprintf("Sheet <b>%s</b> file <b>%s</b> chưa hoàn thiện, bị bỏ qua",
+						$msg = sprintf("Sheet <b>%s</b> file <b>%s</b> chưa hoàn thiện, bị bỏ qua",
 							htmlspecialchars($sheetTitle), htmlspecialchars($fileName)
 						);
 						$this->app->enqueueMessage($msg, 'warning');
@@ -628,7 +668,7 @@ class RegradingsController extends AdminController {
 
 					//Step 5. Save result
 					$model->savePaperRegradingResult($examId, $regradingData);
-					$msg = Text::sprintf("Sheet <b>%s</b> file <b>%s</b>: Cập nhật thành công %d bản ghi",
+					$msg = sprintf("Sheet <b>%s</b> file <b>%s</b>: Cập nhật thành công %d bản ghi",
 						htmlspecialchars($sheetTitle),
 						htmlspecialchars($fileName),
 						count($regradingData));
@@ -638,12 +678,12 @@ class RegradingsController extends AdminController {
 		}
 		catch (Exception $e) {
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingresult&layout=uploadpaper', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingresult&layout=uploadpaper', false));
 			return;
 		}
 
 		//6. Redirect back to the page
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingresult&layout=uploadpaper', false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingresult&layout=uploadpaper', false));
 	}
 	public function uploadHybridRegradingResult():void
 	{
@@ -672,7 +712,7 @@ class RegradingsController extends AdminController {
 			$sheet = $spreadsheet->getSheetByName($sheetName);
 			if(empty($sheet))
 			{
-				$msg = Text::sprintf("File không hợp lệ. Không tìm thấy sheet <b>%s</b>", $sheetName);
+				$msg = sprintf("File không hợp lệ. Không tìm thấy sheet <b>%s</b>", $sheetName);
 				throw new Exception($msg);
 			}
 
@@ -693,7 +733,7 @@ class RegradingsController extends AdminController {
 				}
 				if(!ExamHelper::isValidMark($mark))
 				{
-					$msg = Text::sprintf("Điểm không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $r+1);
+					$msg = sprintf("Điểm không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $r+1);
 					throw new Exception($msg);
 				}
 
@@ -708,16 +748,102 @@ class RegradingsController extends AdminController {
 
 			//6. Show message
 			$examName = DatabaseHelper::getExamName($examId);
-			$msg = Text::sprintf('Ghi điểm phúc khảo thành công cho %d thí sinh của môn thi <b>%s</b>', $count, htmlspecialchars($examName));
+			$msg = sprintf('Ghi điểm phúc khảo thành công cho %d thí sinh của môn thi <b>%s</b>', $count, htmlspecialchars($examName));
 			$this->app->enqueueMessage($msg,'success');
 		}
 		catch (Exception $e) {
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingresult&layout=uploadpaper', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingresult&layout=uploaditest', false));
 			return;
 		}
 
 		//7. Redirect back to the page
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=regradingresult&layout=uploaditest', false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingresult&layout=uploaditest', false));
+	}
+
+	// =========================================================================
+	// importStatement — đối chiếu sao kê ngân hàng phí phúc khảo
+	// =========================================================================
+
+	/**
+	 * Nhận file sao kê Excel, đối chiếu payment_code với các yêu cầu phúc khảo,
+	 * cập nhật payment_completed và (nếu lần đầu nộp) chuyển status → Accepted.
+	 *
+	 * POST params:
+	 *   - examseason_id  : int    — ID kỳ thi
+	 *   - napas_code     : string — Mã NAPAS ngân hàng
+	 *   - bank_statement : file   — File .xlsx sao kê
+	 *
+	 * @since 2.0.7
+	 */
+	public function importStatement(): void
+	{
+		$examseasonId = $this->input->post->getInt('examseason_id');
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=regradings'
+			. ($examseasonId ? '&examseason_id=' . $examseasonId : ''),
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('core.manage', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			// Kiểm tra ngân hàng
+			$napasCode = trim($this->input->post->getString('napas_code', ''));
+			if (empty($napasCode)) {
+				throw new Exception('Vui lòng chọn ngân hàng.');
+			}
+			if (!BankStatementHelper::isSupported($napasCode)) {
+				$supported = implode(', ', BankStatementHelper::getSupportedBankNames());
+				throw new Exception(sprintf(
+					'Ngân hàng này chưa được hỗ trợ đọc sao kê tự động. Các ngân hàng hỗ trợ: %s.',
+					$supported
+				));
+			}
+
+			// Kiểm tra file upload
+			$uploadedFile = $this->input->files->get('bank_statement');
+			if (empty($uploadedFile) || empty($uploadedFile['tmp_name'])) {
+				throw new Exception('Vui lòng chọn file sao kê ngân hàng (.xlsx).');
+			}
+			if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
+				throw new Exception('Lỗi upload file (mã lỗi: ' . $uploadedFile['error'] . ').');
+			}
+			if (strtolower(pathinfo($uploadedFile['name'] ?? '', PATHINFO_EXTENSION)) !== 'xlsx') {
+				throw new Exception('Chỉ chấp nhận file Excel (.xlsx).');
+			}
+
+			// Lưu file vào thư mục tmp
+			$tmpDir  = Factory::getApplication()->get('tmp_path');
+			$tmpFile = $tmpDir . '/eqa_regrading_stmt_' . uniqid('', true) . '.xlsx';
+			if (!move_uploaded_file($uploadedFile['tmp_name'], $tmpFile)) {
+				throw new Exception('Không thể lưu file upload. Vui lòng kiểm tra quyền ghi thư mục tmp.');
+			}
+
+			try {
+				$operatorId = (int) $this->app->getIdentity()->id;
+
+				/** @var RegradingsModel $model */
+				$model  = ComponentHelper::createModel('Regradings');
+				$result = $model->importBankStatement($tmpFile, $napasCode, $examseasonId, $operatorId);
+			} finally {
+				if (file_exists($tmpFile)) {
+					@unlink($tmpFile);
+				}
+			}
+
+			$this->setMessage(
+				BankStatementImportResultHelper::buildMessage($result, 'đã nộp phí và được chấp nhận phúc khảo'),
+				BankStatementImportResultHelper::getMessageType($result)
+			);
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
 	}
 }

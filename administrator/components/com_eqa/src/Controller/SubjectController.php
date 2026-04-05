@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
@@ -11,7 +12,7 @@ class SubjectController extends  FormController {
 	public function stimulate()
 	{
 		//Redirect in any case
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=stimulations',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=stimulations',false));
 
 		//Check token
 		if(!$this->checkToken('post', false))
@@ -66,7 +67,7 @@ class SubjectController extends  FormController {
 	public function clearStimulations()
 	{
 		//Redirect in any case
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=stimulations',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=stimulations',false));
 
 		//Check token
 		if(!$this->checkToken('post', false))

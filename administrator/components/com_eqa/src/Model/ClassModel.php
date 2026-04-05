@@ -153,7 +153,7 @@ class ClassModel extends AdminModel
 		}
 		if(!empty($absentees))
 		{
-			$msg = Text::sprintf('Có %d HVSV không tồn tại trong CSDL: %s',
+			$msg = sprintf('Có %d HVSV không tồn tại trong CSDL: %s',
 				count($absentees),
 				htmlentities(implode('; ', $absentees))
 			);
@@ -262,7 +262,7 @@ class ClassModel extends AdminModel
 		}
 		if(!empty($absentees))
 		{
-			$msg = Text::sprintf('Có %d HVSV không tồn tại trong lớp học phần: %s',
+			$msg = sprintf('Có %d HVSV không tồn tại trong lớp học phần: %s',
 				count($absentees),
 				htmlentities(implode('; ', $absentees))
 			);

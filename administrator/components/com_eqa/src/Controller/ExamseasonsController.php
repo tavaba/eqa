@@ -3,10 +3,8 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
-use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use JRoute;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamseasonsModel;
@@ -89,7 +87,7 @@ class ExamseasonsController extends AdminController
 		$this->checkToken();
 
 		//Set redirect in any other case
-		$url = JRoute::_('index.php?option=com_eqa', false);
+		$url = Route::_('index.php?option=com_eqa', false);
 		$this->setRedirect($url);
 
 		//Check permissions
@@ -149,7 +147,7 @@ class ExamseasonsController extends AdminController
 		$this->checkToken();
 
 		//Redirect
-		$url = JRoute::_('index.php?option=com_eqa&view=examseasons', false);
+		$url = Route::_('index.php?option=com_eqa&view=examseasons', false);
 		$this->setRedirect($url);
 
 		//Permission
@@ -195,7 +193,7 @@ class ExamseasonsController extends AdminController
 		$this->checkToken();
 
 		//Redirect
-		$url = JRoute::_('index.php?option=com_eqa&view=examseasons', false);
+		$url = Route::_('index.php?option=com_eqa&view=examseasons', false);
 		$this->setRedirect($url);
 
 		//Permission

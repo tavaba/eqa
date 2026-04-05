@@ -1,11 +1,10 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
@@ -20,7 +19,7 @@ class PaperexamController extends  FormController {
 		$this->checkToken();
 
 		//Set redirect in any other case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=paperexams',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=paperexams',false));
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('eqa.mask', $this->option)){
@@ -50,7 +49,7 @@ class PaperexamController extends  FormController {
 		$this->checkToken();
 
 		//Set redirect
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa', false));
 
 		//Check permission
 		if (!$this->app->getIdentity()->authorise('eqa.mask', $this->option))
@@ -94,7 +93,7 @@ class PaperexamController extends  FormController {
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option)){
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa',false));
 			return;
 		}
 
@@ -107,7 +106,7 @@ class PaperexamController extends  FormController {
 		$examId = $cid[0];
 
 		//Redirect to edit layout
-		$url = JRoute::_('index.php?option=com_eqa&view=paperexam&layout=examiners&exam_id='.$examId,false);
+		$url = Route::_('index.php?option=com_eqa&view=paperexam&layout=examiners&exam_id='.$examId,false);
 		$this->setRedirect($url);
 	}
 	public function saveExaminers()
@@ -119,12 +118,12 @@ class PaperexamController extends  FormController {
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa',false));
 			return;
 		}
 
 		//Redirect for the rest cases
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=paperexams',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=paperexams',false));
 
 		//Determin the exam id
 		$examId = $this->app->input->getInt('exam_id');
@@ -148,7 +147,7 @@ class PaperexamController extends  FormController {
 		$this->checkToken();
 
 		//Redirect in any case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=paperexams',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=paperexams',false));
 
 		//Determine the exam id
 		$cid     = (array) $this->input->post->get('cid', [], 'int');

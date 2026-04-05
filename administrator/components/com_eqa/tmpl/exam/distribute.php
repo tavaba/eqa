@@ -1,8 +1,10 @@
 <?php
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');
@@ -54,12 +56,9 @@ $form = $this->form;
     <br/>
     <hr/>
 </div>
-<form action="<?php echo JRoute::_('index.php?option=com_eqa');?>" method="post" name="adminForm" id="adminForm" class="form-validate">
-    <input type="hidden" name="exam_id" value="<?php echo $exam->id;?>">
-    <input type="hidden" name="phase" value="getdata">
-    <input type="hidden" name="task" value="">
-    <?php
-    echo HTMLHelper::_('form.token');
-    echo $this->form->renderFieldset('examrooms');
-    ?>
-</form>
+<?php
+$hiddenFields = [
+	'exam_id' => $exam->id,
+	'phase' => 'getdata',
+];
+ViewHelper::printForm($this->form,'examrooms', $hiddenFields);

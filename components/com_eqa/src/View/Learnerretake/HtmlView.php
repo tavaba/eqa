@@ -6,7 +6,8 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Factory;
-use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+//use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Kma\Library\Kma\View\ItemHtmlView as BaseHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
@@ -156,9 +157,10 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
+	    $this->wa->useScript('qrcode.script');
         $this->prepareData();
         $this->addToolbar();
-        parent::display($tpl);
+	    parent::display($tpl);
     }
 
     /**
@@ -198,7 +200,6 @@ class HtmlView extends BaseHtmlView
 
             // 5. Đọc cấu hình từ params của menu item hiện tại
             $this->loadMenuItemParams();
-
         } catch (Exception $e) {
             $this->errorMessage = $e->getMessage();
         }

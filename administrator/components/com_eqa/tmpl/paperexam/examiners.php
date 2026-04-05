@@ -2,6 +2,7 @@
 defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Field\EmployeeField;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -31,7 +32,7 @@ if(empty($packages)){
 else
 	echo 'Số túi: ', sizeof($packages),'<br/>';
 ?>
-<form action="<?php echo JRoute::_('index.php?option=com_eqa');?>" method="POST" name="adminForm" id="adminForm" class="form-validate" >
+<form action="<?php echo Route::_('index.php?option=com_eqa');?>" method="POST" name="adminForm" id="adminForm" class="form-validate" >
 	<input type="hidden" name="task" value=""/>
 	<input type="hidden" name="exam_id" value="<?php echo $exam->id;?>">
 	<?php

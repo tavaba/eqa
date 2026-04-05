@@ -86,9 +86,9 @@ class LearnerexamsModel extends ListModel {
 	    if(is_numeric($subjectId))
 		    $query->where('g.subject_id='.(int)$subjectId);
 
-	    $academicyearId = $this->getState('filter.academicyear_id');
-	    if(is_numeric($academicyearId))
-		    $query->where('`e`.`academicyear_id`='.(int)$academicyearId);
+	    $academicyear = $this->getState('filter.academicyear');
+	    if(is_numeric($academicyear))
+		    $query->where('`e`.`academicyear`='.(int)$academicyear);
 
 	    $term = $this->getState('filter.term');
 	    if(is_numeric($term))

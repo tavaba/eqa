@@ -1,6 +1,8 @@
 <?php
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die;
 
@@ -22,7 +24,7 @@ HTMLHelper::_('behavior.formvalidator');
                         tài chính.
                     </li>
                     <li>Có thể thực hiện chức năng này thông qua "Ghi nợ", "Xóa nợ" tại
-                        <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=learners') ?>">trang quản lý HVSV</a>
+                        <a href="<?php echo Route::_('index.php?option=com_eqa&view=learners') ?>">trang quản lý HVSV</a>
                     </li>
                     <li>
                         CBKT nhập mã HVSV (cách nhau bằng dấu cách, dấu tab, dấu phẩy, dấu chấm phẩy
@@ -39,10 +41,12 @@ HTMLHelper::_('behavior.formvalidator');
     </div>
 </div>
 
-<form action="<?php echo JRoute::_('index.php?option=com_eqa');?>" method="post" name="adminForm" id="adminForm" class="form-validate">
+<form action="<?php echo Route::_('index.php?option=com_eqa');?>" method="post" name="adminForm" id="adminForm" class="form-validate">
     <input type="hidden" name="task">
     <?php
     echo $this->form->renderFieldset('debtors');
     echo JHtml::_('form.token');
     ?>
 </form>
+<?php
+ViewHelper::printForm($this->form,'debtors');

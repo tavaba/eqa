@@ -7,7 +7,6 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
-use JRoute;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Controller\FormController;
@@ -371,7 +370,7 @@ class ExamseasonController extends FormController
 		$this->checkToken();
 
 		//Redirect in any case
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
@@ -408,7 +407,7 @@ class ExamseasonController extends FormController
 		$this->checkToken();
 
 		//Redirect in any case
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
@@ -480,7 +479,7 @@ class ExamseasonController extends FormController
 		catch (Exception $exception)
 		{
 			$this->setMessage($exception->getMessage(),'error');
-			$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
 			return;
 		}
 	}
@@ -520,7 +519,7 @@ class ExamseasonController extends FormController
 		catch (Exception $exception)
 		{
 			$this->setMessage($exception->getMessage(),'error');
-			$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=examseasons',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
 			return;
 		}
 	}
@@ -561,7 +560,7 @@ class ExamseasonController extends FormController
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examseasons',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
 		}
 	}
 

@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -15,7 +15,7 @@ class MmproductionsController extends AdminController
 		$this->checkToken();
 
 		//Set redicrect in any case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=mmproductions',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=mmproductions',false));
 
 		//Check permissions
 		if(!$this->app->getIdentity()->authorise('core.create', $this->option))
@@ -88,7 +88,7 @@ class MmproductionsController extends AdminController
 				break;
 			if(empty($name1) || empty($name2))
 			{
-				$msg = Text::sprintf('Dòng %d: không có đủ 2 người chấm', $row);
+				$msg = sprintf('Dòng %d: không có đủ 2 người chấm', $row);
 				$this->$this->setMessage($msg, 'error');
 			}
 

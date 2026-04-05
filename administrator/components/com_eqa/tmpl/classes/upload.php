@@ -1,9 +1,7 @@
 <?php
-
-use Kma\Library\Kma\Helper\ViewHelper;
-
 defined('_JEXEC') or die();
 
+use Kma\Library\Kma\Helper\ViewHelper;
 
 //Preprocessing
 $samplePath = 'media/com_eqa/xlsx/sample_classes.xls';

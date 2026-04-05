@@ -2,6 +2,9 @@
 defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Helper\ViewHelper;
+
 HTMLHelper::_('behavior.formvalidator');
 
 //Preprocessing
@@ -26,8 +29,5 @@ $sampleUrl = JUri::root().$samplePath;
     </div>
 </div>
 <hr/>
-<form action="<?php echo JRoute::_('index.php?option=com_eqa');?>" method="post" name="adminForm" id="adminForm" enctype="multipart/form-data" class="form-validate">
-    <input type="hidden" name="task" value=""/>
-	<?php echo JHtml::_('form.token'); ?>
-	<?php echo $form->renderFieldset('upload'); ?>
-</form>
+<?php
+ViewHelper::printUploadForm($form);

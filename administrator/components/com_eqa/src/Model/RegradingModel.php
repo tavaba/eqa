@@ -1,9 +1,8 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
-use JFactory;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\User\User;
 use Joomla\Utilities\ArrayHelper;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
@@ -18,7 +17,7 @@ class RegradingModel extends AdminModel {
 		/*
 		 * A record can be delete if the following conditions are met
 		 * - The corresponding request was sent by the current user
-		 *   (column 'requested_by' in #__eqa_regradings table)
+		 *   (column 'created_by' in #__eqa_regradings table)
 		 * - A regrading mark has been set and approved
 		 *   (column 'result' in #__eqa_regradings IS NOT NULL)
 		 * - The corresponding examseason has not been completed yet
@@ -26,9 +25,9 @@ class RegradingModel extends AdminModel {
 		 */
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
-			'a.requested_by         AS requestedBy',
-			'a.result               AS result',
-			'c.completed            AS completed',
+			$db->quoteName('a.created_by',          'createdBy'),
+			$db->quoteName('a.result',              'result'),
+			$db->quoteName('c.completed',           'completed'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -44,9 +43,9 @@ class RegradingModel extends AdminModel {
 
 		//A record can be deleted only by the user who submitted it
 		$currentUserId = Factory::getApplication()->getIdentity()->id;
-		if($currentUserId != $info->requestedBy)
+		if($currentUserId != $info->createdBy)
 			throw new Exception('Yêu cầu phúc khảo chỉ có thể được xóa bởi người đã khởi tạo nó');
-		if($info->resull !== null)
+		if($info->result !== null)
 			throw new Exception('Đã có kết quả phúc khảo nên không thể xóa');
 		if($info->completed)
 			throw new Exception('Kỳ thi đã hoàn thành nên không thể xóa');
@@ -84,22 +83,26 @@ class RegradingModel extends AdminModel {
 	/**
 	 * Ghi nhận yêu cầu đính chính được chấp nhận
 	 * @param   int     $itemId
-	 * @param   string  $currentUsername
+	 * @param   User    $currentUser
 	 * @param   string  $currentTime
 	 *
 	 *
 	 * @throws Exception
 	 * @since 1.1.10
 	 */
-	public function accept(int $itemId, string $currentUsername, string $currentTime)
+	public function accept(int $itemId, User $currentUser, string $currentTime): void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		//1. Get information about the grade correction request
 		$columns = [
-			$db->quoteName('b.code')                 . ' AS ' . $db->quoteName('learnerCode'),
+			$db->quoteName('a.status',              'status'),
+			$db->quoteName('a.payment_amount',      'paymentAmount'),
+			$db->quoteName('a.payment_code',        'paymentCode'),
+			$db->quoteName('a.payment_completed',   'paymentCompleted'),
+			$db->quoteName('b.code',                'learnerCode'),
 			'CONCAT_WS(" ", b.lastname, b.firstname)'      . ' AS ' . $db->quoteName('fullname'),
-			$db->quoteName('d.completed')            . ' AS ' . $db->quoteName('examseasonCompleted')
+			$db->quoteName('d.completed',           'examseasonCompleted')
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -112,40 +115,51 @@ class RegradingModel extends AdminModel {
 		$item = $db->loadObject();
 
 		//2. Check if can accept
-		if(!isset($item))
+		if(empty($item))
 			throw new Exception("Không tìm thấy yêu cầu phúc khảo");
+		$requestInfo = "{$item->learnerCode}-{$item->fullname}({$item->paymentCode})";
 		if($item->examseasonCompleted)
-			throw new Exception("Kỳ thi đã kết thúc nên không thể chấp nhận yêu cầu phúc khảo");
+			throw new Exception("{$requestInfo}: Kỳ thi đã kết thúc nên không thể chấp nhận yêu cầu phúc khảo");
+		if($item->status == PpaaStatus::Done->value)
+			throw new Exception("{$requestInfo}: Yêu cầu đã xử lý xong, không thể quay ngược trạng thái");
 
 		//3. Update database
 		$query = $db->getQuery(true)
 			->update('#__eqa_regradings')
 			->set([
 				'status = ' . PpaaStatus::Accepted->value,
-				'handled_by = ' . $db->quote($currentUsername),
-				'handled_at = ' . $db->quote($currentTime)
+				'handled_at = ' . $db->quote($currentTime),
+				'handled_by = ' . (int)$currentUser->id,
+				'handled_by_username = ' . $db->quote($currentUser->username),
 			])
 			->where('id = ' . $itemId);
+		if($item->paymentAmount >0)
+			$query->set('payment_completed=1');
+
 		$db->setQuery($query);
 		if(!$db->execute())
 			throw new Exception("Xảy ra lỗi khi chấp nhận yêu cầu phúc khảo");
 
 		//4. Return success message
-		$app = JFactory::getApplication();
-		$msg = Text::sprintf('Yêu cầu phúc khảo của <b>%s (%s)</b> đã được chấp nhận',
+		$app = Factory::getApplication();
+		$msg = sprintf('Yêu cầu phúc khảo của <b>%s (%s)</b> đã được chấp nhận',
 			$item->fullname, $item->learnerCode
 		);
 		$app->enqueueMessage($msg, "success");
 	}
-	public function reject(int $itemId, string $currentUsername, string $currentTime)
+	public function reject(int $itemId, User $currentUser, string $currentTime): void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		//1. Get information about the grade correction request
 		$columns = [
-			$db->quoteName('b.code')                 . ' AS ' . $db->quoteName('learnerCode'),
+			$db->quoteName('a.status',              'status'),
+			$db->quoteName('a.payment_amount',      'paymentAmount'),
+			$db->quoteName('a.payment_code',        'paymentCode'),
+			$db->quoteName('a.payment_completed',   'paymentCompleted'),
+			$db->quoteName('b.code',                'learnerCode'),
 			'CONCAT_WS(" ", b.lastname, b.firstname)'      . ' AS ' . $db->quoteName('fullname'),
-			$db->quoteName('d.completed')            . ' AS ' . $db->quoteName('examseasonCompleted')
+			$db->quoteName('d.completed',           'examseasonCompleted')
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -160,15 +174,20 @@ class RegradingModel extends AdminModel {
 		//2. Check if can reject
 		if(!isset($item))
 			throw new Exception("Không tìm thấy yêu cầu phúc khảo");
+		$requestInfo = "{$item->learnerCode}-{$item->fullname}({$item->paymentCode})";
 		if($item->examseasonCompleted)
-			throw new Exception("Kỳ thi đã kết thúc nên không thể từ chối yêu cầu phúc khảo");
+			throw new Exception("{$requestInfo}: Kỳ thi đã kết thúc nên không thể từ chối yêu cầu phúc khảo");
+		if($item->status == PpaaStatus::Done->value)
+			throw new Exception("{$requestInfo}: Yêu cầu đã xử lý xong, không thể quay ngược trạng thái");
 
 		//3. Update database
 		$query = $db->getQuery(true)
 			->update('#__eqa_regradings')
 			->set([
 				'status = ' . PpaaStatus::Rejected->value,
-				'handled_by = ' . $db->quote($currentUsername),
+				'payment_completed=0',
+				'handled_by = ' . (int)$currentUser->id,
+				'handled_by_username = ' . $db->quote($currentUser->username),
 				'handled_at = ' . $db->quote($currentTime)
 			])
 			->where('id = ' . $itemId);
@@ -177,8 +196,8 @@ class RegradingModel extends AdminModel {
 			throw new Exception("Xảy ra lỗi khi từ chối yêu cầu phúc khảo");
 
 		//4. Return success message
-		$app = JFactory::getApplication();
-		$msg = Text::sprintf('Yêu cầu phúc khảo của <b>%s (%s)</b> đã bị từ chối',
+		$app = Factory::getApplication();
+		$msg = sprintf('Yêu cầu phúc khảo của <b>%s (%s)</b> đã bị từ chối',
 			$item->fullname, $item->learnerCode
 		);
 		$app->enqueueMessage($msg, "success");

@@ -5,10 +5,9 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -34,9 +33,9 @@ class ExamsController extends AdminController {
 		//If an examseason id was specified then redirect to that page
 		$examseasonId = $this->input->getInt('examseason_id');
 		if(!empty($examseasonId))
-			$url = JRoute::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+			$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
 		else
-			$url = JRoute::_('index.php?option=com_eqa&view=exams',false);
+			$url = Route::_('index.php?option=com_eqa&view=exams',false);
 		$this->setRedirect($url);
 	}
 
@@ -93,9 +92,9 @@ class ExamsController extends AdminController {
 		//Set redirect in any case
 		$examseasonId = $this->input->getInt('examseason_id');
 		if(empty($examseasonId))
-			$url = JRoute::_('index.php?option=com_eqa&view=exams',false);
+			$url = Route::_('index.php?option=com_eqa&view=exams',false);
 		else
-			$url = JRoute::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+			$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
 		$this->setRedirect($url);
 
 		//Check token
@@ -138,7 +137,7 @@ class ExamsController extends AdminController {
 		$this->checkToken();
 
 		//Redirect in any case
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=exams',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=exams',false));
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
@@ -181,7 +180,7 @@ class ExamsController extends AdminController {
 		$this->checkToken();
 
 		//Redirect in any case
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=exams',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=exams',false));
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
@@ -227,7 +226,7 @@ class ExamsController extends AdminController {
 		$this->checkToken();
 
 		//Redirect in any case
-		$this->setRedirect(\JRoute::_('index.php?option=com_eqa&view=exams',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=exams',false));
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.manage', $this->option))

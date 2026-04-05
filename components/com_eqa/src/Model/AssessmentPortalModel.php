@@ -9,7 +9,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
-
+use Kma\Library\Kma\Helper\PaymentCodeHelper;
 /**
  * Model front-end cho trang Thi sát hạch (AssessmentPortal).
  *
@@ -191,7 +191,7 @@ class AssessmentPortalModel extends BaseModel
 
 		// 6. Phân loại từng kỳ sát hạch
 		// Lấy thời điểm "hôm nay" và "bây giờ" theo giờ hệ thống (OS timezone)
-		$todayLocal = DatetimeHelper::getSystemCurrentClockTime('Y-m-d');
+		$todayLocal = DatetimeHelper::getCurrentSystemClockTime('Y-m-d');
 		$nowUtc     = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
 
 		$active = [];
@@ -359,7 +359,7 @@ class AssessmentPortalModel extends BaseModel
 		$fee    = (int) $assessment->fee;
 		$paymentCode = null;
 		if ($fee > 0) {
-			$paymentCode = $this->generateUniquePaymentCode($db);
+			$paymentCode = PaymentCodeHelper::generateUnique($db, '#__eqa_assessment_learner', 'payment_code');
 		}
 
 		$query = $db->getQuery(true)
@@ -484,32 +484,6 @@ class AssessmentPortalModel extends BaseModel
 		return $db->loadObject() ?: null;
 	}
 
-	/**
-	 * Sinh payment_code ngẫu nhiên 8 ký tự [A-Z0-9] duy nhất trong bảng #__eqa_assessment_learner.
-	 *
-	 * @throws Exception
-	 */
-	private function generateUniquePaymentCode(\Joomla\Database\DatabaseDriver $db): string
-	{
-		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-		// Load tập code đã tồn tại từ cả 2 bảng để đảm bảo duy nhất toàn hệ thống
-		$db->setQuery(
-			'SELECT ' . $db->quoteName('payment_code') .
-			' FROM ' . $db->quoteName('#__eqa_assessment_learner') .
-			' WHERE ' . $db->quoteName('payment_code') . ' IS NOT NULL'
-		);
-		$existingCodes = array_flip($db->loadColumn());
-
-		do {
-			$code = '';
-			for ($i = 0; $i < 8; $i++) {
-				$code .= $chars[random_int(0, strlen($chars) - 1)];
-			}
-		} while (isset($existingCodes[$code]));
-
-		return $code;
-	}
 
 	/**
 	 * Tính khoảng thời gian còn lại đến một thời điểm UTC trong tương lai.

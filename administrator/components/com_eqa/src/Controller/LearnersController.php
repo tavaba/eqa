@@ -6,10 +6,9 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
-use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 
@@ -22,7 +21,7 @@ class LearnersController extends AdminController{
 
         //Set redirect to list view in any case
         $this->setRedirect(
-            JRoute::_(
+            Route::_(
                 'index.php?option=' . $this->option . '&view=' . $this->view_list
                 . $this->getRedirectToListAppend(),
                 false
@@ -168,7 +167,7 @@ class LearnersController extends AdminController{
 
 		//Set redirect to list view in any case
 		$this->setRedirect(
-			JRoute::_(
+			Route::_(
 				'index.php?option=' . $this->option . '&view=' . $this->view_list
 				. $this->getRedirectToListAppend(),
 				false
@@ -217,7 +216,7 @@ class LearnersController extends AdminController{
 
 		//Set redirect to list view in any case
 		$this->setRedirect(
-			JRoute::_(
+			Route::_(
 				'index.php?option=' . $this->option . '&view=' . $this->view_list
 				. $this->getRedirectToListAppend(),
 				false
@@ -259,7 +258,7 @@ class LearnersController extends AdminController{
 
 		//Set redirect to list view in any case
 		$this->setRedirect(
-			JRoute::_(
+			Route::_(
 				'index.php?option=' . $this->option . '&view=' . $this->view_list
 				. $this->getRedirectToListAppend(),
 				false
@@ -287,7 +286,7 @@ class LearnersController extends AdminController{
 		$model = $this->getModel();
 		if($model->markDebt($learnerIds, 1))
 		{
-			$this->setMessage(Text::sprintf('COM_EQA_MSG_DEBT_SET_FOR_N_LEARNERS',sizeof($learnerIds)),'success');
+			$this->setMessage(sprintf('COM_EQA_MSG_DEBT_SET_FOR_N_LEARNERS',sizeof($learnerIds)),'success');
 		}
 		else
 		{

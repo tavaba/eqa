@@ -1,12 +1,13 @@
 <?php
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 
 ?>
 <div>
-    Lưu ý: chỉ hiển thị các lớp học thuộc các khóa học đang còn hiệu lực. Nếu không tìm thấy lớp học mong muốn, hãy kiểm tra trạng thái <a href="<?php echo JRoute::_('index.php?option=com_eqa&view=courses'); ?>">khóa học</a> tương ứng.
+    Lưu ý: chỉ hiển thị các lớp học thuộc các khóa học đang còn hiệu lực. Nếu không tìm thấy lớp học mong muốn, hãy kiểm tra trạng thái <a href="<?php echo Route::_('index.php?option=com_eqa&view=courses'); ?>">khóa học</a> tương ứng.
 </div>
 <?php
 if(!empty($this->layoutData->items)) {

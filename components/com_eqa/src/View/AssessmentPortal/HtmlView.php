@@ -5,7 +5,7 @@ namespace Kma\Component\Eqa\Site\View\AssessmentPortal;
 defined('_JEXEC') or die();
 
 use Exception;
-use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Kma\Library\Kma\View\ItemHtmlView as BaseHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Site\Model\AssessmentPortalModel;
@@ -42,7 +42,8 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
-        $this->prepareData();
+	    $this->wa->useScript('qrcode.script');
+	    $this->prepareData();
         parent::display($tpl);
     }
 

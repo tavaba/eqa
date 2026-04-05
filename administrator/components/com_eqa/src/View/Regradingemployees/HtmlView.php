@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Regradingemployees; //The namespa
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
@@ -80,6 +81,6 @@ class HtmlView extends ItemsHtmlView {
 		ToolbarHelper::title('Phân công cán bộ chấm phúc khảo');
 		ToolbarHelper::apply('regradings.applyRegradingExaminers');
 		ToolbarHelper::save('regradings.saveRegradingExaminers');
-		ToolbarHelper::appendCancelLink(\JRoute::_('index.php?option=com_eqa&view=regradings',false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=regradings',false));
 	}
 }

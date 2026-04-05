@@ -16,10 +16,85 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 defined('_JEXEC') or die();
 
 class ExamseasonModel extends AdminModel{
-	protected function prepareTable($table)
+
+	/**
+	 * Kiểm tra tính hợp lệ của dữ liệu form trước khi lưu.
+	 *
+	 * Quy tắc nghiệp vụ: khi quyền phúc khảo được bật (ppaa_req_enabled = 1),
+	 * ba trường thông tin tài khoản ngân hàng phải được điền đầy đủ
+	 * để sinh viên có thể nộp phí phúc khảo.
+	 *
+	 * @param  \Joomla\CMS\Form\Form  $form   Form object.
+	 * @param  array                   $data   Dữ liệu POST từ form.
+	 * @param  string|null             $group  Tên fieldset (tuỳ chọn).
+	 *
+	 * @return array|bool  Mảng dữ liệu đã được validate, hoặc false nếu validation thất bại.
+	 * @since  2.0.7
+	 */
+	public function validate($form, $data, $group = null): array|bool
 	{
-		if(empty($table->ppaa_req_deadline))
+		// Gọi validate của class cha trước (xử lý required fields, type checks, v.v.)
+		$validData = parent::validate($form, $data, $group);
+
+		// Nếu parent validate đã thất bại thì dừng luôn
+		if ($validData === false) {
+			return false;
+		}
+
+		// Kiểm tra: khi ppaa_req_enabled = 1, ba trường tài khoản ngân hàng phải có giá trị
+		if (!empty($validData['ppaa_req_enabled']) && (int) $validData['ppaa_req_enabled'] === 1) {
+			$missing = [];
+
+			if (empty(trim($validData['bank_napas_code'] ?? ''))) {
+				$missing[] = 'Ngân hàng thu phí phúc khảo';
+			}
+			if (empty(trim($validData['bank_account_number'] ?? ''))) {
+				$missing[] = 'Số tài khoản';
+			}
+			if (empty(trim($validData['bank_account_owner'] ?? ''))) {
+				$missing[] = 'Chủ tài khoản';
+			}
+
+			if (!empty($missing)) {
+				$this->setError(
+					'Khi bật quyền phúc khảo, các trường sau phải được điền đầy đủ: <b>'
+					. implode('</b>, <b>', $missing) . '</b>.'
+				);
+				return false;
+			}
+		}
+
+		return $validData;
+	}
+
+	/**
+	 * Chuẩn bị dữ liệu trước khi lưu vào bảng #__eqa_examseasons.
+	 *
+	 * Các trường nullable string (calendar, text) cần được chuyển về NULL
+	 * thay vì chuỗi rỗng để tránh lưu giá trị '' vào DB.
+	 *
+	 * @param  \Joomla\CMS\Table\Table  $table
+	 *
+	 * @return void
+	 */
+	protected function prepareTable($table): void
+	{
+		// ppaa_req_deadline: calendar nullable
+		if (empty($table->ppaa_req_deadline)) {
 			$table->ppaa_req_deadline = null;
+		}
+
+		// Các trường thông tin ngân hàng: text nullable
+		if (empty($table->bank_napas_code)) {
+			$table->bank_napas_code = null;
+		}
+		if (empty($table->bank_account_number)) {
+			$table->bank_account_number = null;
+		}
+		if (empty($table->bank_account_owner)) {
+			$table->bank_account_owner = null;
+		}
+
 		parent::prepareTable($table);
 	}
 
@@ -162,7 +237,7 @@ class ExamseasonModel extends AdminModel{
 
 			//Commit
 			$db->transactionCommit();
-			$msg = Text::sprintf('Thêm thành công %d môn thi', sizeof($cid));
+			$msg = sprintf('Thêm thành công %d môn thi', sizeof($cid));
 			$app->enqueueMessage($msg, 'success');
 		}
 		catch (Exception $e){
@@ -276,7 +351,7 @@ class ExamseasonModel extends AdminModel{
 		//Nếu kỳ thi đã xong thì thôi
 		if($ppaaReq->completed)
 		{
-			$msg = Text::sprintf('Kỳ thi <b>%s</b> đã kết thúc, không thể phúc khảo.',
+			$msg = sprintf('Kỳ thi <b>%s</b> đã kết thúc, không thể phúc khảo.',
 				htmlspecialchars($ppaaReq->examseason)
 			);
 			$app->enqueueMessage($msg, 'error');
@@ -286,7 +361,7 @@ class ExamseasonModel extends AdminModel{
 		//Nếu vốn đã mở rồi thì thôi
 		if($ppaaReq->enabled)
 		{
-			$msg = Text::sprintf('Kỳ thi <b>%s</b>: quyền gửi yêu cầu phúc khảo đã được mở. Không có thay đổi nào được thực hiện',
+			$msg = sprintf('Kỳ thi <b>%s</b>: quyền gửi yêu cầu phúc khảo đã được mở. Không có thay đổi nào được thực hiện',
 				htmlspecialchars($ppaaReq->examseason)
 			);
 			$app->enqueueMessage($msg, 'warning');
@@ -308,7 +383,7 @@ class ExamseasonModel extends AdminModel{
 		}
 
 		//Nếu thành công thì kiểm tra thêm về deadline
-		$msg = Text::sprintf('Kỳ thi <b>%s</b>: đã mở quyền gửi yêu cầu phúc khảo.',
+		$msg = sprintf('Kỳ thi <b>%s</b>: đã mở quyền gửi yêu cầu phúc khảo.',
 			htmlspecialchars($ppaaReq->examseason));
 		$app->enqueueMessage($msg, 'success');
 		if(empty($ppaaReq->deadline))
@@ -334,7 +409,7 @@ class ExamseasonModel extends AdminModel{
 		//Nếu vốn đang đóng rồi thì thôi
 		if(!$ppaaReq->enabled)
 		{
-			$msg = Text::sprintf('Kỳ thi <b>%s</b>: quyền gửi yêu cầu phúc khảo đang đóng. Không có thay đổi nào được thực hiện',
+			$msg = sprintf('Kỳ thi <b>%s</b>: quyền gửi yêu cầu phúc khảo đang đóng. Không có thay đổi nào được thực hiện',
 				htmlspecialchars($ppaaReq->examseason)
 			);
 			$app->enqueueMessage($msg, 'warning');
@@ -354,7 +429,7 @@ class ExamseasonModel extends AdminModel{
 		}
 		else
 		{
-			$msg = Text::sprintf('Kỳ thi <b>%s</b>: đã đóng quyền gửi yêu cầu phúc khảo.',
+			$msg = sprintf('Kỳ thi <b>%s</b>: đã đóng quyền gửi yêu cầu phúc khảo.',
 				htmlspecialchars($ppaaReq->examseason));
 			$app->enqueueMessage($msg, 'success');
 		}

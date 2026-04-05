@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Learners;    //The namespace must
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\View\ItemAction;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -35,12 +35,12 @@ class HtmlView extends ItemsHtmlView
 		$actionViewClasses = new ItemAction();
 		$actionViewClasses->icon = 'users';
 		$actionViewClasses->text = 'Danh sách các lớp học phần';
-		$actionViewClasses->urlFormatString = JRoute::_('index.php?option=com_eqa&view=learnerclasses&learner_id=%d');
+		$actionViewClasses->urlFormatString = Route::_('index.php?option=com_eqa&view=learnerclasses&learner_id=%d');
 		$option->actions[] = $actionViewClasses;
 	    $actionViewClasses = new ItemAction();
 	    $actionViewClasses->icon = 'puzzle';
 	    $actionViewClasses->text = 'Danh sách môn thi';
-	    $actionViewClasses->urlFormatString = JRoute::_('index.php?option=com_eqa&view=learnerexams&learner_id=%d');
+	    $actionViewClasses->urlFormatString = Route::_('index.php?option=com_eqa&view=learnerexams&learner_id=%d');
 	    $option->actions[] = $actionViewClasses;
 
         //Set the option

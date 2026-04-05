@@ -1,17 +1,19 @@
 /**
  * com_eqa — Install SQL Schema
- * Version : 2.0.6
+ * Version : 2.0.7
  *
- * Thay đổi so với 2.0.5:
- * - Đổi tên `check_out` → `checked_out`, `check_out_time` → `checked_out_time`
- *   trên các bảng gốc (buildings, rooms, units, employees, specialities, programs,
- *   courses, groups, learners, subjects, classes, examseasons, examsessions, exams).
- * - Sửa #__eqa_regradings: `requested_at` → `created_at`, sửa `requested_by` → `created_by`.
- * - Sửa #__eqa_gradecorrections: `requested_at` → `created_at`, sửa `requested_by` → `created_by`.
- * - Bổ sung `updated_at`, `updated_by` vào #__eqa_exam_learner.
- * - Tất cả cột kiểu số nguyên (INT, TINYINT, SMALLINT, BIGINT) được đánh dấu UNSIGNED.
- * - Bổ sung surrogate key `id` cho các junction table:
- *   #__eqa_cohort_learner, #__eqa_exam_learner, #__eqa_papers.
+ * Thay đổi so với 2.0.6:
+ * Bảng #__eqa_regradings:
+ * - đổi tên cột 'handled_by' thành 'handled_by_username'
+ * - thêm mới cột 'handled_by' kiểu INT UNSIGNED để lưu user id thay vì username
+ * - thêm các cột 'payment_amount', 'payment_code', 'payment_completed' để quản lý việc thu phí
+
+ * Bảng #__eqa_gradecorrections:
+ * - đổi tên cột 'handled_by' thành 'handled_by_username'
+ * - thêm mới cột 'handled_by' kiểu INT UNSIGNED để lưu user id thay vì username
+
+ * Bảng #__eqa_xamseasons
+ * - thêm các cột 'bank_napas_code', 'bank_account_number', 'bank_account_owner' để quản lý thu phí
  */
 
 -- Tắt kiểm tra khóa ngoại để xóa sạch không bị lỗi ràng buộc
@@ -435,6 +437,9 @@ CREATE TABLE `#__eqa_examseasons`(
     `finish`              DATE COMMENT 'Ngày thi môn sau cùng',
     `ppaa_req_enabled`    BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Được gửi yêu cầu phúc khảo',
     `ppaa_req_deadline`   DATETIME NULL COMMENT 'Thời hạn gửi yêu cầu phúc khảo',
+    `bank_napas_code`     VARCHAR(10)  NULL DEFAULT NULL COMMENT 'Mã NAPAS ngân hàng nhận phí phúc khảo',
+    `bank_account_number` VARCHAR(50)  NULL DEFAULT NULL COMMENT 'Số tài khoản ngân hàng nhận phí phúc khảo',
+    `bank_account_owner`  VARCHAR(255) NULL DEFAULT NULL COMMENT 'Tên chủ tài khoản ngân hàng',
     `completed`           TINYINT UNSIGNED NOT NULL DEFAULT 0,
     `statistic`           TEXT COMMENT 'JSON: số liệu thống kê về kỳ thi',
     `description`         TEXT,
@@ -670,13 +675,18 @@ CREATE TABLE `#__eqa_regradings`(
     `result`       REAL COMMENT 'Điểm SAU phúc khảo',
     `description`  TEXT COMMENT 'Lý do tăng, giảm điểm (nếu có)',
     `status`       TINYINT UNSIGNED NOT NULL COMMENT 'Tiến độ xử lý',
+    `payment_amount`    INT          NOT NULL DEFAULT 0    COMMENT 'Phí phúc khảo (VND)',
+    `payment_code`      VARCHAR(8)   NULL     DEFAULT NULL  COMMENT 'Mã nộp tiền phúc khảo',
+    `payment_completed` BOOLEAN   NOT NULL DEFAULT FALSE    COMMENT 'Đã nộp phí',
     `created_at`   DATETIME,
     `created_by`   INT UNSIGNED DEFAULT NULL,
     `handled_at`   DATETIME,
-    `handled_by`   VARCHAR(255),
+    `handled_by` INT UNSIGNED NULL DEFAULT NULL COMMENT 'User ID (#__users) của người xử lý phúc khảo',
+    `handled_by_username` VARCHAR(255) NULL DEFAULT NULL COMMENT 'Username của người xử lý phúc khảo (giữ lại để tương thích ngược)',
     `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
+    UNIQUE (`exam_id`, `learner_id`),
     CONSTRAINT fk_eqa_regradings_exam FOREIGN KEY (`exam_id`)
         REFERENCES `#__eqa_exams`(`id`)
         ON DELETE RESTRICT,
@@ -706,7 +716,8 @@ CREATE TABLE `#__eqa_gradecorrections`(
     `created_at`  DATETIME,
     `created_by`  INT UNSIGNED DEFAULT NULL,
     `handled_at`  DATETIME,
-    `handled_by`  VARCHAR(255),
+    `handled_by`  INT UNSIGNED DEFAULT NULL COMMENT 'User ID (#__users) của người xử lý',
+    `handled_by_username` VARCHAR(255) NULL DEFAULT NULL,
     `reviewer_id` INT UNSIGNED DEFAULT NULL COMMENT 'Người xử lý',
     `changed`     BOOLEAN COMMENT 'Có thay đổi điểm sau xử lý yêu cầu hay không',
     `modified_at`  DATETIME,
@@ -714,6 +725,7 @@ CREATE TABLE `#__eqa_gradecorrections`(
     `checked_out`      INT UNSIGNED DEFAULT NULL,
     `checked_out_time` DATETIME DEFAULT NULL,
     PRIMARY KEY (`id`),
+    UNIQUE (`exam_id`, `learner_id`),
     CONSTRAINT fk_eqa_gradecorrections_exam FOREIGN KEY (`exam_id`)
         REFERENCES `#__eqa_exams`(`id`)
         ON DELETE RESTRICT,

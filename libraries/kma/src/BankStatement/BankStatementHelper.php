@@ -148,9 +148,8 @@ abstract class BankStatementHelper
 
         foreach ($transactions as $tx) {
             $descUpper = strtoupper($tx['description']);
-            foreach ($codeToRecord as $code => $rec) {
-				if($code=='Q7DNBT8Y' || $code == 'SR1G0GKW')
-					$x=1;
+            foreach ($codeToRecord as $code => $rec)
+			{
                 if (str_contains($descUpper, $code)) {
                     $codeMatchCount[$code]      = ($codeMatchCount[$code] ?? 0) + 1;
                     $codeToTransactions[$code][] = $tx;

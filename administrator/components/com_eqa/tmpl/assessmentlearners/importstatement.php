@@ -1,4 +1,5 @@
 <?php
+defined('_JEXEC') or die();
 
 /**
  * Template layout "importstatement" cho view SecondAttempts.
@@ -8,11 +9,8 @@
  * payment_completed cho các thí sinh đã nộp phí.
  */
 
-defined('_JEXEC') or die();
 
 use Kma\Library\Kma\Helper\ViewHelper;
-
-/** @var \Kma\Component\Eqa\Administrator\View\AssessmentLearners\HtmlView $this */
 ?>
 
 <div class="row justify-content-center">

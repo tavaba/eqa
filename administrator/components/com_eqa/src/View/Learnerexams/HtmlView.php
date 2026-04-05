@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Learnerexams; //The namespace mus
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
@@ -83,7 +83,7 @@ class HtmlView extends ItemsHtmlView {
     {
 		ToolbarHelper::title('Danh sách môn thi của HVSV');
         ToolbarHelper::appendGoHome();
-		$url = JRoute::_('index.php?option=com_eqa&view=learners', false);
+		$url = Route::_('index.php?option=com_eqa&view=learners', false);
 		ToolbarHelper::appendLink('core.manage', $url, 'Danh sách HVSV', 'arrow-up-2');
     }
 }

@@ -1,10 +1,12 @@
 <?php
+defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Helper\ViewHelper;
 
-defined('_JEXEC') or die();
 HTMLHelper::_('behavior.formvalidator');
-$urlExamrooms = JRoute::_('index.php?option=com_eqa&view=examrooms',false);
+$urlExamrooms = Route::_('index.php?option=com_eqa&view=examrooms',false);
 $urlSample = JUri::root().'media/com_eqa/xlsx/sample_markingsheet.xlsx';
 ?>
 <div>
@@ -25,12 +27,5 @@ $urlSample = JUri::root().'media/com_eqa/xlsx/sample_markingsheet.xlsx';
 	</ol>
 	<hr/>
 </div>
-<form action="" method="post" name="adminForm" id="adminForm" enctype="multipart/form-data">
-	<?php echo JHtml::_('form.token'); ?>
-	<input type="hidden" name="task">
-	<?php
-	if(!empty($this->form))
-		echo $this->form->renderFieldset('upload');
-	?>
-
-</form>
+<?php
+ViewHelper::printUploadForm($this->form);

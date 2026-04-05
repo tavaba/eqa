@@ -2,8 +2,8 @@
 namespace Kma\Component\Eqa\Administrator\View\Gradecorrection; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use JFactory;
-use JRoute;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
@@ -11,7 +11,7 @@ class HtmlView extends ItemHtmlView {
 	protected $itemId;
 	protected function prepareDataForLayoutReject()
 	{
-		$this->itemId = JFactory::getApplication()->input->getInt('id');
+		$this->itemId = Factory::getApplication()->input->getInt('id');
 		$model = $this->getModel();
 		$this->form = $model->getRejectForm($this->itemId);
 	}
@@ -19,11 +19,11 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Từ chối yêu cầu đính chính điểm');
 		ToolbarHelper::appendButton('core.edit','expired', 'Từ chối', 'gradecorrection.reject', false, 'btn btn-danger');
-		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 	}
 	protected function prepareDataForLayoutCorrect()
 	{
-		$this->itemId = JFactory::getApplication()->input->getInt('id');
+		$this->itemId = Factory::getApplication()->input->getInt('id');
 		$model = $this->getModel();
 		$this->form = $model->getCorrectionForm($this->itemId);
 	}
@@ -31,6 +31,6 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Đính chính điểm');
 		ToolbarHelper::appendButton('core.edit','save', 'JTOOLBAR_SAVE', 'gradecorrection.correct', false, 'btn btn-success', true);
-		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 	}
 }

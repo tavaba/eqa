@@ -2,7 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\View\Mmproductions; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -30,7 +30,7 @@ class HtmlView extends ItemsHtmlView {
 		ToolbarHelper::title($this->toolbarOption->title);
 		ToolbarHelper::appendGoHome();
 		ToolbarHelper::deleteList('Bạn có chắc muốn xóa không?','mmproductions.delete');
-		$urlUpload = JRoute::_('index.php?option=com_eqa&view=mmproductions&layout=upload',false);
+		$urlUpload = Route::_('index.php?option=com_eqa&view=mmproductions&layout=upload',false);
 		ToolbarHelper::appendLink('core.create', $urlUpload,'Upload', 'upload');
 	}
 
@@ -42,6 +42,6 @@ class HtmlView extends ItemsHtmlView {
 	{
 		ToolbarHelper::title('Upload sản lượng chấm iTest');
 		ToolbarHelper::save('mmproductions.import');
-		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa&view=mmproductions',false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=mmproductions',false));
 	}
 }

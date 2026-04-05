@@ -233,25 +233,6 @@ abstract class DatetimeHelper
     }
 
 	/**
-	 * Get the current date and time as a string formatted according to the specified format.
-	 * The timezone used is determined by the operating system's configuration
-	 * (not the PHP configuration).
-	 * The method attempts to detect the OS timezone using various methods
-	 *
-	 * @param   string  $format  A date format string compatible with PHP's date() function.
-	 *                           Default is 'Y-m-d H:i:s'.
-	 *
-	 * @return string The current date and time formatted according to the specified format.
-	 * @since 1.0.2
-	 * @throws Exception
-	 */
-	public static function getSystemCurrentClockTime(string $format = 'Y-m-d H:i:s'): string
-	{
-		$tz = new DateTimeZone(self::getOsTimezone());
-		return (new DateTime('now', $tz))->format($format);
-	}
-
-	/**
 	 * Convert a local time string to a UTC time string, using the specified timezone.
 	 * If the timezone is not provided, it will be detected from the operating system's configuration.
 	 *
@@ -295,6 +276,41 @@ abstract class DatetimeHelper
 		$dt->setTimezone(new DateTimeZone($timezone));
 
 		return $dt->format($format);
+	}
+
+	/**
+	 * Get the current date and time in UTC.
+	 *
+	 * @param   string  $format  A date format string compatible with PHP's date() function.
+	 * Default is 'Y-m-d H:i:s'.
+	 *
+	 * @return  string  The current UTC date and time formatted according to the specified format.
+	 * @since   1.0.3
+	 * @throws  Exception
+	 */
+	public static function getCurrentUtcTime(string $format = 'Y-m-d H:i:s'): string
+	{
+		$tz = new DateTimeZone('UTC');
+		return (new DateTime('now', $tz))->format($format);
+	}
+
+	/**
+	 * Get the current date and time as a string formatted according to the specified format.
+	 * The timezone used is determined by the operating system's configuration
+	 * (not the PHP configuration).
+	 * The method attempts to detect the OS timezone using various methods
+	 *
+	 * @param   string  $format  A date format string compatible with PHP's date() function.
+	 *                           Default is 'Y-m-d H:i:s'.
+	 *
+	 * @return string The current date and time formatted according to the specified format.
+	 * @since 1.0.2
+	 * @throws Exception
+	 */
+	public static function getCurrentSystemClockTime(string $format = 'Y-m-d H:i:s'): string
+	{
+		$tz = new DateTimeZone(self::getOsTimezone());
+		return (new DateTime('now', $tz))->format($format);
 	}
 
 	public static function getCurrentHanoiDatetime():string
@@ -377,16 +393,10 @@ abstract class DatetimeHelper
 	 *
 	 * @return bool Returns true if the input timestamp is in the past compared to the current time (i.e., the time has passed), or false if it is in the future or exactly the same as the current time.
 	 *
-	 * @throws \DateInvalidTimeZoneException
-	 * @throws \DateMalformedStringException
 	 * @since 1.0.0
 	 */
-	public static function isTimeOver(
-		string $timestamp,
-		bool   $isUTC          = true,
-		string $timezone       = '',
-		bool   $useOSTimezone  = true
-	): bool {
+	public static function isTimeOver(string $timestamp, bool $isUTC = true, string $timezone = '', bool $useOSTimezone = true): bool
+	{
 		if ($isUTC) {
 			// $timestamp là UTC → so sánh thẳng với thời gian UTC hiện tại
 			$inputDt = new DateTime($timestamp, new DateTimeZone('UTC'));

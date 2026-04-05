@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\View\Paperexams;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -9,7 +10,6 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
 class HtmlView extends ItemsHtmlView
 {
@@ -86,7 +86,7 @@ class HtmlView extends ItemsHtmlView
 	{
 		ToolbarHelper::title('Nhập điểm chấm thi viết theo số phách');
 		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','paperexams.uploadMarkByMask',false,null,true);
-		$cancelUrl = \JRoute::_('index.php?option=com_eqa',false);
+		$cancelUrl = Route::_('index.php?option=com_eqa',false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 }

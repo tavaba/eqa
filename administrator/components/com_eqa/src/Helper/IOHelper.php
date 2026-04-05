@@ -6,7 +6,6 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Collator;
 use Exception;
 use JComponentHelper;
-use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
@@ -653,7 +652,7 @@ abstract class IOHelper extends BaseIOHelper
 
 		//Title và Subtitle
 		$row  += 2;
-		$subTitle = Text::sprintf('HỌC KỲ %d - NĂM HỌC %s', $examInfo->term, $examInfo->academicyear);
+		$subTitle = sprintf('HỌC KỲ %d - NĂM HỌC %s', $examInfo->term, $examInfo->academicyear);
 		$sheet->setCellValue([1, $row], "KẾT QUẢ ĐÁNH GIÁ HỌC PHẦN");
 		$sheet->mergeCells([1,$row, $COLS, $row]);
 		$sheet->setCellValue([1, $row+1], $subTitle);
@@ -767,7 +766,7 @@ abstract class IOHelper extends BaseIOHelper
 
 		//Title và Subtitle
 		$row  = 4;  //Theo đúng mẫu
-		$subTitle = Text::sprintf('HỌC KỲ %d - NĂM HỌC %s', $examInfo->term, $examInfo->academicyear);
+		$subTitle = sprintf('HỌC KỲ %d - NĂM HỌC %s', $examInfo->term, $examInfo->academicyear);
 		$sheet->setCellValue([1, $row], "KẾT QUẢ ĐÁNH GIÁ HỌC PHẦN");
 		$sheet->mergeCells([1,$row, $COLS, $row]);
 		$sheet->setCellValue([1, $row+1], $subTitle);
@@ -1566,7 +1565,7 @@ abstract class IOHelper extends BaseIOHelper
 
 				if(!empty($description))
 					$description .= "; \n";
-				$description .= Text::sprintf('%s: %d Chấm 1, %d Chấm 2',
+				$description .= sprintf('%s: %d Chấm 1, %d Chấm 2',
 					$examProduction['name'],
 					$examProduction['count1'],
 					$examProduction['count2']
@@ -2932,13 +2931,13 @@ abstract class IOHelper extends BaseIOHelper
 				'alignment'=>Jc::CENTER,
 				'spaceBefore'=>Converter::cmToTwip(2),
 			]);
-		$text = Text::sprintf('Kỳ thi: %s', htmlspecialchars($examseason->name));
+		$text = sprintf('Kỳ thi: %s', htmlspecialchars($examseason->name));
 		$text = mb_strtoupper($text);
 		$section->addText($text, [
 				'bold'=>true,
 				'size'=>14,
 			],'Center');
-		$text = Text::sprintf('(Học kỳ %d. Năm học %s)', $examseason->term, htmlspecialchars($examseason->academicyear));
+		$text = sprintf('(Học kỳ %d. Năm học %s)', $examseason->term, htmlspecialchars($examseason->academicyear));
 		$section->addText($text, [
 				'size'=>14,
 			],'Center');
@@ -2954,7 +2953,7 @@ abstract class IOHelper extends BaseIOHelper
 
 		$year = date('Y');
 		$city = ConfigHelper::getCity();
-		$text = Text::sprintf('%s, %d', htmlspecialchars($city), $year);
+		$text = sprintf('%s, %d', htmlspecialchars($city), $year);
 		$section->addText($text,
 			[
 				'bold'=>true,
@@ -3009,7 +3008,7 @@ abstract class IOHelper extends BaseIOHelper
 			$section = self::phpWordAddCommonSection($phpWord);
 
 			$sectionHeader = $section->addHeader();
-			$headerText = Text::sprintf('Môn thi: "%s".   Mã HP: %s.  Số TC: %d',
+			$headerText = sprintf('Môn thi: "%s".   Mã HP: %s.  Số TC: %d',
 				htmlspecialchars($exam['name']),
 				htmlspecialchars($exam['code']),
 				$exam['credits']
@@ -3028,7 +3027,7 @@ abstract class IOHelper extends BaseIOHelper
 				]);
 
 			//4.2. Write title (the exam)
-			$titleText = Text::sprintf('%d. %s', $examCount, htmlspecialchars($exam['name']));
+			$titleText = sprintf('%d. %s', $examCount, htmlspecialchars($exam['name']));
 			$section->addTitle($titleText,1);
 
 			//4.3. Write table heading row

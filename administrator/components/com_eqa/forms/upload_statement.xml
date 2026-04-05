@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!--
-    Form upload bản sao kê tài khoản ngân hàng (MB Bank Excel .xlsx)
-    dùng cho chức năng đối chiếu và ghi nhận thanh toán thi lần hai.
--->
 <form>
     <fieldset name="upload" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
 

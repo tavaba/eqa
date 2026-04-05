@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Examrooms; //The namespace must e
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -76,7 +77,7 @@ class HtmlView extends ItemsHtmlView {
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_LOAD_EXAMROOM_REPORT'));
 		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','examrooms.import',false,null,true);
-		$url = \JRoute::_('index.php?option=com_eqa',false);
+		$url = Route::_('index.php?option=com_eqa',false);
 		ToolbarHelper::appendLink(null,$url,'JTOOLBAR_CANCEL','cancel','btn btn-danger');
 	}
 

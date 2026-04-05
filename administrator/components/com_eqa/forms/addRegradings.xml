@@ -22,14 +22,27 @@
                 class = "select2-basic"
                 multiple="true"
         />
+        <field  name="is_free"
+                type="radio"
+                required="true"
+                default="0"
+                label="Miễn phí"
+                description="Nếu chọn YES thì thí sinh không phải đóng phí phúc khảo
+                (phí = 0). Còn nếu chọn NO thì thí sinh phải đóng phí theo quy định
+                (xác định bởi cấu hình hệ thống)."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
         <field  name="accepted"
                 type="radio"
                 required="true"
                 default="0"
                 label="Chấp nhận"
                 description="Nếu chọn YES thì trạng thái mặc định của yêu cầu
-                là &quot;Đã được chấp nhận;&quot;. Ngược lại trạng thái sẽ
-                là &quot;Đã gửi yêu cầu&quot;."
+                là &quot;Đã được chấp nhận;&quot; và ghi nhận trạng thái &quot;Đã đóng phí&quot;
+                (nếu có phí). Ngược lại trạng thái sẽ là &quot;Đã gửi yêu cầu&quot;."
                 class="btn-group btn-group-yesno"
         >
             <option value="0">JNO</option>

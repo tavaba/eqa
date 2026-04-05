@@ -1,8 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
-use JFactory;
-use Joomla\CMS\Language\Text;
+use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
@@ -85,8 +84,8 @@ class GradecorrectionModel extends AdminModel {
 			throw new Exception("Xảy ra lỗi khi chấp nhận yêu cầu đính chính");
 
 		//4. Return success message
-		$app = JFactory::getApplication();
-		$msg = Text::sprintf('Yêu cầu đính chính của <b>%s (%s)</b> đã được chấp nhận',
+		$app = Factory::getApplication();
+		$msg = sprintf('Yêu cầu đính chính của <b>%s (%s)</b> đã được chấp nhận',
 			$item->fullname, $item->learnerCode
 		);
 		$app->enqueueMessage($msg, "success");
@@ -163,8 +162,8 @@ class GradecorrectionModel extends AdminModel {
 			throw new Exception("Xảy ra lỗi khi từ chối yêu cầu đính chính");
 
 		//4. Return success message
-		$app = JFactory::getApplication();
-		$msg = Text::sprintf('Yêu cầu đính chính của <b>%s (%s)</b> đã bị từ chối',
+		$app = Factory::getApplication();
+		$msg = sprintf('Yêu cầu đính chính của <b>%s (%s)</b> đã bị từ chối',
 			$item->fullname, $item->learnerCode
 		);
 		$app->enqueueMessage($msg, "success");

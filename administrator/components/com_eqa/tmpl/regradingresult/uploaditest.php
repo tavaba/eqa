@@ -2,13 +2,13 @@
 defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Helper\ViewHelper;
+
 HTMLHelper::_('behavior.formvalidator');
 
 //Preprocessing
 $form = $this->layoutData->form;
-
-$samplePath = 'media/com_eqa/xlsx/sample_regrading_result_paper.xlsx';
-$sampleUrl = JUri::root().$samplePath;
 ?>
 <div class="accordion">
     <div class="accordion-item">
@@ -34,8 +34,5 @@ $sampleUrl = JUri::root().$samplePath;
     </div>
 </div>
 <hr/>
-<form action="<?php echo JRoute::_('index.php?option=com_eqa');?>" method="post" name="adminForm" id="adminForm" enctype="multipart/form-data" class="form-validate">
-    <input type="hidden" name="task" value=""/>
-	<?php echo JHtml::_('form.token'); ?>
-	<?php echo $form->renderFieldset('upload_itest'); ?>
-</form>
+<?php
+ViewHelper::printUploadForm($form,'','upload_itest');

@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\DataObject\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\Model\ExamroomModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
@@ -134,7 +134,7 @@ class HtmlView extends ItemHtmlView {
     {
         ToolbarHelper::title($this->toolbarOption->title);
         ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','examroom.addExaminees');
-        $url = JRoute::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$this->examroom->id,false);
+        $url = Route::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$this->examroom->id,false);
         ToolbarHelper::appendLink(null,$url, 'JTOOLBAR_CANCEL', 'delete','btn btn-danger');
     }
 
@@ -158,6 +158,6 @@ class HtmlView extends ItemHtmlView {
 		ToolbarHelper::title('Thông tin bất thường phòng thi');
 		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_APPLY','examroom.applyAnomaly');
 		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','examroom.saveAnomaly');
-		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa&view=examrooms',false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=examrooms',false));
 	}
 }

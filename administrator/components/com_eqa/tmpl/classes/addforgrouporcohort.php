@@ -1,12 +1,8 @@
 <?php
 defined('_JEXEC') or die();
 
-use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Library\Kma\Helper\ViewHelper;
 
-
-HTMLHelper::_('behavior.formvalidator');
-
-$formAction = JRoute::_('index.php?option=com_eqa');
 ?>
     <div class="accordion">
         <div class="accordion-item">
@@ -18,14 +14,5 @@ $formAction = JRoute::_('index.php?option=com_eqa');
         </div>
     </div>
 <hr/>
-<form action="<?php echo $formAction;?>" method="post" name="adminForm" id="adminForm" class="form-validate">
-    <input type="hidden" name="task" value=""/>
-    <?php echo JHtml::_('form.token');?>
-
-    <?php
-    if(isset($this->form)){
-        echo $this->form->renderFieldset('basic');
-    }
-    ?>
-</form>
 <?php
+ViewHelper::printForm($this->form,'basic');

@@ -2,7 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\View\Regradingresult; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
@@ -23,7 +23,7 @@ class HtmlView extends ItemsHtmlView {
 	{
 		ToolbarHelper::title('Tải lên kết quả phúc bài thi viết');
 		ToolbarHelper::appendUpload('regradings.uploadPaperRegradingResult');
-		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa',false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa',false));
 	}
 	protected function prepareDataForLayoutUploaditest(): void
 	{
@@ -37,7 +37,7 @@ class HtmlView extends ItemsHtmlView {
 	{
 		ToolbarHelper::title('Tải lên kết quả phúc bài thi hỗn hợp iTest');
 		ToolbarHelper::appendUpload('regradings.uploadHybridRegradingResult');
-		ToolbarHelper::appendCancelLink(JRoute::_('index.php?option=com_eqa',false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa',false));
 	}
 
 }

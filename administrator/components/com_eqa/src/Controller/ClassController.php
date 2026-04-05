@@ -157,7 +157,7 @@ class ClassController extends  FormController
 				$pam = ExamHelper::toPam($pam, $description);
 				if($pam1 === false || $pam2 === false || $pam === false)
 				{
-					$msg = Text::sprintf('Dòng %d: ĐQP không hợp lệ', $r+1);
+					$msg = sprintf('Dòng %d: ĐQP không hợp lệ', $r+1);
 					throw new Exception($msg);
 				}
 

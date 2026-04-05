@@ -2,7 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\View\Examsessions; //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
-use JFactory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Model\ExamsessionsModel;

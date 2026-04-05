@@ -188,7 +188,7 @@ class ExamroomModel extends AdminModel {
 		foreach ($examinees as $examinee)
 		{
 			if(empty($roomExaminees[$examinee->learnerCode])){
-				$msg = Text::sprintf('Thí sinh <b>%s</b> không tồn tại trong danh sách thí sinh của phòng thi', htmlspecialchars($examinee->learnerCode));
+				$msg = sprintf('Thí sinh <b>%s</b> không tồn tại trong danh sách thí sinh của phòng thi', htmlspecialchars($examinee->learnerCode));
 				throw new Exception($msg);
 			}
 			$examinee->learnerId = $roomExaminees[$examinee->learnerCode]['learner_id'];
@@ -243,7 +243,7 @@ class ExamroomModel extends AdminModel {
 				//Kiểm tra tính hợp lệ của cột 'số tờ'
 				if(!is_numeric($nsheet) || intval($nsheet)!=$nsheet)
 				{
-					$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: số tờ giấy thi của <b>%s</b> không hợp lệ',
+					$msg = sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: số tờ giấy thi của <b>%s</b> không hợp lệ',
 						htmlspecialchars($examName),
 						$examroomName, $learnerCode);
 					throw new Exception($msg);
@@ -265,7 +265,7 @@ class ExamroomModel extends AdminModel {
 
 				$db->setQuery($query);
 				if(!$db->execute()){
-					$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: lỗi cập nhật thông tin cho <b>%s</b>',
+					$msg = sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: lỗi cập nhật thông tin cho <b>%s</b>',
 						htmlspecialchars($examName),
 						$examroomName, $learnerCode);
 					throw new Exception($msg);
@@ -286,7 +286,7 @@ class ExamroomModel extends AdminModel {
 					->where('exam_id='.$examId . ' AND learner_id=' . $learnerId);
 				$db->setQuery($query);
 				if(!$db->execute()){
-					$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: lỗi cập nhật thông tin cho <b>%s</b>',
+					$msg = sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: lỗi cập nhật thông tin cho <b>%s</b>',
 						htmlspecialchars($examName), $examroomName, $learnerCode);
 					throw new Exception($msg);
 				}
@@ -301,7 +301,7 @@ class ExamroomModel extends AdminModel {
 
 			//Commit on success
 			$db->transactionCommit();
-			$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi viết <b>%s</b>: %d thí sinh, %d bài thi, %d tờ giấy thi; trong đó %d thí sinh có bất thường',
+			$msg = sprintf('Môn thi <b>%s</b>. Phòng thi viết <b>%s</b>: %d thí sinh, %d bài thi, %d tờ giấy thi; trong đó %d thí sinh có bất thường',
 				htmlspecialchars($examName),
 				$examroomName,
 				sizeof($examinees),
@@ -349,7 +349,7 @@ class ExamroomModel extends AdminModel {
 				//Kiểm tra tính hợp lệ của cột 'điểm'
 				if($mark === false || $mark<0 || $mark>10)
 				{
-					$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: điểm thi của <b>%s</b> không hợp lệ',
+					$msg = sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: điểm thi của <b>%s</b> không hợp lệ',
 						htmlspecialchars($examName),
 						htmlspecialchars($examroomName), htmlspecialchars($learnerCode));
 					throw new Exception($msg);
@@ -374,7 +374,7 @@ class ExamroomModel extends AdminModel {
 				$db->setQuery($query);
 				if(!$db->execute())
 				{
-					$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi %s: lỗi cập nhật điểm gốc cho <b>%s</b>',
+					$msg = sprintf('Môn thi <b>%s</b>. Phòng thi %s: lỗi cập nhật điểm gốc cho <b>%s</b>',
 						htmlspecialchars($examName), $examroomName, $learnerCode);
 					throw new Exception($msg);
 				}
@@ -392,7 +392,7 @@ class ExamroomModel extends AdminModel {
 			throw new Exception($e->getMessage());
 		}
 
-		$msg = Text::sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: nhập điểm thành công %d thí sinh, trong đó %d thí sinh có bất thường',
+		$msg = sprintf('Môn thi <b>%s</b>. Phòng thi <b>%s</b>: nhập điểm thành công %d thí sinh, trong đó %d thí sinh có bất thường',
 			htmlspecialchars($examName), htmlspecialchars($examroomName), sizeof($examinees), $countAnomaly);
 		$app->enqueueMessage($msg, 'success');
 	}

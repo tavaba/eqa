@@ -14,6 +14,9 @@ use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Component\Eqa\Administrator\DataObject\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\DataObject\Regradingrequest;
+use Kma\Library\Kma\BankStatement\BankStatementHelper;
+use Kma\Library\Kma\BankStatement\BankStatementImportResult;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use stdClass;
 
 defined('_JEXEC') or die();
@@ -57,33 +60,61 @@ class RegradingsModel extends ListModel
 			return false;
 		return true;
 	}
+	/**
+	 * Khởi tạo câu truy vấn danh sách yêu cầu phúc khảo.
+	 *
+	 * Kể từ 2.0.7: bổ sung các cột thanh toán (payment_amount, payment_code,
+	 * payment_completed) từ bảng #__eqa_regradings và thông tin tài khoản ngân
+	 * hàng (bank_napas_code, bank_account_number, bank_account_owner) từ bảng
+	 * #__eqa_examseasons thông qua join qua #__eqa_exams.
+	 *
+	 * @return DatabaseQuery
+	 * @since 2.0.7
+	 */
 	protected function initListQuery(): DatabaseQuery
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
-			$db->quoteName('a.id')           . ' AS ' . $db->quoteName('id'),
-			$db->quoteName('a.exam_id')      . ' AS ' . $db->quoteName('examId'),
-			$db->quoteName('d.name')         . ' AS ' . $db->quoteName('examName'),
-			$db->quoteName('a.learner_id')   . ' AS ' . $db->quoteName('learnerId'),
-			$db->quoteName('b.code')         . ' AS ' . $db->quoteName('learnerCode'),
-			$db->quoteName('b.lastname')     . ' AS ' . $db->quoteName('learnerLastname'),
-			$db->quoteName('b.firstname')    . ' AS ' . $db->quoteName('learnerFirstname'),
-			$db->quoteName('a.status')       . ' AS ' . $db->quoteName('statusCode'),
-			$db->quoteName('c.mark_orig')    . ' AS ' . $db->quotename('origMark'),
-			$db->quoteName('a.handled_by')   . ' AS ' . $db->quotename('handlerId'),
-			$db->quoteName('a.examiner1_id') . ' AS ' . $db->quotename('examiner1Id'),
-			$db->quoteName('a.examiner2_id') . ' AS ' . $db->quotename('examiner2Id'),
-			$db->quoteName('a.result')       . ' AS ' . $db->quotename('ppaaMark'),
-			$db->quoteName('a.description')  . ' AS ' . $db->quotename('description')
+			// ── Định danh ──────────────────────────────────────────────────────
+			$db->quoteName('a.id',                  'id'),
+			$db->quoteName('a.exam_id',             'examId'),
+			$db->quoteName('d.name',                'examName'),
+			$db->quoteName('a.learner_id',          'learnerId'),
+			$db->quoteName('b.code',                'learnerCode'),
+			$db->quoteName('b.lastname',            'learnerLastname'),
+			$db->quoteName('b.firstname',           'learnerFirstname'),
+
+			// ── Trạng thái phúc khảo & điểm ───────────────────────────────────
+			$db->quoteName('a.status',              'statusCode'),
+			$db->quoteName('c.mark_orig',           'origMark'),
+			$db->quoteName('u_handled.name',        'handlerName'),
+			$db->quoteName('a.handled_by_username', 'handlerUsername'),
+			$db->quoteName('a.handled_at',          'handledAt'),
+			$db->quoteName('a.examiner1_id',        'examiner1Id'),
+			$db->quoteName('a.examiner2_id',        'examiner2Id'),
+			$db->quoteName('a.result',              'ppaaMark'),
+			$db->quoteName('a.description',         'description'),
+
+			// ── Thanh toán phí phúc khảo (2.0.7) ──────────────────────────────
+			$db->quoteName('a.payment_amount',      'paymentAmount'),
+			$db->quoteName('a.payment_code',        'paymentCode'),
+			$db->quoteName('a.payment_completed',   'paymentCompleted'),
+
+			// ── Thông tin tài khoản ngân hàng của kỳ thi (2.0.7) ──────────────
+			$db->quoteName('g.bank_napas_code',     'bankNapasCode'),
+			$db->quoteName('g.bank_account_number', 'bankAccountNumber'),
+			$db->quoteName('g.bank_account_owner',  'bankAccountOwner'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_regradings AS a')
-			->leftJoin('#__eqa_learners AS b', 'b.id = a.learner_id')
-			->leftJoin('#__eqa_exam_learner AS c', 'c.exam_id=a.exam_id AND c.learner_id=a.learner_id')
-			->leftJoin('#__eqa_exams AS d', 'd.id=a.exam_id')
-			->leftJoin('#__eqa_classes AS e', 'e.id=c.class_id')
-			->leftJoin('#__eqa_class_learner AS f', 'f.class_id=e.id AND f.learner_id=b.id');
+			->leftJoin('#__eqa_learners AS b',       'b.id = a.learner_id')
+			->leftJoin('#__eqa_exam_learner AS c',   'c.exam_id = a.exam_id AND c.learner_id = a.learner_id')
+			->leftJoin('#__eqa_exams AS d',          'd.id = a.exam_id')
+			->leftJoin('#__eqa_classes AS e',        'e.id = c.class_id')
+			->leftJoin('#__eqa_class_learner AS f',  'f.class_id = e.id AND f.learner_id = b.id')
+			->leftJoin('#__eqa_examseasons AS g',    'g.id = d.examseason_id')
+			->leftJoin('#__users AS u_handled','u_handled.id = a.handled_by');
 		return $query;
 	}
 	public function getListQuery()
@@ -693,5 +724,165 @@ class RegradingsModel extends ListModel
 
 		//3. Trả về số lượng yêu cầu phúc khảo đã được xử lý
 		return count($examinees);
+	}
+
+	// =========================================================================
+	// Thống kê phí phúc khảo (2.0.7)
+	// =========================================================================
+
+	/**
+	 * Thống kê trạng thái nộp phí phúc khảo theo các filter hiện tại của model,
+	 * KHÔNG áp dụng giới hạn phân trang — trả về số liệu toàn bộ kết quả lọc.
+	 *
+	 * @return array{free: int, paid: int, unpaid: int, totalAmount: int, paidAmount: int}
+	 * @since 2.0.7
+	 */
+	public function getPaymentStatistic(): array
+	{
+		$db    = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select([
+				'SUM(CASE WHEN a.payment_amount <= 0 THEN 1 ELSE 0 END)                              AS free_count',
+				'SUM(CASE WHEN a.payment_amount > 0 AND a.payment_completed = 1 THEN 1 ELSE 0 END)  AS paid_count',
+				'SUM(CASE WHEN a.payment_amount > 0 AND a.payment_completed = 0 THEN 1 ELSE 0 END)  AS unpaid_count',
+				'SUM(CASE WHEN a.payment_amount > 0 THEN a.payment_amount ELSE 0 END)               AS total_amount',
+				'SUM(CASE WHEN a.payment_amount > 0 AND a.payment_completed = 1 THEN a.payment_amount ELSE 0 END) AS paid_amount',
+			])
+			->from('#__eqa_regradings AS a')
+			->leftJoin('#__eqa_exams AS d', 'd.id = a.exam_id');
+
+		// Áp dụng cùng các filter như getListQuery() nhưng bỏ phân trang
+		$learnerId = $this->getState('filter.learner_id');
+		if (is_int($learnerId)) {
+			$query->where('a.learner_id = ' . $learnerId);
+		}
+
+		$examseasonId = $this->getState('filter.examseason_id');
+		if (is_numeric($examseasonId)) {
+			$resolvedId = ((int) $examseasonId === 0)
+				? DatabaseHelper::getDefaultExamseason()->id
+				: (int) $examseasonId;
+			$query->where('d.examseason_id = ' . $resolvedId);
+		}
+
+		$status = $this->getState('filter.status');
+		if (is_numeric($status)) {
+			$query->where('a.status = ' . (int) $status);
+		}
+
+		$db->setQuery($query);
+		$row = $db->loadAssoc();
+
+		return [
+			'free'        => (int) ($row['free_count']   ?? 0),
+			'paid'        => (int) ($row['paid_count']   ?? 0),
+			'unpaid'      => (int) ($row['unpaid_count'] ?? 0),
+			'totalAmount' => (int) ($row['total_amount'] ?? 0),
+			'paidAmount'  => (int) ($row['paid_amount']  ?? 0),
+		];
+	}
+
+	// =========================================================================
+	// Nhập sao kê ngân hàng (2.0.7)
+	// =========================================================================
+
+	/**
+	 * Đối chiếu sao kê ngân hàng với danh sách yêu cầu phúc khảo.
+	 *
+	 * Với mỗi giao dịch khớp (payment_code đúng, số tiền đúng):
+	 *   - Cập nhật payment_completed = 1 trong #__eqa_regradings.
+	 *   - Nếu đây là lần đầu ghi nhận nộp phí (trước đó payment_completed = 0):
+	 *       - Chuyển status → PpaaStatus::Accepted.
+	 *       - Ghi handled_at = now (UTC), handled_by = $operatorId.
+	 *
+	 * @param  string  $filePath    Đường dẫn tuyệt đối đến file .xlsx sao kê.
+	 * @param  string  $napasCode   Mã NAPAS ngân hàng (để chọn parser).
+	 * @param  int     $examseasonId  ID kỳ thi (chỉ đối soát YC thuộc kỳ thi này).
+	 * @param  int     $operatorId  ID người dùng thực hiện (từ #__users).
+	 *
+	 * @return BankStatementImportResult
+	 * @throws Exception
+	 * @since 2.0.7
+	 */
+	public function importBankStatement(
+		string $filePath,
+		string $napasCode,
+		int    $examseasonId,
+		int    $operatorId
+	): BankStatementImportResult {
+		// 1. Parse file theo ngân hàng
+		$parser       = BankStatementHelper::getParser($napasCode);
+		$transactions = $parser->parse($filePath);
+
+		if (empty($transactions)) {
+			throw new Exception(sprintf(
+				'File sao kê %s không có giao dịch Credit nào hợp lệ. Vui lòng kiểm tra lại định dạng file.',
+				$parser->getBankName()
+			));
+		}
+
+		// 2. Load các bản ghi phúc khảo cần đối chiếu (có phí + có mã nộp tiền)
+		$db    = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('a.id'),
+				$db->quoteName('a.payment_code'),
+				$db->quoteName('a.payment_amount'),
+				$db->quoteName('a.payment_completed'),
+				$db->quoteName('a.status'),
+				$db->quoteName('b.code', 'learner_code'),
+				$db->quoteName('b.lastname',  'learner_lastname'),
+				$db->quoteName('b.firstname', 'learner_firstname'),
+			])
+			->from('#__eqa_regradings AS a')
+			->leftJoin('#__eqa_learners AS b', 'b.id = a.learner_id')
+			->leftJoin('#__eqa_exams AS d',    'd.id = a.exam_id')
+			->where('a.payment_amount > 0')
+			->where('a.payment_code IS NOT NULL');
+		if($examseasonId)
+			$query->where('d.examseason_id = ' . (int) $examseasonId);
+		$db->setQuery($query);
+		$dbRecords = $db->loadObjectList();
+
+		// 3. Đối chiếu (thuật toán dùng chung từ lib_kma)
+		$reconciled = BankStatementHelper::reconcile($transactions, $dbRecords);
+
+		// 4. Xử lý các giao dịch khớp
+		$nowUtc       = DatetimeHelper::getCurrentUtcTime();
+		$updatedCodes = [];
+
+		foreach ($reconciled['matched'] as $pair) {
+			/** @var object $rec */
+			$rec            = $pair['record'];
+			$wasUnpaid      = !(bool) $rec->payment_completed;
+			$currentStatus  = (int) $rec->status;
+
+			$updateQuery = $db->getQuery(true)
+				->update('#__eqa_regradings')
+				->set($db->quoteName('payment_completed') . ' = 1')
+				->where($db->quoteName('id') . ' = ' . (int) $rec->id);
+
+			// Lần đầu ghi nhận nộp phí → chuyển sang Accepted + ghi người xử lý
+			if ($wasUnpaid && $currentStatus < PpaaStatus::Accepted->value) {
+				$updateQuery
+					->set($db->quoteName('status')      . ' = ' . PpaaStatus::Accepted->value)
+					->set($db->quoteName('handled_at')  . ' = ' . $db->quote($nowUtc))
+					->set($db->quoteName('handled_by')  . ' = ' . (int) $operatorId);
+			}
+
+			$db->setQuery($updateQuery);
+			$db->execute();
+
+			$updatedCodes[] = $rec->learner_code ?? ('id=' . $rec->id);
+		}
+
+		$result                = new BankStatementImportResult();
+		$result->updated        = count($reconciled['matched']);
+		$result->alreadyPaid    = $reconciled['alreadyPaid'];
+		$result->notFound       = $reconciled['notFound'];
+		$result->amountMismatch = $reconciled['amountMismatch'];
+		$result->duplicate      = $reconciled['duplicate'];
+		$result->updatedCodes   = $updatedCodes;
+		return $result;
 	}
 }

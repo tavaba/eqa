@@ -47,7 +47,7 @@ enum Anomaly: int
 	{
 		$result = self::tryFromLabel($anomalyText);
 		if(is_null($result))
-			throw new \InvalidArgumentException(Text::sprintf('Giá trị bất thường "%s" không hợp lệ', $anomalyText));
+			throw new \InvalidArgumentException(sprintf('Giá trị bất thường "%s" không hợp lệ', $anomalyText));
 		return $result;
 	}
 }

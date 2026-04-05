@@ -221,7 +221,7 @@ class ClassesController extends AdminController
                 }
                 $class->subject_id = $subjectMap[$subjectCode];
 				if(empty($class->subject_id)){
-					$msg = Text::sprintf('Không tồn tại mã học phần <b>%s</b>', htmlentities($subjectCode));
+					$msg = sprintf('Không tồn tại mã học phần <b>%s</b>', htmlentities($subjectCode));
 					$app->enqueueMessage($msg, 'error');
 					break;
 				}
@@ -244,7 +244,7 @@ class ClassesController extends AdminController
 	            $db->setQuery('SELECT id FROM #__eqa_classes WHERE code=' . $db->quote($class->code));
 				if(!empty($db->loadResult()))
 				{
-					$msg = Text::sprintf('Mã lớp học phần <b>%s</b> đã tồn tại. Tên lớp: %s',
+					$msg = sprintf('Mã lớp học phần <b>%s</b> đã tồn tại. Tên lớp: %s',
 						$class->code,
 						htmlspecialchars($class->name)
 					);
@@ -453,7 +453,7 @@ class ClassesController extends AdminController
 							break;          //End of data
                         $countTotal++;
                         if(!isset($learnerMap[$learnerCode])){
-                            $msg = Text::sprintf('Không tìm thấy HVSV <b>%s</b> trong CSDL',$learnerCode);
+                            $msg = sprintf('Không tìm thấy HVSV <b>%s</b> trong CSDL',$learnerCode);
                             throw new Exception($msg);
                         }
                         $learnerId = $learnerMap[$learnerCode];

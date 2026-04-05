@@ -10,10 +10,13 @@ use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\ExamType;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
+use Kma\Component\Eqa\Administrator\Enum\FeeMode;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\RoomHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 
@@ -230,7 +233,7 @@ class ExamModel extends AdminModel{
             $app->enqueueMessage($e->getMessage(),'error');
             return false;
         }
-        $msg = Text::sprintf('COM_EQA_N_ITEMS_DELETED',sizeof($learnerIds));
+        $msg = sprintf('COM_EQA_N_ITEMS_DELETED',sizeof($learnerIds));
         $app->enqueueMessage($msg,'success');
         return true;
     }
@@ -258,7 +261,7 @@ class ExamModel extends AdminModel{
         $class = $db->loadObject();
         if(empty($class))
         {
-            $msg = Text::sprintf('Không tìm thấy lớp học phần <b>%s</b>', htmlentities($classCode));
+            $msg = sprintf('Không tìm thấy lớp học phần <b>%s</b>', htmlentities($classCode));
 			throw new Exception($msg);
         }
 
@@ -266,7 +269,7 @@ class ExamModel extends AdminModel{
         $db->setQuery('SELECT * FROM #__eqa_exams WHERE id='.$examId);
         $exam = $db->loadObject();
         if($class->subject_id != $exam->subject_id){
-            $msg = Text::sprintf('Lớp học phần <b>%s</b> không phù hợp với môn thi <b>%s</b>',
+            $msg = sprintf('Lớp học phần <b>%s</b> không phù hợp với môn thi <b>%s</b>',
                 htmlentities($class->name),
                 htmlentities($exam->name));
             throw new Exception($msg);
@@ -293,7 +296,7 @@ class ExamModel extends AdminModel{
 			//The required learner must exist
 			if(empty($classLearner))
 			{
-				$msg = Text::sprintf('HVSV <b>%s</b> không tồn tại trong lớp học phần <b>%s</b>', $learnerCode, $classCode);
+				$msg = sprintf('HVSV <b>%s</b> không tồn tại trong lớp học phần <b>%s</b>', $learnerCode, $classCode);
 				if($ignoreError)
 				{
 					$app->enqueueMessage($msg,'warning');
@@ -305,7 +308,7 @@ class ExamModel extends AdminModel{
 
 		    if ($classLearner->expired && !$addExpired)
 		    {
-			    $msg = Text::sprintf('Trong lớp %s, HVSV <b>%s</b> đã hết quyền dự thi', $classCode, $learnerCode);
+			    $msg = sprintf('Trong lớp %s, HVSV <b>%s</b> đã hết quyền dự thi', $classCode, $learnerCode);
 				if($ignoreError)
 				{
 					$app->enqueueMessage($msg,'warning');
@@ -319,7 +322,7 @@ class ExamModel extends AdminModel{
 		    $db->setQuery("SELECT COUNT(1) FROM #__eqa_exam_learner WHERE exam_id=$examId AND learner_id={$classLearner->id}");
 		    if($db->loadResult())
 		    {
-				$msg = Text::sprintf('HVSV <b>%s</b> đã có trong danh sách môn thi <b>%s</b>', $learnerCode, $exam->name);
+				$msg = sprintf('HVSV <b>%s</b> đã có trong danh sách môn thi <b>%s</b>', $learnerCode, $exam->name);
 			    if($ignoreError)
 			    {
 				    $app->enqueueMessage($msg,'warning');
@@ -337,7 +340,7 @@ class ExamModel extends AdminModel{
 		    $db->setQuery($query);
 		    if (!$db->execute())
 		    {
-			    $msg = Text::sprintf('Thêm HVSV <b>%s</b> vào môn thi <b>%s</b> thất bại', $learnerCode, $exam->name);
+			    $msg = sprintf('Thêm HVSV <b>%s</b> vào môn thi <b>%s</b> thất bại', $learnerCode, $exam->name);
 			    if($ignoreError)
 			    {
 				    $app->enqueueMessage($msg,'warning');
@@ -481,7 +484,7 @@ class ExamModel extends AdminModel{
 		$excludedLearnerCodes = array_column($excludedLearners, 'code');
 		if(!empty($excludedLearnerCodes))
 		{
-			$msg = Text::sprintf('Không thể hoãn thi cho %d thí sinh vì đã có bất thường, hoặc điểm quá trình không đạt, hoặc đang nợ học phí: <b>%s</b>',
+			$msg = sprintf('Không thể hoãn thi cho %d thí sinh vì đã có bất thường, hoặc điểm quá trình không đạt, hoặc đang nợ học phí: <b>%s</b>',
 				sizeof($excludedLearnerCodes),
 				implode(', ', $excludedLearnerCodes)
 			);
@@ -510,7 +513,7 @@ class ExamModel extends AdminModel{
 			return false;
 		}
 		else{
-			$msg = Text::sprintf('Hoãn thi thành công cho %d thí sinh', sizeof($delayedExamineeIds));
+			$msg = sprintf('Hoãn thi thành công cho %d thí sinh', sizeof($delayedExamineeIds));
 			$app->enqueueMessage($msg, 'success');
 			return true;
 		}
@@ -566,7 +569,7 @@ class ExamModel extends AdminModel{
 		else{
 			$learnerCodes = array_column($learners, 'code');
 			$countSuccess = sizeof($learnerIds);
-			$msg = Text::sprintf('Hủy hoãn thi thành công cho %d thí sinh: <b>%s</b>',
+			$msg = sprintf('Hủy hoãn thi thành công cho %d thí sinh: <b>%s</b>',
 				$countSuccess,
 				implode(', ', $learnerCodes)
 			);
@@ -575,7 +578,7 @@ class ExamModel extends AdminModel{
 			$countFailed = sizeof($examineeIds) - $countSuccess;
 			if($countFailed>0)
 			{
-				$msg = Text::sprintf('%d thí sinh không thể hủy hoãn thi. Lưu ý rằng chỉ có thể hủy hoãn thi đối với những thí sinh đang hoãn thi',
+				$msg = sprintf('%d thí sinh không thể hủy hoãn thi. Lưu ý rằng chỉ có thể hủy hoãn thi đối với những thí sinh đang hoãn thi',
 					$countFailed
 				);
 				$app->enqueueMessage($msg,'warning');
@@ -606,7 +609,7 @@ class ExamModel extends AdminModel{
 
 		//Nếu dùng ngân hàng thì không thể nhận đề
 		if($exam->usetestbank){
-			$msg = Text::sprintf('Môn thi <b>%s</b> sử dụng ngân hàng đề nên không thể nhận đề',$exam->name);
+			$msg = sprintf('Môn thi <b>%s</b> sử dụng ngân hàng đề nên không thể nhận đề',$exam->name);
 			$app->enqueueMessage($msg,'error');
 			return false;
 		}
@@ -632,13 +635,13 @@ class ExamModel extends AdminModel{
 		$db->setQuery($query);
 		if(!$db->execute())
 		{
-			$msg = Text::sprintf('Cập nhật thông tin thất bại cho môn thi <b>%s</b>', $exam->name);
+			$msg = sprintf('Cập nhật thông tin thất bại cho môn thi <b>%s</b>', $exam->name);
 			$app->enqueueMessage($msg,'error');
 			return false;
 		}
 
 		//Success
-		$msg = Text::sprintf('Cập nhật thông tin thành công cho môn thi <b>%s</b>', $exam->name);
+		$msg = sprintf('Cập nhật thông tin thành công cho môn thi <b>%s</b>', $exam->name);
 		$app->enqueueMessage($msg, 'success');
 		return true;
 	}
@@ -771,7 +774,7 @@ class ExamModel extends AdminModel{
 						$examroomId = $examroom->id;            //get exam room's ID
 
 						if($optionCreateNewExamrooms){ //Nếu yêu cầu tạo phòng mới thì báo lỗi
-							$msg = Text::sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
+							$msg = sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
 								DatabaseHelper::getExamsessionName($examsessionId),
 								DatabaseHelper::getRoomCode($roomId)
 							);
@@ -904,7 +907,7 @@ class ExamModel extends AdminModel{
 				->where('b.room_id IN ' . $roomIdSet);
 			$db->setQuery($query);
 			if($db->loadResult() > 0){
-				$msg = Text::sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
+				$msg = sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
 					DatabaseHelper::getExamsessionName($examsession['examsession_id']),
 					DatabaseHelper::getRoomCode($room['room_id'])
 				);
@@ -1074,7 +1077,7 @@ class ExamModel extends AdminModel{
 		}
 
 		$db->transactionCommit();
-		$msg = Text::sprintf('COM_EQA_MSG_N_EXAMINEES_DISTRIBUTED_INTO_N_EXAMROOMS',$countExaminee,$countExamroom);
+		$msg = sprintf('COM_EQA_MSG_N_EXAMINEES_DISTRIBUTED_INTO_N_EXAMROOMS',$countExaminee,$countExamroom);
 		$app->enqueueMessage($msg,'success');
 		return true;
 	}
@@ -1490,7 +1493,7 @@ class ExamModel extends AdminModel{
 					$transfers[] = $examinee;
 					break;
 				default:
-					throw new Exception(Text::sprintf('Loại khuyến khích không hợp lệ: %d', $stimulationType));
+					throw new Exception(sprintf('Loại khuyến khích không hợp lệ: %d', $stimulationType));
 			}
 		}
 
@@ -1610,21 +1613,21 @@ class ExamModel extends AdminModel{
 
 		if(!empty($listUnset))
 		{
-			$messages[] = Text::sprintf('%d HVSV đã hết nợ: %s',
+			$messages[] = sprintf('%d HVSV đã hết nợ: %s',
 				sizeof($listUnset),
 				implode(', ', $listUnset)
 			);
 		}
 		if(!empty($listSet))
 		{
-			$messages[] = Text::sprintf('%d HVSV đã phát sinh nợ: %s',
+			$messages[] = sprintf('%d HVSV đã phát sinh nợ: %s',
 				sizeof($listSet),
 				implode(', ', $listSet)
 			);
 		}
 		if(!empty($listCannotChange))
 		{
-			$messages[] = Text::sprintf('%d HVSV có thay đổi trạng thái nợ phí nhưng không được cập nhật vì đã có kết quả: %s',
+			$messages[] = sprintf('%d HVSV có thay đổi trạng thái nợ phí nhưng không được cập nhật vì đã có kết quả: %s',
 				sizeof($listCannotChange),
 				implode(', ', $listCannotChange)
 			);
@@ -1725,21 +1728,21 @@ class ExamModel extends AdminModel{
 
 		if(!empty($listUnset))
 		{
-			$messages[] = Text::sprintf('%d HVSV đã hết nợ: %s',
+			$messages[] = sprintf('%d HVSV đã hết nợ: %s',
 				sizeof($listUnset),
 				implode(', ', $listUnset)
 			);
 		}
 		if(!empty($listSet))
 		{
-			$messages[] = Text::sprintf('%d HVSV đã phát sinh nợ: %s',
+			$messages[] = sprintf('%d HVSV đã phát sinh nợ: %s',
 				sizeof($listSet),
 				implode(', ', $listSet)
 			);
 		}
 		if(!empty($listCannotChange))
 		{
-			$messages[] = Text::sprintf('%d HVSV có thay đổi trạng thái nợ phí nhưng không được cập nhật vì đã có kết quả: %s',
+			$messages[] = sprintf('%d HVSV có thay đổi trạng thái nợ phí nhưng không được cập nhật vì đã có kết quả: %s',
 				sizeof($listCannotChange),
 				implode(', ', $listCannotChange)
 			);
@@ -2293,12 +2296,12 @@ class ExamModel extends AdminModel{
 			{
 				if (!isset($items[$examinee->learnerCode]))
 				{
-					$msg = Text::sprintf('Không tìm thấy thông tin thí sinh <b>%s</b> trong CSDL môn thi', $examinee->learnerCode);
+					$msg = sprintf('Không tìm thấy thông tin thí sinh <b>%s</b> trong CSDL môn thi', $examinee->learnerCode);
 					throw new Exception($msg);
 				}
 				if ($items[$examinee->learnerCode] != $examinee->code)
 				{
-					$msg = Text::sprintf('Thông tin thí sinh <b>%s</b> không khớp với CSDL môn thi', $examinee->learnerCode);
+					$msg = sprintf('Thông tin thí sinh <b>%s</b> không khớp với CSDL môn thi', $examinee->learnerCode);
 					throw new Exception($msg);
 				}
 			}
@@ -2365,7 +2368,7 @@ class ExamModel extends AdminModel{
 			return false;
 		}
 
-		$msg = Text::sprintf('Nhập điểm thành công %d thí sinh', sizeof($examinees));
+		$msg = sprintf('Nhập điểm thành công %d thí sinh', sizeof($examinees));
 		$app->enqueueMessage($msg, 'success');
 		return true;
 	}
@@ -2394,6 +2397,7 @@ class ExamModel extends AdminModel{
 	{
 		/*
 		 * A PPAA request can be sent to an exam if the following conditions are met:
+		 * - The exam test type is Written or Hybrid
 		 * - The corresponding examseason has not been completed yet
 		 *   (column 'completed' in #__eqa_examseasons table is FALSE)
 		 * - The corresponding examseason is opened for PPAA requests
@@ -2402,8 +2406,14 @@ class ExamModel extends AdminModel{
 		 *   (column 'ppaa_req_deadline' in #__eqa_examseasons table).
 		 */
 		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			$db->quoteName('a.testtype',            'testtype'),
+			$db->quoteName('b.completed',           'completed'),
+			$db->quoteName('b.ppaa_req_enabled',    'ppaa_req_enabled'),
+			$db->quoteName('b.ppaa_req_deadline',   'ppaa_req_deadline'),
+		];
 		$query = $db->getQuery(true)
-			->select(['b.completed', 'b.ppaa_req_enabled', 'b.ppaa_req_deadline'])
+			->select($columns)
 			->from('#__eqa_exams AS a')
 			->leftJoin('#__eqa_examseasons AS b', 'b.id=a.examseason_id')
 			->where('a.id=' . $examId);
@@ -2411,11 +2421,14 @@ class ExamModel extends AdminModel{
 		$info = $db->loadObject();
 		if(empty($info))
 			return false;
+		$testType = TestType::tryFrom($info->testtype);
+		if(!in_array($testType, [TestType::Paper, TestType::MachineHybrid]))
+			return false;
 		if($info->completed)
 			return false;
 		if(!$info->ppaa_req_enabled)
 			return  false;
-		if(time() > strtotime($info->ppaa_req_deadline))
+		if($info->ppaa_req_deadline && DatetimeHelper::isTimeOver($info->ppaa_req_deadline))
 			return false;
 		return true;
 	}
@@ -2512,4 +2525,21 @@ class ExamModel extends AdminModel{
 		$db->setQuery($query);
 		return $db->execute();
 	}
+	public function getRegradingFeeAmount(int $examId, FeeMode $feeMode, int $feeRate): int
+	{
+		if($feeMode == FeeMode::PerExam)
+			return $feeRate;
+
+		//Determine the number of credits of the subject corresponding to the exam
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('b.credits')
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_subjects AS b', 'b.id=a.subject_id')
+			->where('a.id='.$examId);
+		$db->setQuery($query);
+		$creditNumber = $db->loadResult();
+		return $creditNumber*$feeRate;
+	}
+
 }

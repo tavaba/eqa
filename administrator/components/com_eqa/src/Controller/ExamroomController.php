@@ -2,7 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use JRoute;
 use Kma\Component\Eqa\Administrator\Model\ExamroomModel;
 use Kma\Library\Kma\Controller\FormController;
 
@@ -15,14 +14,14 @@ class ExamroomController extends  FormController {
 
         $examroomId = $this->input->getInt('examroom_id');
         if(empty($examroomId)){
-            $redirect = \JRoute::_('index.php?option=com_eqa&view=examrooms',false);
+            $redirect = Route::_('index.php?option=com_eqa&view=examrooms',false);
             $this->setRedirect($redirect);
             return;
         }
 
         if(!$this->app->getIdentity()->authorise('core.edit', $this->option)){
             $this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
-            $redirect = \JRoute::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$examroomId, false);
+            $redirect = Route::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$examroomId, false);
             $this->redirect($redirect);
             return;
         }
@@ -43,7 +42,7 @@ class ExamroomController extends  FormController {
             $model->removeExaminees($examroomId, $learnerIds);
         }
 
-        $redirect = JRoute::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$examroomId, false);
+        $redirect = Route::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$examroomId, false);
         $this->setRedirect($redirect);
     }
     public function addExaminees()
@@ -120,7 +119,7 @@ class ExamroomController extends  FormController {
 		$url = 'index.php?option=com_eqa&view=examrooms';
 		if(!empty($examId))
 			$url .= '&filter[exam_id]= ' . $examId;
-		$this->setRedirect(JRoute::_($url, false));
+		$this->setRedirect(Route::_($url, false));
 
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option)){
@@ -140,7 +139,7 @@ class ExamroomController extends  FormController {
 
 		//Redirect
 		$url = 'index.php?option=com_eqa&view=examroom&layout=anomaly&examroom_id='.$examroomId;
-		$this->setRedirect(JRoute::_($url, false));
+		$this->setRedirect(Route::_($url, false));
 	}
 	public function saveAnomaly(bool $continueEdit=false)
 	{
@@ -151,7 +150,7 @@ class ExamroomController extends  FormController {
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examrooms',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examrooms',false));
 			return;
 		}
 
@@ -160,7 +159,7 @@ class ExamroomController extends  FormController {
 		$data = $this->input->post->get('jform',[],'array');
 		if(empty($examroomId) || empty($data)){
 			$this->setMessage(Text::_('COM_EQA_MSG_INVALID_DATA'),'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examrooms', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examrooms', false));
 			return;
 		}
 
@@ -173,7 +172,7 @@ class ExamroomController extends  FormController {
 			$url = 'index.php?option=com_eqa&view=examroom&layout=anomaly&examroom_id='.$examroomId;
 		else
 			$url = 'index.php?option=com_eqa&view=examrooms';
-		$this->setRedirect(JRoute::_($url,false));
+		$this->setRedirect(Route::_($url,false));
 	}
 	public function applyAnomaly()
 	{

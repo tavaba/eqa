@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Stimulations; //The namespace mus
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -54,7 +55,7 @@ class HtmlView extends ItemsHtmlView {
 	{
 		ToolbarHelper::title($this->toolbarOption->title);
 		ToolbarHelper::appendGoHome();
-		$urlAddStimulations = \JRoute::_('index.php?option=com_eqa&view=stimulations&layout=add', false);
+		$urlAddStimulations = Route::_('index.php?option=com_eqa&view=stimulations&layout=add', false);
 		ToolbarHelper::appendLink('core.create', $urlAddStimulations, 'COM_EQA_ADD','plus-circle');
 		$confirmMsg = Text::_('COM_EQA_MSG_CONFIRM_DELETE');
 		ToolbarHelper::appendConfirmButton('core.delete', $confirmMsg, 'delete', 'JTOOLBAR_DELETE', 'subject.clearStimulations',true,'btn btn-danger');
@@ -78,7 +79,7 @@ class HtmlView extends ItemsHtmlView {
 		ToolbarHelper::title($option->title);
 		ToolbarHelper::appendGoHome();
 		ToolbarHelper::save('subject.stimulate');
-		$urlStimulations = \JRoute::_('index.php?option=com_eqa&view=stimulations');
+		$urlStimulations = Route::_('index.php?option=com_eqa&view=stimulations');
 		ToolbarHelper::appendLink('core.manage', $urlStimulations,'JTOOLBAR_CANCEL','cancel','btn btn-danger');
 	}
 }

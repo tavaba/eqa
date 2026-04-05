@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -42,7 +42,7 @@ class GradecorrectionsController extends AdminController {
 		}
 		catch (Exception $e)
 		{
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=gradecorrections', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}

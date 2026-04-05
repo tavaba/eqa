@@ -170,7 +170,7 @@ class ExamsessionModel extends AdminModel
             $db->transactionCommit();
 
             $app->enqueueMessage(
-                Text::sprintf('COM_EQA_MSG_N_ITEMS_INSERTED', count($examsessions)),
+	            Text::sprintf('COM_EQA_MSG_N_ITEMS_INSERTED', count($examsessions)),
                 'success'
             );
             return true;

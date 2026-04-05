@@ -2,11 +2,12 @@
 defined('_JEXEC') or die();
 
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Helper\ViewHelper;
+
 $urlSamplePaper = JUri::root() . 'media/com_eqa/xlsx/sample_exam_report_paper.xlsx';
 $urlSampleNonpaper = JUri::root() . 'media/com_eqa/xlsx/sample_exam_report_nonpaper.xlsx';
-$urlEditWarning = JRoute::_('index.php?option=com_eqa&view=examrooms',false);
-$formAction = JRoute::_('index.php?option=com_eqa');
-HTMLHelper::_('behavior.formvalidator');
+$urlEditWarning = Route::_('index.php?option=com_eqa&view=examrooms',false);
 ?>
 <div>
 	<b>Lưu ý:</b>
@@ -41,11 +42,5 @@ HTMLHelper::_('behavior.formvalidator');
 			Sai lệch mã phòng thi sẽ dẫn đến sai lệch số liệu nhập vào hệ thống.</li>
 	</ol>
 </div>
-<form action="<?php echo $formAction;?>" method="POST" enctype="multipart/form-data" name="adminForm" id="adminForm" class="form-validate" >
-	<input type="hidden" name="task" value=""/>
-	<?php
-	echo $this->form->renderFieldset('upload');
-	echo JHtml::_('form.token');
-	?>
-</form>
 <?php
+ViewHelper::printUploadForm($this->form);

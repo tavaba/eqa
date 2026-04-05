@@ -1,6 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\View\Paperexam; //The namespace must end with the VIEW NAME.
 use Joomla\CMS\Factory;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\FormHelper;
@@ -19,7 +20,7 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Đánh số phách bài thi viết');
 		ToolbarHelper::appendButton('core.edit','save','JTOOLBAR_SAVE','paperexam.mask',false,null,true);
-		$url = \JRoute::_('index.php?option=com_eqa&view=paperexams',false);
+		$url = Route::_('index.php?option=com_eqa&view=paperexams',false);
 		ToolbarHelper::appendLink('core.manage',$url,'JTOOLBAR_CANCEL','delete','btn btn-danger');
 	}
 	protected function prepareDataForLayoutExaminers()
@@ -35,6 +36,6 @@ class HtmlView extends ItemHtmlView {
 		ToolbarHelper::title('Phân công chấm thi viết');
 		ToolbarHelper::appendGoHome();
 		ToolbarHelper::save('paperexam.saveExaminers');
-		ToolbarHelper::appendCancelLink(\JRoute::_('index.php?option=com_eqa&view=paperexams'));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=paperexams'));
 	}
 }

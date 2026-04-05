@@ -19,7 +19,7 @@
         />
         <field
                 name="reason"
-                type="texterea"
+                type="textarea"
                 label="Yêu cầu đính chính"
                 readonly="true"
         />

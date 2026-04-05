@@ -5,7 +5,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Exception;
 use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
@@ -44,7 +44,7 @@ class ExamroomsController extends AdminController {
 				$msg = "Phòng thi <b>$examroom->name</b>: chưa phân công CBCT, CBCT-ChT";
 				$this->setMessage($msg, 'error');
 				$url = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id='.$examroom->examsessionId;
-				$this->setRedirect(JRoute::_($url, false));
+				$this->setRedirect(Route::_($url, false));
 				return;
 	        }
 
@@ -73,7 +73,7 @@ class ExamroomsController extends AdminController {
 		$fileFormField = 'file_report';
 
 		//Set redirect to list view in any case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examrooms&layout=import', false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=examrooms&layout=import', false));
 		try
 		{
 			// Check for request forgeries.
@@ -125,7 +125,7 @@ class ExamroomsController extends AdminController {
 			}
 			if($row >= $highestRow) //Not found
 			{
-				$msg = Text::sprintf('Sheet <b>%s</b>: không tìm thấy thông tin phòng thi', $sheet->getTitle());
+				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy thông tin phòng thi', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
 				continue; //Nhảy sang sheet kế tiếp
 			}
@@ -133,7 +133,7 @@ class ExamroomsController extends AdminController {
 			//2. Lấy thông tin về các exam liên quan
 			$examroomExamIds = DatabaseHelper::getExamroomExamIds($examroomId);
 			if (empty($examroomExamIds)){
-				$msg = Text::sprintf('Sheet <b>%s</b>: không xác định được môn thi', $sheet->getTitle());
+				$msg = sprintf('Sheet <b>%s</b>: không xác định được môn thi', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
 				continue; //Nhảy sang sheet kế tiếp
 			}
@@ -147,7 +147,7 @@ class ExamroomsController extends AdminController {
 				}
 			}
 			if(!$canEdit){
-				$msg = Text::sprintf('Sheet <b>%s</b>: môn thi đã hoàn tất, không thể nhập dữ liệu', $sheet->getTitle());
+				$msg = sprintf('Sheet <b>%s</b>: môn thi đã hoàn tất, không thể nhập dữ liệu', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
 				continue; //Nhảy sang sheet kế tiếp
 			}
@@ -163,7 +163,7 @@ class ExamroomsController extends AdminController {
 			}
 			if($row >= $highestRow) //Not found
 			{
-				$msg = Text::sprintf('Sheet <b>%s</b>: không tìm thấy thông tin thí sinh', $sheet->getTitle());
+				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy thông tin thí sinh', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
 				continue;
 			}
@@ -190,7 +190,7 @@ class ExamroomsController extends AdminController {
 					$anomaly = Anomaly::tryFromLabel($examinee->description);
 					if($anomaly==null)
 					{
-						$msg = Text::sprintf("Dòng 'Ghi chú' không hợp lệ: sheet %s, dòng %d", $sheet->getTitle(), $row);
+						$msg = sprintf("Dòng 'Ghi chú' không hợp lệ: sheet %s, dòng %d", $sheet->getTitle(), $row);
 						$this->setMessage($msg, 'error');
 						return;
 					}
@@ -227,12 +227,12 @@ class ExamroomsController extends AdminController {
 			$exam = DatabaseHelper::getExamInfo($examId);
 			if ($exam->countConcluded == $exam->countTotal)
 			{
-				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countTotal);
+				$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countTotal);
 				$app->enqueueMessage($msg, 'success');
 			}
 			elseif ($exam->countConcluded > 0)
 			{
-				$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countToTake);
+				$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countToTake);
 				$app->enqueueMessage($msg );
 			}
 			if($exam->testtype==TestType::Paper->value )
@@ -240,13 +240,13 @@ class ExamroomsController extends AdminController {
 				if ($exam->countHavePaperInfo == $exam->countToTake)
 				{
 					$examModel->setExamStatus($examId, ExamStatus::PaperInfoFull);
-					$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
+					$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
 					$app->enqueueMessage($msg, 'success');
 				}
 				elseif ($exam->countHavePaperInfo > 0)
 				{
 					$examModel->setExamStatus($examId, ExamStatus::PaperInfoPartial);
-					$msg = Text::sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
+					$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
 					$app->enqueueMessage($msg);
 				}
 			}

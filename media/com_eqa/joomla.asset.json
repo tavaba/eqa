@@ -20,6 +20,12 @@
       "version": "1.0.2"
     },
     {
+      "name": "qrcode.script",
+      "type": "script",
+      "uri": "com_eqa/qrcode.min.js",
+      "version": "2.0.6"
+    },
+    {
       "name": "com_eqa.fixpam",
       "type": "script",
       "uri": "com_eqa/fixpam.js",

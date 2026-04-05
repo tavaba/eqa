@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\View\Classes;    //The namespace must end with the VIEW NAME.
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -67,7 +68,7 @@ class HtmlView extends ItemsHtmlView
 	    ToolbarHelper::appendButton('core.delete','delete','JTOOLBAR_DELETE','classes.delete',true,'btn btn-danger');
 	    ToolbarHelper::appendButton(['core.create','eqa.create.class'],'upload','JTOOLBAR_UPLOAD','classes.upload');
 		ToolbarHelper::appendButton(['core.create','eqa.create.class'], 'plus-circle','Thêm đồng loạt','classes.addForGroupOrCohort',false,'btn btn-success');
-        $url = \JRoute::_('index.php?option=com_eqa&view=classes&layout=uploadpam',false);
+        $url = Route::_('index.php?option=com_eqa&view=classes&layout=uploadpam',false);
 		ToolbarHelper::appendButton('core.manage','download','Điểm QT','classes.downloadPam',true);
         ToolbarHelper::appendLink(['core.edit','core.edit.own','eqa.edit.class'], $url,'COM_EQA_IMPORT_PAM', 'bars');
     }

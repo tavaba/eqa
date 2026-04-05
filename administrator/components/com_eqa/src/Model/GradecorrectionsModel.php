@@ -53,27 +53,28 @@ class GradecorrectionsModel extends ListModel
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
-			$db->quoteName('a.id')           . ' AS ' . $db->quoteName('id'),
-			$db->quoteName('a.exam_id')      . ' AS ' . $db->quoteName('examId'),
-			$db->quoteName('d.name')         . ' AS ' . $db->quoteName('examName'),
-			$db->quoteName('a.learner_id')   . ' AS ' . $db->quoteName('learnerId'),
-			$db->quoteName('a.constituent')  . ' AS ' . $db->quoteName('constituentCode'),
-			$db->quoteName('b.code')         . ' AS ' . $db->quoteName('learnerCode'),
-			$db->quoteName('b.lastname')     . ' AS ' . $db->quoteName('learnerLastname'),
-			$db->quoteName('b.firstname')    . ' AS ' . $db->quoteName('learnerFirstname'),
-			$db->quoteName('a.status')       . ' AS ' . $db->quoteName('statusCode'),
-			$db->quoteName('f.pam1')         . ' AS ' . $db->quotename('pam1'),
-			$db->quoteName('f.pam2')         . ' AS ' . $db->quotename('pam2'),
-			$db->quoteName('c.mark_orig')    . ' AS ' . $db->quotename('finalExamMark'),
-			$db->quoteName('a.reason')       . ' AS ' . $db->quotename('reason'),
-			$db->quoteName('a.changed')      . ' AS ' . $db->quotename('changed'),
-			$db->quoteName('a.description')  . ' AS ' . $db->quotename('description'),
-			$db->quoteName('a.handled_by')   . ' AS ' . $db->quotename('handledBy'),
-			$db->quoteName('a.handled_at')   . ' AS ' . $db->quotename('handledAt'),
-			$db->quoteName('a.modified_by')   . ' AS ' . $db->quotename('updatedBy'),
-			$db->quoteName('a.modified_at')   . ' AS ' . $db->quotename('updatedAt'),
-			$db->quoteName('g.lastname')     . ' AS ' . $db->quotename('reviewerLastname'),
-			$db->quoteName('g.firstname')    . ' AS ' . $db->quotename('reviewerFirstname'),
+			$db->quoteName('a.id',                  'id'),
+			$db->quoteName('a.exam_id',             'examId'),
+			$db->quoteName('d.name',                'examName'),
+			$db->quoteName('a.learner_id',          'learnerId'),
+			$db->quoteName('a.constituent',         'constituentCode'),
+			$db->quoteName('b.code',                'learnerCode'),
+			$db->quoteName('b.lastname',            'learnerLastname'),
+			$db->quoteName('b.firstname',           'learnerFirstname'),
+			$db->quoteName('a.status',              'statusCode'),
+			$db->quoteName('f.pam1',                'pam1'),
+			$db->quoteName('f.pam2',                'pam2'),
+			$db->quoteName('c.mark_orig',           'finalExamMark'),
+			$db->quoteName('a.reason',              'reason'),
+			$db->quoteName('a.changed',             'changed'),
+			$db->quoteName('a.description',         'description'),
+			$db->quoteName('u_handled.name',        'handlerName'),
+			$db->quoteName('a.handled_by_username', 'handlerUsername'),
+			$db->quoteName('a.handled_at',          'handledAt'),
+			$db->quoteName('u_modified.name',       'modifierName'),
+			$db->quoteName('a.modified_at',         'modifiedAt'),
+			$db->quoteName('g.lastname',            'reviewerLastname'),
+			$db->quoteName('g.firstname',           'reviewerFirstname'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -83,7 +84,9 @@ class GradecorrectionsModel extends ListModel
 			->leftJoin('#__eqa_exams AS d', 'd.id=a.exam_id')
 			->leftJoin('#__eqa_classes AS e', 'e.id=c.class_id')
 			->leftJoin('#__eqa_class_learner AS f', 'f.class_id=e.id AND f.learner_id=b.id')
-			->leftJoin('#__eqa_employees AS g', 'g.id=a.reviewer_id');
+			->leftJoin('#__eqa_employees AS g', 'g.id=a.reviewer_id')
+			->leftJoin('#__users AS u_handled','u_handled.id=a.handled_by')
+			->leftJoin('#__users AS u_modified','u_modified.id=a.modified_by');
 		return $query;
 	}
 	public function getListQuery()

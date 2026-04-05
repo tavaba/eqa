@@ -2,7 +2,6 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
-use JRoute;
 use Kma\Library\Kma\Controller\FormController;
 
 defined('_JEXEC') or die();
@@ -74,19 +73,19 @@ class ExamsessionController extends  FormController {
         {
             //Save the data in the session and Redirect to edit screen
             $app->setUserState($context . '.data', $data);
-            $this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examsession&layout=addbatch',false));
+            $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch',false));
             return;
         }
 
         if(!$model->saveBatch($data)){
             //Save the data in the session and Redirect to edit screen
             $app->setUserState($context . '.data', $data);
-            $this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examsession&layout=addbatch',false));
+            $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch',false));
         }
         else{
             //Clear data and Redirect to list view
             $app->setUserState($context . '.data', null);
-            $this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examsessions',false));
+            $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsessions',false));
         }
     }
 }

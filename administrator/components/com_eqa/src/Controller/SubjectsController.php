@@ -3,20 +3,18 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 defined('_JEXEC') or die();
 
 use Exception;
-use Joomla\CMS\Language\Text;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Model\SubjectsModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\DatetimeHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 
 class SubjectsController extends AdminController{
 	public function import(): void
 	{
-		$redirectUrl = JRoute::_('index.php?option=com_eqa&view=subjects', false);
+		$redirectUrl = Route::_('index.php?option=com_eqa&view=subjects', false);
 		$this->setRedirect($redirectUrl);
 		try{
 			//1. Check token
@@ -48,21 +46,21 @@ class SubjectsController extends AdminController{
 				$unitCode = trim($row[$colIndex++]);
 				if(!preg_match($unitCodePattern,$unitCode))
 				{
-					$msg = Text::sprintf('Dòng %d: Mã đơn vị "%s" không hợp lệ', $r+1, htmlspecialchars($unitCode));
+					$msg = sprintf('Dòng %d: Mã đơn vị "%s" không hợp lệ', $r+1, htmlspecialchars($unitCode));
 					throw new Exception($msg);
 				}
 
 				$subjectCode = trim($row[$colIndex++]);
 				if(!preg_match($subjectCodePattern,$subjectCode))
 				{
-					$msg = Text::sprintf('Dòng %d: Mã môn học "%s" không hợp lệ', $r+1, htmlspecialchars($subjectCode));
+					$msg = sprintf('Dòng %d: Mã môn học "%s" không hợp lệ', $r+1, htmlspecialchars($subjectCode));
 					throw new Exception($msg);
 				}
 
 				$subjectName = trim(strip_tags($row[$colIndex++]));
 				if(empty($subjectName))
 				{
-					$msg = Text::sprintf('Dòng %d: Tên môn học không hợp lệ', $r+1);
+					$msg = sprintf('Dòng %d: Tên môn học không hợp lệ', $r+1);
 					throw new Exception($msg);
 				}
 
@@ -71,20 +69,20 @@ class SubjectsController extends AdminController{
 					'ĐH' => 7,
 					'CH' => 8,
 					'TS' => 9,
-					default => throw new Exception(Text::sprintf('Dòng %d: Bậc học "%s" không hợp lệ', $r+1, htmlspecialchars($degreeAbbr))),
+					default => throw new Exception(sprintf('Dòng %d: Bậc học "%s" không hợp lệ', $r+1, htmlspecialchars($degreeAbbr))),
 				};
 
 				$creditNumber = NumberHelper::toFloat(trim($row[$colIndex++]));
 				if($creditNumber===false)
 				{
-					$msg = Text::sprintf('Dòng %d: Số tín chỉ "%s" không hợp lệ', $r+1, htmlspecialchars($creditNumber));
+					$msg = sprintf('Dòng %d: Số tín chỉ "%s" không hợp lệ', $r+1, htmlspecialchars($creditNumber));
 					throw new Exception($msg);
 				}
 
 				$testtypeText = trim($row[$colIndex++]);
 				$testType = TestType::tryFromText($testtypeText);
 				if(is_null($testType)){
-					$msg = Text::sprintf('Dòng %d: Hình thức thi "%s" không hợp lệ', $r+1, htmlspecialchars($testtypeText));
+					$msg = sprintf('Dòng %d: Hình thức thi "%s" không hợp lệ', $r+1, htmlspecialchars($testtypeText));
 					throw new Exception($msg);
 				}
 
@@ -94,7 +92,7 @@ class SubjectsController extends AdminController{
 				else if(NumberHelper::isInteger($testBankYear))
 					$testBankYear = (int)$testBankYear;
 				else{
-					$msg = Text::sprintf('Dòng %d: Năm đề thi "%s" không hợp lệ', $r+1, htmlspecialchars($testBankYear));
+					$msg = sprintf('Dòng %d: Năm đề thi "%s" không hợp lệ', $r+1, htmlspecialchars($testBankYear));
 					throw new Exception($msg);
 				}
 

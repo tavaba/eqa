@@ -72,7 +72,7 @@ class HtmlView extends ItemHtmlView{
 	{
 		ToolbarHelper::title('Nhập điểm thi từ ca thi iTest');
 		ToolbarHelper::appendButton('core.create','save','JTOOLBAR_SAVE','exam.importItest',false,null,true);
-		$cancelUrl = \JRoute::_('index.php?option=com_eqa', false);
+		$cancelUrl = Route::_('index.php?option=com_eqa', false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 
@@ -83,7 +83,7 @@ class HtmlView extends ItemHtmlView{
 	{
 		ToolbarHelper::title('Nhập thông tin tiếp nhận đề thi');
 		ToolbarHelper::appendButton('core.create','save','JTOOLBAR_SAVE','exam.saveQuestion',false,null,true);
-		$cancelUrl = \JRoute::_('index.php?option=com_eqa', false);
+		$cancelUrl = Route::_('index.php?option=com_eqa', false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 }

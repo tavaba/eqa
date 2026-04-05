@@ -10,6 +10,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
+use Kma\Library\Kma\BankStatement\BankStatementImportResultHelper;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
@@ -687,8 +688,8 @@ class AssessmentLearnersController extends AdminController
 			}
 
 			$this->setMessage(
-				$this->buildImportResultMessage($result),
-				($result['updated'] > 0) ? 'success' : 'warning'
+				BankStatementImportResultHelper::buildMessage($result, 'đã nộp phí sát hạch'),
+				BankStatementImportResultHelper::getMessageType($result)
 			);
 
 		} catch (Exception $e) {
@@ -696,56 +697,6 @@ class AssessmentLearnersController extends AdminController
 		}
 	}
 
-	/**
-	 * Tạo thông báo HTML tổng hợp kết quả đối chiếu sao kê.
-	 *
-	 * @since 2.0.5
-	 */
-	private function buildImportResultMessage(array $result): string
-	{
-		$lines = [];
-
-		if ($result['updated'] > 0) {
-			$lines[] = sprintf(
-				'✅ Đã ghi nhận <b>%d</b> trường hợp nộp phí: %s',
-				$result['updated'],
-				implode(', ', $result['updatedCodes'])
-			);
-		} else {
-			$lines[] = 'ℹ️ Không có trường hợp nào được cập nhật.';
-		}
-		if ($result['alreadyPaid'] > 0) {
-			$lines[] = sprintf('ℹ️ <b>%d</b> trường hợp đã nộp phí từ trước (bỏ qua).', $result['alreadyPaid']);
-		}
-		if ($result['notFound'] > 0) {
-			$lines[] = sprintf('ℹ️ <b>%d</b> giao dịch không tìm thấy mã nộp tiền tương ứng.', $result['notFound']);
-		}
-		if (!empty($result['amountMismatch'])) {
-			$lines[] = sprintf('⚠️ <b>%d</b> trường hợp <b>sai số tiền</b>, chưa cập nhật:', count($result['amountMismatch']));
-			foreach ($result['amountMismatch'] as $item) {
-				$lines[] = sprintf(
-					'&nbsp;&nbsp;• <code>%s</code> (%s) — Cần: <b>%s đ</b>, Thực nhận: <b>%s đ</b>',
-					htmlspecialchars($item['payment_code']),
-					htmlspecialchars($item['learner_code']),
-					number_format($item['expected'], 0, ',', '.'),
-					number_format($item['actual'], 0, ',', '.')
-				);
-			}
-		}
-		if (!empty($result['duplicate'])) {
-			$lines[] = sprintf('⚠️ <b>%d</b> mã nộp tiền xuất hiện nhiều lần (cần xử lý thủ công):', count($result['duplicate']));
-			foreach ($result['duplicate'] as $item) {
-				$lines[] = sprintf(
-					'&nbsp;&nbsp;• <code>%s</code> (%s) — %d lần',
-					htmlspecialchars($item['payment_code']),
-					htmlspecialchars($item['learner_code']),
-					$item['count']
-				);
-			}
-		}
-
-		return implode('<br>', $lines);
-	}
 // =========================================================================
 // exportItest — xuất ca thi iTest cho kỳ sát hạch
 // =========================================================================

@@ -1,4 +1,5 @@
 <?php
+defined('_JEXEC') or die();
 
 /**
  * Template: Cập nhật thông tin thanh toán thí sinh sát hạch
@@ -10,7 +11,6 @@
  * @since       2.0.5
  */
 
-defined('_JEXEC') or die();
 
 use Kma\Library\Kma\Helper\ViewHelper;
 

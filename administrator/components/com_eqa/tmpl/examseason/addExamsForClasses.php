@@ -6,7 +6,6 @@ use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 
 defined('_JEXEC') or die();
-HTMLHelper::_('behavior.formvalidator');
 $examseason = $this->examseason;
 ?>
 <div>

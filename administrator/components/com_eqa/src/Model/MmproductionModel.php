@@ -20,7 +20,7 @@ class MmproductionModel extends AdminModel {
 			$examinerId = EmployeeHelper::getId($examiner);
 			if(empty($examinerId))
 			{
-				$msg = Text::sprintf('Không tìm thấy <b>%s</b> trong CSDL', $examiner);
+				$msg = sprintf('Không tìm thấy <b>%s</b> trong CSDL', $examiner);
 				$app->enqueueMessage($msg,'error');
 				return false;
 			}
@@ -39,7 +39,7 @@ class MmproductionModel extends AdminModel {
 			$app->enqueueMessage('Lỗi truy vấn CSDL', 'error');
 			return false;
 		}
-		$msg = Text::sprintf('Đã ghi nhận %d bài thi cho %d CBChT%d', $count, sizeof($examinerProductions), $role);
+		$msg = sprintf('Đã ghi nhận %d bài thi cho %d CBChT%d', $count, sizeof($examinerProductions), $role);
 		$app->enqueueMessage($msg, 'success');
 		return true;
 	}

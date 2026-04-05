@@ -8,7 +8,6 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
-use JRoute;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -16,7 +15,6 @@ use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
@@ -199,7 +197,7 @@ class ExamController extends  FormController
 		    $attempt = $this->input->getInt('attempt');
 			if(empty($attempt))  //Phase 1
 			{
-				$this->setRedirect(JRoute::_(
+				$this->setRedirect(Route::_(
 					'index.php?option=com_eqa&view=exam&layout=addexaminees&exam_id='.$examId,
 					false));
 				return;
@@ -227,9 +225,9 @@ class ExamController extends  FormController
 		    $countAdded = $model->addExamineesFromClass($examId, $classCode, $examineeCodes, $attempt, $ignoreError, $addExpired);
 
 		    //Redirect to examinees list page
-		    $msg = Text::sprintf('Có %d/%d thí sinh được thêm vào môn thi', $countAdded, count($examineeCodes));
+		    $msg = sprintf('Có %d/%d thí sinh được thêm vào môn thi', $countAdded, count($examineeCodes));
 		    $this->setMessage($msg, 'info');
-		    $this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
 	    }
 		catch (Exception $e)
 		{
@@ -264,7 +262,7 @@ class ExamController extends  FormController
 			$model->addFailedExaminees($examId);
 
 			//Set redirect to the examinees list page
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
 		}
 		catch(Exception $e)
 		{
@@ -288,7 +286,7 @@ class ExamController extends  FormController
 		$url = 'index.php?option=com_eqa&view=examexaminees';
 		if(is_numeric($examId))
 			$url .= '&exam_id=' . $examId;
-		$this->setRedirect(JRoute::_($url, false));
+		$this->setRedirect(Route::_($url, false));
 
 		//Check permissions
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
@@ -319,7 +317,7 @@ class ExamController extends  FormController
 		$url = 'index.php?option=com_eqa&view=examexaminees';
 		if(is_numeric($examId))
 			$url .= '&exam_id=' . $examId;
-		$this->setRedirect(JRoute::_($url, false));
+		$this->setRedirect(Route::_($url, false));
 
 		//Check permissions
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
@@ -351,7 +349,7 @@ class ExamController extends  FormController
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
 			$this->setMessage($msg, 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa', false));
 			return;
 		}
 
@@ -366,7 +364,7 @@ class ExamController extends  FormController
 		{
 			$msg = Text::_('COM_EQA_MSG_INVALID_DATA');
 			$this->setMessage($msg, 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=exam&layout=question', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=exam&layout=question', false));
 			return;
 		}
 
@@ -375,7 +373,7 @@ class ExamController extends  FormController
 		$model->updateExamQuestion($examId, $questionAuthorId, $questionSenderId, $questionQuantity, $questionDate);
 
 		//Redirect
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa'));
+		$this->setRedirect(Route::_('index.php?option=com_eqa'));
 	}
 	private function checkCanDistributeExamineesAmongRooms(int $examId, bool $throw=true):bool
 	{
@@ -717,7 +715,7 @@ class ExamController extends  FormController
 
 			//Set redirect in any case
 			$this->setMessage(implode('. ', $messages));
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -754,7 +752,7 @@ class ExamController extends  FormController
 
 			//Set redirect in any case
 			$this->setMessage(implode('. ', $messages));
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -821,7 +819,7 @@ class ExamController extends  FormController
 					throw new Exception($msg);
 				}
 			}
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -845,12 +843,12 @@ class ExamController extends  FormController
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
 			$this->setMessage($msg, 'error');
-			$this->setRedirect(JRoute::_('index.php?option=com_eqa',false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa',false));
 			return;
 		}
 
 		//Set redirect in any other case
-		$this->setRedirect(JRoute::_('index.php?option=com_eqa&view=exam&layout=uploaditest',false));
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=exam&layout=uploaditest',false));
 
 		//Get data
 		$examId = $this->input->post->getInt('exam_id');
@@ -873,7 +871,7 @@ class ExamController extends  FormController
 		$sheet = $spreadsheet->getSheetByName($sheetName);
 		if(empty($sheet))
 		{
-			$msg = Text::sprintf("File không hợp lệ. Không tìm thấy sheet <b>%s</b>", $sheetName);
+			$msg = sprintf("File không hợp lệ. Không tìm thấy sheet <b>%s</b>", $sheetName);
 			$this->setMessage($msg, 'error');
 			return;
 		}
@@ -896,7 +894,7 @@ class ExamController extends  FormController
 			$examinee = new \stdClass();
 			if(empty($data[$row][$colCode]) || empty($data[$row][$colLearnerCode]))
 			{
-				$msg = Text::sprintf("Dữ liệu không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $row+1);
+				$msg = sprintf("Dữ liệu không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $row+1);
 				$this->setMessage($msg, 'error');
 				return;
 			}
@@ -907,7 +905,7 @@ class ExamController extends  FormController
 				$examinee->mark = 0;
 			elseif($mark<0 || $mark>10)
 			{
-				$msg = Text::sprintf("Điểm không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $row+1);
+				$msg = sprintf("Điểm không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $row+1);
 				$this->setMessage($msg, 'error');
 				return;
 			}
@@ -938,7 +936,7 @@ class ExamController extends  FormController
 		}
 
 		//Thông báo kết quả
-		$msg = Text::sprintf("Môn thi <b>%s</b>: %d/%d đã có kết quả",
+		$msg = sprintf("Môn thi <b>%s</b>: %d/%d đã có kết quả",
 			$exam->name,
 			$exam->countConcluded,
 			$exam->countToTake + $exam->countExempted

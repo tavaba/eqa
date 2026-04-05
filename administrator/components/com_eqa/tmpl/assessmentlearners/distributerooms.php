@@ -1,4 +1,5 @@
 <?php
+defined('_JEXEC') or die();
 
 /**
  * Template: Chia phòng thi cho kỳ sát hạch
@@ -12,17 +13,12 @@
  * @since       2.1.0
  */
 
-defined('_JEXEC') or die();
-
-use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Helper\ViewHelper;
 
 /**
  * @var Kma\Component\Eqa\Administrator\View\AssessmentLearners\HtmlView $this
  */
-
-HTMLHelper::_('behavior.formvalidator');
-
 $assessment  = $this->assessment;
 $stats       = $this->distributionStats;
 $selectedIds = $this->selectedIds;   // [] = toàn bộ; [id,...] = được chọn
@@ -133,17 +129,12 @@ $actionUrl = Route::_('index.php?option=com_eqa', false);
 </div>
 <?php endif; ?>
 
-<?php /* =================================================================
+<?php
+/* =================================================================
    Form chia phòng
-   ================================================================= */ ?>
-<form action="<?php echo $actionUrl; ?>" method="post"
-      name="adminForm" id="adminForm" class="form-validate">
-
-    <input type="hidden" name="task"          value="assessmentlearners.distributeRooms">
-    <input type="hidden" name="phase"         value="getdata">
-    <input type="hidden" name="assessment_id" value="<?php echo (int) $assessment->id; ?>">
-
-    <?php echo HTMLHelper::_('form.token'); ?>
-    <?php echo $this->form->renderFieldset('examrooms'); ?>
-
-</form>
+   ================================================================= */
+$hiddenFields = [
+        'assessment_id' => $assessment->id,
+        'phase'=>'getdata'
+];
+ViewHelper::printForm($this->form,'examrooms', $hiddenFields);
