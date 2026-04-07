@@ -72,7 +72,7 @@ return new class () implements InstallerScriptInterface {
 	{
 		return true;
 	}
-	
+
     public function postflight_bak(string $type, InstallerAdapter $adapter): bool
     {
         $db = DatabaseHelper::getDatabaseDriver();

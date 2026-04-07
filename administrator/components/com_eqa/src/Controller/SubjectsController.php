@@ -115,7 +115,7 @@ class SubjectsController extends AdminController{
 			if(empty($data))
 				throw new Exception('Không có dữ liệu để nhập');
 			$username = $this->app->getIdentity()->username;
-			$time = DatetimeHelper::getCurrentHanoiDatetime();
+			$time = DatetimeHelper::getCurrentUtcTime();
 			$model = $this->getModel('Subjects');
 			$model->import($data, $updateExisting, $username, $time);
 		}

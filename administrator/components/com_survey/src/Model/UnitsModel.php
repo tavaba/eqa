@@ -70,7 +70,7 @@ class UnitsModel extends ListModel
     {
         $db = DatabaseHelper::getDatabaseDriver();
         $userId = Factory::getApplication()->getIdentity()->id;
-        $now = $db->quote(DatetimeHelper::getCurrentHanoiDatetime());
+        $now = $db->quote(DatetimeHelper::getCurrentUtcTime());
         $columns = $db->quoteName([
             'type',
             'code',

@@ -331,7 +331,7 @@ class ClassModel extends AdminModel
 			//5. Update class PAM date if all learners have been assigned PAM
 			if($setPamDateToday && $npam==$classSize)
 			{
-				$now = DatetimeHelper::getCurrentHanoiDatetime();
+				$now = DatetimeHelper::getCurrentUtcTime();
 				$query = $db->getQuery(true)
 					->update('#__eqa_classes')
 					->set($db->quoteName('pamdate') . '=' . $db->quote($now))
@@ -353,7 +353,7 @@ class ClassModel extends AdminModel
 	public function updatePam(int $classId, int $learnerId, float $pam1, float $pam2, float $pam, bool $allowed, bool $expired, string $description)
 	{
 		$userId = Factory::getApplication()->getIdentity()->id;
-		$currentTime = DatetimeHelper::getCurrentHanoiDatetime();
+		$currentTime = DatetimeHelper::getCurrentUtcTime();
 		$db = $this->getDatabase();
 		$query = $db->getQuery(true)
 			->update('#__eqa_class_learner')

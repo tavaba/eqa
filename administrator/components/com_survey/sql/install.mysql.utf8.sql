@@ -1,6 +1,11 @@
 /*
  * com_survey
  * Version 1.0.1
+ * Thay đổi so với version 1.0.0:
+ * 1. Bảng #__survey_campaigns
+ *    Bỏ cột 'performance_mode'
+ * 2. Thêm bảng #__survey_campaign_respondent
+ * 3. Thay đổi hoàn toàn bảng #__survey_logs cho tương thích với LogService của lib_kma
  */
 DROP TABLE IF EXISTS `#__survey_logs`;
 CREATE TABLE `#__survey_logs` (

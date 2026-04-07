@@ -15,6 +15,7 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
+use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
 use Kma\Component\Eqa\Administrator\Model\RegradingModel;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Library\Kma\BankStatement\BankStatementImportResultHelper;
@@ -241,15 +242,19 @@ class RegradingsController extends AdminController
 			if(empty($examseasonId))
 				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
 
-			//Bước 2. Kiểm tra, đảm bảo rằng kỳ thi chưa kết thúc, thời hạn phúc khảo đã qua. Nếu vi phạm thì báo lỗi
-			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
-			if($examseason->completed)
+			/**
+			 * Bước 2. Kiểm tra, đảm bảo rằng kỳ thi chưa kết thúc, thời hạn phúc khảo đã qua.
+			 * Nếu vi phạm thì báo lỗi
+			 * @var ExamseasonModel $examseasonModel
+			 */
+			$examseasonModel = $this->getModel('examseason');
+			if($examseasonModel->isCompleted($examseasonId))
 				throw new Exception('Kỳ thi đã kết thúc');
-			if($examseason->canSendPpaaRequest())
+			if($examseasonModel->canRequestPpaa($examseasonId))
 				throw new Exception('Vẫn chưa hết hạn gửi yêu cầu phúc khảo');
 
 			//Bước 3. Chuyển hướng sang form
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseason->id, false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseasonId, false));
 			return;
 		}
 		catch (Exception $e) {
@@ -329,8 +334,12 @@ class RegradingsController extends AdminController
 			if(empty($examseasonId))
 				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
 
-			//Bước 3. Kiểm tra thời hạn phúc khảo. Nếu chưa kết thúc thì báo lỗi
-			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
+			/**
+			 * Bước 3. Kiểm tra thời hạn phúc khảo. Nếu chưa kết thúc thì báo lỗi
+			 * @var ExamseasonModel $examseasonModel
+			 */
+			$examseasonModel = $this->getModel('examseason');
+			$examseason = $examseasonModel->getItem($examseasonId);
 			if($examseason->canSendPpaaRequest())
 				throw new Exception('Chưa hết hạn gửi yêu cầu phúc khảo');
 

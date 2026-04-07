@@ -191,8 +191,7 @@ class AssessmentPortalModel extends BaseModel
 
 		// 6. Phân loại từng kỳ sát hạch
 		// Lấy thời điểm "hôm nay" và "bây giờ" theo giờ hệ thống (OS timezone)
-		$todayLocal = DatetimeHelper::getCurrentSystemClockTime('Y-m-d');
-		$nowUtc     = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+		$today = DatetimeHelper::getCurrentUtcTime('Y-m-d');
 
 		$active = [];
 		$past   = [];
@@ -223,9 +222,9 @@ class AssessmentPortalModel extends BaseModel
 			// Đang trong thời hạn đăng ký?
 			// registration_start/end được lưu UTC trong DB → dùng isTimeOver với isUTC=true
 			$regEndPassed   = !empty($a->registration_end)
-				&& DatetimeHelper::isTimeOver($a->registration_end, true);
+				&& DatetimeHelper::isTimeOver($a->registration_end);
 			$regNotStarted  = !empty($a->registration_start)
-				&& !DatetimeHelper::isTimeOver($a->registration_start, true);
+				&& !DatetimeHelper::isTimeOver($a->registration_start);
 
 			$withinRegPeriod = (bool) $a->allow_registration
 				&& !$regEndPassed
@@ -233,7 +232,7 @@ class AssessmentPortalModel extends BaseModel
 
 			// Ngày thi đã qua? (start_date/end_date là DATE không có timezone
 			// → so sánh với ngày hiện tại theo giờ hệ thống)
-			$examPassed = $a->end_date < $todayLocal;
+			$examPassed = $a->end_date < $today;
 
 			// Người học đã đăng ký hợp lệ (chưa hủy)?
 			$isRegistered = $reg !== null && !(bool) $reg->cancelled;
@@ -324,11 +323,11 @@ class AssessmentPortalModel extends BaseModel
 			throw new Exception('Kỳ sát hạch hiện không mở đăng ký.');
 		}
 		if (!empty($assessment->registration_end)
-			&& DatetimeHelper::isTimeOver($assessment->registration_end, true)) {
+			&& DatetimeHelper::isTimeOver($assessment->registration_end)) {
 			throw new Exception('Đã hết thời hạn đăng ký.');
 		}
 		if (!empty($assessment->registration_start)
-			&& !DatetimeHelper::isTimeOver($assessment->registration_start, true)) {
+			&& !DatetimeHelper::isTimeOver($assessment->registration_start)) {
 			throw new Exception('Chưa đến thời điểm bắt đầu đăng ký.');
 		}
 

@@ -63,7 +63,7 @@ class AssessmentModel extends AdminModel
 		foreach (self::DATETIME_FIELDS as $field) {
 			if (!empty($item->$field)) {
 				// Giá trị trong DB là UTC → chuyển sang local time để hiển thị trên form
-				$item->$field = DatetimeHelper::fromUtc($item->$field);
+				$item->$field = DatetimeHelper::convertToLocalTime($item->$field);
 			}
 		}
 
@@ -89,7 +89,7 @@ class AssessmentModel extends AdminModel
 		foreach (self::DATETIME_FIELDS as $field) {
 			if (!empty($data[$field])) {
 				// Người dùng nhập theo giờ hệ thống → chuyển sang UTC để lưu DB
-				$data[$field] = DatetimeHelper::toUtc($data[$field]);
+				$data[$field] = DatetimeHelper::convertToUtc($data[$field]);
 			}
 		}
 

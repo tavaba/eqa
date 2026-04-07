@@ -248,25 +248,25 @@ class HtmlView extends BaseHtmlView
 
         // Người dùng nhập deadline theo local time (OS timezone).
         // Chuyển sang UTC để so sánh nhất quán với đồng hồ máy chủ.
-        $this->deadlineUtc = DatetimeHelper::toUtc($deadlineRaw);
+        $this->deadlineUtc = DatetimeHelper::convertToUtc($deadlineRaw);
 
         // Chuyển UTC ngược lại sang local time để hiển thị cho người học.
         // (Đảm bảo hiển thị đúng dù máy chủ có thể chạy ở timezone khác.)
-        $this->deadlineLocal = DatetimeHelper::fromUtc($this->deadlineUtc);
+        $this->deadlineLocal = DatetimeHelper::convertToLocalTime($this->deadlineUtc);
 
         // Kiểm tra đã quá hạn chưa: isTimeOver() nhận UTC và so sánh với UTC hiện tại.
-        $this->isDeadlinePassed = DatetimeHelper::isTimeOver($this->deadlineUtc, true);
+        $this->isDeadlinePassed = DatetimeHelper::isTimeOver($this->deadlineUtc);
 
 		// ── Xử lý open_from (thời điểm bắt đầu thu phí) ────────────────────────
 	    $openFromRaw = trim((string) $params->get('open_from', ''));
 
 	    if ($openFromRaw !== '') {
 		    // Người dùng nhập theo local time → chuyển sang UTC để so sánh.
-		    $this->openFromUtc   = DatetimeHelper::toUtc($openFromRaw);
-		    $this->openFromLocal = DatetimeHelper::fromUtc($this->openFromUtc);
+		    $this->openFromUtc   = DatetimeHelper::convertToUtc($openFromRaw);
+		    $this->openFromLocal = DatetimeHelper::convertToLocalTime($this->openFromUtc);
 
 		    // isTimeOver trả về true khi thời điểm đó đã QUA → chưa đến = NOT isTimeOver
-		    $this->isBeforeOpenFrom = !DatetimeHelper::isTimeOver($this->openFromUtc, true);
+		    $this->isBeforeOpenFrom = !DatetimeHelper::isTimeOver($this->openFromUtc);
 	    }
 
 		// ── Trạng thái cổng thu phí ─────────────────────────────────────────────
@@ -275,8 +275,8 @@ class HtmlView extends BaseHtmlView
 	    // ── Thời điểm cập nhật sao kê gần nhất ──────────────────────────────────
 	    $lastStatementRaw = trim((string) $params->get('last_statement_update', ''));
 	    if ($lastStatementRaw !== '') {
-		    $this->lastStatementUpdateUtc   = DatetimeHelper::toUtc($lastStatementRaw);
-		    $this->lastStatementUpdateLocal = DatetimeHelper::fromUtc($this->lastStatementUpdateUtc);
+		    $this->lastStatementUpdateUtc   = DatetimeHelper::convertToUtc($lastStatementRaw);
+		    $this->lastStatementUpdateLocal = DatetimeHelper::convertToLocalTime($this->lastStatementUpdateUtc);
 	    }
 	}
 

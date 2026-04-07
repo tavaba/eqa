@@ -71,7 +71,7 @@ $renderResult = static function (object $a): string {
 };
 
 $fmtDt = static fn(?string $utcDt): string =>
-    $utcDt ? DatetimeHelper::fromUtc($utcDt, null, 'd/m/Y H:i') : '—';
+    $utcDt ? DatetimeHelper::convertToLocalTime($utcDt, null, 'd/m/Y H:i') : '—';
 $fmtD  = static fn(?string $d): string =>
     $d ? date('d/m/Y', strtotime($d)) : '—';
 

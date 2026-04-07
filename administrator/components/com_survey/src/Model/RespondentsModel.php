@@ -117,7 +117,7 @@ class RespondentsModel extends ListModel
             throw new Exception('Không tìm thấy đơn vị có mã ' . htmlspecialchars($courseCode));
 
         //STEP 2. Update and Insert new records.
-        $quotedNow = $db->quote(DatetimeHelper::getCurrentHanoiDatetime());
+        $quotedNow = $db->quote(DatetimeHelper::getCurrentUtcTime());
         $userId = Factory::getApplication()->getIdentity()->id;
         $items = [];
         foreach ($learners as $learner)
@@ -192,7 +192,7 @@ class RespondentsModel extends ListModel
         }
 
         //STEP 2. Update and Insert new records.
-        $quotedNow = $db->quote(DatetimeHelper::getCurrentHanoiDatetime());
+        $quotedNow = $db->quote(DatetimeHelper::getCurrentUtcTime());
         $userId = Factory::getApplication()->getIdentity()->id;
         $items = [];
         foreach ($employees as $employee)
@@ -261,7 +261,7 @@ class RespondentsModel extends ListModel
         if(empty($defaultUnitId))
             throw new Exception('Không tìm thấy đơn vị mặc định (GVM) cho giảng viên thỉnh giảng');
 
-        $quotedNow = $db->quote(DatetimeHelper::getCurrentHanoiDatetime());
+        $quotedNow = $db->quote(DatetimeHelper::getCurrentUtcTime());
         $userId = Factory::getApplication()->getIdentity()->id;
         $items = [];
         foreach ($visitingLecturers as $employee)

@@ -213,7 +213,7 @@ class ConductsModel extends ListModel {
 		}
 
 		//Step 4. Update database
-		$time = DatetimeHelper::getCurrentHanoiDatetime();
+		$time = DatetimeHelper::getCurrentUtcTime();
 		$userId = (int)Factory::getApplication()->getIdentity()->id;
 		$quotedTime = $db->quote($time);
 		$columns = [

@@ -44,3 +44,7 @@ ALTER TABLE `#__eqa_examseasons`
     ADD COLUMN `bank_napas_code`     VARCHAR(10)  NULL DEFAULT NULL COMMENT 'Mã NAPAS ngân hàng nhận phí phúc khảo' AFTER `ppaa_req_deadline`,
     ADD COLUMN `bank_account_number` VARCHAR(50)  NULL DEFAULT NULL COMMENT 'Số tài khoản ngân hàng nhận phí phúc khảo' AFTER `bank_napas_code`,
     ADD COLUMN `bank_account_owner`  VARCHAR(255) NULL DEFAULT NULL COMMENT 'Tên chủ tài khoản ngân hàng' AFTER `bank_account_number`;
+
+-- 4. Bảng #__eqa_class_learner: Sửa tên cột 'updated_by' thành 'modified_by'
+-- (Vì lý do nào đó mà cột này bị bỏ sót khi update lên 2.0.6)
+ALTER TABLE `#__eqa_class_learner` CHANGE `updated_by` `modified_by` INT UNSIGNED NULL DEFAULT NULL COMMENT 'User ID';

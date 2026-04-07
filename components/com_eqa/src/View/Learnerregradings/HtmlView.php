@@ -176,7 +176,7 @@ class HtmlView extends ItemsHtmlView
 	                $ppaaDeadline = $item->ppaaReqDeadline ?? null;
 	                $isPpaaDeadlinePassed = $ppaaEnabled
 		                && !empty($ppaaDeadline)
-		                && DatetimeHelper::isTimeOver($ppaaDeadline, true);
+		                && DatetimeHelper::isTimeOver($ppaaDeadline);
 
 	                if ($paymentAmount <= 0 || $paymentCompleted) {
 		                $item->paymentStatusHtml = '<span class="badge bg-success">'
@@ -221,7 +221,7 @@ class HtmlView extends ItemsHtmlView
 			        $ppaaDeadline = $item->ppaaReqDeadline ?? null;
 			        $deadlinePassed = $ppaaEnabled
 				        && !empty($ppaaDeadline)
-				        && DatetimeHelper::isTimeOver($ppaaDeadline, true);
+				        && DatetimeHelper::isTimeOver($ppaaDeadline);
 			        if ((int) ($item->_paymentAmount ?? 0) > 0
 				        && !($item->_paymentCompleted ?? false)
 				        && !$deadlinePassed
@@ -234,7 +234,7 @@ class HtmlView extends ItemsHtmlView
 	        if ($hasUnpaidAndActive) {
 		        $utcTimestamp = $model->getLastStatementUpdate();
 		        if (!empty($utcTimestamp)) {
-			        $this->lastStatementUpdateLocal = DatetimeHelper::fromUtc(
+			        $this->lastStatementUpdateLocal = DatetimeHelper::convertToLocalTime(
 				        $utcTimestamp,
 				        null,
 				        'H:i, d/m/Y'

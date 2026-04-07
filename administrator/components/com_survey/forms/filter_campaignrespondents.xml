@@ -25,7 +25,7 @@
             <option value="0">Tổ chức</option>
         </field>
         <field  name="unit_id"
-                type="unit"
+                type="CampaignUnit"
                 label="Đơn vị"
                 class="select2-basic"
                 onchange="this.form.submit();"

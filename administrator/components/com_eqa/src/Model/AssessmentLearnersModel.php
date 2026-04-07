@@ -9,6 +9,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Library\Kma\BankStatement\BankStatementImportResult;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\PaymentCodeHelper;
 
 /**
@@ -269,8 +270,8 @@ class AssessmentLearnersModel extends ListModel
             return false;
         }
 
-        // end_date là DATE (không có timezone) → so sánh với ngày hôm nay theo OS timezone
-        $today = \Kma\Library\Kma\Helper\DatetimeHelper::getCurrentSystemClockTime('Y-m-d');
+        // end_date là DATE (không có timezone)
+        $today = DatetimeHelper::getCurrentUtcTime('Y-m-d');
         if ($a->end_date < $today) {
             return false;
         }

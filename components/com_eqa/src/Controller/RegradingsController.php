@@ -7,6 +7,7 @@ use Exception;
 use JRoute;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
 use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\ComponentHelper;
@@ -40,9 +41,12 @@ class RegradingsController extends AdminController
 			if(empty($examseasonId))
 				throw new Exception('Hãy chọn một kỳ thi ở bộ lọc để thực hiện chức năng này');
 
-			//Bước 3. Kiểm tra thời hạn phúc khảo. Nếu chưa kết thúc thì báo lỗi
-			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
-			if($examseason->canSendPpaaRequest())
+			/**
+			 * Bước 3. Kiểm tra thời hạn phúc khảo. Nếu chưa kết thúc thì báo lỗi
+			 * @var ExamseasonModel $examseasonModel
+			 */
+			$examseasonModel = $this->getModel('examseason');
+			if($examseasonModel->canRequestPpaa($examseasonId))
 				throw new Exception('Chưa hết hạn gửi yêu cầu phúc khảo');
 
 			//Bước 4. Lấy danh sách yêu cầu phúc khảo của kỳ thi
