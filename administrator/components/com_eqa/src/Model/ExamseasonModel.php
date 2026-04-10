@@ -10,6 +10,7 @@ use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use stdClass;
@@ -197,9 +198,19 @@ class ExamseasonModel extends AdminModel{
 					'usetestbank' => empty($subject->testbankyear)?0:1,
 					'status' => ExamStatus::Unknown->value
 				];
+				/**
+				 * @var ExamModel $examModel
+				 */
+				$examModel = ComponentHelper::createModel('Exam');
+				if(!$examModel->save($exam))
+					throw new Exception($examModel->getError());
+				$examId = $examModel->getInsertId();
+
+				/*
 				$table = $this->getTable('exam');
 				$table->save($exam);
-				$examId = $db->insertid();
+				$examId = $table->getId();
+				*/
 
 				//2. Get all the leaners in all the credit classes of this subject in this academic year and term
 				//2.1. Load examseason
@@ -260,8 +271,7 @@ class ExamseasonModel extends AdminModel{
 		}
 		catch (Exception $e){
 			$db->transactionRollback();
-			$msg = Text::_('COM_EQA_MSG_DATABASE_ERROR');
-			$app->enqueueMessage($msg,'error');
+			$app->enqueueMessage($e->getMessage(),'error');
 		}
 	}
 	public function addRetakeExams($examseasonId)

@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Administrator\Base\ListModel;
 
@@ -54,16 +55,16 @@ class SurveysModel extends ListModel
         $authConditions = [];
 
         // AUTH_MODE_ANYONE - always accessible
-        $authConditions[] = $db->quoteName('s.auth_mode') . ' = ' . SurveyHelper::AUTH_MODE_ANYONE;
+        $authConditions[] = $db->quoteName('s.auth_mode') . ' = ' . AuthorizationMode::Anyone->value;
 
         if ($respondent !== null) {
             // User is authenticated
-            $authConditions[] = $db->quoteName('s.auth_mode') . ' = ' . SurveyHelper::AUTH_MODE_AUTHENTICATED;
+            $authConditions[] = $db->quoteName('s.auth_mode') . ' = ' . AuthorizationMode::Authenticated->value;
 
             if (isset($respondent->id)) { // User has respondent_id
-                $authConditions[] = $db->quoteName('s.auth_mode') . ' = ' . SurveyHelper::AUTH_MODE_RESPONDENT;
+                $authConditions[] = $db->quoteName('s.auth_mode') . ' = ' . AuthorizationMode::Respondent->value;
                 $authConditions[] = '(' .
-                    $db->quoteName('s.auth_mode') . ' = ' . SurveyHelper::AUTH_MODE_ASSIGNED .
+                    $db->quoteName('s.auth_mode') . ' = ' . AuthorizationMode::AssignedRespondent->value .
                     ' AND ' . $db->quoteName('sr.survey_id') . ' IS NOT NULL' .
                     ')';
             }

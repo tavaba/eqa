@@ -4,6 +4,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Site\Model\SurveyModel;
 use Kma\Library\Kma\Helper\StateHelper;
@@ -48,8 +49,9 @@ class SurveyController extends BaseController
 
         //If the survey requires the user to be a respondent,
         // but the current user isn't one of them,
+	    $authMode = AuthorizationMode::from($survey->auth_mode);
         if(empty($respondentId)
-            && ($survey->auth_mode==SurveyHelper::AUTH_MODE_RESPONDENT || $survey->auth_mode==SurveyHelper::AUTH_MODE_ASSIGNED))
+            && ($authMode===AuthorizationMode::Respondent || $authMode===AuthorizationMode::AssignedRespondent))
         {
             if ($throw)
                 throw new Exception('Bạn không có quyền tham gia khảo sát này');
@@ -58,7 +60,7 @@ class SurveyController extends BaseController
 
         //If the survey requires the user to be explicitly assigned as a respondent,
         // but the user isn't an explicit respondent for that survey,
-        if($survey->auth_mode == SurveyHelper::AUTH_MODE_ASSIGNED && !$surveyModel->isAssigned($surveyId,$respondentId))
+        if($authMode == AuthorizationMode::AssignedRespondent && !$surveyModel->isAssigned($surveyId,$respondentId))
         {
             if ($throw)
                 throw new Exception('Bạn không có quyền tham gia khảo sát này');
@@ -118,13 +120,10 @@ class SurveyController extends BaseController
             $this->checkCanRespond($surveyId, $respondentId, true);
 
             //Save response
-            $ok = $surveyModel->saveResponse($surveyId, $response, $respondentId);
+            $surveyModel->saveResponse($surveyId, $response, $respondentId);
 
             //Set a message and redirect
-            if($ok)
-                $this->setMessage('Ý kiến phản hồi đã được ghi nhận thành công', 'success');
-            else
-                $this->setMessage('Lỗi khi lưu ý kiến phản hồi', 'error');
+	        $this->setMessage('Ý kiến phản hồi đã được ghi nhận thành công', 'success');
             $redirect = Route::_('index.php?option=com_survey&view=surveys',false);
             $this->setRedirect($redirect);
         }

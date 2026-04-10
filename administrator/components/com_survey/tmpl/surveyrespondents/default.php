@@ -1,5 +1,6 @@
 <?php
 
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 
@@ -18,7 +19,7 @@ $survey = $this->item;
                         </tr>
                         <tr>
                             <td style="white-space: nowrap; width: 1%;">Quyền ý kiến:</td>
-                            <td><?php echo SurveyHelper::decodeAuthMode($survey->auth_mode);?></td>
+                            <td><?php echo AuthorizationMode::from($survey->auth_mode)->getLabel();?></td>
                         </tr>
                         <tr>
                             <td style="white-space: nowrap; width: 1%;">Thời gian bắt đầu:</td>

@@ -94,6 +94,9 @@ class SurveyModel extends AdminModel
         return parent::delete($pks);
     }
     /**
+     * Add respondents to a survey. This should update the tabel #__survey_survey_respondent.
+     * If the survey belongs to a campaign, this should update the table
+     * #__survey_campaign_respondent also
      * @param int $surveyId The id of the survey we want to add respondents to.
      * @param array $respondentIds An array containing the ids of the respondents that should be added to this survey.
      * @return int The number of added respondents

@@ -6,6 +6,7 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\ExternalDataHelper;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
@@ -60,13 +61,16 @@ class SurveyController extends  FormController
 
         //2. Check if the survey's authorization mode is AUTH_MODE_LISTED
         $survey = $model->getItem($surveyId);
-        if($survey->auth_mode != SurveyHelper::AUTH_MODE_ASSIGNED)
+		$authMode = AuthorizationMode::from($survey->auth_mode);
+
+
+        if($authMode !== AuthorizationMode::AssignedRespondent)
         {
             if ($throw)
             {
-                $msg = match ($survey->auth_mode) {
-                    SurveyHelper::AUTH_MODE_ANYONE => 'Bất kỳ ai cũng có thể tham gia khảo sát!',
-                    SurveyHelper::AUTH_MODE_AUTHENTICATED => 'Tất cả những người dùng đã đăng nhập đều có thể tham gia khảo sát!',
+                $msg = match ($authMode) {
+                    AuthorizationMode::Anyone => 'Bất kỳ ai cũng có thể tham gia khảo sát!',
+                    AuthorizationMode::Authenticated => 'Tất cả những người dùng đã đăng nhập đều có thể tham gia khảo sát!',
                     default => '',
                 };
                 throw new Exception($msg);

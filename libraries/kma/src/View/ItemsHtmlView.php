@@ -8,7 +8,6 @@ use Joomla\CMS\WebAsset\WebAssetManager;
 use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
-use Kma\Library\Kma\Model\AdminModel;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Library\Kma\Service\EnglishService;
 

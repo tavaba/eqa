@@ -5,6 +5,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Administrator\Model\CampaignModel;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
@@ -94,7 +95,7 @@ class HtmlView extends ItemsHtmlView
             foreach ($this->layoutData->items as $item)
             {
                 //Progress bar for response count
-                if($item->authMode == SurveyHelper::AUTH_MODE_ASSIGNED && $item->respondentCount>0)
+                if($item->authMode == AuthorizationMode::AssignedRespondent->value && $item->respondentCount>0)
                 {
                     $rate = round($item->responseCount/$item->respondentCount*100);
                     $item->progress = $progressBarService->render($rate, $item->responseCount);

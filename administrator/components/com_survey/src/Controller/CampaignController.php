@@ -82,7 +82,7 @@ class CampaignController extends  FormController {
             foreach ($classes as $class)
             {
                 //Skip class that has less than min size
-                if($class->size < $minClassSize) {
+                if($class->size==0 || $class->size < $minClassSize) {
                     $countSmallSize++;
                     continue;
                 }
@@ -140,6 +140,7 @@ class CampaignController extends  FormController {
             /**
              * @var SurveyModel $surveyModel
              * @var ClassModel $classModel
+             * @var CampaignModel $campaignModel
              */
             $surveyModel = $this->getModel('Survey');
             $classModel = $this->getModel('Class');
@@ -157,6 +158,21 @@ class CampaignController extends  FormController {
                 //Get class learners and add to survey respondent list
                 $respondentIds = $classModel->getLearnerIds($classId);
                 $surveyModel->addRespondents($surveyId,$respondentIds);
+
+				//Update the respondent statistics for this campaign
+	            foreach ($respondentIds as $respondentId)
+	            {
+					if (isset($existingRespondents[$respondentId]))
+						$existingRespondents[$respondentId]['survey_count']++;
+					elseif (isset($newRespondents[$respondentId]))
+						$newRespondents[$respondentId]['survey_count']++;
+					else
+						$newRespondents[$respondentId] = [
+							'respondent_id' => $respondentId,
+							'survey_count'=>1,
+							'response_count'=>0
+						];
+	            }
             }
 
             //Set a message and redirect back to list view

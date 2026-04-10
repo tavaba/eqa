@@ -4,6 +4,7 @@ namespace Kma\Component\Survey\Administrator\View\Surveys;
 defined('_JEXEC') or die;
 
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
 use Kma\Component\Survey\Administrator\Model\SurveysModel;
@@ -81,15 +82,16 @@ class HtmlView extends ItemsHtmlView
 
             foreach ($this->layoutData->items as $item)
             {
-                $item->authModeText = SurveyHelper::decodeAuthMode($item->authMode);
-                if($item->authMode != SurveyHelper::AUTH_MODE_ASSIGNED)
+				$authMode = AuthorizationMode::from($item->authMode);
+                $item->authModeText = $authMode->getLabel();
+                if($authMode !== AuthorizationMode::AssignedRespondent)
                     $item->respondentCount=null;
 
                 //A link to survey form preview page
                 $item->form = '<span class="fa fa-eye"></span>';
 
                 //Progress bar for response count
-                if($item->authMode == SurveyHelper::AUTH_MODE_ASSIGNED && $item->respondentCount>0)
+                if($authMode == AuthorizationMode::AssignedRespondent && $item->respondentCount>0)
                 {
                     $rate = round($item->responseCount/$item->respondentCount*100);
                     $item->progress=$progressBarService->render($rate,$item->responseCount);

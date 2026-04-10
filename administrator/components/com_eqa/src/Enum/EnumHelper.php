@@ -1,8 +1,6 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Enum;
 
-use PHPSQLParser\Test\Parser\selectTest;
-
 trait EnumHelper
 {
 	public static function getOptions(): array

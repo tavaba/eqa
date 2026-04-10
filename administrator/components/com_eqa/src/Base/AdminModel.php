@@ -1,4 +1,7 @@
 <?php
+namespace Kma\Component\Eqa\Administrator\Base;
+defined('_JEXEC') or die();
+
 /**
  * @package     Kma\Component\Eqa\Administrator\Base
  * @subpackage
@@ -7,14 +10,12 @@
  * @license     A "Slug" license name e.g. GPL2
  */
 
-namespace Kma\Component\Eqa\Administrator\Base;
 
 use Exception;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 
 class AdminModel extends \Kma\Library\Kma\Model\AdminModel
 {
-
 	/**
 	 * Trả về VALUE của một CASE trong enum ObjectType
 	 * Nếu subclass không override phương thức này thì logic sẽ như sau:

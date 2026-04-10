@@ -3,7 +3,6 @@ namespace Kma\Library\Kma\Model;
 defined('_JEXEC') or die();
 
 use Exception;
-use InvalidArgumentException;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Form\FormFactoryInterface;
@@ -101,9 +100,11 @@ abstract class AdminModel extends BaseAdminModel
 	abstract protected function getLogObjectType(): int;
 
 	/** Subclass nên override để tùy chỉnh title */
-	protected function buildObjectTitle(array $data): string
+	protected function buildObjectTitle(array|object $data): string
 	{
-		return $data['title'] ?? $data['name'] ?? $data['code'] ?? '';
+		if(is_array($data))
+			return $data['title'] ?? $data['name'] ?? $data['code'] ?? '';
+		return $data->title ?? $data->name ?? $data->code ?? '';
 	}
 
 	public function enableLogging(): static  { $this->loggingEnabled = true;  return $this; }
@@ -112,7 +113,7 @@ abstract class AdminModel extends BaseAdminModel
 	/**
      * 'loadFormData' là hàm đã có trong lớp AdminModel nhưng nó rỗng
      * Vì thế, việc định nghĩa lại ở đây sẽ giúp tránh phải định nghĩa lại ở
-     * các item model được sử dụng trong component này.
+     * các item model được sử dụng trong component.
      * @since 1.0
      */
     public function loadFormData()
@@ -170,8 +171,9 @@ abstract class AdminModel extends BaseAdminModel
      */
     public function setDefault(int $id, string $fieldName='default'): bool
     {
-        //Authorization: the user must have 'core.edit' permission on the component
-        if(!$this->getCurrentUser()->authorise('core.edit', $this->option)){
+        //Authorization: the user must have edit permission on the item
+        if(!$this->canEdit($id))
+		{
             $textKeyPrefix = strtoupper($this->option).'_MSG_UNAUTHORISED';
             $msg = Text::_($textKeyPrefix);
             throw new Exception($msg);
@@ -235,6 +237,19 @@ abstract class AdminModel extends BaseAdminModel
     {
         return "$this->option.$this->name.$itemId";
     }
+
+	/**
+	 * Trả về 'id' của phần tử cuối cùng được INSERT vào CSDL bởi model.
+	 * Cơ chế: Joomla's AdminModel::save() sau khi lưu thành công sẽ tự động set state
+	 * với key {modelName}.id. Ví dụ, nếu model tên là Exam thì key sẽ là exam.id.
+	 * @return int
+	 *
+	 * @since 1.0.3
+	 */
+	public function getInsertId(): int
+	{
+		return (int)$this->getState($this->getName().'.id',0);
+	}
 
     /**
      * Check whether the current user can perform a certain action on a given item.
@@ -449,18 +464,20 @@ abstract class AdminModel extends BaseAdminModel
 	 */
 	public function save($data): bool
 	{
+		/**
+		 * @var Table $table
+		 */
 		$table  = $this->getTable();
-		$key    = $table->getKeyName();
-		$isNew  = empty($data[$key]);
+		$isNew  = empty($data['id']);
 		$oldSnap = (!$isNew && $table instanceof Table)
-			? $table->loadSnapshot((int) $data[$key])
+			? $table->loadSnapshot((int) $data['id'])
 			: null;
 
 		$result = parent::save($data);
 
 		if ($this->loggingEnabled && $this->logService)
 		{
-			$id = (int) ($this->getState($this->getName() . '.id') ?? 0);
+			$id = $this->getInsertId();
 			$action = $isNew ? Action::CREATE : Action::EDIT;
 			$entry  = new LogEntry(
 				action: $action,
@@ -470,7 +487,7 @@ abstract class AdminModel extends BaseAdminModel
 				objectTitle: $this->buildObjectTitle($data),
 				errorMessage: $result ? null : $this->getError(),
 				oldValue: $oldSnap ?: null,
-				newValue: $result ? $table->getSnapshot() : null,
+				newValue: $result ? $table->loadSnapshot($id) : null,
 			);
 			$this->logService->write($entry);
 		}
@@ -522,12 +539,15 @@ abstract class AdminModel extends BaseAdminModel
 				2       => Action::ARCHIVE,
 				-2      => Action::TRASH,
 			};
-			foreach ((array) $pks as $id) {
+			foreach ((array) $pks as $id)
+			{
+				$item = $this->getItem($id);
 				$logEntry = new LogEntry(
 					action: $action,
 					objectType: $this->getLogObjectType(),
 					isSuccess: $result,
 					objectId: $id,
+					objectTitle: $this->buildObjectTitle($item),
 				);
 				$this->logService->write($logEntry);
 			}

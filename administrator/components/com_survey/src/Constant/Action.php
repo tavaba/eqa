@@ -1,9 +1,8 @@
 <?php
-namespace Kma\Component\Survey\Administrator\Helper;
+namespace Kma\Component\Survey\Administrator\Constant;
 
-use Kma\Library\Kma\Constant\Action;
-
-class ActionHelper extends Action
+use Kma\Library\Kma\Constant\Action as KmaAction;
+class Action extends KmaAction
 {
 	//Khoảng giá trị [0-1000] đã được sử dụng bởi base class
 

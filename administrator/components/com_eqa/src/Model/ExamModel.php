@@ -1,5 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
+defined('_JEXEC') or die();
+
 use Collator;
 use Exception;
 use Joomla\CMS\Factory;
@@ -18,7 +20,6 @@ use Kma\Component\Eqa\Administrator\Helper\RoomHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
-defined('_JEXEC') or die();
 
 class ExamModel extends AdminModel{
 	public function prepareTable($table)
@@ -233,7 +234,7 @@ class ExamModel extends AdminModel{
             $app->enqueueMessage($e->getMessage(),'error');
             return false;
         }
-        $msg = sprintf('COM_EQA_N_ITEMS_DELETED',sizeof($learnerIds));
+        $msg = Text::sprintf('COM_EQA_N_ITEMS_DELETED',sizeof($learnerIds));
         $app->enqueueMessage($msg,'success');
         return true;
     }
@@ -774,7 +775,7 @@ class ExamModel extends AdminModel{
 						$examroomId = $examroom->id;            //get exam room's ID
 
 						if($optionCreateNewExamrooms){ //Nếu yêu cầu tạo phòng mới thì báo lỗi
-							$msg = sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
+							$msg = Text::sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
 								DatabaseHelper::getExamsessionName($examsessionId),
 								DatabaseHelper::getRoomCode($roomId)
 							);
@@ -907,7 +908,7 @@ class ExamModel extends AdminModel{
 				->where('b.room_id IN ' . $roomIdSet);
 			$db->setQuery($query);
 			if($db->loadResult() > 0){
-				$msg = sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
+				$msg = Text::sprintf('COM_EQA_MSG_EXAMSESSION_S_ALREADY_USES_ROOM_S',
 					DatabaseHelper::getExamsessionName($examsession['examsession_id']),
 					DatabaseHelper::getRoomCode($room['room_id'])
 				);
@@ -1077,7 +1078,7 @@ class ExamModel extends AdminModel{
 		}
 
 		$db->transactionCommit();
-		$msg = sprintf('COM_EQA_MSG_N_EXAMINEES_DISTRIBUTED_INTO_N_EXAMROOMS',$countExaminee,$countExamroom);
+		$msg = Text::sprintf('COM_EQA_MSG_N_EXAMINEES_DISTRIBUTED_INTO_N_EXAMROOMS',$countExaminee,$countExamroom);
 		$app->enqueueMessage($msg,'success');
 		return true;
 	}

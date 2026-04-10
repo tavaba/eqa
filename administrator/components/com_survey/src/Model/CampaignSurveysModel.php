@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\StateHelper;
@@ -34,7 +35,7 @@ class CampaignSurveysModel extends ListModel
         $subqueryRespondentCount=$db->getQuery(true)
             ->from('#__survey_survey_respondent AS sr')
             ->select('COUNT(1)')
-            ->where('sr.survey_id=a.id AND a.auth_mode='.SurveyHelper::AUTH_MODE_ASSIGNED);
+            ->where('sr.survey_id=a.id AND a.auth_mode='.AuthorizationMode::AssignedRespondent->value);
         $subqueryResponseCount = $db->getQuery(true)
             ->from('#__survey_responses AS r')
             ->select('COUNT(1)')

@@ -50,7 +50,7 @@ class RegradingsController extends AdminController
 				throw new Exception('Chưa hết hạn gửi yêu cầu phúc khảo');
 
 			//Bước 4. Lấy danh sách yêu cầu phúc khảo của kỳ thi
-			$regradingRequests = $model->getRegradingRequests($examseason->id, true);
+			$regradingRequests = $model->getRegradingRequests($examseasonId, true);
 			if(empty($regradingRequests))
 				throw new Exception('Không có yêu cầu phúc khảo');
 
@@ -61,6 +61,7 @@ class RegradingsController extends AdminController
 			IOHelper::writeRegradingFee($spreadsheet, $regradingRequests);
 
 			//Bước 6. Force download of the Excel file
+			$examseason = $examseasonModel->getItem($examseasonId);
 			$fileName = "Thu phí PK. {$examseason->name}.xlsx";
 			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 			$this->app->close();

@@ -4,6 +4,7 @@ namespace Kma\Library\Kma\Service;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseDriver;
 use Kma\Library\Kma\DataObject\LogEntry;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 class LogService
 {
@@ -35,6 +36,11 @@ class LogService
 	public function isEnabled(): bool
 	{
 		return $this->enabled;
+	}
+
+	public function getLogTableName(): string
+	{
+		return $this->tableName;
 	}
 
 	/**
@@ -87,8 +93,7 @@ class LogService
 			'new_value'     => $this->encodeValue($entry->newValue),
 			'extra_data'    => $this->encodeValue($entry->extraData),
 			'ip_address'    => $this->encodeIp($entry->ipAddress),
-			'created_at'    => $entry->created_at
-				?? (new \DateTime())->format('Y-m-d H:i:s.v'),
+			'created_at'    => $entry->created_at ?? DatetimeHelper::getCurrentUtcTime(),
 		];
 
 		try

@@ -4,6 +4,7 @@ namespace Kma\Component\Survey\Site\View\Surveys;
 defined('_JEXEC') or die;
 
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
 use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
@@ -60,7 +61,7 @@ class HtmlView extends ItemsHtmlView
                     && !$hasResponded;
 
                 //Field: authModeText
-                $item->authModeText = 'Quyền gửi ý kiến: ' . SurveyHelper::decodeAuthMode($item->authMode);
+                $item->authModeText = 'Quyền gửi ý kiến: ' . AuthorizationMode::from($item->authMode)->getLabel();
 
                 //Row CSS
                 if($hasResponded)

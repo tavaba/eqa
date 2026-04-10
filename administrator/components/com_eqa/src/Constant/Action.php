@@ -1,9 +1,9 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Helper;
+namespace Kma\Component\Eqa\Administrator\Constant;
 
-use Kma\Library\Kma\Constant\Action;
+use Kma\Library\Kma\Constant\Action as KmaAction;
 
-class ActionHelper extends Action
+class Action extends KmaAction
 {
 	//Khoảng giá trị [0-1000] đã được sử dụng bởi base class
 
