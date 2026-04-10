@@ -74,7 +74,18 @@ class Table extends BaseTable{
      * @since 1.0.0
      */
     protected static array $allTableColumns = [];
-    public function __construct(DatabaseDriver $db, string $tableName='', string $keyName='')
+
+	/**
+	 * Cache danh sách cột DATETIME theo tên bảng, dùng chung trong cùng một request.
+	 *
+	 * Cấu trúc: [ '#__table_name' => ['col_a', 'col_b', ...], ... ]
+	 *
+	 * @var array<string, string[]>
+	 * @since 1.0.0
+	 */
+	private static array $datetimeFields = [];
+
+	public function __construct(DatabaseDriver $db, string $tableName='', string $keyName='')
     {
         $className = get_class($this);                                                 //Result: Kma\Library\Kma\Table\FooTable
         $shortClassName = basename(str_replace('\\', '/', $className));  //Result: FooTable
@@ -165,9 +176,6 @@ class Table extends BaseTable{
         if (is_object($src)) {
             $src = get_object_vars($src);
         }
-
-        // Handle automatic field population before binding
-        $src = $this->prepareTimestampFields($src);
 
         //Process rules
 		if(isset($src['rules']) && is_array($src['rules'])){
@@ -286,55 +294,6 @@ class Table extends BaseTable{
         }
     }
 
-    /**
-     * Prepare timestamp fields in data array
-     *
-     * @param   array  $data  The data array
-     *
-     * @return  array  Modified data array
-     * @since 1.0.0
-     */
-    protected function prepareTimestampFields($data): array
-    {
-        if (empty($this->detectedTimestampFields)) {
-            return $data;
-        }
-
-        $now = Factory::getDate()->toSql();
-        $user = Factory::getApplication()->getIdentity();
-        $userId = $user->id;
-        $isNewRecord = !(int) $this->{$this->_tbl_key} && empty($data[$this->_tbl_key]);
-
-        // For new records, set created fields if not already set
-        if ($isNewRecord) {
-            if (isset($this->detectedTimestampFields['created'])) {
-                $field = $this->detectedTimestampFields['created'];
-                if (!isset($data[$field]) || empty($data[$field]) || $data[$field] === $this->_db->getNullDate()) {
-                    $data[$field] = $now;
-                }
-            }
-
-            if (isset($this->detectedTimestampFields['created_by'])) {
-                $field = $this->detectedTimestampFields['created_by'];
-                if (!isset($data[$field]) || empty($data[$field])) {
-                    $data[$field] = $userId;
-                }
-            }
-        }
-
-        // Always update modified/updated fields
-        $modifiedField = $this->detectedTimestampFields['modified'] ?? $this->detectedTimestampFields['updated'] ?? null;
-        if ($modifiedField) {
-            $data[$modifiedField] = $now;
-        }
-
-        $modifiedByField = $this->detectedTimestampFields['modified_by'] ?? $this->detectedTimestampFields['updated_by'] ?? null;
-        if ($modifiedByField) {
-            $data[$modifiedByField] = $userId;
-        }
-
-        return $data;
-    }
 
     /**
      * Handle null datetime fields after loading
@@ -386,6 +345,60 @@ class Table extends BaseTable{
     {
         return $this->_getAssetName();
     }
+
+	/**
+	 * Trả về danh sách tên các cột có kiểu DATETIME trong bảng hiện tại.
+	 * Ngoại trừ cột 'checked_out_time' (nếu có)
+	 * Kết quả được cache theo tên bảng để tránh truy vấn lặp lại nhiều lần
+	 * trong cùng một request (đặc biệt hữu ích khi xử lý nhiều bản ghi).
+	 *
+	 * Ví dụ sử dụng:
+	 * <code>
+	 *   $datetimeFields = $this->getDatetimeFields();
+	 *   // → ['created_at', 'updated_at', 'start_time', ...]
+	 * </code>
+	 *
+	 * @return string[]  Mảng các tên cột DATETIME (có thể rỗng nếu bảng không có cột nào).
+	 *
+	 * @since 1.0.0
+	 */
+	public function getDatetimeFields(): array
+	{
+		$tableName = $this->_tbl;
+
+		if (isset(self::$datetimeFields[$tableName])) {
+			return self::$datetimeFields[$tableName];
+		}
+
+		// getTableColumns($table, false) trả về mảng object đầy đủ metadata,
+		// trong đó mỗi object có property 'Type' chứa kiểu dữ liệu SQL.
+		// Check cache first
+		if (!isset(static::$allTableColumns[$tableName])) {
+			try {
+				static::$allTableColumns[$tableName] = $this->_db->getTableColumns($tableName, false);
+			} catch (Exception $e) {
+				// If we can't get columns, assume no timestamp fields
+				static::$allTableColumns[$tableName] = [];
+			}
+		}
+		$columns = static::$allTableColumns[$tableName];
+
+		//Loại bỏ cột 'checked_out_time' khỏi danh sách
+		if(isset($columns['checked_out_time']))
+			unset($columns['checked_out_time']);
+
+		$datetimeFields = [];
+
+		foreach ($columns as $columnName => $columnInfo) {
+			if (strtolower($columnInfo->Type) === 'datetime') {
+				$datetimeFields[] = $columnName;
+			}
+		}
+
+		self::$datetimeFields[$tableName] = $datetimeFields;
+
+		return $datetimeFields;
+	}
 
 	/**
 	 * Lấy snapshot toàn bộ dữ liệu hiện tại của row trong bộ nhớ.

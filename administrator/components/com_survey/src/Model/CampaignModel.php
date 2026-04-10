@@ -8,7 +8,8 @@ use Kma\Component\Survey\Administrator\Base\AdminModel;
 
 defined('_JEXEC') or die();
 
-class CampaignModel extends AdminModel {
+class CampaignModel extends AdminModel
+{
     public function canCreate(?string $specificAction = 'com.create.survey'): bool
     {
         return parent::canCreate($specificAction);

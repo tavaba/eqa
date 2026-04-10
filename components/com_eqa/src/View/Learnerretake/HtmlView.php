@@ -75,15 +75,6 @@ class HtmlView extends BaseHtmlView
 
     // ── Thông tin deadline ──────────────────────────────────────────────────
 	/**
-	 * Thời điểm bắt đầu thu phí dạng UTC.
-	 * Null nếu menu item không cấu hình open_from.
-	 *
-	 * @var string|null
-	 * @since 2.0.3
-	 */
-	protected ?string $openFromUtc = null;
-
-	/**
 	 * Thời điểm bắt đầu thu phí dạng local time (để hiển thị).
 	 * Null nếu menu item không cấu hình open_from.
 	 *
@@ -99,16 +90,7 @@ class HtmlView extends BaseHtmlView
 	 * @var bool
 	 * @since 2.0.3
 	 */
-	protected bool $isBeforeOpenFrom = false;
-
-    /**
-     * Hạn chót nộp phí dạng UTC (để so sánh với thời gian hiện tại).
-     * Null nếu menu item không cấu hình deadline.
-     *
-     * @var string|null
-     * @since 2.0.3
-     */
-    protected ?string $deadlineUtc = null;
+	protected bool $isBeforeOpeningTime = false;
 
     /**
      * Hạn chót nộp phí dạng local time (để hiển thị cho người học).
@@ -144,7 +126,7 @@ class HtmlView extends BaseHtmlView
 	 * @var string|null
 	 * @since 2.0.3
 	 */
-	protected ?string $lastStatementUpdateUtc = null;
+	protected ?string $lastStatementUpdate = null;
 
 	/**
 	 * Thời điểm cập nhật sao kê gần nhất dạng local time (để hiển thị).
@@ -225,7 +207,9 @@ class HtmlView extends BaseHtmlView
      */
     private function loadMenuItemParams(): void
     {
-        $menuItem = Factory::getApplication()->getMenu()->getActive();
+		$app = Factory::getApplication();
+        $menuItem = $app->getMenu()->getActive();
+		$userTimezone = $app->getIdentity()->getTimezone();
 
         if ($menuItem === null) {
             return;
@@ -239,45 +223,30 @@ class HtmlView extends BaseHtmlView
         $this->recipientName = (string) ($params->get('recipient_name', ''));
 
         // ── Xử lý deadline ──────────────────────────────────────────────────
+	    // Người dùng nhập deadline theo local time (User timezone).
+	    // Chấp nhận: áp dụng bình đẳng cho mọi user, dù họ ở timezone nào
+	    // Chuyển UTC ngược lại sang local time để hiển thị cho người học.
+	    // (Đảm bảo hiển thị đúng dù máy chủ có thể chạy ở timezone khác.)
         $deadlineRaw = trim((string) $params->get('deadline', ''));
-
-        if ($deadlineRaw === '') {
-            // Không cấu hình deadline → không giới hạn thời gian nộp phí
-            return;
+        if (!empty($deadlineRaw)) {
+	        $this->deadlineLocal = $deadlineRaw;
+	        $this->isDeadlinePassed = DatetimeHelper::isTimeOver($this->deadlineLocal, $userTimezone);
         }
-
-        // Người dùng nhập deadline theo local time (OS timezone).
-        // Chuyển sang UTC để so sánh nhất quán với đồng hồ máy chủ.
-        $this->deadlineUtc = DatetimeHelper::convertToUtc($deadlineRaw);
-
-        // Chuyển UTC ngược lại sang local time để hiển thị cho người học.
-        // (Đảm bảo hiển thị đúng dù máy chủ có thể chạy ở timezone khác.)
-        $this->deadlineLocal = DatetimeHelper::convertToLocalTime($this->deadlineUtc);
-
-        // Kiểm tra đã quá hạn chưa: isTimeOver() nhận UTC và so sánh với UTC hiện tại.
-        $this->isDeadlinePassed = DatetimeHelper::isTimeOver($this->deadlineUtc);
 
 		// ── Xử lý open_from (thời điểm bắt đầu thu phí) ────────────────────────
 	    $openFromRaw = trim((string) $params->get('open_from', ''));
-
-	    if ($openFromRaw !== '') {
-		    // Người dùng nhập theo local time → chuyển sang UTC để so sánh.
-		    $this->openFromUtc   = DatetimeHelper::convertToUtc($openFromRaw);
-		    $this->openFromLocal = DatetimeHelper::convertToLocalTime($this->openFromUtc);
-
-		    // isTimeOver trả về true khi thời điểm đó đã QUA → chưa đến = NOT isTimeOver
-		    $this->isBeforeOpenFrom = !DatetimeHelper::isTimeOver($this->openFromUtc);
+	    if (!empty($openFromRaw)) {
+		    $this->openFromLocal       = $openFromRaw;
+		    $this->isBeforeOpeningTime = !DatetimeHelper::isTimeOver($this->openFromLocal,$userTimezone);
 	    }
+		else
+			$this->isBeforeOpeningTime = false;
 
 		// ── Trạng thái cổng thu phí ─────────────────────────────────────────────
 	    $this->paymentGateOpen = (bool) $params->get('payment_gate_open', 1);
 
 	    // ── Thời điểm cập nhật sao kê gần nhất ──────────────────────────────────
-	    $lastStatementRaw = trim((string) $params->get('last_statement_update', ''));
-	    if ($lastStatementRaw !== '') {
-		    $this->lastStatementUpdateUtc   = DatetimeHelper::convertToUtc($lastStatementRaw);
-		    $this->lastStatementUpdateLocal = DatetimeHelper::convertToLocalTime($this->lastStatementUpdateUtc);
-	    }
+	    $this->lastStatementUpdate = trim((string) $params->get('last_statement_update', ''));
 	}
 
     /**

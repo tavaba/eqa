@@ -84,12 +84,8 @@ class ExamseasonModel extends AdminModel{
 	protected function prepareTable($table): void
 	{
 		// ppaa_req_deadline: calendar nullable
-		// Must be convert to UTC if not null
-		if (empty($table->ppaa_req_deadline)) {
+		if (empty($table->ppaa_req_deadline))
 			$table->ppaa_req_deadline = null;
-		}
-		else
-			$table->ppaa_req_deadline = DatetimeHelper::convertToUtc($table->ppaa_req_deadline);
 
 		// Các trường thông tin ngân hàng: text nullable
 		if (empty($table->bank_napas_code)) {
@@ -104,19 +100,6 @@ class ExamseasonModel extends AdminModel{
 
 		parent::prepareTable($table);
 	}
-
-	public function getItem($pk = null): false|stdClass
-	{
-		$item = parent::getItem($pk);
-		if($item === false)
-			return false;
-		if(!empty($item->ppaa_req_deadline))
-		{
-			$item->ppaa_req_deadline = DatetimeHelper::convertToLocalTime($item->ppaa_req_deadline);
-		}
-		return $item;
-	}
-
 	public function getExamCount(int $examseasonId):int
 	{
 		$db = $this->getDatabase();

@@ -106,7 +106,7 @@ abstract class DatetimeHelper
 	 *
 	 * @since 1.0.3
 	 */
-	public static function getCurrentLocalTime(?DateTimeZone $timezone = null, string $format='Y-m-d H:i:s'):string
+	public static function getCurrentTime(?DateTimeZone $timezone = null, string $format='Y-m-d H:i:s'):string
 	{
 		$timezone ??= self::getUserTimezone();
 		$dt = new DateTime('now', $timezone);
@@ -207,11 +207,13 @@ abstract class DatetimeHelper
 	 *
 	 * @since 1.0.0
 	 */
-	public static function isTimeOver(string $timestamp, string $timezone = 'UTC'): bool
+	public static function isTimeOver(string $timestamp, string|DateTimeZone $timezone = 'UTC'): bool
 	{
-		$tz = new DateTimeZone($timezone);
-		$inputDt = new DateTime($timestamp, $tz);
-		$nowDt   = new DateTime('now', $tz);
+		if(is_string($timezone))
+			$timezone = new DateTimeZone($timezone);
+
+		$inputDt = new DateTime($timestamp, $timezone);
+		$nowDt   = new DateTime('now', $timezone);
 		return $inputDt < $nowDt;
 	}
 

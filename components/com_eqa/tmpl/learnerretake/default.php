@@ -79,7 +79,7 @@ foreach ($this->items as $item) {
         $cellType = 'done';
     } elseif ($this->isDeadlinePassed) {
         $cellType = 'overdue';
-    } elseif ($this->isBeforeOpenFrom) {
+    } elseif ($this->isBeforeOpeningTime) {
         $cellType = 'not_started';
     } elseif (!$this->paymentGateOpen) {
         $cellType = 'suspended';
