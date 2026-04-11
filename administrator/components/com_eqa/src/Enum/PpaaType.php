@@ -1,5 +1,7 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Enum;
+use Kma\Library\Kma\Enum\EnumHelper;
+
 enum PpaaType: int {
 	use EnumHelper;
 	case None = 0;          // Không có

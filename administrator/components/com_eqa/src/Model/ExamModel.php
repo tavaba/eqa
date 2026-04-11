@@ -648,7 +648,7 @@ class ExamModel extends AdminModel{
 	}
 	public function distribute(int $examId, $data):bool
 	{
-		if ($this->isWithSomeMarks($examId))
+		if ($this->hasSomeoneWithCodeAndMark($examId))
 			throw new Exception('Đã có điểm thi. Không thể chia phòng thi.');
 
 		if(!$this->isWithAllPams($examId))
@@ -860,7 +860,7 @@ class ExamModel extends AdminModel{
 	}
 	public function distribute2(int $examId, $data):bool
 	{
-		if ($this->isWithSomeMarks($examId))
+		if ($this->hasSomeoneWithCodeAndMark($examId))
 			throw new Exception('Đã có điểm thi. Không thể chia phòng thi.');
 
 		if(!$this->isWithAllPams($examId))
@@ -1832,15 +1832,29 @@ class ExamModel extends AdminModel{
 		$db->setQuery($query);
 		return $db->loadResult()==0;
 	}
-	public function isWithSomeMarks(int $examId):bool
+
+	/**
+	 * Kiểm tra xem trong môn thi đã có ai có điểm hay chưa. Chỉ tính những người
+	 * đã dự thi (đã được chia phòng), không tính các trường hợp được miễn thi hay
+	 * quy đổi điểm. Việc kiểm tra này là để quyết định về điều kiện để thực hiện
+	 * việc chia phòng thi, đánh số báo danh.
+	 * @param   int  $examId
+	 *
+	 * @return bool
+	 *
+	 */
+	public function hasSomeoneWithCodeAndMark(int $examId):bool
 	{
 		$db = $this->getDatabase();
 
 		$inner = $db->getQuery(true)
 			->select('1')
 			->from($db->quoteName('#__eqa_exam_learner'))
-			->where($db->quoteName('exam_id') . ' = ' . $examId)
-			->where($db->quoteName('mark_orig') . ' IS NOT NULL')
+			->where([
+				'exam_id = ' . $examId,
+				'mark_orig IS NOT NULL',
+				'code IS NOT NULL'
+			])
 			->setLimit(1);
 
 		return (bool) $db->setQuery(
@@ -2143,7 +2157,7 @@ class ExamModel extends AdminModel{
 				$status = ExamStatus::AllConcluded;
 				$this->setExamStatus($examId, ExamStatus::AllConcluded);
 			}
-			else if($this->isWithSomeMarks($examId)) {
+			else if($this->hasSomeoneWithCodeAndMark($examId)) {
 				// Nếu có ít nhất 1 thí sinh đã có điểm thi (mark_orig)
 				// thì cập nhật trạng thái thành 'Đã có một phần điểm thi'
 				$status = ExamStatus::MarkPartial;

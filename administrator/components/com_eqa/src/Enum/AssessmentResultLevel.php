@@ -2,6 +2,8 @@
 
 namespace Kma\Component\Eqa\Administrator\Enum;
 
+use Kma\Library\Kma\Enum\EnumHelper;
+
 defined('_JEXEC') or die();
 
 /**

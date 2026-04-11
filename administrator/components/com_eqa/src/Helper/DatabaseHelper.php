@@ -1052,4 +1052,26 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery('UPDATE #__eqa_examrooms SET exam_ids=' . $examIds . ' WHERE id='.$examroomId);
 		return $db->execute();
 	}
+
+	public static function getGroupInfo(int $groupId)
+	{
+		$db = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('id, code, name')
+			->from('#__eqa_groups')
+			->where('id = ' . $groupId);
+		$db->setQuery($query);
+		return $db->loadObject();
+	}
+
+	public static function getCourseInfo(int $courseId)
+	{
+		$db = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('id, code, name')
+			->from('#__eqa_courses')
+			->where('id = ' . $courseId);
+		$db->setQuery($query);
+		return $db->loadObject();
+	}
 }

@@ -21,6 +21,7 @@ use Kma\Component\Eqa\Administrator\Service\ConfigService;
 use Kma\Component\Eqa\Administrator\Service\HTML\AdministratorService;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
+use Kma\Library\Kma\Service\MailService;
 use Psr\Container\ContainerInterface;
 use Joomla\CMS\Component\Router\RouterServiceInterface;
 
@@ -44,16 +45,22 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	private ConfigService $configService;
 
 	/**
-	 * Service để ghi log, được inject qua DI
-	 * @since 2.0.6
-	 */
-	private LogService $logService;
-
-	/**
 	 * Service để tự động xác định dạng số ít, số nhiều trong tiếng Anh
 	 * @since 2.0.6
 	 */
 	private EnglishService $englishService;
+
+	/**
+	 * Service để ghi log, được inject qua DI
+	 * @since 2.0.7
+	 */
+	private LogService $logService;
+
+	/**
+	 * Service gửi email, được inject qua DI
+	 * @since 2.0.8
+	 */
+	private MailService $mailService;
 
 	/**
 	 * Được Joomla gọi sau khi component được boot từ DIC.
@@ -94,28 +101,6 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	}
 
 	/**
-	 * Nhận ConfigService từ DIC (được gọi trong provider.php).
-	 *
-	 * @param   LogService  $logService
-	 * @since 2.0.6
-	 */
-	public function setLogService(LogService $logService): void
-	{
-		$this->logService = $logService;
-	}
-
-	/**
-	 * Trả về LogService để các class trong component sử dụng
-	 * @return LogService
-	 *
-	 * @since 2.0.6
-	 */
-	public function getLogService(): LogService
-	{
-		return $this->logService;
-	}
-
-	/**
 	 * Phương thức để tiếp nhận EnglishService từ DIC
 	 * @param   EnglishService  $englishService
 	 * @since 2.0.6
@@ -134,4 +119,50 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	{
 		return $this->englishService;
 	}
+
+	/**
+	 * Nhận LogService từ DIC (được gọi trong provider.php).
+	 *
+	 * @param   LogService  $logService
+	 * @since 2.0.7
+	 */
+	public function setLogService(LogService $logService): void
+	{
+		$this->logService = $logService;
+	}
+
+	/**
+	 * Trả về LogService để các class trong component sử dụng
+	 * @return LogService
+	 *
+	 * @since 2.0.7
+	 */
+	public function getLogService(): LogService
+	{
+		return $this->logService;
+	}
+
+	/**
+	 * Nhận MailService từ DIC (được gọi trong provider.php).
+	 *
+	 * @param   MailService  $mailService
+	 * @since 2.0.8
+	 */
+	public function setMailService(MailService $mailService): void
+	{
+		$this->mailService = $mailService;
+	}
+
+	/**
+	 * Trả về MailService để các class trong component sử dụng
+	 * @return MailService
+	 *
+	 * @since 2.0.8
+	 */
+	public function getMailService(): MailService
+	{
+		return $this->mailService;
+	}
+
+
 }

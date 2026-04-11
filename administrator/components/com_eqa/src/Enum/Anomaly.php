@@ -2,6 +2,7 @@
 namespace Kma\Component\Eqa\Administrator\Enum;
 
 use Joomla\CMS\Language\Text;
+use Kma\Library\Kma\Enum\EnumHelper;
 
 enum Anomaly: int
 {

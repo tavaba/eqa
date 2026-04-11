@@ -9,6 +9,8 @@
 
 namespace Kma\Component\Eqa\Administrator\Enum;
 
+use Kma\Library\Kma\Enum\EnumHelper;
+
 enum ObjectType : int
 {
 	use EnumHelper;
@@ -41,6 +43,10 @@ enum ObjectType : int
 
 	//Assessment
 	case Assessment = 3000;
+
+	//Email
+	case MailCampaign = 3500;
+	case MailTemplate = 3501;
 
 	//Juntion
 	case ClassLearner = 7001;

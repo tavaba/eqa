@@ -719,7 +719,6 @@ abstract class AdminModel extends BaseAdminModel
 		return $result;
 	}
 
-
 	/** Ghi log tùy chọn cho các action đặc biệt */
 	protected function writeLog(LogEntry $entry): void
 	{

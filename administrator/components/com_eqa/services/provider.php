@@ -22,6 +22,7 @@ use Kma\Component\Eqa\Site\Service\Router;
 use Joomla\CMS\Component\Router\RouterInterface;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
+use Kma\Library\Kma\Service\MailService;
 
 return new class implements ServiceProviderInterface
 {
@@ -59,12 +60,38 @@ return new class implements ServiceProviderInterface
 		    EnglishService::class,
 		    function (Container $container){
 			    $map = [
-				    'course' => 'courses'
+				    'course' => 'courses',
+				    'mailtemplate' => 'mailtemplates',
 			    ];
 			    return new EnglishService($map);
 		    }
 	    );
 
+	    // ── Đăng ký MailService vào DIC ────────────────────────────────────
+	    // DIC sẽ tạo instance một lần duy nhất (shared = true theo mặc định)
+	    // và tái sử dụng trong suốt vòng đời của request.
+	    $container->set(
+		    MailService::class,
+		    function (Container $container)
+		    {
+			    /**
+			     * @var ConfigService $configService
+			     */
+			    $db = $container->get(DatabaseInterface::class);
+				$configService = $container->get(ConfigService::class);
+			    return new MailService
+			    (
+					$db,
+				    '#__eqa_mail_tempalates',
+				    '#__eqa_mail_campaigns',
+				    '#__eqa_mail_queue',
+					'actvn.edu.vn',
+					$configService->getMailBatchSize(),
+				    $configService->getMailMaxAttempts(),
+				    $configService->getMailRetryIntervalMinutes()
+			    );
+		    }
+	    );
 
 	    $container->set(
 		    RouterInterface::class,
@@ -84,8 +111,9 @@ return new class implements ServiceProviderInterface
 				$component->setMVCFactory($container->get(MVCFactoryInterface::class));
 				$component->setRouterFactory($container->get(RouterFactoryInterface::class));
 				$component->setConfigService($container->get(ConfigService::class));
-				$component->setLogService($container->get(LogService::class));
 				$component->setEnglishService($container->get(EnglishService::class));
+				$component->setLogService($container->get(LogService::class));
+				$component->setMailService($container->get(MailService::class));
 				return $component;
 			}
 		);

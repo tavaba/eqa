@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Administrator\Enum;
+namespace Kma\Library\Kma\Enum;
 
 trait EnumHelper
 {

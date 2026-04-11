@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="basic">
+
+        <!-- Tên template -->
+        <field
+            name="id"
+            type="hidden"
+        />
+
+        <field
+            name="title"
+            type="text"
+            label="Tên template"
+            description="Tên hiển thị khi chọn template trong modal gửi thông báo."
+            required="true"
+            maxlength="200"
+            class="form-control"
+        />
+
+        <!-- Ngữ cảnh áp dụng -->
+        <field
+            name="context_type"
+            type="list"
+            label="Ngữ cảnh áp dụng"
+            description="Xác định loại đối tượng nhận email. Template chỉ xuất hiện khi gửi thông báo từ đúng ngữ cảnh này."
+            required="true"
+            class="form-select"
+        >
+            <option value="">-- Chọn ngữ cảnh --</option>
+            <option value="1">Môn thi</option>
+            <option value="2">Kỳ thi</option>
+            <option value="3">Lớp hành chính</option>
+            <option value="4">Khóa học</option>
+            <option value="5">Danh sách thủ công</option>
+        </field>
+
+        <!-- Trạng thái -->
+        <field
+            name="published"
+            type="radio"
+            label="Trạng thái"
+            default="1"
+            class="btn-group btn-group-yesno"
+        >
+            <option value="1">Kích hoạt</option>
+            <option value="0">Ẩn</option>
+        </field>
+
+        <!-- Tiêu đề email -->
+        <field
+            name="subject"
+            type="text"
+            label="Tiêu đề email"
+            description="Hỗ trợ placeholder: {learner_name}, {learner_code}, {exam_name}, {examseason_name}..."
+            required="true"
+            maxlength="500"
+            class="form-control"
+        />
+
+        <!-- Nội dung email -->
+        <field
+            name="body"
+            type="textarea"
+            label="Nội dung email (HTML)"
+            description="Nội dung dạng HTML. Placeholder khả dụng tuỳ ngữ cảnh: {learner_name}, {learner_code}, {exam_name}, {exam_date}, {exam_time}, {room_name}, {examseason_name}. Placeholder không có dữ liệu sẽ được thay bằng chuỗi rỗng."
+            required="true"
+            rows="15"
+            class="form-control font-monospace"
+        />
+
+    </fieldset>
+    <fieldset name="metadata">
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+        <field
+                name="created_at"
+                type="text"
+                readonly="true"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+        />
+        <field
+                name="modified_by"
+                type="user"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+        <field
+                name="modified_at"
+                type="text"
+                readonly="true"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+        />
+    </fieldset>
+</form>

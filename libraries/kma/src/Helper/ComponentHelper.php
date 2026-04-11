@@ -9,10 +9,10 @@ use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactory;
 use Joomla\CMS\Component\ComponentHelper as JoomlaComponentHelper;
-use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\Registry\Registry;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
+use Kma\Library\Kma\Service\MailService;
 
 abstract class ComponentHelper
 {
@@ -133,7 +133,7 @@ abstract class ComponentHelper
 	 * @return LogService|null
 	 *
 	 * @throws Exception
-	 * @since version
+	 * @since 2.0.7
 	 */
 	public static function getLogService(): LogService|null
 	{
@@ -152,7 +152,7 @@ abstract class ComponentHelper
 	 * @return EnglishService|null
 	 *
 	 * @throws Exception
-	 * @since version
+	 * @since 2.0.6
 	 */
 	public static function getEnglishService(): EnglishService|null
 	{
@@ -161,6 +161,25 @@ abstract class ComponentHelper
 		$component = $app->bootComponent($componentName);
 		if(method_exists($component, 'getEnglishService'))
 			return $component->getEnglishService();
+		return null;
+	}
+
+	/**
+	 * Lấy EnglishService từ DIC, với điều kiện MailService đã được inject vào DIC
+	 * của component (trong file 'provider.php') và trong Component phải định nghĩa
+	 * phương thức getMailService() cho mục đích này.
+	 * @return MailService|null
+	 *
+	 * @throws Exception
+	 * @since 2.0.6
+	 */
+	public static function getMailService(): MailService|null
+	{
+		$app = Factory::getApplication();
+		$componentName = self::getName();
+		$component = $app->bootComponent($componentName);
+		if(method_exists($component, 'getMailService'))
+			return $component->getMailService();
 		return null;
 	}
 

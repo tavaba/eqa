@@ -391,7 +391,7 @@ class ExamController extends  FormController
 		 * @var ExamModel $model
 		 */
 		$model = $this->getModel();
-		if($model->isWithSomeMarks($examId))
+		if($model->hasSomeoneWithCodeAndMark($examId))
 		{
 			if($throw)
 				throw new Exception('Đã có điểm thi. Không thể chia phòng thi.');

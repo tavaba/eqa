@@ -67,6 +67,7 @@ class HtmlView extends ItemsHtmlView {
             $examineeCounts = DatabaseHelper::getExamsessionExamineeCounts($examsessionIds);
             foreach ($this->layoutData->items as $item)
             {
+	            $item->start = DatetimeHelper::convertToLocalTime($item->start);
                 $item->flexible = $item->flexible ? Text::_('JYES') : Text::_('JNO');
                 $item->dayofweek = DatetimeHelper::getDayOfWeek($item->start);
                 $item->dayofmonth = DatetimeHelper::getDayAndMonth($item->start);

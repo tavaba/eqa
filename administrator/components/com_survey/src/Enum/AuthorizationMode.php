@@ -2,6 +2,9 @@
 
 namespace Kma\Component\Survey\Administrator\Enum;
 
+
+use Kma\Library\Kma\Enum\EnumHelper;
+
 enum AuthorizationMode : int
 {
 	use EnumHelper;

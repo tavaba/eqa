@@ -3,75 +3,40 @@ namespace Kma\Component\Survey\Site\Service;
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Component\Router\RouterView;
 use Joomla\CMS\Component\Router\RouterViewConfiguration;
+use Joomla\CMS\Component\Router\Rules\MenuRules;
+use Joomla\CMS\Component\Router\Rules\NomenuRules;
+use Joomla\CMS\Component\Router\Rules\StandardRules;
 use Joomla\CMS\Menu\AbstractMenu;
 
 class Router extends RouterView
 {
-    /**
-     * Constructor
-     *
-     * @param   CMSApplication  $app   The application object
-     * @param   AbstractMenu    $menu  The menu object to work with
-     * @since   1.0.0
-     */
-    public function __construct(CMSApplication $app, AbstractMenu $menu)
-    {
-        parent::__construct($app, $menu);
+	/**
+	 * Constructor
+	 *
+	 * @param   CMSApplication  $app   The application object
+	 * @param   AbstractMenu    $menu  The menu object to work with
+	 * @since   1.0.0
+	 */
+	public function __construct(SiteApplication $app, AbstractMenu $menu)
+	{
 
-        // View: surveys (list of surveys)
-        $surveys = new RouterViewConfiguration('surveys');
-        $this->registerView($surveys);
+		parent::__construct($app, $menu);
 
-        // View: survey (single survey form)
-        $survey = new RouterViewConfiguration('survey');
-        $survey->setKey('id'); // can be survey_id or token
-        $this->registerView($survey);
-    }
+		// 1. Đăng ký View: surveys (danh sách)
+		$surveys = new RouterViewConfiguration('surveys');
+		$this->registerView($surveys);
 
-    /**
-     * Build SEF route segments from query vars
-     * @param   array  &$query  The query array
-     * @return  array  The URL segments
-     * @since   1.0.0
-     */
-    public function build(&$query)
-    {
-        $segments = [];
+		// 2. Đăng ký View: survey (chi tiết/form)
+		$survey = new RouterViewConfiguration('survey');
+		$survey->setKey('id'); // Joomla sẽ tự hiểu id này lấy từ URL
+		$this->registerView($survey);
 
-        if (isset($query['view']))
-        {
-            $segments[] = $query['view'];
-            unset($query['view']);
-        }
-
-        if (isset($query['id']))
-        {
-            $segments[] = $query['id'];
-            unset($query['id']);
-        }
-        return $segments;
-    }
-
-    /**
-     * Parse SEF URL segments back into query vars
-     * @param   array  &$segments  The URL segments
-     * @return  array  The query array
-     * @since   1.0.0
-     */
-    public function parse(&$segments)
-    {
-        $vars = [];
-
-        if (!empty($segments[0]))
-        {
-            $vars['view'] = $segments[0];
-
-            if ($segments[0] === 'survey' && !empty($segments[1]))
-            {
-                $vars['id'] = $segments[1];
-            }
-        }
-        return $vars;
-    }}
+		// Attach the routing rules
+		$this->attachRule(new MenuRules($this));
+		$this->attachRule(new StandardRules($this));
+		$this->attachRule(new NomenuRules($this));
+	}
+}

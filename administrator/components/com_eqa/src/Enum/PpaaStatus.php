@@ -1,6 +1,8 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Enum;
 
+use Kma\Library\Kma\Enum\EnumHelper;
+
 enum PpaaStatus: int {
 	use EnumHelper;
 	case Init = 0;              // Trạng thái khởi tạo / Mới tiếp nhận

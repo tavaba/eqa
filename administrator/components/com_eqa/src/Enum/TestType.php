@@ -1,6 +1,8 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Enum;
 
+use Kma\Library\Kma\Enum\EnumHelper;
+
 enum TestType : int
 {
 	use EnumHelper;

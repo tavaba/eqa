@@ -1,19 +1,13 @@
 /**
  * com_eqa — Install SQL Schema
- * Version : 2.0.7
+ * Version : 2.0.8
  *
- * Thay đổi so với 2.0.6:
- * Bảng #__eqa_regradings:
- * - đổi tên cột 'handled_by' thành 'handled_by_username'
- * - thêm mới cột 'handled_by' kiểu INT UNSIGNED để lưu user id thay vì username
- * - thêm các cột 'payment_amount', 'payment_code', 'payment_completed' để quản lý việc thu phí
-
- * Bảng #__eqa_gradecorrections:
- * - đổi tên cột 'handled_by' thành 'handled_by_username'
- * - thêm mới cột 'handled_by' kiểu INT UNSIGNED để lưu user id thay vì username
-
- * Bảng #__eqa_xamseasons
- * - thêm các cột 'bank_napas_code', 'bank_account_number', 'bank_account_owner' để quản lý thu phí
+ * Thay đổi so với 2.0.7:
+ * Bổ sung 3 bảng để gửi mail
+ *   1. #__eqa_mail_templates  — Quản lý mẫu email theo ngữ cảnh
+ *   2. #__eqa_mail_campaigns  — Mỗi lần kích hoạt gửi = 1 campaign
+ *   3. #__eqa_mail_queue      — Hàng đợi email cá nhân hóa từng người nhận
+ *
  */
 
 -- Tắt kiểm tra khóa ngoại để xóa sạch không bị lỗi ràng buộc
@@ -896,6 +890,114 @@ CREATE TABLE `#__eqa_logs` (
     INDEX `idx_user`        (`user_id`),
     INDEX `idx_created_at`  (`created_at`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4  COMMENT='Nhật ký thao tác người dùng';
+
+DROP TABLE IF EXISTS `#__eqa_mail_templates`;
+CREATE TABLE `#__eqa_mail_templates` (
+    `id`           INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+    `title`        VARCHAR(200)     NOT NULL, -- Tên template — hiển thị trong modal chọn template (Luồng B)
+    `context_type` TINYINT UNSIGNED NOT NULL, -- Ngữ cảnh áp dụng → MailContextType
+    `subject`      VARCHAR(500)     NOT NULL, -- Tiêu đề email — có thể chứa placeholder, ví dụ: "Thông báo lịch thi {exam_name}"
+    `body`         LONGTEXT         NOT NULL, -- Nội dung email dạng HTML — chứa các placeholder như {learner_name}, {room_name}...
+    `published`    TINYINT          NOT NULL DEFAULT 1, -- 0 = ẩn, 1 = hiển thị / có hiệu lực
+    `created_by`   INT UNSIGNED     NOT NULL DEFAULT 0,
+    `created_at`   DATETIME         NOT NULL COMMENT 'UTC',
+    `modified_by`  INT UNSIGNED     NOT NULL DEFAULT 0,
+    `modified_at`  DATETIME         NULL     COMMENT 'UTC',
+
+    PRIMARY KEY (`id`),
+    KEY `idx_context_published` (`context_type`, `published`) -- Index để query nhanh template theo context khi hiển thị modal
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `#__eqa_mail_campaigns`;
+CREATE TABLE `#__eqa_mail_campaigns` (
+    `id`               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+    `template_id`      INT UNSIGNED     NOT NULL,   -- Template đã dùng để tạo campaign này
+
+    -- Sao chép context_type từ template tại thời điểm tạo (để query không cần JOIN)
+    -- → MailContextType
+    `context_type`     TINYINT UNSIGNED NOT NULL,
+
+    -- ID của đối tượng ngữ cảnh:
+    --   context_type=1 (Exam)       → exam_id
+    --   context_type=2 (ExamSeason) → examseason_id
+    --   context_type=3 (Group)      → group_id
+    --   context_type=4 (Course)     → course_id
+    --   context_type=5 (Manual)     → NULL
+    `context_id`       INT UNSIGNED     NULL,
+
+    `recipient_filter` TEXT             NULL,   -- Điều kiện lọc bổ sung (JSON). NULL = toàn bộ đối tượng của context.
+    `status`           TINYINT          NOT NULL DEFAULT 0, -- Trạng thái campaign → MailCampaignStatus
+
+    -- Thống kê tiến độ
+    `total_count`      INT UNSIGNED     NOT NULL DEFAULT 0,
+    `sent_count`       INT UNSIGNED     NOT NULL DEFAULT 0,
+    `failed_count`     INT UNSIGNED     NOT NULL DEFAULT 0,
+
+    `created_by`       INT UNSIGNED     NOT NULL DEFAULT 0,
+    `created_at`       DATETIME         NOT NULL COMMENT 'UTC',
+
+    PRIMARY KEY (`id`),
+
+    -- Index phục vụ query lịch sử từ view ngữ cảnh
+    KEY `idx_context` (`context_type`, `context_id`),
+
+    -- Index phục vụ query theo người tạo + thời gian (view tập trung)
+    KEY `idx_created` (`created_by`, `created_at`),
+
+    CONSTRAINT `fk_mail_campaigns_template`
+    FOREIGN KEY (`template_id`)
+    REFERENCES `#__eqa_mail_templates` (`id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS `#__eqa_mail_queue`;
+CREATE TABLE `#__eqa_mail_queue` (
+    `id`               INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+    `campaign_id`      INT UNSIGNED     NOT NULL,   -- Campaign chứa email này
+    `recipient_type`   TINYINT UNSIGNED NOT NULL DEFAULT 0, -- Loại người nhận → MailRecipientType
+    `recipient_id`     INT UNSIGNED     NULL,   -- ID người nhận trong bảng tương ứng. NULL nếu recipient_type = External.
+
+    -- Địa chỉ email thực tế để gửi — luôn được resolve và lưu khi tạo queue.
+    -- Với learner: {learner_code}@actvn.edu.vn
+    `recipient_email`  VARCHAR(255)     NOT NULL,
+
+    -- Tiêu đề và nội dung email đã được render (placeholder đã được thay thế)
+    `subject`          VARCHAR(500)     NOT NULL,
+    `body`             LONGTEXT         NOT NULL,
+
+    `status`           TINYINT          NOT NULL DEFAULT 0, -- Trạng thái gửi → MailQueueStatus
+
+    -- Số lần đã thử gửi.
+    -- Khi attempts >= 3 và vẫn thất bại → chuyển status = 2 (Failed).
+    `attempts`         TINYINT UNSIGNED NOT NULL DEFAULT 0,
+
+    -- Thời điểm lần thử gửi gần nhất (UTC).
+    -- NULL = chưa thử lần nào (bản ghi mới được tạo vào queue).
+    -- Task Scheduler cập nhật trường này sau mỗi lần thử gửi.
+    -- Dùng để kiểm soát khoảng cách tối thiểu giữa các lần retry.
+    `last_attempt_at`  DATETIME         NULL     COMMENT 'UTC',
+    `sent_at`          DATETIME         NULL     COMMENT 'UTC', -- Thời điểm gửi thành công (UTC). NULL nếu chưa gửi được.
+    `error_message`    TEXT             NULL, -- Thông báo lỗi của lần thử gần nhất (nếu thất bại)
+    `created_at`       DATETIME         NOT NULL COMMENT 'UTC',
+
+    PRIMARY KEY (`id`),
+
+    -- Index chính — Task Scheduler query: WHERE campaign_id=X AND status=0
+    KEY `idx_campaign_status` (`campaign_id`, `status`),
+
+    -- Index phụ — Task Scheduler query toàn bộ pending, lọc theo last_attempt_at để retry
+    KEY `idx_status_attempt` (`status`, `attempts`, `last_attempt_at`),
+
+    CONSTRAINT `fk_mail_queue_campaign`
+    FOREIGN KEY (`campaign_id`)
+    REFERENCES `#__eqa_mail_campaigns` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- Bật lại kiểm tra khóa ngoại
 SET FOREIGN_KEY_CHECKS = 1;

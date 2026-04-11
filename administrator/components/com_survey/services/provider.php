@@ -2,10 +2,12 @@
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Application\SiteApplication;
+use Joomla\CMS\Component\Router\RouterFactoryInterface;
 use Joomla\CMS\Dispatcher\ComponentDispatcherFactoryInterface;
 use Joomla\CMS\Extension\ComponentInterface;
 use Joomla\CMS\Extension\Service\Provider\ComponentDispatcherFactory;
 use Joomla\CMS\Extension\Service\Provider\MVCFactory;
+use Joomla\CMS\Extension\Service\Provider\RouterFactory;
 use Joomla\CMS\HTML\Registry;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseInterface;
@@ -21,6 +23,7 @@ return new class implements ServiceProviderInterface {
     {
         $container->registerServiceProvider(new MVCFactory('\\Kma\\Component\\Survey'));
         $container->registerServiceProvider(new ComponentDispatcherFactory('\\Kma\\Component\\Survey'));
+	    $container->registerServiceProvider(new RouterFactory('\\Kma\\Component\\Survey'));
 
 	    // ── Đăng ký LogService vào DIC ────────────────────────────────────
 	    // DIC sẽ tạo instance một lần duy nhất (shared = true theo mặc định)
@@ -53,7 +56,7 @@ return new class implements ServiceProviderInterface {
                 $component = new SurveyComponent(
                     $container->get(ComponentDispatcherFactoryInterface::class)
                 );
-	            $component->setRegistry($container->get(Registry::class));
+	            $component->setRouterFactory($container->get(RouterFactoryInterface::class));            $component->setRegistry($container->get(Registry::class));
                 $component->setMVCFactory($container->get(MVCFactoryInterface::class));
 	            $component->setLogService($container->get(LogService::class));
 	            $component->setEnglishService($container->get(EnglishService::class));

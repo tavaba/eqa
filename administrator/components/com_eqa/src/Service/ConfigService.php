@@ -388,4 +388,18 @@ class ConfigService
 	{
 		return (float) $this->params->get('params.second_attempt_fee_rate', 90000);
 	}
+
+	public function getMailBatchSize():int
+	{
+		return (int) $this->params->get('params.mail_batch_size', 50);
+	}
+	public function getMailMaxAttempts():int
+	{
+		return (int) $this->params->get('params.mail_max_attempts', 3);
+	}
+
+	public function getMailRetryIntervalMinutes(): int
+	{
+		return (int) $this->params->get('params.mail_retry_interval_minutes', 5);
+	}
 }

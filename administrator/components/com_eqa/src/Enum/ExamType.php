@@ -1,6 +1,8 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Enum;
 
+use Kma\Library\Kma\Enum\EnumHelper;
+
 enum ExamType: int {
 	use EnumHelper;
 	case Other = 0;                     // Thi khác

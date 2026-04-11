@@ -1,8 +1,11 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Enum;
 
+use Kma\Library\Kma\Enum\EnumHelper;
+
 enum SpecialMark: int
 {
+	use EnumHelper;
 	case N25 = -25;     //Nghỉ học quá 25% số buổi
 	case N100 = -100;   //Nghỉ học 100% số buổi
 	case TKD = -10;     //Thi giữa kỳ không đạt
