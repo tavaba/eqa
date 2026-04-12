@@ -187,7 +187,7 @@ abstract class MailCampaignsController extends AdminController
 
                 $this->setMessage(sprintf(
                     'Đã xếp hàng gửi email thông báo (<b>%s</b>). '
-                    . 'Email sẽ được gửi đi trong thời gian ngắn.',
+                    . 'Email sẽ sớm được gửi đi.',
                     htmlspecialchars($template->title)
                 ));
             }

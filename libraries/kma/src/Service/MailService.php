@@ -21,6 +21,7 @@ use Joomla\Database\DatabaseDriver;
 use Kma\Library\Kma\Enum\MailCampaignStatus;
 use Kma\Library\Kma\Enum\MailQueueStatus;
 use Kma\Library\Kma\Enum\MailRecipientType;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 /**
  * Service xử lý toàn bộ logic email thông báo.
@@ -78,16 +79,13 @@ class MailService
     // =========================================================================
 
     /** Số lần thử gửi tối đa (mặc định). */
-    public const DEFAULT_MAX_ATTEMPTS = 3;
+    public const int DEFAULT_MAX_ATTEMPTS = 3;
 
     /** Số phút tối thiểu giữa hai lần retry (mặc định). */
-    public const DEFAULT_RETRY_INTERVAL_MINUTES = 5;
+    public const int DEFAULT_RETRY_INTERVAL_MINUTES = 5;
 
     /** Số email tối đa xử lý trong một batch (mặc định). */
-    public const DEFAULT_BATCH_SIZE = 100;
-
-    /** Domain email người học (mặc định). */
-    public const DEFAULT_LEARNER_EMAIL_DOMAIN = 'actvn.edu.vn';
+    public const int DEFAULT_BATCH_SIZE = 100;
 
     // =========================================================================
     // Constructor
@@ -98,7 +96,6 @@ class MailService
      * @param  string          $tableTemplates        Tên bảng email template (có tiền tố #__)
      * @param  string          $tableCampaigns        Tên bảng campaign (có tiền tố #__)
      * @param  string          $tableQueue            Tên bảng hàng đợi email (có tiền tố #__)
-     * @param  string          $emailDomain           Domain email người nhận
      * @param  int             $batchSize             Số email tối đa mỗi batch
      * @param  int             $maxAttempts           Số lần thử tối đa trước khi Failed
      * @param  int             $retryIntervalMinutes  Số phút chờ giữa hai lần retry
@@ -108,7 +105,6 @@ class MailService
         private readonly string         $tableTemplates,
         private readonly string         $tableCampaigns,
         private readonly string         $tableQueue,
-        private readonly string         $emailDomain           = self::DEFAULT_LEARNER_EMAIL_DOMAIN,
         private readonly int            $batchSize             = self::DEFAULT_BATCH_SIZE,
         private readonly int            $maxAttempts           = self::DEFAULT_MAX_ATTEMPTS,
         private readonly int            $retryIntervalMinutes  = self::DEFAULT_RETRY_INTERVAL_MINUTES,
@@ -132,13 +128,7 @@ class MailService
     {
         return $this->tableQueue;
     }
-
-    public function getEmailDomain(): string
-    {
-        return $this->emailDomain;
-    }
-
-    public function getBatchSize(): int
+	public function getBatchSize(): int
     {
         return $this->batchSize;
     }
@@ -184,30 +174,40 @@ class MailService
         return preg_replace('/\{[a-z_]+\}/', '', $rendered);
     }
 
-    /**
-     * Xây dựng mảng placeholder chung cho mọi context, từ thông tin người học.
-     *
-     * Placeholder được tạo ra:
-     *   {learner_name} — họ tên đầy đủ (lastname + firstname)
-     *   {learner_code} — mã HVSV
-     *
-     * Component cần array_merge() kết quả này với placeholder đặc thù
-     * của context bên trong $placeholderResolver truyền vào buildQueue().
-     *
-     * @param  object  $learner  Cần có: code (string), lastname (string), firstname (string)
-     *
-     * @return array<string,string>
-     * @since  1.0.3
-     */
-    public static function buildCommonPlaceholders(object $learner): array
-    {
-        return [
-            '{learner_name}' => trim($learner->lastname . ' ' . $learner->firstname),
-            '{learner_code}' => $learner->code,
-        ];
-    }
+	/**
+	 * Chuyển đổi các thuộc tính của object thành mảng associative với key
+	 * nằm trong ngoặc nhọn. Chỉ lấy các thuộc tính là String hoặc Number (int/float).
+	 * Điều kiện: tên các properties phải trùng với tên các placehoders.
+	 * Ví dụ:
+	 * $item = new stdClass();
+	 * $item->x = 'Giá trị X';
+	 * $item->y = 'Giá trị Y';
+	 * Kết quả: ['{x}' => 'Giá trị X', '{y}' => 'Giá trị Y']
+	 *
+	 * @param object $recipient
+	 *
+	 * @return array Associative array có dạng ['{x}' => 'Giá trị X', '{y}' => 'Giá trị Y']
+	 */
+	public static function resolvePlaceholders(object $recipient): array
+	{
+		if (!is_object($recipient)) {
+			return [];
+		}
 
-    /**
+		$result = [];
+		$properties = get_object_vars($recipient);
+
+		foreach ($properties as $key => $value) {
+			// Kiểm tra nếu giá trị là chuỗi hoặc là số
+			if (is_string($value) || is_numeric($value)) {
+				$result['{' . $key . '}'] = $value;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
      * Tạo địa chỉ email người học từ learner code.
      * Sử dụng $this->emailDomain đã được inject.
      *
@@ -218,7 +218,7 @@ class MailService
      */
     public function resolveLearnerEmail(string $learnerCode): string
     {
-        return strtolower(trim($learnerCode)) . '@' . $this->emailDomain;
+        return strtolower(trim($learnerCode)) . '@actvn.edu.vn';
     }
 
     // =========================================================================
@@ -264,97 +264,88 @@ class MailService
      * @param  int       $campaignId
      * @param  string    $subjectTemplate      Template tiêu đề (chưa render)
      * @param  string    $bodyTemplate         Template nội dung HTML (chưa render)
-     * @param  array     $recipients           Danh sách người nhận (xem quy ước ở docblock class)
-     * @param  callable  $placeholderResolver
-     *             fn(object $recipient): array<string, string>
-     *             Phải trả về mảng đầy đủ tất cả placeholder cho người nhận đó.
+     * @param  array     $recipients           Danh sách người nhận. Mỗi người nhận phải có 3 thuộc tính
+     *                   bắt buộc là 'id', 'type' và 'email'; các giá trị cần đưa vào placeholder thì tên
+     *                   thuộc tính tương ứng phải trùng với tên của placeholder.
+     *                   Ví dụ, placeholder '{fullname}' sẽ lấy giá trị từ thuộc tính 'fullname'.
      *
      * @return int  Số bản ghi được insert vào queue
      * @throws Exception
      * @since  1.0.3
      */
-    public function buildQueue(
-        int      $campaignId,
-        string   $subjectTemplate,
-        string   $bodyTemplate,
-        array    $recipients,
-        callable $placeholderResolver
-    ): int {
-        if (empty($recipients)) {
-            return 0;
-        }
+	public function buildQueue(int $campaignId, string $subjectTemplate, string $bodyTemplate, array $recipients): int
+	{
+		if (empty($recipients)) {
+			return 0;
+		}
 
-        $now   = (new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-        $count = 0;
+		$now   = DatetimeHelper::getCurrentUtcTime();
+		$count = 0;
 
-        $this->db->transactionStart();
+		$this->db->transactionStart();
 
-        try {
-            foreach ($recipients as $recipient) {
-                // Component chịu trách nhiệm resolve toàn bộ placeholder
-                $placeholders    = $placeholderResolver($recipient);
-                $renderedSubject = self::renderTemplate($subjectTemplate, $placeholders);
-                $renderedBody    = self::renderTemplate($bodyTemplate, $placeholders);
+		try {
+			foreach ($recipients as $recipient) {
+				$placeholders    = self::resolvePlaceholders($recipient);
+				$renderedSubject = self::renderTemplate($subjectTemplate, $placeholders);
+				$renderedBody    = self::renderTemplate($bodyTemplate, $placeholders);
 
-                $learner        = $recipient->learner;
-                $recipientEmail = $this->resolveLearnerEmail($learner->code);
+				$query = $this->db->getQuery(true)
+					->insert($this->db->quoteName($this->tableQueue))
+					->columns($this->db->quoteName([
+						'campaign_id',
+						'recipient_type',
+						'recipient_id',
+						'recipient_email',
+						'subject',
+						'body',
+						'status',
+						'attempts',
+						'last_attempt_at',
+						'sent_at',
+						'error_message',
+						'created_at',
+					]))
+					->values(implode(',', [
+						(int) $campaignId,
+						(int) $recipient->type,
+						(int) $recipient->id,
+						$this->db->quote($recipient->email),
+						$this->db->quote($renderedSubject),
+						$this->db->quote($renderedBody),
+						MailQueueStatus::Pending->value,
+						0,
+						'NULL',  // last_attempt_at
+						'NULL',  // sent_at
+						'NULL',  // error_message
+						$this->db->quote($now),
+					]));
 
-                $query = $this->db->getQuery(true)
-                    ->insert($this->db->quoteName($this->tableQueue))
-                    ->columns($this->db->quoteName([
-                        'campaign_id',
-                        'recipient_type',
-                        'recipient_id',
-                        'recipient_email',
-                        'subject',
-                        'body',
-                        'status',
-                        'attempts',
-                        'last_attempt_at',
-                        'sent_at',
-                        'error_message',
-                        'created_at',
-                    ]))
-                    ->values(implode(',', [
-                        (int) $campaignId,
-                        MailRecipientType::Learner->value,
-                        (int) $learner->id,
-                        $this->db->quote($recipientEmail),
-                        $this->db->quote($renderedSubject),
-                        $this->db->quote($renderedBody),
-                        MailQueueStatus::Pending->value,
-                        0,
-                        'NULL',  // last_attempt_at
-                        'NULL',  // sent_at
-                        'NULL',  // error_message
-                        $this->db->quote($now),
-                    ]));
+				$this->db->setQuery($query);
+				$this->db->execute();
+				$count++;
+			}
 
-                $this->db->setQuery($query);
-                $this->db->execute();
-                $count++;
-            }
+			// Cập nhật total_count và đảm bảo status = Pending
+			$query = $this->db->getQuery(true)
+				->update($this->db->quoteName($this->tableCampaigns))
+				->set($this->db->quoteName('total_count') . ' = ' . $count)
+				->set($this->db->quoteName('status') . ' = ' . MailCampaignStatus::Pending->value)
+				->where($this->db->quoteName('id') . ' = ' . (int) $campaignId);
+			$this->db->setQuery($query);
+			$this->db->execute();
 
-            // Cập nhật total_count và đảm bảo status = Pending
-            $query = $this->db->getQuery(true)
-                ->update($this->db->quoteName($this->tableCampaigns))
-                ->set($this->db->quoteName('total_count') . ' = ' . $count)
-                ->set($this->db->quoteName('status') . ' = ' . MailCampaignStatus::Pending->value)
-                ->where($this->db->quoteName('id') . ' = ' . (int) $campaignId);
-            $this->db->setQuery($query);
-            $this->db->execute();
+			$this->db->transactionCommit();
+		}
+		catch (Exception $e) {
+			$this->db->transactionRollback();
+			throw $e;
+		}
 
-            $this->db->transactionCommit();
-        }
-        catch (Exception $e) {
-            $this->db->transactionRollback();
-            throw $e;
-        }
+		return $count;
+	}
 
-        return $count;
-    }
-
-    // =========================================================================
+	// =========================================================================
     // Dispatch (gửi email)
     // =========================================================================
 

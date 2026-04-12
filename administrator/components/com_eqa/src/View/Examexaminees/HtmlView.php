@@ -14,10 +14,23 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
+use Kma\Component\Eqa\Administrator\Enum\MailContextType;
+use Kma\Library\Kma\Enum\MailCampaignStatus;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 class HtmlView extends ItemsHtmlView {
     protected $exam;
-    protected function configureItemFieldsForLayoutDefault():void{
+
+	/**
+	 * Lịch sử các chiến dịch email đã gửi cho môn thi này.
+	 * Hiển thị ở cuối trang dưới dạng bảng tóm tắt.
+	 *
+	 * @var object[]
+	 * @since 2.0.8
+	 */
+	protected array $campaignHistory = [];
+
+	protected function configureItemFieldsForLayoutDefault():void{
         $this->itemFields = new ListLayoutItemFields();
         $fields = $this->itemFields;      //Just shorten the name
         $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
@@ -119,6 +132,25 @@ class HtmlView extends ItemsHtmlView {
             }
         }
 
+		//Inject some hidden form data
+	    $this->layoutData->formHiddenFields = array_merge(
+		    $this->layoutData->formHiddenFields ?? [],
+		    [
+			    'context_type' => MailContextType::Exam->value,
+			    'context_id'   => $examId,
+			    // return URL (base64) để sau khi notify xong redirect về view này
+			    'return'       => base64_encode(
+				    'index.php?option=com_eqa&view=examexaminees&exam_id=' . $examId
+			    ),
+		    ]
+	    );
+
+	    // Load lịch sử campaign — dùng trong sub-template default_campaign_history.php
+	    if ($examId > 0) {
+		    $this->campaignHistory = $this->loadCampaignHistory($examId);
+	    }
+
+
     }
     protected function addToolbarForLayoutDefault(): void
     {
@@ -142,5 +174,61 @@ class HtmlView extends ItemsHtmlView {
 	    ToolbarHelper::appendButton('core.create','calendar','Chia phòng theo lớp','exam.distribute2',false);
 	    ToolbarHelper::appendButton(null,'download','Xuất môn thi','exam.export');
 	    ToolbarHelper::appendButton(null,'download','Xuất ca iTest','exam.exportitest');
+	    ToolbarHelper::appendButton('core.manage','envelope','Gửi email','mailcampaigns.notify',false,'btn btn-success');
     }
+
+	/**
+	 * Lấy lịch sử các chiến dịch email đã gửi cho một môn thi.
+	 *
+	 * Kết quả được gán vào $this->campaignHistory và render trong sub-template
+	 * tmpl/examexaminees/default_campaign_history.php thông qua $this->loadTemplate().
+	 *
+	 * @param  int  $examId
+	 * @return object[]
+	 * @since  2.0.9
+	 */
+	private function loadCampaignHistory(int $examId): array
+	{
+		$db    = \Joomla\CMS\Factory::getDbo();
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('mc.id'),
+				$db->quoteName('mc.status'),
+				$db->quoteName('mc.total_count'),
+				$db->quoteName('mc.sent_count'),
+				$db->quoteName('mc.failed_count'),
+				$db->quoteName('mc.created_at'),
+				$db->quoteName('t.title',  'template_title'),
+				$db->quoteName('u.name',   'creator_name'),
+			])
+			->from($db->quoteName('#__eqa_mail_campaigns', 'mc'))
+			->leftJoin(
+				$db->quoteName('#__eqa_mail_templates', 't') .
+				' ON ' . $db->quoteName('t.id') . ' = ' . $db->quoteName('mc.template_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__users', 'u') .
+				' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('mc.created_by')
+			)
+			->where($db->quoteName('mc.context_type') . ' = ' . MailContextType::Exam->value)
+			->where($db->quoteName('mc.context_id')   . ' = ' . $examId)
+			->order($db->quoteName('mc.created_at') . ' DESC')
+			->setLimit(10);
+
+		$db->setQuery($query);
+		$items = $db->loadObjectList() ?: [];
+
+		// Preprocessing: bổ sung status_label, status_badge, created_at_local
+		foreach ($items as $item) {
+			$statusEnum             = MailCampaignStatus::tryFrom((int) $item->status);
+			$item->status_label     = $statusEnum?->getLabel()    ?? '?';
+			$item->status_badge     = $statusEnum?->getBadgeClass() ?? 'bg-secondary';
+			$item->created_at_local = !empty($item->created_at)
+				? DatetimeHelper::convertToLocalTime((string) $item->created_at)
+				: '—';
+		}
+
+		return $items;
+	}
+
 }

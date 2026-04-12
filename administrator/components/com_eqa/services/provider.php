@@ -82,10 +82,9 @@ return new class implements ServiceProviderInterface
 			    return new MailService
 			    (
 					$db,
-				    '#__eqa_mail_tempalates',
+				    '#__eqa_mail_templates',
 				    '#__eqa_mail_campaigns',
 				    '#__eqa_mail_queue',
-					'actvn.edu.vn',
 					$configService->getMailBatchSize(),
 				    $configService->getMailMaxAttempts(),
 				    $configService->getMailRetryIntervalMinutes()

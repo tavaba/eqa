@@ -144,24 +144,6 @@ abstract class MailCampaignsModel extends ListModel
         return [];
     }
 
-    /**
-     * Trả về callback resolver placeholder cho một context type.
-     *
-     * Callback signature: fn(object $recipient): array<string, string>
-     *
-     * Mặc định chỉ trả về common placeholders ({learner_name}, {learner_code}).
-     * Lớp con override để thêm placeholder đặc thù theo context.
-     *
-     * @param  int  $contextType  Giá trị MailContextType enum
-     *
-     * @return callable
-     * @since  1.0.3
-     */
-    protected function buildPlaceholderResolver(int $contextType): callable
-    {
-        return static fn(object $recipient): array
-            => MailService::buildCommonPlaceholders($recipient->learner);
-    }
 
     // =========================================================================
     // Constructor & state
@@ -217,16 +199,19 @@ abstract class MailCampaignsModel extends ListModel
         $db             = $this->getDatabase();
         $mailService    = $this->getMailService();
         $tableCampaigns = $mailService->getTableCampaigns();
+		$tableTemplates = $mailService->getTableTemplates();
 
         $query = $db->getQuery(true)
             ->from($db->quoteName($tableCampaigns, 'mc'))
             ->leftJoin(
-                $db->quoteName('#__users', 'u') .
-                ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('mc.created_by')
+                $db->quoteName('#__users', 'u'),
+                $db->quoteName('u.id') . ' = ' . $db->quoteName('mc.created_by')
             )
+	        ->leftJoin($db->quoteName($tableTemplates, 'mt'), 'mt.id = ' . $db->quoteName('mc.template_id'))
             ->select([
                 $db->quoteName('mc.id'),
-                $db->quoteName('mc.template_id'),
+	            $db->quoteName('mc.template_id'),
+	            $db->quoteName('mt.title','template_title'),
                 $db->quoteName('mc.context_type'),
                 $db->quoteName('mc.context_id'),
                 $db->quoteName('mc.recipient_filter'),
@@ -429,7 +414,7 @@ abstract class MailCampaignsModel extends ListModel
 
         $query = $db->getQuery(true)
             ->select([
-                $db->quoteName('mc.*'),
+	            'mc.*',
                 $db->quoteName('u.name',     'creator_name'),
                 $db->quoteName('u.username', 'creator_username'),
                 $db->quoteName('t.title',    'template_title'),
@@ -532,16 +517,12 @@ abstract class MailCampaignsModel extends ListModel
             throw new Exception('Không có người nhận nào phù hợp với ngữ cảnh đã chọn.');
         }
 
-        // 4. Lấy placeholder resolver (lớp con thực hiện)
-        $placeholderResolver = $this->buildPlaceholderResolver($contextType);
-
         // 5. Build queue — tự cập nhật total_count và status cho campaign
         $mailService->buildQueue(
             $campaignId,
             $template->subject,
             $template->body,
-            $recipients,
-            $placeholderResolver
+            $recipients
         );
 
         return $campaignId;

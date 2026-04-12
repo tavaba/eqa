@@ -144,33 +144,30 @@ abstract class DatetimeHelper
         $date = new Date($datetimeString);
         return $date->format('l',true);
     }
-    public static function getHourAndMinute(string $datetimeString):string
+    public static function getHourAndMinute(string $datetimeString, string $format='H:i'):string
     {
         $datetime = new DateTime($datetimeString);
-        return $datetime->format('H') . ':' . $datetime->format('i');
+        return $datetime->format($format);
     }
-	public static function getDayAndMonth(string $datetimeString):string
+	public static function getDayAndMonth(string $datetimeString, string $format='d/m'):string
 	{
 		$datetime = new DateTime($datetimeString);
-		return $datetime->format('d') . '/' . $datetime->format('m') ;
+		return $datetime->format($format) ;
 	}
-	public static function getDayAndTime(string $datetimeString):string
+	public static function getDayAndTime(string $datetimeString, string $format='d/m - H:i'):string
 	{
 		$datetime = new DateTime($datetimeString);
-		$res = $datetime->format('d') . '/' . $datetime->format('m');
-		$res .= '-';
-		$res .= $datetime->format('H') . ':' . $datetime->format('i');
-		return $res;
+		return $datetime->format($format);
 	}
     public static function getYear(string $datetimeString):int
     {
         $datetime = new DateTime($datetimeString);
         return intval($datetime->format('Y'));
     }
-    public static function getFullDate(string $datetimeString):string
+    public static function getFullDate(string $datetimeString, string $format='d/m/Y'):string
     {
         $datetime = new DateTime($datetimeString);
-        return $datetime->format('d') . '/' . $datetime->format('m') . '/' . $datetime->format('Y');
+	    return $datetime->format($format);
     }
 	public static function isValidDate($date, $format = 'Y-m-d'): bool
 	{

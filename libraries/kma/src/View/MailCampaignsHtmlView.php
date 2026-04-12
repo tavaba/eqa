@@ -132,7 +132,7 @@ abstract class MailCampaignsHtmlView extends ItemsHtmlView
      */
     protected function getCancelTaskName(): string
     {
-        return 'mailcampaign.cancelCampaign';
+        return 'mailcampaigns.cancelCampaign';
     }
 
     // =========================================================================

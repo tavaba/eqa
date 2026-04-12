@@ -12,7 +12,13 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Enum\MailContextType;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
+use Kma\Component\Eqa\Administrator\Enum\SpecialMark;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
+use Kma\Library\Kma\Enum\MailRecipientType;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Model\MailCampaignsModel as BaseMailCampaignModel;
 use Kma\Library\Kma\Service\MailService;
 
@@ -30,10 +36,12 @@ use Kma\Library\Kma\Service\MailService;
  */
 class MailCampaignsModel extends BaseMailCampaignModel
 {
-    // =========================================================================
-    // Abstract override — bắt buộc
-    // =========================================================================
-
+	private const string TAG_SPAN_BADGE_DANGER = '<span style="display: inline-block; padding: 4px 8px; 
+			font-size: 12px; font-weight: 600; line-height: 1; color: #ffffff;
+    		background-color: #dc3545; border-radius: 4px; white-space: nowrap;">';
+	private const string TAG_SPAN_BADGE_SUCCESS = '<span style="display: inline-block; padding: 4px 8px;
+    		font-size: 12px; font-weight: 600; line-height: 1; color: #ffffff;
+    		background-color: #198754; border-radius: 4px; white-space: nowrap;">';
     /**
      * Lấy MailService đã được đăng ký trong DI Container của com_eqa.
      *
@@ -42,7 +50,7 @@ class MailCampaignsModel extends BaseMailCampaignModel
      */
     protected function getMailService(): MailService
     {
-        return Factory::getContainer()->get(MailService::class);
+        return ComponentHelper::getMailService();
     }
 
     // =========================================================================
@@ -119,47 +127,6 @@ class MailCampaignsModel extends BaseMailCampaignModel
         };
     }
 
-    // =========================================================================
-    // Overridable — placeholder resolver theo context type
-    // =========================================================================
-
-    /**
-     * Trả về callback resolver placeholder phù hợp với context type.
-     *
-     * @param  int  $contextType
-     *
-     * @return callable  fn(object $recipient): array<string, string>
-     * @since  2.0.9
-     */
-    protected function buildPlaceholderResolver(int $contextType): callable
-    {
-        $type = MailContextType::tryFrom($contextType);
-
-        return match ($type) {
-            MailContextType::Exam => static function (object $r): array {
-                return array_merge(
-                    MailService::buildCommonPlaceholders($r->learner),
-                    [
-                        '{exam_name}' => $r->exam_name  ?? '',
-                        '{exam_date}' => $r->exam_date  ?? '',
-                        '{exam_time}' => $r->exam_time  ?? '',
-                        '{room_name}' => $r->room_name  ?? '',
-                    ]
-                );
-            },
-            MailContextType::ExamSeason => static function (object $r): array {
-                return array_merge(
-                    MailService::buildCommonPlaceholders($r->learner),
-                    [
-                        '{examseason_name}' => $r->examseason_name ?? '',
-                    ]
-                );
-            },
-            // Group, Course, Manual: chỉ cần common placeholders
-            default => static fn(object $r): array
-                => MailService::buildCommonPlaceholders($r->learner),
-        };
-    }
 
     // =========================================================================
     // Private — resolve recipients theo từng context type
@@ -181,41 +148,37 @@ class MailCampaignsModel extends BaseMailCampaignModel
      */
     private function resolveExamRecipients(int $examId, ?string $recipientFilter): array
     {
-        $db     = $this->getDatabase();
+        $db     = DatabaseHelper::getDatabaseDriver();
+		$mailService = $this->getMailService();
         $filter = $recipientFilter !== null ? json_decode($recipientFilter, true) : [];
 
         $query = $db->getQuery(true)
             ->select([
-                $db->quoteName('lr.id',         'learner_id'),
-                $db->quoteName('lr.code',        'learner_code'),
-                $db->quoteName('lr.lastname'),
-                $db->quoteName('lr.firstname'),
-                $db->quoteName('ex.name',        'exam_name'),
-                $db->quoteName('es.start',       'exam_start'),  // UTC DATETIME
-                $db->quoteName('rm.name',        'room_name'),
+                $db->quoteName('lr.id',         'id'),
+	            $db->quoteName('lr.lastname',   'lastname'),
+	            $db->quoteName('lr.firstname',  'firstname'),
+	            $db->quoteName('lr.code',       'learner_code'),
+	            $db->quoteName('ex.code',       'exam_code'),
+	            $db->quoteName('ex.name',       'exam_name'),
+	            $db->quoteName('el.debtor',     'is_debtor'),
+	            $db->quoteName('cl.allowed',    'allowed'),
+	            $db->quoteName('cl.pam',        'pam'),
+	            $db->quoteName('ex.name',       'exam_name'),
+	            $db->quoteName('st.type',       'stimulation_type'),
+	            $db->quoteName('st.value',      'stimulation_value'),
+	            $db->quoteName('es.name',       'examsession_name'),  // UTC DATETIME
+	            $db->quoteName('es.start',      'examsession_start'),  // UTC DATETIME
+	            $db->quoteName('er.name',       'examroom_name'),
+	            $db->quoteName('el.code',       'examinee_code'),
             ])
-            ->from($db->quoteName('#__eqa_exam_learner', 'el'))
-            ->leftJoin(
-                $db->quoteName('#__eqa_learners', 'lr') .
-                ' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('el.learner_id')
-            )
-            ->leftJoin(
-                $db->quoteName('#__eqa_exams', 'ex') .
-                ' ON ' . $db->quoteName('ex.id') . ' = ' . $db->quoteName('el.exam_id')
-            )
-            ->leftJoin(
-                $db->quoteName('#__eqa_examrooms', 'er') .
-                ' ON ' . $db->quoteName('er.id') . ' = ' . $db->quoteName('el.examroom_id')
-            )
-            ->leftJoin(
-                $db->quoteName('#__eqa_examsessions', 'es') .
-                ' ON ' . $db->quoteName('es.id') . ' = ' . $db->quoteName('er.examsession_id')
-            )
-            ->leftJoin(
-                $db->quoteName('#__eqa_rooms', 'rm') .
-                ' ON ' . $db->quoteName('rm.id') . ' = ' . $db->quoteName('er.room_id')
-            )
-            ->where($db->quoteName('el.exam_id') . ' = ' . (int) $examId);
+            ->from('#__eqa_exam_learner AS el')
+	        ->leftJoin('#__eqa_class_learner AS cl', 'cl.learner_id = el.learner_id AND cl.class_id=el.class_id')
+	        ->leftJoin('#__eqa_learners AS lr', 'lr.id = el.learner_id')
+            ->leftJoin('#__eqa_exams AS ex', 'ex.id = el.exam_id')
+            ->leftJoin('#__eqa_examrooms AS er', 'er.id = el.examroom_id')
+            ->leftJoin('#__eqa_examsessions AS es', 'es.id = er.examsession_id')
+	        ->leftJoin('#__eqa_stimulations AS st', 'st.id = el.stimulation_id')
+            ->where('el.exam_id = ' . $examId);
 
         // Áp dụng filter bổ sung từ recipientFilter JSON
         if (!empty($filter['has_room'])) {
@@ -223,34 +186,59 @@ class MailCampaignsModel extends BaseMailCampaignModel
         }
 
         $db->setQuery($query);
-        $rows = $db->loadObjectList();
+        $recipients = $db->loadObjectList();
 
-        // Chuyển sang cấu trúc $recipient->learner + context data
-        $recipients = [];
-        foreach ($rows as $row) {
-            $learner            = new \stdClass();
-            $learner->id        = (int) $row->learner_id;
-            $learner->code      = $row->learner_code;
-            $learner->lastname  = $row->lastname;
-            $learner->firstname = $row->firstname;
+        // Bổ sung thêm các thuộc tính còn thiếu:
+	    // Thuộc tính buộc phải có: type, email,
+	    // Thuộc tính cho placeholder: fullname, examsession, allowed_to_exam
+        foreach ($recipients as &$recipient) {
+			$recipient->type = MailRecipientType::Learner->value;
+			$recipient->email = $mailService->resolveLearnerEmail($recipient->learner_code);
+			$recipient->fullname = implode(' ', [$recipient->lastname, $recipient->firstname]);
 
-            $recipient            = new \stdClass();
-            $recipient->learner   = $learner;
-            $recipient->exam_name = $row->exam_name ?? '';
+			//TODO: Remove this line for production environment
+	        $recipient->email = 'testkt02@actvn.edu.vn';
 
-            // exam_start lưu UTC → convert sang Local Time cho placeholder hiển thị
-            if (!empty($row->exam_start)) {
-                $recipient->exam_date = \Kma\Library\Kma\Helper\DatetimeHelper::getFullDate($row->exam_start);
-                $recipient->exam_time = \Kma\Library\Kma\Helper\DatetimeHelper::getHourAndMinute($row->exam_start);
-            }
-            else {
-                $recipient->exam_date = '';
-                $recipient->exam_time = '';
-            }
+	        $allowed = $recipient->allowed && !$recipient->is_debtor;
+	        if($recipient->stimulation_type == StimulationHelper::TYPE_TRANS)
+			{
+				$recipient->allowed_to_exam = self::TAG_SPAN_BADGE_SUCCESS . 'QUY ĐỔI ĐIỂM</span>'
+					. ' (' . $recipient->stimulation_value . ' điểm)';
+				$recipient->examsession = '';
+			}
+			elseif($allowed && $recipient->stimulation_type == StimulationHelper::TYPE_EXEMPT)
+			{
+				$recipient->allowed_to_exam = self::TAG_SPAN_BADGE_SUCCESS . 'MIỄN THI</span>'
+					. ' (' . $recipient->stimulation_value . ' điểm)';
+				$recipient->examsession = '';
+			}
+			elseif($allowed)
+	        {
+		        $recipient->allowed_to_exam = self::TAG_SPAN_BADGE_SUCCESS . 'ĐƯỢC THI</span>';
 
-            $recipient->room_name = $row->room_name ?? '';
-            $recipients[]         = $recipient;
-        }
+		        //examsession
+		        $startTime = DatetimeHelper::convertToLocalTime($recipient->examsession_start);
+		        $recipient->examsession = sprintf("%s (%s ngày %s)",
+			        $recipient->examsession_name,
+			        DatetimeHelper::getHourAndMinute($startTime),
+			        DatetimeHelper::getFullDate($startTime)
+		        );
+	        }
+			else
+			{
+				//allowed_to_exam
+				$reasonPam = $recipient->pam<0 ? SpecialMark::from($recipient->pam)->getLabel() : null;
+				$reasonDebt = $recipient->is_debtor ? 'Nợ phí' : null;
+				$reasons = [$reasonPam, $reasonDebt];
+				$reasons = array_filter($reasons);
+				$reasons = implode(', ', $reasons);
+				$recipient->allowed_to_exam = self::TAG_SPAN_BADGE_DANGER . 'KHÔNG ĐƯỢC THI</span>';
+				$recipient->allowed_to_exam .= ' (' . $reasons . ')';
+
+				//examsession
+				$recipient->examsession = '';
+			}
+		}
 
         return $recipients;
     }

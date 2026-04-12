@@ -14,11 +14,14 @@ defined('_JEXEC' or die());
 use Joomla\CMS\MVC\Controller\BaseController;
 use Kma\Component\Eqa\Administrator\Model\GroupModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Service\MailService;
 
 class TestController extends BaseController
 {
 	public function test()
 	{
+		$now = DatetimeHelper::getCurrentTime();
+		echo DatetimeHelper::getHourAndMinute($now);
 	}
 }
