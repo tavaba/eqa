@@ -291,11 +291,13 @@ abstract class MailCampaignsController extends AdminController
 
         try {
             $this->checkSendMailPermission();
-
-            $campaignId = $this->input->getInt('campaign_id');
-            if ($campaignId <= 0) {
-                throw new Exception('Không xác định được campaign_id.');
-            }
+			$cid = $this->input->get('cid', []);
+			$cid = array_filter($cid);
+			if(count($cid) === 0)
+				throw new Exception('Không có chiến dịch nào được chọn');
+			if(count($cid) > 1)
+				throw new Exception('Mỗi lần chỉ được chọn 1 chiến dịch');
+            $campaignId = $cid[0];
 
             $model = $this->getMailCampaignModel();
             $model->cancelCampaign($campaignId);

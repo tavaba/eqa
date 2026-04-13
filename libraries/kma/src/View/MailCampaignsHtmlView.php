@@ -150,6 +150,7 @@ abstract class MailCampaignsHtmlView extends ItemsHtmlView
         $fields = new ListLayoutItemFields();
 
         $fields->sequence        = ListLayoutItemFields::defaultFieldSequence();
+		$fields->check = ListLayoutItemFields::defaultFieldCheck();
         $fields->customFieldset1 = [];
 
         // Thời gian tạo (UTC → Local Time sau preprocessing)
@@ -319,8 +320,7 @@ abstract class MailCampaignsHtmlView extends ItemsHtmlView
         }
 
         $item->actions_html =
-            '<a href="' . $logUrl . '" class="btn btn-sm btn-outline-secondary">Xem log</a>'
-            . $cancelButton;
+            '<a href="' . $logUrl . '" class="btn btn-sm btn-outline-secondary">Xem log</a>';
     }
 
     // =========================================================================
@@ -337,9 +337,85 @@ abstract class MailCampaignsHtmlView extends ItemsHtmlView
     {
         ToolbarHelper::title($this->getViewTitle());
         ToolbarHelper::appendGoHome();
+		ToolbarHelper::appendConfirmButton('Bạn có chắc muốn hủy chiến dịch?',
+			'ban-circle',
+			'Hủy chiến dịch',
+			 $this->getCancelTaskName(),
+			true,
+			'btn btn-danger'
+		);
     }
 
-    // =========================================================================
+	// =========================================================================
+	// Layout: selecttemplate — Luồng B (nhiều template)
+	// =========================================================================
+
+	/**
+	 * Chuẩn bị dữ liệu cho layout selecttemplate.
+	 *
+	 * Được gọi khi notify() phát hiện có nhiều template phù hợp với context_type.
+	 * Người dùng chọn một template rồi POST về task mailcampaigns.create.
+	 *
+	 * Request params (GET):
+	 *   - context_type (int)    : giá trị context type enum
+	 *   - context_id   (int)    : ID đối tượng ngữ cảnh
+	 *   - return       (string) : URL base64-encoded để redirect về sau khi xong
+	 *
+	 * @throws Exception
+	 * @since  1.0.3
+	 */
+	protected function prepareDataForLayoutSelecttemplate(): void
+	{
+		// 1. Kiểm tra quyền
+		$user = Factory::getApplication()->getIdentity();
+		if (!$user->authorise($this->getRequiredPermission(), ComponentHelper::getName())) {
+			throw new Exception('Bạn không có quyền thực hiện chức năng này.', 403);
+		}
+
+		// 2. Lấy params từ request
+		$app         = Factory::getApplication();
+		$contextType = $app->input->getInt('context_type');
+		$contextId   = $app->input->getInt('context_id');
+		$returnB64   = $app->input->getBase64('return', '');
+
+		if ($contextType <= 0 || $contextId <= 0) {
+			throw new Exception('Tham số không hợp lệ (context_type hoặc context_id bị thiếu).');
+		}
+
+		// 3. Lấy danh sách template phù hợp
+		/** @var MailCampaignsModel $model */
+		$model     = $this->getModel();
+		$templates = $model->getTemplatesByContextType($contextType);
+
+		if (empty($templates)) {
+			throw new Exception('Không có template email nào phù hợp với ngữ cảnh này.');
+		}
+
+		// 4. Gán vào layoutData để template PHP sử dụng
+		$this->layoutDataX              = new \stdClass();
+		$this->layoutDataX->templates   = $templates;
+		$this->layoutDataX->contextType = $contextType;
+		$this->layoutDataX->contextId   = $contextId;
+		$this->layoutDataX->returnB64   = $returnB64;
+
+		// 5. Nhãn ngữ cảnh (dùng abstract method của lớp con)
+		$this->layoutDataX->contextTypeLabel = $this->getContextTypeLabel($contextType);
+	}
+
+	/**
+	 * Toolbar cho layout selecttemplate.
+	 * Lớp con có thể override để dùng ToolbarHelper riêng của component.
+	 *
+	 * @since 1.0.3
+	 */
+	protected function addToolbarForLayoutSelecttemplate(): void
+	{
+		ToolbarHelper::title('Chọn mẫu email thông báo');
+		ToolbarHelper::appendGoHome();
+	}
+
+
+	// =========================================================================
     // Layout: log — delivery log của một campaign
     // =========================================================================
 

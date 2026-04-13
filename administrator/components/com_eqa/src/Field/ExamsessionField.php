@@ -7,6 +7,7 @@ use Joomla\CMS\Date\Date;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Kma\Library\Kma\Helper\DatabaseHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 
 /**
  * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
@@ -45,12 +46,10 @@ class ExamsessionField extends ListField
         $options = parent::getOptions();
         foreach ($items as $item)
         {
-            $datetime = new DateTime($item->start);
-            $date = new Date($item->start);
-            $dayofweek = $date->format('l',true);
-            $dayofmonth = $datetime->format('d') . '/' . $datetime->format('m');
-            $time = $datetime->format('H') . ':' . $datetime->format('i');
-            $option = $dayofweek . ' (' . $dayofmonth . ' ' . $time . ') - ' . $item->name;
+			$time = DatetimeHelper::convertToLocalTime($item->start);
+			$dayofweek = DatetimeHelper::getDayOfWeek($time);
+			$dayAndTime = DatetimeHelper::getDayAndTime($time);
+            $option = $dayofweek . ' (' . $dayAndTime . ') - ' . $item->name;
             $options[] = HTMLHelper::_('select.option', $item->id, $option);
         }
         return $options;

@@ -12,6 +12,7 @@ use Kma\Component\Eqa\Administrator\DataObject\CreditClassLearnerObject;
 use Kma\Component\Eqa\Administrator\DataObject\CreditClassObject;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
+use Kma\Component\Eqa\Administrator\Model\ClassModel;
 use Kma\Component\Eqa\Administrator\Service\CreditClassNameParser;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -593,7 +594,10 @@ class ClassesController extends AdminController
 				throw new Exception('No class ID found');
 
 
-			//Load model
+			/**
+			 * Load model
+			 * @var ClassModel $model
+			 */
 			$model = $this->getModel();
 
 			//Prepare a spreadsheet

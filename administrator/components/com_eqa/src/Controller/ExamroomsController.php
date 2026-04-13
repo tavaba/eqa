@@ -31,7 +31,10 @@ class ExamroomsController extends AdminController {
 
         $examroomIds = (array) $this->input->get('cid', [], 'int');
 
-        // Prepare the spreadsheet
+	    /**
+	     * Prepare the spreadsheet
+	     * @var ExamroomModel $model
+	     */
 	    $model = $this->getModel();
         $spreadsheet = new Spreadsheet();
         $spreadsheet->removeSheetByIndex(0);

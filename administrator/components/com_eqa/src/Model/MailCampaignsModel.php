@@ -36,12 +36,30 @@ use Kma\Library\Kma\Service\MailService;
  */
 class MailCampaignsModel extends BaseMailCampaignModel
 {
-	private const string TAG_SPAN_BADGE_DANGER = '<span style="display: inline-block; padding: 4px 8px; 
+	private const string TAG_SPAN_BADGE_PRIMARY = '<span style="display: inline-block; padding: 4px 8px; 
 			font-size: 12px; font-weight: 600; line-height: 1; color: #ffffff;
-    		background-color: #dc3545; border-radius: 4px; white-space: nowrap;">';
+    		background-color: #0d6efd; border-radius: 4px; white-space: nowrap;">';
+	private const string TAG_SPAN_BADGE_INFO = '<span style="display: inline-block; padding: 4px 8px; 
+			font-size: 12px; font-weight: 600; line-height: 1; color: #000000;
+    		background-color: #0dcaf0; border-radius: 4px; white-space: nowrap;">';
 	private const string TAG_SPAN_BADGE_SUCCESS = '<span style="display: inline-block; padding: 4px 8px;
     		font-size: 12px; font-weight: 600; line-height: 1; color: #ffffff;
     		background-color: #198754; border-radius: 4px; white-space: nowrap;">';
+	private const string TAG_SPAN_BADGE_WARNING = '<span style="display: inline-block; padding: 4px 8px;
+    		font-size: 12px; font-weight: 600; line-height: 1; color: #000000;
+    		background-color: #ffc107; border-radius: 4px; white-space: nowrap;">';
+	private const string TAG_SPAN_BADGE_DANGER = '<span style="display: inline-block; padding: 4px 8px; 
+			font-size: 12px; font-weight: 600; line-height: 1; color: #ffffff;
+    		background-color: #dc3545; border-radius: 4px; white-space: nowrap;">';
+	private const string TAG_SPAN_BADGE_SECONDARY = '<span style="display: inline-block; padding: 4px 8px; 
+			font-size: 12px; font-weight: 600; line-height: 1; color: #ffffff;
+    		background-color: #6c757d; border-radius: 4px; white-space: nowrap;">';
+	private const string TAG_SPAN_BADGE_DARK = '<span style="display: inline-block; padding: 4px 8px; 
+			font-size: 12px; font-weight: 600; line-height: 1; color: #ffffff;
+    		background-color: #212529; border-radius: 4px; white-space: nowrap;">';
+	private const string TAG_SPAN_BADGE_LIGHT = '<span style="display: inline-block; padding: 4px 8px; 
+			font-size: 12px; font-weight: 600; line-height: 1; color: #000000;
+    		background-color: #f8f9fa; border-radius: 4px; white-space: nowrap;">';
     /**
      * Lấy MailService đã được đăng ký trong DI Container của com_eqa.
      *
@@ -217,12 +235,17 @@ class MailCampaignsModel extends BaseMailCampaignModel
 		        $recipient->allowed_to_exam = self::TAG_SPAN_BADGE_SUCCESS . 'ĐƯỢC THI</span>';
 
 		        //examsession
-		        $startTime = DatetimeHelper::convertToLocalTime($recipient->examsession_start);
-		        $recipient->examsession = sprintf("%s (%s ngày %s)",
-			        $recipient->examsession_name,
-			        DatetimeHelper::getHourAndMinute($startTime),
-			        DatetimeHelper::getFullDate($startTime)
-		        );
+		        if($recipient->examsession_start)
+		        {
+			        $startTime              = DatetimeHelper::convertToLocalTime($recipient->examsession_start);
+			        $recipient->examsession = sprintf("%s (%s ngày %s)",
+				        $recipient->examsession_name,
+				        DatetimeHelper::getHourAndMinute($startTime),
+				        DatetimeHelper::getFullDate($startTime)
+			        );
+		        }
+				else
+					$recipient->examsession = '';
 	        }
 			else
 			{

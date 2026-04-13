@@ -303,7 +303,7 @@ abstract class IOHelper extends BaseIOHelper
 		$sheet->getStyle([1, $row, $COLS, $row])->getFont()->setBold(true);
 		$row++;
 		$sheet->mergeCells([1, $row, $COLS, $row]);
-		$value = 'Năm học ' . $examroom->academicyear . '.  Học kỳ ' . $examroom->term;
+		$value = 'Năm học ' . DatetimeHelper::decodeAcademicYear($examroom->academicyear) . '.  Học kỳ ' . $examroom->term;
 		$sheet->setCellValue([1, $row],$value);
 		$sheet->getStyle([1, $row, $COLS, $row])->getFont()->setBold(true);
 

@@ -1894,6 +1894,42 @@ class ExamModel extends AdminModel{
 	}
 
 	/**
+	 * Kiểm tra xem việc chia phòng thi (và đánh số báo danh) đã hoàn tất chưa.
+	 * @param   int  $examId
+	 *
+	 * @return bool
+	 *
+	 * @since 2.0.8
+	 */
+	public function isRoomDistributionCompleted(int $examId):bool
+	{
+		/*
+		 * ĐIỀU KIỆN ĐỂ ĐƯỢC COI LÀ HOÀN TẤT:
+		 * Không có thí sinh nào mà đồng thời thỏa mãn các điều kiện sau:
+		 * - Được thi: allowed = true
+		 * - Không nợ phí: debtor = false
+		 * - Không được miễn thi: stimulation_type <> exempt
+		 * - Mà chưa được chia phòng: examroom_id = NULL
+		 */
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('1')
+			->from('#__eqa_exam_learner AS el')
+			->leftJoin('#__eqa_class_learner AS cl', 'cl.class_id=el.class_id AND cl.learner_id=el.learner_id')
+			->innerJoin('#__eqa_stimulations AS s','s.id = el.stimulation_id')
+			->where([
+				'el.exam_id='.$examId,
+				'cl.allowed=1',
+				'el.debtor=0',
+				's.type <> ' . StimulationHelper::TYPE_EXEMPT,
+				'el.examroom_id IS NULL'
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+		return !$db->loadResult();
+	}
+
+	/**
 	 * Tính toán điểm học phần và kết luận kết quả học phần cho tất cả thí sinh
 	 * của một môn thi. Method này có thể được gọi sau khi điểm thi đã được cập nhật
 	 * hoặc sau bất kỳ thay đổi nào liên quan đến thí sinh.
