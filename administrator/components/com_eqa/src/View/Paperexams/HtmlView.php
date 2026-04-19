@@ -46,7 +46,8 @@ class HtmlView extends ItemsHtmlView
         //Load additional data
         $model = $this->getModel();
         $examseasonId = $model->getState('filter.examseason_id');
-        $this->examseason = DatabaseHelper::getExamseasonInfo($examseasonId);    //Maybe null
+		if(is_numeric($examseasonId))
+			$this->examseason = DatabaseHelper::getExamseasonInfo((int)$examseasonId);    //Maybe null
         if(!empty($this->examseason)) {
             $this->layoutData->formHiddenFields['examseason_id'] = $this->examseason->id;  //Được sử dụng trong trường hợp người dùng chọn 'Thêm môn thi từ lớp học phần'
         }

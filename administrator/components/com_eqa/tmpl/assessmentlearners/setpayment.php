@@ -67,7 +67,7 @@ $feeLabel = (int) $item->payment_amount > 0
         <!-- Form cập nhật -->
         <?php
         ViewHelper::printForm(
-            $this->form,
+            $this->setPaymentForm,
             'setassessmentpayment',
             [
                 'task'          => 'assessmentlearners.savePaymentInfo',

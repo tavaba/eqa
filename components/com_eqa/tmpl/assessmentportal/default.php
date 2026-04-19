@@ -47,29 +47,84 @@ if ($this->errorMessage !== null): ?>
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 $renderResult = static function (object $a): string {
-    $resultTypeEnum = AssessmentResultType::tryFrom((int) $a->result_type);
-    $reg            = $a->registrationRecord;
+	$resultTypeEnum = AssessmentResultType::tryFrom((int) $a->result_type);
+	$reg            = $a->registrationRecord;
 
-    if ($reg === null || $reg->passed === null) {
-        return '<span class="badge bg-secondary">Chưa có kết quả</span>';
-    }
+	if ($reg === null || $reg->passed === null) {
+		return '<span class="text-muted fst-italic">Chưa có kết quả</span>';
+	}
 
-    $parts = [];
-    if (in_array($resultTypeEnum, [AssessmentResultType::Score, AssessmentResultType::ScoreAndLevel], true)
-        && $reg->score !== null) {
-        $parts[] = 'Điểm: <strong>' . number_format((float) $reg->score, 2) . '</strong>';
-    }
-    if (in_array($resultTypeEnum, [AssessmentResultType::Level, AssessmentResultType::ScoreAndLevel], true)
-        && $reg->level !== null) {
-        $levelEnum = AssessmentResultLevel::tryFrom((int) $reg->level);
-        $parts[]   = 'Bậc: <strong>' . ($levelEnum?->getLabel() ?? '—') . '</strong>';
-    }
-    $passedBadge = $reg->passed
-        ? '<span class="badge bg-success">Đạt</span>'
-        : '<span class="badge bg-danger">Không đạt</span>';
-    return ($parts ? implode(' &nbsp; ', $parts) . ' &nbsp; ' : '') . $passedBadge;
+	// ── Badge kết quả chính ──────────────────────────────────────────────
+	if ($reg->passed) {
+		return '<span class="text-muted small me-1">Kết quả:</span>'
+			. '<span class="badge bg-success fs-6">'
+			. '<span class="icon-check me-1" aria-hidden="true"></span>Đạt'
+			. '</span>';
+	}
+
+	// ── Không đạt: badge + chi tiết điểm thành phần ─────────────────────
+	$html  = '<span class="text-muted small me-1">Kết quả:</span>';
+	$html .= '<span class="badge bg-danger fs-6">'
+		. '<span class="icon-times me-1" aria-hidden="true"></span>Không đạt'
+		. '</span>';
+
+	// Điểm chính (score / level) — hiển thị inline dưới badge
+	$summaryParts = [];
+	if (in_array($resultTypeEnum, [AssessmentResultType::Score, AssessmentResultType::ScoreAndLevel], true)
+		&& $reg->score !== null) {
+		$summaryParts[] = 'Điểm: <strong>' . number_format((float) $reg->score, 2) . '</strong>';
+	}
+	if (in_array($resultTypeEnum, [AssessmentResultType::Level, AssessmentResultType::ScoreAndLevel], true)
+		&& $reg->level !== null) {
+		$levelEnum      = AssessmentResultLevel::tryFrom((int) $reg->level);
+		$summaryParts[] = 'Bậc: <strong>' . ($levelEnum?->getLabel() ?? '—') . '</strong>';
+	}
+	if ($summaryParts) {
+		$html .= '<div class="mt-1 small">' . implode(' &nbsp;·&nbsp; ', $summaryParts) . '</div>';
+	}
+
+	// Chi tiết từ raw_result (JSON)
+	$rawResult = [];
+	if (!empty($reg->raw_result)) {
+		$decoded = json_decode($reg->raw_result, true);
+		if (is_array($decoded) && !empty($decoded)) {
+			$rawResult = $decoded;
+		}
+	}
+
+	if (!empty($rawResult)) {
+		// Map key kỹ thuật → nhãn tiếng Việt thân thiện
+		$keyLabels = [
+			'listening' => 'Nghe',
+			'reading'   => 'Đọc',
+			'writing'   => 'Viết',
+			'speaking'  => 'Nói',
+			'grammar'   => 'Ngữ pháp',
+			'vocabulary' => 'Từ vựng',
+			'total'     => 'Tổng điểm',
+			'score'     => 'Điểm',
+			'level'     => 'Bậc',
+			'part1'     => 'Phần 1',
+			'part2'     => 'Phần 2',
+			'part3'     => 'Phần 3',
+			'part4'     => 'Phần 4',
+		];
+
+		$html .= '<div class="mt-2 p-2 bg-light rounded border small">';
+		$html .= '<div class="text-muted mb-1"><em>Chi tiết điểm các thành phần:</em></div>';
+		$html .= '<table class="table table-sm table-borderless mb-0">';
+		foreach ($rawResult as $key => $value) {
+			$label = $keyLabels[$key] ?? htmlspecialchars($key);
+			$html .= '<tr>'
+				. '<td class="py-0 text-muted pe-3" style="width:1%;white-space:nowrap">' . $label . '</td>'
+				. '<td class="py-0 fw-semibold">' . htmlspecialchars((string) $value) . '</td>'
+				. '</tr>';
+		}
+		$html .= '</table></div>';
+	}
+
+	return $html;
 };
-
 $fmtDt = static fn(?string $utcDt): string =>
     $utcDt ? DatetimeHelper::convertToLocalTime($utcDt, null, 'd/m/Y H:i') : '—';
 $fmtD  = static fn(?string $d): string =>
@@ -451,11 +506,6 @@ foreach ($app->getMessageQueue(true) as $msg): ?>
                             </dd>
                         </dl>
                         <div><?php echo $renderResult($a); ?></div>
-                        <?php if ($reg !== null && !empty($reg->note)): ?>
-                            <p class="text-muted small mt-2 mb-0">
-                                <em><?php echo htmlspecialchars($reg->note); ?></em>
-                            </p>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>

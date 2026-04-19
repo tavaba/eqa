@@ -4,6 +4,7 @@ namespace Kma\Component\Eqa\Administrator\View\Assessments;
 
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\AssessmentResultType;
 use Kma\Component\Eqa\Administrator\Enum\AssessmentType;
@@ -42,7 +43,12 @@ class HtmlView extends ItemsHtmlView
 		$fields->customFieldset1[] = new ListLayoutItemFieldOption('resultTypeLabel', 'Kiểu kết quả', false, false, 'text-center');
 		$fields->customFieldset1[] = new ListLayoutItemFieldOption('start_date', 'Bắt đầu', true, false, 'text-center');
 		$fields->customFieldset1[] = new ListLayoutItemFieldOption('end_date', 'Kết thúc', false, false, 'text-center');
-		$fields->customFieldset1[] = new ListLayoutItemFieldOption('feeFormatted', 'Phí (VNĐ)', false, false, 'text-end');
+
+		$user = Factory::getApplication()->getIdentity();
+		if($user->authorise('eqa.assessment.payment','com_eqa'))
+		{
+			$fields->customFieldset1[] = new ListLayoutItemFieldOption('feeFormatted', 'Phí (VNĐ)', false, false, 'text-end');
+		}
 
 		// Cột "Số TS" có link drill-down sang danh sách thí sinh
 		$f = new ListLayoutItemFieldOption('ncandidate', 'Số TS', false, false, 'text-center');

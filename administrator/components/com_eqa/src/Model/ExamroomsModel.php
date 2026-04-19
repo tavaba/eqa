@@ -4,11 +4,12 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Library\Kma\Helper\DatabaseHelper;
 
 class ExamroomsModel extends ListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('code','start','nexaminee','nanomaly');
+        $config['filter_fields']=array('code','start','nexaminee','nanomaly', 'exam_id');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'start', $direction = 'desc'): void
@@ -17,33 +18,51 @@ class ExamroomsModel extends ListModel{
     }
     public function getListQuery()
     {
-        $db = $this->getDatabase();
-	    $subQueryNumberOfExaminees = $db->getQuery(true)
+        $db = DatabaseHelper::getDatabaseDriver();
+	    $subQueryNumberOfExamExaminees = $db->getQuery(true)
 		    ->select('COUNT(1)')
 		    ->from('#__eqa_exam_learner AS z')
 		    ->where('z.examroom_id = a.id');
-	    $subQueryNumberOfAnomalies = $db->getQuery(true)
+	    $subQueryNumberOfExamAnomalies = $db->getQuery(true)
 		    ->select('COUNT(1)')
-		    ->from('#__eqa_exam_learner AS z')
-		    ->where('z.examroom_id = a.id AND z.anomaly <> 0');
-        $columns = $db->quoteName(
-            array('a.id', 'b.code', 'c.start', 'c.name',      'a.exam_ids'),
-            array('id',   'code',   'start',   'examsession', 'exam_ids')
-        );
+		    ->from('#__eqa_exam_learner AS y')
+		    ->where('y.examroom_id = a.id AND y.anomaly <> 0');
+	    $subQueryNumberOfAssessmentExaminees = $db->getQuery(true)
+		    ->select('COUNT(1)')
+		    ->from('#__eqa_assessment_learner AS x')
+		    ->where('x.examroom_id = a.id');
+	    $subQueryNumberOfAssessmentAnomalies = $db->getQuery(true)
+		    ->select('COUNT(1)')
+		    ->from('#__eqa_exam_learner AS w')
+		    ->where('w.examroom_id = a.id AND w.anomaly <> 0');
+		$columns = [
+			$db->quoteName('a.id',          'id'),
+			$db->quoteName('b.code',        'code'),
+			$db->quoteName('c.start',       'start'),
+			$db->quoteName('c.name',        'examsessionName'),
+			$db->quoteName('a.exam_ids',    'examIds'),
+			$db->quoteName('a.monitor1_id', 'monitor1Id'),
+			$db->quoteName('a.monitor2_id', 'monitor2Id'),
+			$db->quoteName('a.monitor3_id', 'monitor3Id'),
+			$db->quoteName('a.examiner1_id','examiner1Id'),
+			$db->quoteName('a.examiner2_id','examiner2Id'),
+			$db->quoteName('c.id',          'examsessionId'),
+			'(' . $subQueryNumberOfExamExaminees . ') AS nExamExaminee',
+			'(' . $subQueryNumberOfExamAnomalies . ') AS nExamAnomaly',
+			'(' . $subQueryNumberOfAssessmentExaminees . ') AS nAssessmentExaminee',
+			'(' . $subQueryNumberOfAssessmentAnomalies . ') AS nAssessmentAnomaly'
+		];
         $query =  $db->getQuery(true)
-            ->from('#__eqa_examrooms AS a')
-            ->leftJoin('#__eqa_rooms AS b', 'a.room_id=b.id')
-            ->leftJoin('#__eqa_examsessions AS c', 'a.examsession_id=c.id')
 	        ->select($columns)
-	        ->select('(' . $subQueryNumberOfExaminees . ') AS nexaminee')
-	        ->select('(' . $subQueryNumberOfAnomalies . ') AS nanomaly');
-            //->order($db->quoteName('start'). ' DESC');
+            ->from('#__eqa_examrooms AS a')
+            ->leftJoin('#__eqa_rooms AS b', 'b.id = a.room_id')
+            ->leftJoin('#__eqa_examsessions AS c', 'c.id = a.examsession_id');
 
         //Filtering
 	    $exam_id = $this->getState('filter.exam_id');
 		if(is_numeric($exam_id)){
 			$exam_id = $db->quote($exam_id);
-			$query->where('FIND_IN_SET(' . $exam_id . ', exam_ids) > 0');
+			$query->where('FIND_IN_SET(' . $exam_id . ', a.exam_ids) > 0');
 		}
 
         $examseasonId = $this->getState('filter.examseason_id');
@@ -68,7 +87,6 @@ class ExamroomsModel extends ListModel{
 
         return $query;
     }
-
 	public function getStoreId($id = '')
 	{
 		$id .= ':' . $this->getState('filter.search');

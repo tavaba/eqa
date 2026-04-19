@@ -505,6 +505,8 @@ class ClassesController extends AdminController
 		                    if($optionCompletePamCalculation){
 			                    if($pam1<0) //Special mark
 				                    $pam = $pam1;
+								elseif($pam2<0)
+									$pam = $pam2; //Special mark
 			                    else
 				                    $pam = ExamHelper::calculatePamForDefaultFormular($pam1, $pam2);
 		                    }

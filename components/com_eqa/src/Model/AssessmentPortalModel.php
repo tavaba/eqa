@@ -136,12 +136,17 @@ class AssessmentPortalModel extends BaseModel
 				$db->quoteName('al.payment_completed'),
 				$db->quoteName('al.cancelled'),
 				$db->quoteName('al.created_at'),
+				$db->quoteName('al.score'),
+				$db->quoteName('al.level'),
+				$db->quoteName('al.passed'),
+				$db->quoteName('al.note'),
+				$db->quoteName('al.raw_result'),
 			])
 			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
 			->where($db->quoteName('al.learner_id') . ' = ' . $learnerId)
 			->where($db->quoteName('al.assessment_id') . ' IN (' . $idList . ')');
 		$db->setQuery($query);
-		$registrations = $db->loadObjectList('assessment_id'); // map: assessment_id → record
+		$registrations = $db->loadObjectList('assessment_id');
 
 		// 4. Lấy số người đã hoàn thành nghĩa vụ nộp phí cho từng kỳ (để tính slot)
 		$query = $db->getQuery(true)

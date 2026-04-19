@@ -6,11 +6,15 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Library\Kma\BankStatement\BankStatementImportResult;
 use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\IOHelper;
 use Kma\Library\Kma\Helper\PaymentCodeHelper;
+use Kma\Library\Kma\Helper\ToeicHelper;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
  * Model danh sách thí sinh (người học) của một kỳ sát hạch.
@@ -27,7 +31,7 @@ class AssessmentLearnersModel extends ListModel
         $config['filter_fields'] = [
             'al.id', 'al.code', 'lr.code', 'lr.lastname', 'lr.firstname',
             'al.payment_completed', 'al.anomaly', 'al.passed', 'al.score', 'al.level',
-	        'al.cancelled', 'er.examsession_id'
+	        'al.cancelled', 'er.examsession_id', 'al.examroom_id'
         ];
         parent::__construct($config, $factory);
     }
@@ -50,10 +54,10 @@ class AssessmentLearnersModel extends ListModel
 	 */
 	public function getListQuery()
 	{
-		$assessmentId = (int) $this->getState('filter.assessment_id');
-		if ($assessmentId <= 0) {
-			throw new Exception('Không xác định được kỳ sát hạch (assessment_id chưa được set).');
-		}
+		$assessmentId = (int) $this->getState('filter.assessment_id',0);
+//		if ($assessmentId <= 0) {
+//			throw new Exception('Không xác định được kỳ sát hạch (assessment_id chưa được set).');
+//		}
 
 		$db = $this->getDatabase();
 
@@ -87,6 +91,7 @@ class AssessmentLearnersModel extends ListModel
 				$db->quoteName('al.payment_completed'),
 				$db->quoteName('al.anomaly'),
 				$db->quoteName('al.score'),
+				$db->quoteName('al.raw_result'),
 				$db->quoteName('al.level'),
 				$db->quoteName('al.passed'),
 				$db->quoteName('al.note'),
@@ -99,8 +104,9 @@ class AssessmentLearnersModel extends ListModel
 				$db->quoteName('rm.code',                'room_code'),
 				$db->quoteName('es.name',                'examsession_name'),
 				$db->quoteName('er.examsession_id',      'examsession_id'),
-			])
-			->where($db->quoteName('al.assessment_id') . ' = ' . $assessmentId);
+			]);
+		if($assessmentId>0)
+			$query->where($db->quoteName('al.assessment_id') . ' = ' . $assessmentId);
 
 		// ----- Filtering -----
 
@@ -132,7 +138,14 @@ class AssessmentLearnersModel extends ListModel
 
 		$passed = $this->getState('filter.passed');
 		if (is_numeric($passed)) {
-			$query->where($db->quoteName('al.passed') . ' = ' . (int) $passed);
+			$passed = intval($passed);
+			if($passed==0 || $passed==1)
+				$query->where($db->quoteName('al.passed') . ' = ' . (int) $passed);
+			else if($passed==2)
+				$query->where($db->quoteName('al.passed') . ' IS NOT NULL');
+			else
+				$query->where($db->quoteName('al.passed') . ' IS NULL');
+
 		}
 
 		$cancelled = $this->getState('filter.cancelled');
@@ -143,6 +156,12 @@ class AssessmentLearnersModel extends ListModel
 		$examsessionId = $this->getState('filter.examsession_id');
 		if (is_numeric($examsessionId) && (int) $examsessionId > 0) {
 			$query->where($db->quoteName('er.examsession_id') . ' = ' . (int) $examsessionId);
+		}
+
+		// Lọc theo phòng thi cụ thể (dùng cho layout assessmentexaminees của Examroom view)
+		$examroomId = $this->getState('filter.examroom_id');
+		if (is_numeric($examroomId) && (int) $examroomId > 0) {
+			$query->where($db->quoteName('al.examroom_id') . ' = ' . (int) $examroomId);
 		}
 
 		// ----- Ordering -----
@@ -167,6 +186,7 @@ class AssessmentLearnersModel extends ListModel
 		$id .= ':' . $this->getState('filter.passed');
 		$id .= ':' . $this->getState('filter.cancelled');
 		$id .= ':' . $this->getState('filter.examsession_id');
+		$id .= ':' . $this->getState('filter.examroom_id');
 		return parent::getStoreId($id);
 	}
 
@@ -278,6 +298,33 @@ class AssessmentLearnersModel extends ListModel
 
         return true;
     }
+
+	public function canUploadResult(int $assessmentId): bool
+	{
+		$db    = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select([$db->quoteName('completed'), $db->quoteName('end_date')])
+			->from($db->quoteName('#__eqa_assessments'))
+			->where($db->quoteName('id') . ' = ' . $assessmentId);
+		$db->setQuery($query);
+		$a = $db->loadObject();
+
+		if ($a === null) {
+			throw new Exception('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId);
+		}
+
+		if ((bool) $a->completed) {
+			return false;
+		}
+
+		// end_date là DATE (không có timezone)
+		$today = DatetimeHelper::getCurrentUtcTime('Y-m-d');
+		if ($a->end_date > $today) {
+			return false;
+		}
+
+		return true;
+	}
 
     // =========================================================================
     // Lấy một bản ghi theo id (dùng cho layout setpayment)
@@ -1313,4 +1360,724 @@ class AssessmentLearnersModel extends ListModel
 			throw $e;
 		}
 	}
+
+	// =========================================================================
+	// importITestResult — Nhập điểm thi TOEIC iTest
+	// =========================================================================
+
+	/**
+	 * Ngưỡng điểm TOEIC tối thiểu cần đạt theo năm nhập học.
+	 *
+	 * Quy định hiện hành:
+	 *   - Nhập học trước năm 2025 : 450 điểm
+	 *   - Nhập học từ năm 2025    : 500 điểm
+	 *
+	 * Khi quy định thay đổi, chỉ cần sửa method này.
+	 *
+	 * @param  int  $admissionYear  Năm nhập học (từ cột admissionyear của #__eqa_courses).
+	 *
+	 * @return int  Ngưỡng điểm tối thiểu (thang 990).
+	 * @since  2.0.9
+	 */
+	protected function getToeicPassingScore(int $admissionYear): int
+	{
+		return $admissionYear < 2025 ? 450 : 500;
+	}
+
+	/**
+	 * Nhập điểm thi iTest TOEIC cho một kỳ sát hạch.
+	 *
+	 * Quy trình:
+	 *   1. Đọc & parse tất cả sheet điểm trong file Excel (bỏ qua 'Thống kê', 'Tất cả').
+	 *   2. Kiểm tra tính toàn vẹn: duplicate, khớp danh sách DB↔file, khớp cặp SBD↔mã HVSV.
+	 *   3. Tính kết quả từng thí sinh (dùng ToeicHelper).
+	 *   4. Ghi toàn bộ vào DB trong một transaction.
+	 *
+	 * @param  string  $filePath      Đường dẫn đến file .xlsx đã được lưu tạm.
+	 * @param  int     $assessmentId  ID kỳ sát hạch.
+	 * @param  int     $operatorId    ID người thực hiện (ghi vào modified_by).
+	 *
+	 * @return array{total: int, passed: int, failed: int}
+	 *
+	 * @throws \Exception  Nếu file không hợp lệ, dữ liệu không toàn vẹn, hoặc lỗi DB.
+	 * @since  2.0.9
+	 */
+	public function importITestResult(string $filePath, int $assessmentId, int $operatorId): array
+	{
+		// ----------------------------------------------------------------
+		// BƯỚC 1: Đọc & parse file Excel
+		// ----------------------------------------------------------------
+		$fileRows = $this->parseITestResultFile($filePath);
+
+		// ----------------------------------------------------------------
+		// BƯỚC 2: Load dữ liệu thí sinh đủ điều kiện từ DB
+		// ----------------------------------------------------------------
+		$dbRows = $this->loadEligibleExaminees($assessmentId);
+
+		// ----------------------------------------------------------------
+		// BƯỚC 3: Kiểm tra tính toàn vẹn
+		// ----------------------------------------------------------------
+		$this->validateITestResultData($fileRows, $dbRows);
+
+		// ----------------------------------------------------------------
+		// BƯỚC 4 & 5: Tính kết quả và ghi DB trong transaction
+		// ----------------------------------------------------------------
+		return $this->saveITestResults($fileRows, $dbRows, $assessmentId, $operatorId);
+	}
+
+	// =========================================================================
+	// Private helpers
+	// =========================================================================
+
+	/**
+	 * Đọc và parse tất cả sheet điểm trong file Excel iTest.
+	 *
+	 * Bỏ qua các sheet có tên 'Thống kê' và 'Tất cả'.
+	 * Mỗi dòng dữ liệu (từ dòng 2 trở đi) được đọc từ:
+	 *   - Cột B (index 1) : examinee_code  (int)
+	 *   - Cột C (index 2) : learner_code   (string)
+	 *   - Cột K (index 10): anomaly_text   (string|null)
+	 *   - Cột N (index 13): listening_raw  (int|null)
+	 *   - Cột O (index 14): reading_raw    (int|null)
+	 *
+	 * @param  string  $filePath  Đường dẫn file .xlsx.
+	 *
+	 * @return array<int, array{
+	 *     examinee_code: int,
+	 *     learner_code: string,
+	 *     anomaly: Anomaly,
+	 *     listening_raw: int|null,
+	 *     reading_raw: int|null,
+	 *     sheet: string,
+	 *     row: int
+	 * }>  Mảng indexed bởi examinee_code.
+	 *
+	 * @throws \Exception  Nếu file không đọc được hoặc dữ liệu không hợp lệ.
+	 * @since  2.0.9
+	 */
+	private function parseITestResultFile(string $filePath): array
+	{
+		require_once JPATH_ROOT . '/vendor/autoload.php';
+		$spreadsheet = IOHelper::loadSpreadsheet($filePath);
+
+		// Danh sách sheet bỏ qua
+		$ignoredSheets = ['Thống kê', 'Tất cả'];
+
+		$fileRows     = [];   // key = examinee_code
+		$duplicates   = [];   // Ghi nhận SBD trùng để báo lỗi chi tiết
+		$parseErrors  = [];   // Ghi nhận lỗi parse từng dòng
+
+		foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+			$sheetName = $sheet->getTitle();
+
+			// Bỏ qua sheet tổng hợp
+			if (in_array($sheetName, $ignoredSheets, true)) {
+				continue;
+			}
+
+			$highestRow = $sheet->getHighestDataRow();
+
+			// Bỏ qua sheet rỗng (chỉ có header hoặc không có dữ liệu)
+			if ($highestRow < 2) {
+				continue;
+			}
+
+			for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
+				// Đọc các ô theo vị trí cột (1-based)
+				$rawExamineeCode = $sheet->getCell('B' . $rowIndex)->getValue(); // Cột B
+				$rawLearnerCode  = $sheet->getCell('C' . $rowIndex)->getValue(); // Cột C
+				$rawAnomalyText  = $sheet->getCell('K' . $rowIndex)->getValue(); // Cột K
+				$rawListening    = $sheet->getCell('N' . $rowIndex)->getValue(); // Cột N
+				$rawReading      = $sheet->getCell('O' . $rowIndex)->getValue(); // Cột O
+
+				// Bỏ qua dòng trống hoàn toàn
+				if ($rawExamineeCode === null && $rawLearnerCode === null) {
+					continue;
+				}
+
+				$location = sprintf('Sheet "%s", dòng %d', $sheetName, $rowIndex);
+
+				// Validate examinee_code
+				if (!is_numeric($rawExamineeCode) || (int) $rawExamineeCode <= 0) {
+					$parseErrors[] = $location . ': SBD không hợp lệ — "' . $rawExamineeCode . '".';
+					continue;
+				}
+				$examineeCode = (int) $rawExamineeCode;
+
+				// Validate learner_code
+				$learnerCode = trim((string) $rawLearnerCode);
+				if ($learnerCode === '') {
+					$parseErrors[] = $location . ': Mã HVSV (cột C) trống.';
+					continue;
+				}
+
+				// Parse anomaly
+				$anomalyText = ($rawAnomalyText !== null) ? trim((string) $rawAnomalyText) : '';
+				$anomaly     = Anomaly::tryFromLabel($anomalyText);
+
+				if ($anomaly === null) {
+					$parseErrors[] = sprintf(
+						'%s (SBD %d — %s): Giá trị cột "Ghi chú" không hợp lệ — "%s". '
+						. 'Chỉ chấp nhận: trống, "Vắng thi", "Đình chỉ".',
+						$location,
+						$examineeCode,
+						$learnerCode,
+						$anomalyText
+					);
+					continue;
+				}
+
+				// Validate điểm thành phần (bắt buộc khi không có bất thường)
+				$listeningRaw = null;
+				$readingRaw   = null;
+
+				$isAbsentOrSuspended = in_array(
+					$anomaly,
+					[Anomaly::Absent,
+						Anomaly::Suspended],
+					true
+				);
+
+				if (!$isAbsentOrSuspended) {
+					// Trường hợp bình thường: phải có điểm listening và reading
+					if ($rawListening === null || $rawListening === '') {
+						$parseErrors[] = sprintf(
+							'%s (SBD %d — %s): Thiếu điểm Listening (cột N).',
+							$location, $examineeCode, $learnerCode
+						);
+						continue;
+					}
+					if ($rawReading === null || $rawReading === '') {
+						$parseErrors[] = sprintf(
+							'%s (SBD %d — %s): Thiếu điểm Reading (cột O).',
+							$location, $examineeCode, $learnerCode
+						);
+						continue;
+					}
+
+					// Cột N/O có dạng "55/100" — lấy phần trước dấu "/"
+					$listeningRaw = $this->parseRawScoreCell($rawListening);
+					$readingRaw   = $this->parseRawScoreCell($rawReading);
+
+					if ($listeningRaw === null) {
+						$parseErrors[] = sprintf(
+							'%s (SBD %d — %s): Giá trị điểm Listening không hợp lệ — "%s".',
+							$location, $examineeCode, $learnerCode, $rawListening
+						);
+						continue;
+					}
+					if ($readingRaw === null) {
+						$parseErrors[] = sprintf(
+							'%s (SBD %d — %s): Giá trị điểm Reading không hợp lệ — "%s".',
+							$location, $examineeCode, $learnerCode, $rawReading
+						);
+						continue;
+					}
+				}
+
+				// Kiểm tra SBD trùng
+				if (isset($fileRows[$examineeCode])) {
+					$existing    = $fileRows[$examineeCode];
+					$duplicates[] = sprintf(
+						'SBD %d xuất hiện nhiều lần: lần đầu tại sheet "%s" dòng %d, lần sau tại %s.',
+						$examineeCode,
+						$existing['sheet'],
+						$existing['row'],
+						$location
+					);
+					continue;
+				}
+
+				$fileRows[$examineeCode] = [
+					'examinee_code' => $examineeCode,
+					'learner_code'  => $learnerCode,
+					'anomaly'       => $anomaly,
+					'listening_raw' => $listeningRaw,
+					'reading_raw'   => $readingRaw,
+					'sheet'         => $sheetName,
+					'row'           => $rowIndex,
+				];
+			}
+		}
+
+		// Tổng hợp lỗi parse và duplicate — dừng lại nếu có lỗi
+		$allErrors = array_merge($parseErrors, $duplicates);
+		if (!empty($allErrors)) {
+			throw new \Exception(
+				'File điểm có lỗi dữ liệu — không thể nhập. Chi tiết:<br>'
+				. '<ul><li>' . implode('</li><li>', array_map('htmlspecialchars', $allErrors)) . '</li></ul>'
+			);
+		}
+
+		if (empty($fileRows)) {
+			throw new \Exception('File điểm không có dữ liệu thí sinh nào (sau khi bỏ qua các sheet tổng hợp).');
+		}
+
+		return $fileRows;
+	}
+
+	/**
+	 * Parse giá trị ô điểm có dạng "55/100" hoặc số nguyên thuần.
+	 *
+	 * @param  mixed  $cellValue  Giá trị ô từ PhpSpreadsheet.
+	 *
+	 * @return int|null  Số câu đúng, hoặc null nếu không parse được.
+	 * @since  2.0.9
+	 */
+	private function parseRawScoreCell(mixed $cellValue): ?int
+	{
+		$str = trim((string) $cellValue);
+
+		// Dạng "55/100"
+		if (str_contains($str, '/')) {
+			$parts = explode('/', $str, 2);
+			$numerator = trim($parts[0]);
+			if (is_numeric($numerator) && (int) $numerator >= 0) {
+				return (int) $numerator;
+			}
+			return null;
+		}
+
+		// Dạng số nguyên thuần
+		if (is_numeric($str) && (int) $str >= 0) {
+			return (int) $str;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Load danh sách thí sinh đủ điều kiện dự thi của kỳ sát hạch từ DB.
+	 *
+	 * Điều kiện: cancelled = 0, examroom_id IS NOT NULL, code IS NOT NULL.
+	 * Join thêm để lấy admission_year của từng thí sinh.
+	 *
+	 * @param  int  $assessmentId  ID kỳ sát hạch.
+	 *
+	 * @return array<int, array{
+	 *     al_id: int,
+	 *     examinee_code: int,
+	 *     learner_id: int,
+	 *     learner_code: string,
+	 *     admission_year: int
+	 * }>  Mảng indexed bởi examinee_code.
+	 *
+	 * @throws \Exception
+	 * @since  2.0.9
+	 */
+	private function loadEligibleExaminees(int $assessmentId): array
+	{
+		$db = $this->getDatabase();
+
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('al.id',              'al_id'),
+				$db->quoteName('al.code',            'examinee_code'),
+				$db->quoteName('al.learner_id',      'learner_id'),
+				$db->quoteName('lr.code',            'learner_code'),
+				$db->quoteName('co.admissionyear',   'admission_year'),
+			])
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->join(
+				'INNER',
+				$db->quoteName('#__eqa_learners', 'lr')
+				. ' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('al.learner_id')
+			)
+			->join(
+				'INNER',
+				$db->quoteName('#__eqa_groups', 'gr')
+				. ' ON ' . $db->quoteName('gr.id') . ' = ' . $db->quoteName('lr.group_id')
+			)
+			->join(
+				'INNER',
+				$db->quoteName('#__eqa_courses', 'co')
+				. ' ON ' . $db->quoteName('co.id') . ' = ' . $db->quoteName('gr.course_id')
+			)
+			->where($db->quoteName('al.assessment_id') . ' = ' . $assessmentId)
+			->where($db->quoteName('al.cancelled')     . ' = 0')
+			->where($db->quoteName('al.examroom_id')   . ' IS NOT NULL')
+			->where($db->quoteName('al.code')          . ' IS NOT NULL');
+
+		$db->setQuery($query);
+		$rows = $db->loadObjectList();
+
+		// Chuyển sang mảng indexed bởi examinee_code
+		$dbRows = [];
+		foreach ($rows as $row) {
+			$dbRows[(int) $row->examinee_code] = [
+				'al_id'          => (int) $row->al_id,
+				'examinee_code'  => (int) $row->examinee_code,
+				'learner_id'     => (int) $row->learner_id,
+				'learner_code'   => (string) $row->learner_code,
+				'admission_year' => (int) $row->admission_year,
+			];
+		}
+
+		if (empty($dbRows)) {
+			throw new \Exception(
+				'Kỳ sát hạch này chưa có thí sinh nào được đánh số báo danh và xếp phòng thi. '
+				. 'Vui lòng hoàn thành bước chia phòng trước khi nhập điểm.'
+			);
+		}
+
+		return $dbRows;
+	}
+
+	/**
+	 * Kiểm tra tính toàn vẹn giữa dữ liệu file và dữ liệu DB.
+	 *
+	 * Các kiểm tra:
+	 *   (a) Thí sinh trong DB nhưng không có trong file (thiếu điểm).
+	 *   (b) Thí sinh trong file nhưng không có trong DB (thừa, không thuộc danh sách).
+	 *   (c) Cặp (examinee_code → learner_code) trong file khác với DB.
+	 *
+	 * Nếu có bất kỳ lỗi nào → throw Exception với thông báo chi tiết.
+	 *
+	 * @param  array<int, array>  $fileRows  Dữ liệu parse từ file.
+	 * @param  array<int, array>  $dbRows    Dữ liệu load từ DB.
+	 *
+	 * @return void
+	 * @throws \Exception
+	 * @since  2.0.9
+	 */
+	private function validateITestResultData(array $fileRows, array $dbRows): void
+	{
+		$errors = [];
+
+		// (a) Thí sinh trong DB nhưng thiếu trong file
+		$missingInFile = array_diff_key($dbRows, $fileRows);
+		foreach ($missingInFile as $code => $row) {
+			$errors[] = sprintf(
+				'SBD %d (mã HVSV: %s) có trong danh sách thi nhưng không tìm thấy trong file điểm.',
+				$code,
+				$row['learner_code']
+			);
+		}
+
+		// (b) Thí sinh trong file nhưng không có trong DB
+		$extraInFile = array_diff_key($fileRows, $dbRows);
+		foreach ($extraInFile as $code => $row) {
+			$errors[] = sprintf(
+				'SBD %d (mã HVSV: %s, sheet "%s" dòng %d) có trong file điểm nhưng không thuộc danh sách thi của kỳ sát hạch này.',
+				$code,
+				$row['learner_code'],
+				$row['sheet'],
+				$row['row']
+			);
+		}
+
+		// (c) Kiểm tra khớp cặp examinee_code ↔ learner_code
+		foreach ($fileRows as $examineeCode => $fileRow) {
+			if (!isset($dbRows[$examineeCode])) {
+				continue; // Đã báo lỗi ở (b)
+			}
+			$dbLearnerCode   = $dbRows[$examineeCode]['learner_code'];
+			$fileLearnerCode = $fileRow['learner_code'];
+			if ($fileLearnerCode !== $dbLearnerCode) {
+				$errors[] = sprintf(
+					'SBD %d: mã HVSV trong file là "%s" nhưng trong CSDL là "%s" — dữ liệu không khớp (sheet "%s", dòng %d).',
+					$examineeCode,
+					$fileLearnerCode,
+					$dbLearnerCode,
+					$fileRow['sheet'],
+					$fileRow['row']
+				);
+			}
+		}
+
+		if (!empty($errors)) {
+			throw new \Exception(
+				'Dữ liệu file điểm không khớp với danh sách thi — không thể nhập. Chi tiết:<br>'
+				. '<ul><li>' . implode('</li><li>', array_map('htmlspecialchars', $errors)) . '</li></ul>'
+			);
+		}
+	}
+
+	/**
+	 * Tính kết quả từng thí sinh và ghi vào DB trong một transaction.
+	 *
+	 * @param  array<int, array>  $fileRows     Dữ liệu đã parse & validate từ file.
+	 * @param  array<int, array>  $dbRows       Dữ liệu thí sinh từ DB (indexed bởi examinee_code).
+	 * @param  int                $assessmentId  ID kỳ sát hạch.
+	 * @param  int                $operatorId    ID người thực hiện.
+	 *
+	 * @return array{total: int, passed: int, failed: int}
+	 * @throws \Exception
+	 * @since  2.0.9
+	 */
+	private function saveITestResults(
+		array $fileRows,
+		array $dbRows,
+		int $assessmentId,
+		int $operatorId
+	): array {
+		$db  = $this->getDatabase();
+		$now = DatetimeHelper::getCurrentUtcTime();
+
+		$countPassed = 0;
+		$countFailed = 0;
+
+		$db->transactionStart();
+		try {
+			foreach ($fileRows as $examineeCode => $fileRow) {
+				$dbRow        = $dbRows[$examineeCode];
+				$alId         = $dbRow['al_id'];
+				$admissionYear = $dbRow['admission_year'];
+				$anomaly       = $fileRow['anomaly'];
+
+				$isAbsentOrSuspended = in_array(
+					$anomaly,
+					[Anomaly::Absent, Anomaly::Suspended],
+					true
+				);
+
+				if ($isAbsentOrSuspended) {
+					// Vắng thi / Đình chỉ → điểm 0, không đạt, không có raw_result
+					$score      = 0.0;
+					$passed     = false;
+					$rawResult  = null;
+				} else {
+					// Trường hợp bình thường — tính điểm TOEIC
+					$breakdown = ToeicHelper::getScoreBreakdown(
+						$fileRow['listening_raw'],
+						$fileRow['reading_raw']
+					);
+					$score   = (float) $breakdown['total'];
+					$passing = $this->getToeicPassingScore($admissionYear);
+					$passed  = $score >= $passing;
+
+					// Lưu thêm ngưỡng tối thiểu vào raw_result để sau này
+					// có thể truy vết mà không cần tính lại theo admission_year.
+					$breakdown['passing_score'] = $passing;
+
+					$rawResult = json_encode($breakdown, JSON_UNESCAPED_UNICODE);
+				}
+
+				$query = $db->getQuery(true)
+					->update($db->quoteName('#__eqa_assessment_learner'))
+					->set($db->quoteName('anomaly')      . ' = ' . (int) $anomaly->value)
+					->set($db->quoteName('raw_result')   . ' = ' . ($rawResult !== null ? $db->quote($rawResult) : 'NULL'))
+					->set($db->quoteName('score')        . ' = ' . $score)
+					->set($db->quoteName('passed')       . ' = ' . ($passed ? 1 : 0))
+					->set($db->quoteName('modified_at')  . ' = ' . $db->quote($now))
+					->set($db->quoteName('modified_by')  . ' = ' . $operatorId)
+					->where($db->quoteName('id')         . ' = ' . $alId);
+
+				$db->setQuery($query);
+				$db->execute();
+
+				$passed ? $countPassed++ : $countFailed++;
+			}
+
+			$db->transactionCommit();
+
+		} catch (\Exception $e) {
+			$db->transactionRollback();
+			throw $e;
+		}
+
+		return [
+			'total'  => count($fileRows),
+			'passed' => $countPassed,
+			'failed' => $countFailed,
+		];
+	}
+
+	// =========================================================================
+	// getExportData — lấy dữ liệu xuất báo cáo kỳ sát hạch
+	// =========================================================================
+
+	/**
+	 * Lấy toàn bộ dữ liệu cần thiết để xuất 2 loại báo cáo kết quả kỳ sát hạch
+	 * (Báo cáo Hội đồng thi và Thông báo cho HVSV).
+	 *
+	 * Dữ liệu trả về gồm:
+	 *   - assessment  : object  — thông tin kỳ sát hạch (id, title, type)
+	 *   - examinees   : array   — danh sách thí sinh, mỗi phần tử là object với các trường:
+	 *       learner_id, learner_code, learner_lastname, learner_firstname,
+	 *       course_code, admission_year,
+	 *       anomaly (int), score (float|null), passed (bool|null), raw_result (string|null),
+	 *       attempt_number (int — lần sát hạch thứ mấy của thí sinh trong cùng loại kỳ sát hạch)
+	 *   - stats_by_course : array — thống kê theo khóa, mỗi phần tử là object với:
+	 *       course_code, admission_year, total, passed, failed, absent, pass_rate (float)
+	 *       (sắp theo admission_year ASC, course_code ASC)
+	 *
+	 * Chỉ lấy thí sinh đã được xếp phòng thi (examroom_id IS NOT NULL, code IS NOT NULL,
+	 * cancelled = 0) — tức là những thí sinh thực sự tham dự kỳ sát hạch.
+	 *
+	 * @param  int  $assessmentId  ID kỳ sát hạch.
+	 *
+	 * @return array{assessment: object, examinees: object[], stats_by_course: object[]}
+	 * @throws \Exception
+	 * @since  2.0.9
+	 */
+	public function getExportData(int $assessmentId): array
+	{
+		$db = $this->getDatabase();
+
+		// ----------------------------------------------------------------
+		// 1. Thông tin kỳ sát hạch
+		// ----------------------------------------------------------------
+		$query = $db->getQuery(true)
+			->select(['id', 'title', 'type'])
+			->from($db->quoteName('#__eqa_assessments'))
+			->where($db->quoteName('id') . ' = ' . $assessmentId);
+		$db->setQuery($query);
+		$assessment = $db->loadObject();
+
+		if ($assessment === null) {
+			throw new \Exception('Không tìm thấy kỳ sát hạch có id = ' . $assessmentId . '.');
+		}
+
+		// ----------------------------------------------------------------
+		// 2. Danh sách thí sinh đã dự thi
+		// ----------------------------------------------------------------
+		$query = $db->getQuery(true)
+			->select([
+				$db->quoteName('al.learner_id'),
+				$db->quoteName('lr.code',            'learner_code'),
+				$db->quoteName('lr.lastname',         'learner_lastname'),
+				$db->quoteName('lr.firstname',        'learner_firstname'),
+				$db->quoteName('co.code',             'course_code'),
+				$db->quoteName('co.admissionyear',    'admission_year'),
+				$db->quoteName('al.anomaly'),
+				$db->quoteName('al.score'),
+				$db->quoteName('al.passed'),
+				$db->quoteName('al.raw_result'),
+			])
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->join('INNER',
+				$db->quoteName('#__eqa_learners', 'lr')
+				. ' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('al.learner_id')
+			)
+			->join('INNER',
+				$db->quoteName('#__eqa_groups', 'gr')
+				. ' ON ' . $db->quoteName('gr.id') . ' = ' . $db->quoteName('lr.group_id')
+			)
+			->join('INNER',
+				$db->quoteName('#__eqa_courses', 'co')
+				. ' ON ' . $db->quoteName('co.id') . ' = ' . $db->quoteName('gr.course_id')
+			)
+			->where($db->quoteName('al.assessment_id') . ' = ' . $assessmentId)
+			->where($db->quoteName('al.cancelled')     . ' = 0')
+			->where($db->quoteName('al.examroom_id')   . ' IS NOT NULL')
+			->where($db->quoteName('al.code')          . ' IS NOT NULL')
+			->order($db->quoteName('co.admissionyear') . ' ASC')
+			->order($db->quoteName('co.code')          . ' ASC')
+			->order($db->quoteName('lr.firstname')     . ' ASC')
+			->order($db->quoteName('lr.lastname')      . ' ASC');
+
+		$db->setQuery($query);
+		$examinees = $db->loadObjectList();
+
+		if (empty($examinees)) {
+			throw new \Exception(
+				'Kỳ sát hạch này chưa có thí sinh nào được đánh số báo danh và xếp phòng thi.'
+			);
+		}
+
+		// ----------------------------------------------------------------
+		// 3. Tính attempt_number — lần sát hạch thứ mấy (cùng type)
+		//    Đếm số kỳ sát hạch cùng type có id <= currentAssessmentId
+		//    mà thí sinh đã thực sự dự thi (examroom_id IS NOT NULL, cancelled = 0).
+		// ----------------------------------------------------------------
+		$learnerIds = array_map(
+			static fn(object $e): int => (int) $e->learner_id,
+			$examinees
+		);
+		$learnerIdList = implode(',', array_map('intval', $learnerIds));
+
+		$attemptQuery = $db->getQuery(true)
+			->select([
+				$db->quoteName('al.learner_id'),
+				'COUNT(*) AS ' . $db->quoteName('attempt_number'),
+			])
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->join('INNER',
+				$db->quoteName('#__eqa_assessments', 'a')
+				. ' ON ' . $db->quoteName('a.id') . ' = ' . $db->quoteName('al.assessment_id')
+			)
+			->where($db->quoteName('a.type')         . ' = ' . (int) $assessment->type)
+			->where($db->quoteName('al.learner_id')  . ' IN (' . $learnerIdList . ')')
+			->where($db->quoteName('al.assessment_id') . ' <= ' . $assessmentId)
+			->where($db->quoteName('al.cancelled')   . ' = 0')
+			->where($db->quoteName('al.examroom_id') . ' IS NOT NULL')
+			->group($db->quoteName('al.learner_id'));
+
+		$db->setQuery($attemptQuery);
+		// Map: learner_id (int) → attempt_number (int)
+		$attemptMap = [];
+		foreach ($db->loadObjectList() as $row) {
+			$attemptMap[(int) $row->learner_id] = (int) $row->attempt_number;
+		}
+
+		// Gắn attempt_number vào từng thí sinh
+		foreach ($examinees as $examinee) {
+			$examinee->attempt_number = $attemptMap[(int) $examinee->learner_id] ?? 1;
+		}
+
+		// ----------------------------------------------------------------
+		// 4. Thống kê theo khóa (PHP — không cần query thêm)
+		// ----------------------------------------------------------------
+		$courseGroups = [];
+		foreach ($examinees as $examinee) {
+			$key = $examinee->course_code;
+			if (!isset($courseGroups[$key])) {
+				$courseGroups[$key] = [
+					'course_code'    => $examinee->course_code,
+					'admission_year' => (int) $examinee->admission_year,
+					'total'          => 0,
+					'passed'         => 0,
+					'failed'         => 0,   // không đạt, không tính vắng thi
+					'absent'         => 0,
+				];
+			}
+
+			$courseGroups[$key]['total']++;
+
+			$isAbsent = ((int) $examinee->anomaly === Anomaly::Absent->value);
+
+			if ($isAbsent) {
+				$courseGroups[$key]['absent']++;
+			} elseif ((bool) $examinee->passed) {
+				$courseGroups[$key]['passed']++;
+			} else {
+				$courseGroups[$key]['failed']++;
+			}
+		}
+
+		// Sắp xếp: admission_year ASC, course_code ASC
+		uasort($courseGroups, static function (array $a, array $b): int {
+			if ($a['admission_year'] !== $b['admission_year']) {
+				return $a['admission_year'] <=> $b['admission_year'];
+			}
+			return strcmp($a['course_code'], $b['course_code']);
+		});
+
+		// Tính pass_rate và chuyển sang object
+		$statsByCourse = [];
+		foreach ($courseGroups as $group) {
+			$passRate = $group['total'] > 0
+				? round($group['passed'] / $group['total'] * 100, 1)
+				: 0.0;
+
+			$stat                = new \stdClass();
+			$stat->course_code   = $group['course_code'];
+			$stat->admission_year = $group['admission_year'];
+			$stat->total         = $group['total'];
+			$stat->passed        = $group['passed'];
+			$stat->failed        = $group['failed'];
+			$stat->absent        = $group['absent'];
+			$stat->pass_rate     = $passRate;
+
+			$statsByCourse[] = $stat;
+		}
+
+		return [
+			'assessment'       => $assessment,
+			'examinees'        => $examinees,
+			'stats_by_course'  => $statsByCourse,
+		];
+	}
+
 }

@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -79,8 +80,12 @@ class PaperexamController extends  FormController {
 		IOHelper::writeMaskMap($sheet, $map, $examInfo);
 
 
-		// Force download of the Excel file
-		$examName = DatabaseHelper::getExamName($examId);
+		/**
+		 * Force download of the Excel file
+		 * @var ExamModel $examModel
+		 */
+		$examModel = $this->getModel('exam');
+		$examName = $examModel->getExamName($examId);
 		$fileName = 'Sơ đồ phách. ' . $examName . '.xlsx';
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		$this->app->close();
@@ -137,9 +142,12 @@ class PaperexamController extends  FormController {
 		$model = $this->getModel();
 		$ok = $model->saveExaminers($examId, $data);
 
-		//Cập nhật trạng thái môn thi
-		$model = $this->createModel('exam');
-		$model->setExamStatus($examId,ExamStatus::ExaminerAssigned);
+		/**
+		 * Cập nhật trạng thái môn thi
+		 * @var ExamModel $examModel
+		 */
+		$examModel = $this->getModel('exam');
+		$examModel->setExamStatus($examId,ExamStatus::ExaminerAssigned);
 	}
 	public function exportMarkingSheet()
 	{
@@ -177,8 +185,12 @@ class PaperexamController extends  FormController {
 			IOHelper::writeMarkingSheet($sheet, $packageInfo);
 		}
 
-		// Force download of the Excel file
-		$examName = DatabaseHelper::getExamName($examId);
+		/**
+		 * Force download of the Excel file
+		 * @var ExamModel $examModel
+		 */
+		$examModel = $this->getModel('exam');
+		$examName = $examModel->getExamName($examId);
 		$fileName = 'Phiếu chấm. ' . $examName . '.xlsx';
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();

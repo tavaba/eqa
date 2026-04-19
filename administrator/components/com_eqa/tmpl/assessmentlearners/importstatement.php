@@ -11,6 +11,7 @@ defined('_JEXEC') or die();
 
 
 use Kma\Library\Kma\Helper\ViewHelper;
+/** @var Kma\Component\Eqa\Administrator\View\AssessmentLearners\HtmlView $this */
 ?>
 
 <div class="row justify-content-center">

@@ -156,7 +156,7 @@
 			/>
 		</fieldset>
 		<fieldset
-				name="threshold"
+				name="threshold2"
 				label="Ngưỡng thi khác"
 				description="Cấu hình ngưỡng điểm đạt trong thi tốt nghiệp và các kỳ thi khác"
 		>
@@ -226,8 +226,6 @@
 					required="true"
 			/>
 		</fieldset>
-
-
 	</fields>
 	<fieldset
 		name="permissions"

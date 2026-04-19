@@ -19,7 +19,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use stdClass;
 
 class ExamroomsController extends AdminController {
-    public function export(): void
+    public function export_bak(): void
     {
         $app = $this->app;
         $this->checkToken();
@@ -70,6 +70,73 @@ class ExamroomsController extends AdminController {
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 	    exit();
     }
+
+	/**
+	 * Xuất danh sách thí sinh của các phòng thi được chọn ra file Excel.
+	 * Tự động phân nhánh theo loại phòng thi (KTHP hoặc sát hạch).
+	 *
+	 * @return void
+	 * @since 1.0
+	 */
+	public function export(): void
+	{
+		$this->checkToken();
+
+		if (!$this->app->getIdentity()->authorise('core.manage', $this->option)) {
+			echo Text::_('COM_EQA_MSG_UNAUTHORISED');
+			exit();
+		}
+
+		$examroomIds = array_filter(
+			(array) $this->input->get('cid', [], 'int')
+		);
+
+		if (empty($examroomIds)) {
+			$this->setMessage(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'), 'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examrooms', false));
+			return;
+		}
+
+		/** @var ExamroomModel $model */
+		$model       = $this->getModel();
+		$spreadsheet = new Spreadsheet();
+		$spreadsheet->removeSheetByIndex(0);
+
+		foreach ($examroomIds as $index => $examroomId) {
+
+			$examroom = DatabaseHelper::getExamroomInfo($examroomId);
+
+			// Kiểm tra phân công CBCT/CBChT — áp dụng cho cả hai loại phòng thi
+			if (!$model->canExport($examroomId)) {
+				$this->setMessage(
+					"Phòng thi <b>{$examroom->name}</b>: chưa phân công CBCT, CBCT-ChT",
+					'error'
+				);
+				$url = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id='
+					. $examroom->examsessionId;
+				$this->setRedirect(Route::_($url, false));
+				return;
+			}
+
+			// Tạo sheet
+			$sheet = $spreadsheet->createSheet($index);
+			$sheetTitle = mb_substr($examroom->name, 0, 20) . ' (' . $examroomId . ')';
+			$sheet->setTitle($sheetTitle);
+
+			// Phân nhánh: ghi nội dung theo loại phòng thi
+			if ($examroom->isAssessmentRoom) {
+				$examinees = $model->getAssessmentExaminees($examroomId);
+				IOHelper::writeAssessmentExamroomExaminees($sheet, $examroom, $examinees);
+			} else {
+				$examinees = $model->getExaminees($examroomId);
+				IOHelper::writeExamroomExaminees($sheet, $examroom, $examinees);
+			}
+		}
+
+		$fileName = 'Danh sách thí sinh phòng thi.xlsx';
+		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+		exit();
+	}
 	public function import(): void
 	{
 		$app = $this->app;

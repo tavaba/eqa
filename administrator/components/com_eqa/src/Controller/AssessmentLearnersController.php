@@ -15,6 +15,8 @@ use Kma\Library\Kma\Controller\AdminController;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Kma\Library\Kma\Helper\DatetimeHelper;
+use PhpOffice\PhpWord\PhpWord;
 
 /**
  * Items Controller cho danh sách thí sinh sát hạch.
@@ -770,4 +772,212 @@ class AssessmentLearnersController extends AdminController
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
+
+	// =========================================================================
+	// importITestResult — nhập điểm thi iTest cho kỳ sát hạch
+	// =========================================================================
+
+	/**
+	 * Nhận file bảng điểm iTest (.xlsx), kiểm tra tính toàn vẹn, tính kết quả
+	 * và ghi vào CSDL trong một transaction.
+	 *
+	 * POST params:
+	 *   - assessment_id      : int  — ID kỳ sát hạch
+	 *   - itest_result_file  : file — File .xlsx bảng điểm iTest
+	 *
+	 * @since 2.0.9
+	 */
+	public function importITestResult(): void
+	{
+		$assessmentId = $this->input->post->getInt('assessment_id');
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
+				throw new Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model = ComponentHelper::createModel('AssessmentLearners');
+
+			if (!$model->canUploadResult($assessmentId)) {
+				throw new Exception('Đang trong thời gian thi hoặc Kỳ sát hạch đã ở trạng thái "Hoàn tất" — không thể cập nhật.');
+			}
+
+			// Kiểm tra file upload
+			$uploadedFile = $this->input->files->get('excelfile');
+			if (empty($uploadedFile) || empty($uploadedFile['tmp_name'])) {
+				throw new Exception('Vui lòng chọn file bảng điểm iTest (.xlsx).');
+			}
+			if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
+				throw new Exception('Lỗi upload file (mã lỗi: ' . $uploadedFile['error'] . ').');
+			}
+			if (strtolower(pathinfo($uploadedFile['name'] ?? '', PATHINFO_EXTENSION)) !== 'xlsx') {
+				throw new Exception('Chỉ chấp nhận file Excel (.xlsx).');
+			}
+
+			// Lưu file vào thư mục tạm
+			$tmpDir  = Factory::getApplication()->get('tmp_path');
+			$tmpFile = $tmpDir . '/eqa_itest_result_' . uniqid('', true) . '.xlsx';
+			if (!move_uploaded_file($uploadedFile['tmp_name'], $tmpFile)) {
+				throw new Exception('Không thể lưu file upload. Vui lòng kiểm tra quyền ghi thư mục tmp.');
+			}
+
+			try {
+				$operatorId = (int) $this->app->getIdentity()->id;
+				$result     = $model->importITestResult($tmpFile, $assessmentId, $operatorId);
+			} finally {
+				if (file_exists($tmpFile)) {
+					@unlink($tmpFile);
+				}
+			}
+
+			$this->setMessage(
+				$this->buildITestImportResultMessage($result),
+				'success'
+			);
+
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
+
+	/**
+	 * Tạo thông báo HTML tổng hợp kết quả nhập điểm iTest.
+	 *
+	 * @param  array{total: int, passed: int, failed: int}  $result
+	 *
+	 * @return string  HTML message.
+	 * @since  2.0.9
+	 */
+	private function buildITestImportResultMessage(array $result): string
+	{
+		return sprintf(
+			'Đã nhập điểm thành công cho <b>%d</b> thí sinh: '
+			. '<span class="text-success"><b>%d đạt</b></span>, '
+			. '<span class="text-danger"><b>%d không đạt</b></span>.',
+			$result['total'],
+			$result['passed'],
+			$result['failed']
+		);
+	}
+
+	// =========================================================================
+	// exportCouncilReport — Xuất Báo cáo kết quả cho Hội đồng thi
+	// =========================================================================
+
+	/**
+	 * Xuất file DOCX "Báo cáo kết quả kỳ sát hạch" gửi Hội đồng thi.
+	 *
+	 * Tài liệu gồm:
+	 *   - Header quốc hiệu / tiêu ngữ + ngày ký
+	 *   - Tiêu đề: BÁO CÁO / Kết quả {tên kỳ sát hạch}
+	 *   - Bảng 1: Thống kê theo khóa đào tạo (8 cột)
+	 *   - Bảng 2: Kết quả chi tiết từng thí sinh (9 cột)
+	 *
+	 * @since 2.0.9
+	 */
+	public function exportCouncilReport(): void
+	{
+		// Lấy assessment_id từ GET (nút không dùng POST form)
+		$assessmentId = $this->input->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('eqa.assessment.score', $this->option)) {
+				throw new \Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new \Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model      = ComponentHelper::createModel('AssessmentLearners');
+			$exportData = $model->getExportData($assessmentId);
+
+			$signingDate = DatetimeHelper::getSigningDateString('Hà Nội', 'now');
+
+			$phpWord = new PhpWord();
+			IOHelper::writeAssessmentCouncilReport($phpWord, $exportData, $signingDate);
+
+			$fileName = 'Báo cáo kết quả. '
+				. $exportData['assessment']->title . '.docx';
+			IOHelper::sendHttpDocx($phpWord, $fileName);
+			jexit();
+
+		} catch (\Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
+
+	// =========================================================================
+	// exportStudentNotification — Xuất Thông báo kết quả cho HVSV
+	// =========================================================================
+
+	/**
+	 * Xuất file DOCX "Thông báo kết quả kỳ sát hạch" gửi cho thí sinh.
+	 *
+	 * Tài liệu gồm:
+	 *   - Header quốc hiệu / tiêu ngữ + ngày ký
+	 *   - Tiêu đề: THÔNG BÁO / Kết quả {tên kỳ sát hạch}
+	 *   - Bảng kết quả (7 cột), cột Ghi chú ghi điểm thành phần nếu không đạt
+	 *
+	 * @since 2.0.9
+	 */
+	public function exportStudentNotification(): void
+	{
+		$assessmentId = $this->input->getInt('assessment_id', 0);
+		$listUrl      = Route::_(
+			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			false
+		);
+		$this->setRedirect($listUrl);
+
+		try {
+			$this->checkToken();
+
+			if (!$this->app->getIdentity()->authorise('eqa.assessment.score', $this->option)) {
+				throw new \Exception('Bạn không có quyền thực hiện chức năng này.');
+			}
+
+			if ($assessmentId <= 0) {
+				throw new \Exception('Kỳ sát hạch không hợp lệ.');
+			}
+
+			/** @var AssessmentLearnersModel $model */
+			$model      = ComponentHelper::createModel('AssessmentLearners');
+			$exportData = $model->getExportData($assessmentId);
+
+			$signingDate = DatetimeHelper::getSigningDateString('Hà Nội', 'now');
+
+			$phpWord = new PhpWord();
+			IOHelper::writeAssessmentStudentNotification($phpWord, $exportData, $signingDate);
+
+			$fileName = 'Thông báo kết quả. '
+				. $exportData['assessment']->title . '.docx';
+			IOHelper::sendHttpDocx($phpWord, $fileName);
+			jexit();
+
+		} catch (\Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
+		}
+	}
+
 }

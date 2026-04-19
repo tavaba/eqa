@@ -751,12 +751,19 @@ class RegradingsController extends AdminController
 			if(count($examResults)==0)
 				throw new Exception('Không tìm thấy dữ liệu');
 
-			//5. Save results to database
-			$model = $this->getModel('regradings');
-			$count = $model->saveHybridRegradingResult($examId, $examResults);
+			/**
+			 * 5. Save results to database
+			 * @var RegradingsModel $regradingsModel
+			 */
+			$regradingsModel = $this->getModel('regradings');
+			$count = $regradingsModel->saveHybridRegradingResult($examId, $examResults);
 
-			//6. Show message
-			$examName = DatabaseHelper::getExamName($examId);
+			/**
+			 * 6. Show message
+			 * @var ExamModel $examModel
+			 */
+			$examModel = $this->getModel('exam');
+			$examName = $examModel->getExamName($examId);
 			$msg = sprintf('Ghi điểm phúc khảo thành công cho %d thí sinh của môn thi <b>%s</b>', $count, htmlspecialchars($examName));
 			$this->app->enqueueMessage($msg,'success');
 		}

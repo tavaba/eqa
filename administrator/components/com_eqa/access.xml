@@ -15,5 +15,7 @@
 		<action name="eqa.supervise" title="Quản lý HVSV"/>
 		<action name="eqa.mask" title="Quản lý phách bài thi"/>
 		<action name="eqa.edit.mark" title="Sửa điểm"/>
+		<action name="eqa.assessment.score" title="Quản lý điểm sát hạch"/>
+		<action name="eqa.assessment.payment" title="Quản lý phí sát hạch"/>
 	</section>
 </access>

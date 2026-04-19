@@ -17,6 +17,29 @@ use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 defined('_JEXEC') or die();
 
 class ExamroomModel extends AdminModel {
+
+	/**
+	 * Xác định phòng thi có thuộc về kỳ sát hạch hay không.
+	 *
+	 * Kiểm tra bằng cách đếm số thí sinh trong #__eqa_assessment_learner
+	 * có examroom_id tương ứng. Nếu > 0 thì là phòng thi sát hạch.
+	 *
+	 * @param  int  $examroomId  ID phòng thi cần kiểm tra.
+	 *
+	 * @return bool  true nếu là phòng thi sát hạch, false nếu là KTHP.
+	 * @throws \Exception  Nếu $examroomId không hợp lệ.
+	 * @since 2.0.6
+	 */
+	public function isAssessmentRoom(int $examroomId): bool
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from($db->quoteName('#__eqa_assessment_learner'))
+			->where($db->quoteName('examroom_id') . ' = ' . $examroomId);
+		$db->setQuery($query);
+		return (int) $db->loadResult() > 0;
+	}
 	public function getExaminees(int $examroomId)
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -33,6 +56,80 @@ class ExamroomModel extends AdminModel {
 			->where('examroom_id='.$examroomId)
 			->order('a.code');
 		$db->setQuery($query);
+		return $db->loadObjectList();
+	}
+
+	/**
+	 * Lấy danh sách thí sinh của một phòng thi sát hạch để xuất Excel.
+	 *
+	 * @param  int  $examroomId
+	 *
+	 * @return object[]  Mỗi object có: code (SBD), learner_code, lastname,
+	 *                   firstname, payment_completed, anomaly.
+	 * @since 2.0.8
+	 */
+	public function getAssessmentExaminees_bak(int $examroomId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		$columns = $db->quoteName(
+			['al.code', 'lr.code',       'lr.lastname', 'lr.firstname', 'al.payment_completed', 'al.anomaly'],
+			['code',    'learner_code',  'lastname',    'firstname',    'payment_completed',    'anomaly']
+		);
+
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('al.learner_id')
+			)
+			->where($db->quoteName('al.examroom_id') . ' = ' . $examroomId)
+			->order($db->quoteName('al.code') . ' ASC');
+
+		$db->setQuery($query);
+
+		return $db->loadObjectList();
+	}
+
+	/**
+	 * Lấy danh sách thí sinh của một phòng thi sát hạch để xuất Excel.
+	 *
+	 * Cấu trúc trả về đồng nhất với getExaminees() (KTHP) ở các cột
+	 * code, learner_code, lastname, firstname, group — để writeAssessmentExamroomExaminees()
+	 * có thể dùng cùng cấu trúc ghi dữ liệu.
+	 * Thêm payment_completed và anomaly để ghi vào cột Ghi chú.
+	 *
+	 * @param  int  $examroomId
+	 *
+	 * @return object[]
+	 * @since 2.0.6
+	 */
+	public function getAssessmentExaminees(int $examroomId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		$columns = $db->quoteName(
+			['al.code', 'lr.code',      'lr.lastname', 'lr.firstname', 'gr.code',  'al.payment_completed', 'al.anomaly'],
+			['code',    'learner_code', 'lastname',    'firstname',    'group',    'payment_completed',    'anomaly']
+		);
+
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('al.learner_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_groups', 'gr') .
+				' ON ' . $db->quoteName('gr.id') . ' = ' . $db->quoteName('lr.group_id')
+			)
+			->where($db->quoteName('al.examroom_id') . ' = ' . $examroomId)
+			->order($db->quoteName('al.code') . ' ASC');
+
+		$db->setQuery($query);
+
 		return $db->loadObjectList();
 	}
     public function removeExaminees($examroomId, $learnerIds){
@@ -439,6 +536,77 @@ class ExamroomModel extends AdminModel {
 			if(!$db->execute())
 				return false;
 		}
+		return true;
+	}
+
+	/**
+	 * Lấy danh sách thí sinh và thông tin bất thường của một phòng thi sát hạch.
+	 *
+	 * @param  int  $examroomId
+	 *
+	 * @return object[]  Mỗi object có: id (al.id), code (SBD), learner_code,
+	 *                   lastname, firstname, anomaly, description (note).
+	 * @since 2.0.6
+	 */
+	public function getAssessmentExamineeAnomalies(int $examroomId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		$columns = $db->quoteName(
+			['al.id', 'al.code', 'lr.code',       'lr.lastname', 'lr.firstname', 'al.anomaly', 'al.note'],
+			['id',    'code',    'learner_code',   'lastname',    'firstname',    'anomaly',    'description']
+		);
+
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+			->leftJoin(
+				$db->quoteName('#__eqa_learners', 'lr') .
+				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('al.learner_id')
+			)
+			->where($db->quoteName('al.examroom_id') . ' = ' . $examroomId)
+			->order($db->quoteName('al.code') . ' ASC');
+
+		$db->setQuery($query);
+
+		return $db->loadObjectList();
+	}
+
+	/**
+	 * Ghi nhận thông tin bất thường cho các thí sinh của một phòng thi sát hạch.
+	 *
+	 * Chỉ ghi nhận, không xử lý điểm — tương tự saveAnomaly() cho KTHP.
+	 * Key của $data là al.id (id bản ghi trong #__eqa_assessment_learner).
+	 *
+	 * @param  int    $examroomId
+	 * @param  array  $data  [ al_id => ['anomaly' => int, 'description' => string], ... ]
+	 *
+	 * @return bool
+	 * @since 2.0.6
+	 */
+	public function saveAssessmentAnomaly(int $examroomId, array $data): bool
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		foreach ($data as $alId => $record) {
+			$query = $db->getQuery(true)
+				->update($db->quoteName('#__eqa_assessment_learner'))
+				->set($db->quoteName('anomaly') . ' = ' . (int) $record['anomaly'])
+				->where($db->quoteName('id')         . ' = ' . (int) $alId)
+				->where($db->quoteName('examroom_id') . ' = ' . $examroomId);
+
+			// Ghi note nếu có
+			if (!empty($record['description'])) {
+				$query->set($db->quoteName('note') . ' = ' . $db->quote($record['description']));
+			}
+
+			$db->setQuery($query);
+
+			if (!$db->execute()) {
+				return false;
+			}
+		}
+
 		return true;
 	}
 }

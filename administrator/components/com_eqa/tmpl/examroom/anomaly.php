@@ -19,6 +19,7 @@ $examinees = $this->examineeAnomalies;
 	<?php echo JHtml::_('form.token');?>
 	<input type="hidden" name="task">
 	<input type="hidden" name="examroom_id" value="<?php echo $examroom->id;?>">
+    <input type="hidden" name="type" value="<?php echo htmlspecialchars($this->anomalyType); ?>">
 	<table class="table table-striped">
 		<thead>
         <tr>

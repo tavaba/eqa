@@ -10,6 +10,7 @@
 
 defined('_JEXEC') or die();
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Layout\LayoutHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
 
@@ -22,6 +23,7 @@ $stats      = $this->statistics;
 
 // Helper: format số tiền VNĐ
 $fmt = static fn(int $amount): string => number_format($amount, 0, ',', '.') . ' đ';
+$showPaymentStatistics = Factory::getApplication()->getIdentity()->authorise('eqa.assessment.payment','com_eqa');
 
 ?>
 
@@ -69,7 +71,7 @@ $fmt = static fn(int $amount): string => number_format($amount, 0, ',', '.') . '
         </div>
     </div>
 
-    <?php if ((int) $stats->hasFee > 0): ?>
+    <?php if ((int) $stats->hasFee > 0 && $showPaymentStatistics): ?>
     <div class="col-6 col-md-4 col-xl-2">
         <div class="card text-center border-warning h-100">
             <div class="card-body py-2 px-1">

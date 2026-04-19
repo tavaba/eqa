@@ -34,27 +34,72 @@ class ConductsController extends AdminController {
 	}
 	private function importSheet(Worksheet $sheet, int $academicyearCode, int $term, bool $importMark, bool $importCredits): void
 	{
-		$data = $sheet->toArray();
-		$firstRow = 0;
+		$data = $sheet->toArray('');
+		$rowCount = count($data);
 
-		//Tìm dòng đầu tiên chứa dữ liệu (STT ở cột A bằng 1)
-		while(isset($data[$firstRow]) && $data[$firstRow][0]!=1)
-			++$firstRow; //Skip empty rows at top
-		if($data[$firstRow][0]!=1)
+		//Tìm heading row (cột A chứa giá trị "STT")
+		$headingRow = 0;
+		$value = '';
+		for(; $headingRow < $rowCount; $headingRow++)
 		{
-			$msg = sprintf('Trên sheet <b>%s</b> không có dữ liệu hợp lệ', htmlspecialchars($sheet->getTitle()));
+			$value = $data[$headingRow][0];
+			$value = strtoupper(trim($value));
+			if($value=='STT' || $value=='TT')
+				break;
+		}
+		if($headingRow==$rowCount || ($value!='STT' && $value!='TT'))
+		{
+			$msg = sprintf('Sheet "%s": không tìm thấy dòng tiêu đề. Dòng tiêu để phải có cột A là "STT" hoặc "TT"',
+				$sheet->getTitle()
+			);
 			throw new Exception($msg);
 		}
+
+		//Tìm dòng có chứa số thứ tự "1"
+		$firstRow=$headingRow+1;
+		for(; $firstRow < $rowCount; $firstRow++)
+		{
+			$value = $data[$firstRow][0];
+			if($value==1)
+				break;
+			if(!empty($value))
+			{
+				$msg = sprintf('Sheet "%s": giá trị tại dòng %d không hợp lệ. Phải là "1" nhưng thực tế là "%s"',
+					$sheet->getTitle(), $firstRow+1, $value
+				);
+				throw new Exception($msg);
+			}
+		}
+		if($firstRow == $rowCount)
+		{
+			$msg = sprintf('Sheet "%s": Không có dữ liệu để nhập!', $sheet->getTitle());
+			throw new Exception($msg);
+		}
+
 
 		/**
 		 * Đọc và nhập dữ liệu
 		 * @var ConductModel $model
 		 */
 		$model = $this->getModel();
-		$r = $firstRow;
-		while (is_numeric($data[$r][0]))
+		$seq = 0;
+		for($r=$firstRow; $r<$rowCount; $r++)
 		{
+			//Bỏ qua dòng trống (ở cuối file)
 			$row = $data[$r];
+			if(empty($row[0]))
+				continue;
+
+			//Kiểm tra, đảm bảo rằng giá trị tại cột A là số thứ tự
+			$seq++;
+			if($row[0] != $seq)
+			{
+				$msg = sprintf('Sheet "%s": Dữ liệu không hợp lệ. Cột A dòng %d phải là %d, nhưng giá trị thực tế là "%s"',
+					$sheet->getTitle(), $r+1, $seq, $row[0]
+				);
+			}
+
+			//Nhập dữ liệu
 			$item = new stdClass();
 			$item->learnerCode = strtoupper(trim($row[1]));   //Cột B: Mã HVSV
 			$item->excusedAbsenceCount = intval($row[3]);     //Cột D: Số buổi nghỉ có phép
@@ -92,7 +137,6 @@ class ConductsController extends AdminController {
 
 			}
 			$model->importItem($academicyearCode, $term,$item, $importMark, $importCredits,true);
-			$r++;
 		}
 	}
 	private function countResitExams(array $exams):int

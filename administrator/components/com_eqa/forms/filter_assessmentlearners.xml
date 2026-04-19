@@ -53,8 +53,10 @@
                 onchange="this.form.submit();"
         >
             <option value="">-- Kết quả --</option>
-            <option value="1">Đạt</option>
             <option value="0">Không đạt</option>
+            <option value="1">Đạt</option>
+            <option value="2">Đã có kết quả</option>
+            <option value="3">Chưa có kết quả</option>
         </field>
 
         <field  name="cancelled"

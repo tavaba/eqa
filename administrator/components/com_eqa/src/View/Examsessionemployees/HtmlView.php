@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\DataObject\ExamsessionInfo;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -13,7 +14,7 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView {
-	protected $examsession;
+	protected ?ExamsessionInfo $examsession;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
 		$option->sequence = ListLayoutItemFields::defaultFieldSequence();
@@ -88,7 +89,9 @@ class HtmlView extends ItemsHtmlView {
 					$desc = '';
 					if(!empty($examroom->exams))
 						$desc .= 'Môn thi: ' . implode(', ', $examroom->exams) . '.';
-					if(is_numeric($examroom->testtype))
+					elseif($examroom->assessmentTitle)
+						$desc = $examroom->assessmentTitle . '.';
+					if(isset($examroom->testtype))
 						$desc .= ' Hình thức thi: ' . TestType::from($examroom->testtype)->getLabel() . '.';
 					$desc .= ' Số thí sinh: ' . $examroom->examineeCount;
 				}

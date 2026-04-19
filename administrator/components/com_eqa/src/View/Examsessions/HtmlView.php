@@ -63,8 +63,6 @@ class HtmlView extends ItemsHtmlView {
         //Preprocessing
         if(!empty($this->layoutData->items)){
             $examsessionIds = array_map(function ($item){return $item->id;}, $this->layoutData->items);
-            $examroomCounts = DatabaseHelper::getExamsessionExamroomCounts($examsessionIds);
-            $examineeCounts = DatabaseHelper::getExamsessionExamineeCounts($examsessionIds);
             foreach ($this->layoutData->items as $item)
             {
 	            $item->start = DatetimeHelper::convertToLocalTime($item->start);
@@ -72,8 +70,6 @@ class HtmlView extends ItemsHtmlView {
                 $item->dayofweek = DatetimeHelper::getDayOfWeek($item->start);
                 $item->dayofmonth = DatetimeHelper::getDayAndMonth($item->start);
                 $item->time = DatetimeHelper::getHourAndMinute($item->start);
-                $item->nexaminee = $examineeCounts[$item->id];
-                $item->nexamroom = $examroomCounts[$item->id];
 	            $item->nmonitor = DatabaseHelper::getExamsessionMonitorCount($item->id);
 	            $item->nexaminer = DatabaseHelper::getExamsessionExaminerCount($item->id);
             }

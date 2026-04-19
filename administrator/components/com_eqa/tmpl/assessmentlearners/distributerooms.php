@@ -137,4 +137,4 @@ $hiddenFields = [
         'assessment_id' => $assessment->id,
         'phase'=>'getdata'
 ];
-ViewHelper::printForm($this->form,'examrooms', $hiddenFields);
+ViewHelper::printForm($this->distributeToRoomsForm,'examrooms', $hiddenFields);

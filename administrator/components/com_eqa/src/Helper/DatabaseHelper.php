@@ -2,6 +2,7 @@
 
 namespace Kma\Component\Eqa\Administrator\Helper;
 
+use Kma\Component\Eqa\Administrator\DataObject\ExamsessionInfo;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
@@ -103,12 +104,6 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		return $currentAcademicyear - $admissionYear + 1;
 	}
 
-	static public function getExamName(int $examId)
-	{
-		$db = self::getDatabaseDriver();
-		$db->setQuery('SELECT name FROM #__eqa_exams WHERE id='.$examId);
-		return $db->loadResult();
-	}
 	static public function getExamNames(array $examIds)
 	{
 		if(empty($examIds))
@@ -332,64 +327,168 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery('SELECT COUNT(1) FROM #__eqa_packages WHERE exam_id='.$examId);
 		return $db->loadResult();
 	}
-	static public function getExamroomInfo($id): ExamroomInfo|null
+
+	/**
+	 * Lấy thông tin đầy đủ của một phòng thi, tự động phân biệt KTHP và sát hạch.
+	 *
+	 * Luồng xử lý:
+	 *   1. Lấy các trường cơ bản của examroom + examsession + phòng vật lý.
+	 *   2. Đếm thí sinh từ cả hai bảng (exam_learner và assessment_learner).
+	 *   3. Nếu có thí sinh sát hạch → populate thông tin kỳ sát hạch.
+	 *      Ngược lại → populate thông tin kỳ thi KTHP (examseason).
+	 *
+	 * @param  int|null  $id  ID phòng thi.
+	 *
+	 * @return ExamroomInfo|null  null nếu $id rỗng hoặc không tìm thấy bản ghi.
+	 * @since 1.0
+	 */
+	public static function getExamroomInfo($id): ExamroomInfo|null
 	{
-		if(empty($id))
+		if (empty($id)) {
 			return null;
+		}
 
 		$db = self::getDatabaseDriver();
+
+		// -------------------------------------------------------------------------
+		// 1. Lấy thông tin cơ bản: examroom + phòng vật lý + ca thi
+		// -------------------------------------------------------------------------
 		$columns = $db->quoteName(
-			array('a.id', 'a.name', 'a.exam_ids', 'c.code',  'd.start', 'e.attempt', 'e.term', 'e.academicyear', 'e.name',    'd.name',     'd.id',          'a.monitor1_id', 'a.monitor2_id', 'a.monitor3_id', 'a.examiner1_id', 'a.examiner2_id'),
-			array('id',   'name',   'exam_ids',   'building','examtime', 'attempt',  'term',   'academicyear',   'examseason','examsession','examsession_id','monitor1_id',   'monitor2_id',   'monitor3_id',   'examiner1_id',   'examiner2_id')
+			['a.id', 'a.name', 'a.exam_ids',
+				'c.code',
+				'd.start', 'd.name',     'd.id',
+				'a.monitor1_id', 'a.monitor2_id', 'a.monitor3_id',
+				'a.examiner1_id', 'a.examiner2_id'],
+			['id',   'name',   'exam_ids',
+				'building',
+				'examtime', 'examsession', 'examsession_id',
+				'monitor1_id', 'monitor2_id', 'monitor3_id',
+				'examiner1_id', 'examiner2_id']
 		);
+
 		$query = $db->getQuery(true)
 			->select($columns)
-			->from('#__eqa_examrooms AS a')
-			->leftJoin('#__eqa_rooms AS b', 'a.room_id=b.id')
-			->leftJoin('#__eqa_buildings AS c', 'b.building_id=c.id')
-			->leftJoin('#__eqa_examsessions AS d', 'a.examsession_id=d.id')
-			->leftJoin('#__eqa_examseasons AS e', 'd.examseason_id=e.id')
-			->where('a.id='. $id);
+			->from($db->quoteName('#__eqa_examrooms', 'a'))
+			->leftJoin($db->quoteName('#__eqa_rooms', 'b')         . ' ON ' . $db->quoteName('a.room_id')        . ' = ' . $db->quoteName('b.id'))
+			->leftJoin($db->quoteName('#__eqa_buildings', 'c')     . ' ON ' . $db->quoteName('b.building_id')    . ' = ' . $db->quoteName('c.id'))
+			->leftJoin($db->quoteName('#__eqa_examsessions', 'd')  . ' ON ' . $db->quoteName('a.examsession_id') . ' = ' . $db->quoteName('d.id'))
+			->where($db->quoteName('a.id') . ' = ' . (int) $id);
+
 		$db->setQuery($query);
 		$obj = $db->loadObject();
-		$examroom = new ExamroomInfo();
-		$examroom->id = $obj->id;
-		$examroom->name = $obj->name;
-		$examroom->building = $obj->building;
-		$examroom->examTime = $obj->examtime;
-		$examroom->academicyear = $obj->academicyear;
-		$examroom->term = $obj->term;
-		$examroom->attempt = $obj->attempt;
-		$examroom->examseason = $obj->examseason;
-		$examroom->examsession = $obj->examsession;
+
+		if ($obj === null) {
+			return null;
+		}
+
+		// -------------------------------------------------------------------------
+		// 2. Đếm thí sinh từ cả hai bảng
+		// -------------------------------------------------------------------------
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from($db->quoteName('#__eqa_exam_learner'))
+			->where($db->quoteName('examroom_id') . ' = ' . (int) $id);
+		$db->setQuery($query);
+		$examExamineeCount = (int) $db->loadResult();
+
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from($db->quoteName('#__eqa_assessment_learner'))
+			->where($db->quoteName('examroom_id') . ' = ' . (int) $id);
+		$db->setQuery($query);
+		$assessmentExamineeCount = (int) $db->loadResult();
+
+		$isAssessmentRoom = $assessmentExamineeCount > 0;
+
+		// -------------------------------------------------------------------------
+		// 3. Populate ExamroomInfo
+		// -------------------------------------------------------------------------
+		$examroom                = new ExamroomInfo();
+		$examroom->id            = $obj->id;
+		$examroom->name          = $obj->name;
+		$examroom->building      = $obj->building;
+		$examroom->examTime      = DatetimeHelper::convertToLocalTime($obj->examtime);
+		$examroom->examsession   = $obj->examsession;
 		$examroom->examsessionId = $obj->examsession_id;
-		$examroom->monitor1Id = $obj->monitor1_id;
-		$examroom->monitor2Id = $obj->monitor2_id;
-		$examroom->monitor3Id = $obj->monitor3_id;
-		$examroom->examiner1Id = $obj->examiner1_id;
-		$examroom->examiner2Id = $obj->examiner2_id;
+		$examroom->monitor1Id    = $obj->monitor1_id;
+		$examroom->monitor2Id    = $obj->monitor2_id;
+		$examroom->monitor3Id    = $obj->monitor3_id;
+		$examroom->examiner1Id   = $obj->examiner1_id;
+		$examroom->examiner2Id   = $obj->examiner2_id;
 
-		//Đếm số thí sinh trong phòng thi
-		$db->setQuery('SELECT COUNT(1) FROM `#__eqa_exam_learner` WHERE `examroom_id`='.(int)$id);
-		$examroom->examineeCount = $db->loadResult();
+		$examroom->isAssessmentRoom = $isAssessmentRoom;
+		$examroom->examineeCount    = $isAssessmentRoom ? $assessmentExamineeCount : $examExamineeCount;
 
-		//Lấy danh sách các môn thi
-		if(!empty($obj->exam_ids))
-		{
-			$examroom->examIds = explode(',', $obj->exam_ids);
-			$examroom->exams = self::getExamNames($examroom->examIds);
+		if ($isAssessmentRoom) {
+			// ---------------------------------------------------------------------
+			// 3a. Phòng thi sát hạch: lấy thông tin kỳ sát hạch
+			// ---------------------------------------------------------------------
+			$query = $db->getQuery(true)
+				->select([
+					$db->quoteName('a.id'),
+					$db->quoteName('a.title'),
+				])
+				->from($db->quoteName('#__eqa_assessments', 'a'))
+				->innerJoin(
+					$db->quoteName('#__eqa_assessment_learner', 'al') .
+					' ON ' . $db->quoteName('al.assessment_id') . ' = ' . $db->quoteName('a.id')
+				)
+				->where($db->quoteName('al.examroom_id') . ' = ' . (int) $id)
+				->setLimit(1);
+			$db->setQuery($query);
+			$assessment = $db->loadObject();
+
+			$examroom->assessmentId    = $assessment->id    ?? null;
+			$examroom->assessmentTitle = $assessment->title ?? null;
+
+			// Đặt các field KTHP về null để tránh nhầm lẫn
+			$examroom->academicyear = null;
+			$examroom->term         = null;
+			$examroom->examseason   = null;
+			$examroom->attempt      = null;
+			$examroom->examIds      = null;
+			$examroom->exams        = null;
+
+		} else {
+			// ---------------------------------------------------------------------
+			// 3b. Phòng thi KTHP: lấy thông tin kỳ thi (examseason)
+			// ---------------------------------------------------------------------
+			$query = $db->getQuery(true)
+				->select($db->quoteName(
+					['e.attempt', 'e.term', 'e.academicyear', 'e.name'],
+					['attempt',   'term',   'academicyear',   'examseason']
+				))
+				->from($db->quoteName('#__eqa_examsessions', 'd'))
+				->leftJoin(
+					$db->quoteName('#__eqa_examseasons', 'e') .
+					' ON ' . $db->quoteName('d.examseason_id') . ' = ' . $db->quoteName('e.id')
+				)
+				->where($db->quoteName('d.id') . ' = ' . (int) $obj->examsession_id);
+			$db->setQuery($query);
+			$season = $db->loadObject();
+
+			$examroom->academicyear = $season->academicyear ?? null;
+			$examroom->term         = $season->term         ?? null;
+			$examroom->examseason   = $season->examseason   ?? null;
+			$examroom->attempt      = $season->attempt      ?? null;
+
+			// Lấy danh sách môn thi
+			if (!empty($obj->exam_ids)) {
+				$examroom->examIds = explode(',', $obj->exam_ids);
+				$examroom->exams   = self::getExamNames($examroom->examIds);
+			} else {
+				$examroom->examIds = [];
+				$examroom->exams   = [];
+			}
+
+			// Lấy hình thức thi và thời gian thi
+			$examroom->testtype     = self::getExamroomTesttype((int) $id);
+			$examroom->testDuration = self::getExamroomTestDuration((int) $id);
+
+			// Đặt các field sát hạch về null
+			$examroom->assessmentId    = null;
+			$examroom->assessmentTitle = null;
 		}
-		else
-		{
-			$examroom->examIds=[];
-			$examroom->exams = [];
-		}
-
-		//Hình thức thi
-		$examroom->testtype = self::getExamroomTesttype($id);
-
-		//Thời gian làm bài thi
-		$examroom->testDuration = self::getExamroomTestDuration($id);
 
 		return $examroom;
 	}
@@ -554,7 +653,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery('SELECT name FROM #__eqa_examsessions WHERE id='.$examsessionId);
 		return $db->loadResult();
 	}
-	static public function getExamsessionInfo(int $examsessionId)
+	static public function getExamsessionInfo_bak(int $examsessionId)
 	{
 		$db = self::getDatabaseDriver();
 
@@ -585,16 +684,107 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$obj->countExaminee = sizeof($examIds);
 		$obj->examIds = array_unique($examIds);
 
+		//Convert start time to local time
+		$obj->start = DatetimeHelper::convertToLocalTime($obj->start);
+
 		return $obj;
 	}
-	static public function getExamsessionExamrooms(int $examsessionId){
+	/**
+	 * Lấy thông tin tóm tắt của một ca thi theo ID.
+	 *
+	 * Tự động phân biệt ca thi KTHP và ca thi sát hạch dựa trên
+	 * examseason_id / assessment_id trong bảng #__eqa_examsessions.
+	 *
+	 * @param  int  $examsessionId
+	 *
+	 * @return ExamsessionInfo|null  null nếu không tìm thấy.
+	 * @since 1.0
+	 * @updated 2.0.6  Trả về ExamsessionInfo thay vì stdClass; hỗ trợ sát hạch.
+	 */
+	public static function getExamsessionInfo(int $examsessionId): ?ExamsessionInfo
+	{
 		$db = self::getDatabaseDriver();
+
 		$query = $db->getQuery(true)
-			->select('id, name, monitor1_id, monitor2_id, monitor3_id, examiner1_id, examiner2_id')
-			->from('#__eqa_examrooms')
-			->where('examsession_id='.$examsessionId);
+			->select($db->quoteName(['id', 'name', 'start', 'examseason_id', 'assessment_id']))
+			->from($db->quoteName('#__eqa_examsessions'))
+			->where($db->quoteName('id') . ' = ' . $examsessionId);
 		$db->setQuery($query);
-		return $db->loadObjectList();
+		$row = $db->loadObject();
+
+		if ($row === null) {
+			return null;
+		}
+
+		$info                      = new ExamsessionInfo();
+		$info->id                  = (int) $row->id;
+		$info->name                = $row->name;
+		$info->start               = $row->start;
+		$info->isAssessmentSession = !empty($row->assessment_id);
+
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from($db->quoteName('#__eqa_examrooms'))
+			->where($db->quoteName('examsession_id') . ' = ' . $examsessionId);
+		$db->setQuery($query);
+		$info->countExamroom = (int) $db->loadResult();
+
+		if ($info->isAssessmentSession) {
+			// Ca thi sát hạch
+			$query = $db->getQuery(true)
+				->select($db->quoteName(['id', 'title']))
+				->from($db->quoteName('#__eqa_assessments'))
+				->where($db->quoteName('id') . ' = ' . (int) $row->assessment_id);
+			$db->setQuery($query);
+			$assessment = $db->loadObject();
+
+			$info->assessmentId    = $assessment ? (int) $assessment->id    : null;
+			$info->assessmentTitle = $assessment ? $assessment->title        : null;
+
+			$query = $db->getQuery(true)
+				->select('COUNT(1)')
+				->from($db->quoteName('#__eqa_assessment_learner', 'al'))
+				->innerJoin(
+					$db->quoteName('#__eqa_examrooms', 'er') .
+					' ON ' . $db->quoteName('er.id') . ' = ' . $db->quoteName('al.examroom_id')
+				)
+				->where($db->quoteName('er.examsession_id') . ' = ' . $examsessionId);
+			$db->setQuery($query);
+			$info->countExaminee = (int) $db->loadResult();
+
+			$info->examIds = null;
+
+			// Với sát hạch, "môn thi" là tên kỳ sát hạch
+			$info->exams = !empty($info->assessmentTitle)
+				? [$info->assessmentTitle]
+				: [];
+
+		} else {
+			// Ca thi KTHP
+			$query = $db->getQuery(true)
+				->select($db->quoteName('a.exam_id'))
+				->from($db->quoteName('#__eqa_exam_learner', 'a'))
+				->leftJoin(
+					$db->quoteName('#__eqa_examrooms', 'b') .
+					' ON ' . $db->quoteName('a.examroom_id') . ' = ' . $db->quoteName('b.id')
+				)
+				->where($db->quoteName('b.examsession_id') . ' = ' . $examsessionId);
+			$db->setQuery($query);
+			$examIds = $db->loadColumn();
+
+			$info->countExaminee = count($examIds);
+			$info->examIds       = array_unique($examIds);
+
+			// Lấy tên các môn thi
+			$info->exams = !empty($info->examIds)
+				? self::getExamNames($info->examIds)
+				: [];
+
+			$info->assessmentId    = null;
+			$info->assessmentTitle = null;
+		}
+
+		return $info;
 	}
 	static public function getExamsessionMonitorCount(int $examsessionId)
 	{
@@ -628,83 +818,6 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		}
 		return $count;
 	}
-	static public function getExamsessionExamroomCounts(array $examsessionIds): array
-	{
-		//1. Lấy tất cả các cặp (examsession, examsession)
-		$examsessionsIdSet = '(' . implode(',', $examsessionIds) . ')';
-		$db = self::getDatabaseDriver();
-		$query = $db->getQuery(true)
-			->select('DISTINCT a.examroom_id, b.examsession_id')
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_examrooms AS b', 'a.examroom_id = b.id')
-			->where('a.examroom_id IS NOT NULL AND  b.examsession_id IN ' . $examsessionsIdSet);
-		$db->setQuery($query);
-		$items = $db->loadObjectList();
-
-		//2. Khởi tạo bộ đếm
-		$count = [];
-		foreach ($examsessionIds as $examsessionsId)
-			$count[$examsessionsId] = 0;
-
-		//3. Đếm
-		foreach ($items as $item){
-			$count[$item->examsession_id]++;
-		}
-
-		//Return
-		return $count;
-	}
-	static public function getExamsessionExamineeCounts(array $examsessionIds): array
-    {
-        //1. Lấy tất cả các cặp (learner, examsession)
-        $examsessionsIdSet = '(' . implode(',', $examsessionIds) . ')';
-        $db = self::getDatabaseDriver();
-        $query = $db->getQuery(true)
-            ->select('a.learner_id, b.examsession_id')
-            ->from('#__eqa_exam_learner AS a')
-            ->leftJoin('#__eqa_examrooms AS b', 'a.examroom_id = b.id')
-            ->where('a.examroom_id IS NOT NULL AND b.examsession_id IN ' . $examsessionsIdSet);
-        $db->setQuery($query);
-        $items = $db->loadObjectList();
-
-        //2. Khởi tạo bộ đếm
-        $count = [];
-        foreach ($examsessionIds as $examsessionsId)
-            $count[$examsessionsId] = 0;
-
-        //3. Đếm
-        foreach ($items as $item){
-            $count[$item->examsession_id]++;
-        }
-
-        //Return
-        return $count;
-    }
-    static public function getExamineeCountOfExamrooms(array $examroomIds)
-    {
-        //1. Lấy tất cả các cặp (learner, examsession)
-        $examroomIdSet = '(' . implode(',', $examroomIds) . ')';
-        $db = self::getDatabaseDriver();
-        $query = $db->getQuery(true)
-            ->select('learner_id, examroom_id')
-            ->from('#__eqa_exam_learner')
-            ->where('examroom_id IN ' . $examroomIdSet);
-        $db->setQuery($query);
-        $items = $db->loadObjectList();
-
-        //2. Khởi tạo bộ đếm
-        $count = [];
-        foreach ($examroomIds as $examroomId)
-            $count[$examroomId] = 0;
-
-        //3. Đếm
-        foreach ($items as $item){
-            $count[$item->examroom_id]++;
-        }
-
-        //Return
-        return $count;
-    }
 
 	/**
 	 * @param   array   $employeeIds
@@ -887,7 +1000,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 	{
 		return self::getExamseasonInfo();
 	}
-	static public function isCompletedExamsession(int $examsessionId) : bool
+	static public function isCompletedExamsession_bak(int $examsessionId) : bool
 	{
 		$db = self::getDatabaseDriver();
 		$query = $db->getQuery(true)
@@ -897,6 +1010,57 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 			->where('a.id='.$examsessionId);
 		$db->setQuery($query);
 		return $db->loadResult();
+	}
+	/**
+	 * Kiểm tra xem một ca thi đã kết thúc hay chưa.
+	 *
+	 * Với ca thi KTHP: dựa vào trường 'completed' của kỳ thi (examseason).
+	 * Với ca thi sát hạch: dựa vào trường 'completed' của kỳ sát hạch (assessment).
+	 * Nếu không xác định được ca thi hoặc ngữ cảnh → trả về false (cho phép tiếp tục).
+	 *
+	 * @param  int  $examsessionId
+	 *
+	 * @return bool
+	 * @since 1.0
+	 */
+	static public function isCompletedExamsession(int $examsessionId): bool
+	{
+		$db = self::getDatabaseDriver();
+
+		// Lấy thông tin ca thi: examseason_id và assessment_id
+		$query = $db->getQuery(true)
+			->select($db->quoteName(['examseason_id', 'assessment_id']))
+			->from($db->quoteName('#__eqa_examsessions'))
+			->where($db->quoteName('id') . ' = ' . $examsessionId);
+		$db->setQuery($query);
+		$session = $db->loadObject();
+
+		if ($session === null) {
+			return false;
+		}
+
+		if (!empty($session->examseason_id)) {
+			// Ca thi KTHP: kiểm tra trạng thái completed của examseason
+			$query = $db->getQuery(true)
+				->select($db->quoteName('completed'))
+				->from($db->quoteName('#__eqa_examseasons'))
+				->where($db->quoteName('id') . ' = ' . (int) $session->examseason_id);
+			$db->setQuery($query);
+			return (bool) $db->loadResult();
+		}
+
+		if (!empty($session->assessment_id)) {
+			// Ca thi sát hạch: kiểm tra trạng thái completed của assessment
+			$query = $db->getQuery(true)
+				->select($db->quoteName('completed'))
+				->from($db->quoteName('#__eqa_assessments'))
+				->where($db->quoteName('id') . ' = ' . (int) $session->assessment_id);
+			$db->setQuery($query);
+			return (bool) $db->loadResult();
+		}
+
+		// Không xác định được ngữ cảnh → không chặn
+		return false;
 	}
 	static public function isDebtor(int $learnerId):bool
 	{

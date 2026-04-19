@@ -22,6 +22,7 @@ class HtmlView extends ItemHtmlView {
     protected ?ExamroomInfo $examroom;
 	protected $examineeAnomalies;
 	protected ?ExamineeanomalyField $anomalyField;
+	protected string $anomalyType = 'exam';
     protected function prepareDataForLayoutExaminees() : void
     {
         $examroomId = Factory::getApplication()->input->getInt('examroom_id');
@@ -116,6 +117,126 @@ class HtmlView extends ItemHtmlView {
 		ToolbarHelper::appendButton('core.edit','shuffle','COM_EQA_CHANGE_EXAMROOM', 'examroom.change',true);
 		ToolbarHelper::appendDelete('examroom.removeExaminees','COM_EQA_REMOVE_FROM_EXAMROOM','COM_EQA_MSG_CONFIRM_REMOVE_FROM_EXAMROOM');
 	}
+
+	/**
+	 * Chuẩn bị dữ liệu cho layout danh sách thí sinh sát hạch của một phòng thi.
+	 *
+	 * @return void
+	 * @since 2.0.6
+	 */
+	protected function prepareDataForLayoutAssessmentexaminees(): void
+	{
+		$app        = Factory::getApplication();
+		$examroomId = $app->input->getInt('examroom_id');
+
+		// Lấy thông tin phòng thi + kỳ sát hạch cho header
+		$this->examroom   = DatabaseHelper::getExamroomInfo($examroomId);
+
+		/**
+		 * Chuẩn bị model
+		 * @var \Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel $model
+		 */
+		$model = ComponentHelper::createModel('AssessmentLearners');
+		$this->setModel($model, true);
+		$model->setState('filter.assessment_id', (int) ($this->assessment->id ?? 0));
+		$model->setState('filter.examroom_id',   $examroomId);
+
+		// List layout data
+		$this->listLayoutData = new ListLayoutData();
+		$this->loadCommonListLayoutData($this->listLayoutData, $model);
+		$this->listLayoutData->formActionParams = [
+			'view'       => 'examroom',
+			'layout'     => 'assessmentexaminees',
+			'examroom_id' => $examroomId,
+		];
+
+		// Xóa filter state sau khi lấy dữ liệu
+		$model->setState('filter.assessment_id', null);
+		$model->setState('filter.examroom_id',   null);
+
+		// Preprocessing từng item
+		if (!empty($this->listLayoutData->items)) {
+			foreach ($this->listLayoutData->items as &$item) {
+				// Bất thường
+				$item->anomaly_label = ($item->anomaly != \Kma\Component\Eqa\Administrator\Enum\Anomaly::None->value)
+					? \Kma\Component\Eqa\Administrator\Enum\Anomaly::from($item->anomaly)->getLabel()
+					: '—';
+
+				// Kết quả điểm
+				$item->score_display = isset($item->score) && $item->score !== null
+					? number_format((float) $item->score, 2)
+					: '—';
+
+				// Trạng thái đạt/không đạt
+				if ($item->passed === null) {
+					$item->passed_html = '<span class="badge bg-secondary">Chưa có</span>';
+				} elseif ($item->passed) {
+					$item->passed_html = '<span class="badge bg-success">Đạt</span>';
+				} else {
+					$item->passed_html = '<span class="badge bg-danger">Không đạt</span>';
+				}
+			}
+		}
+
+		// Cấu hình cột hiển thị
+		$fields = new ListLayoutItemFields();
+		$fields->sequence = ListLayoutItemFields::defaultFieldSequence();
+
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption(
+			'examinee_code', 'SBD', true, false, 'text-center'
+		);
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption(
+			'learner_code', 'Mã HVSV', true, false, 'text-center'
+		);
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_lastname','Họ đệm');
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption('learner_firstname','Tên');
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption(
+			'anomaly_label', 'Bất thường', false, false, 'text-center'
+		);
+		$fields->customFieldset1[] = new ListLayoutItemFieldOption(
+			'score_display', 'Điểm', false, false, 'text-center'
+		);
+		$f           = new ListLayoutItemFieldOption('passed_html', 'Kết quả', false, false, 'text-center');
+		$f->printRaw = true;
+		$fields->customFieldset1[] = $f;
+
+		$this->listLayoutItemFields = $fields;
+	}
+
+	/**
+	 * Toolbar cho layout assessmentexaminees.
+	 *
+	 * @return void
+	 * @since 2.0.6
+	 */
+	protected function addToolbarForLayoutAssessmentexaminees(): void
+	{
+		$examroomId   = Factory::getApplication()->input->getInt('examroom_id');
+
+		$title = 'Danh sách thí sinh sát hạch';
+		if (!empty($this->examroom->assessmentTitle)) {
+			$title .= ' — ' . $this->examroom->assessmentTitle;
+		}
+		ToolbarHelper::title($title);
+
+		// Nút quay lại danh sách phòng thi
+		ToolbarHelper::appendGoHome();
+
+		//Nút quay lại danh sách phòng thi
+		$backUrl = Route::_('index.php?option=com_eqa&view=examrooms',false);
+		ToolbarHelper::appendLink('core.manage', $backUrl, 'Phòng thi', 'arrow-up-2');
+
+		// Nút quay lại danh sách thí sinh của kỳ sát hạch
+		if(!empty($this->examroom->assessmentId))
+		{
+			$backUrl = Route::_(
+				'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $this->examroom->assessmentId,
+				false
+			);
+			ToolbarHelper::appendLink('core.manage', $backUrl, 'Danh sách kỳ sát hạch', 'arrow-up-2');
+		}
+	}
+
     protected function prepareDataForLayoutAddexaminees(): void
     {
         //Init
@@ -138,7 +259,7 @@ class HtmlView extends ItemHtmlView {
         ToolbarHelper::appendLink(null,$url, 'JTOOLBAR_CANCEL', 'delete','btn btn-danger');
     }
 
-	protected function prepareDataForLayoutAnomaly(): void
+	protected function prepareDataForLayoutAnomaly_bak(): void
 	{
 		//Init
 		$app = Factory::getApplication();
@@ -152,6 +273,33 @@ class HtmlView extends ItemHtmlView {
 		$this->examroom = DatabaseHelper::getExamroomInfo($examroomId);
 		$this->examineeAnomalies = $model->getExamineeAnomalies($examroomId);
 		$this->anomalyField = new ExamineeanomalyField();
+	}
+
+	/**
+	 * Chuẩn bị dữ liệu cho layout nhập thông tin bất thường.
+	 * Phân nhánh theo tham số 'type' trong URL (exam | assessment).
+	 *
+	 * @return void
+	 * @since 1.0
+	 */
+	protected function prepareDataForLayoutAnomaly(): void
+	{
+		$app        = Factory::getApplication();
+		$examroomId = $app->input->getInt('examroom_id', 0);
+		$type       = $app->input->getAlpha('type', 'exam'); // 'exam' | 'assessment'
+
+		/** @var ExamroomModel $model */
+		$model = $this->getModel();
+
+		$this->examroom        = DatabaseHelper::getExamroomInfo($examroomId);
+		$this->anomalyField    = new ExamineeanomalyField();
+		$this->anomalyType     = $type; // truyền xuống template
+
+		if ($type === 'assessment') {
+			$this->examineeAnomalies = $model->getAssessmentExamineeAnomalies($examroomId);
+		} else {
+			$this->examineeAnomalies = $model->getExamineeAnomalies($examroomId);
+		}
 	}
 	protected function addToolbarForLayoutAnomaly() : void
 	{

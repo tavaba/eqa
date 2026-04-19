@@ -452,6 +452,208 @@ abstract class IOHelper extends BaseIOHelper
 		//Change font for all the sheet
 		$sheet->getStyle($sheet->calculateWorksheetDimension())->getFont()->setName('Times New Roman');
 	}
+
+	/**
+	 * Ghi danh sách thí sinh của một phòng thi sát hạch ra một Worksheet.
+	 *
+	 * Cấu trúc y hệt writeExamroomExaminees() với 9 cột (A-I thay vì A-J),
+	 * với các điểm khác biệt:
+	 *   - Row 5 : để trống (KTHP ghi năm học/học kỳ)
+	 *   - Row 6 : tên kỳ sát hạch (KTHP ghi môn thi)
+	 *   - Row 7 : để trống (KTHP ghi lần thi/hình thức/thời gian)
+	 *   - Row 12: cột H = "Ký tên", cột I = "Ghi chú"
+	 *   - Độ rộng cột H = 15 (= J cũ), cột I = 23 (= H+I cũ gộp lại)
+	 *
+	 * @param  Worksheet    $sheet     Sheet đích.
+	 * @param  ExamroomInfo $examroom  Thông tin phòng thi (isAssessmentRoom = true).
+	 * @param  object[]     $examinees Kết quả từ ExamroomModel::getAssessmentExaminees().
+	 *
+	 * @return void
+	 * @since 2.0.6
+	 */
+	public static function writeAssessmentExamroomExaminees(
+		Worksheet $sheet,
+		ExamroomInfo $examroom,
+		array $examinees
+	): void {
+		$COLS     = 9;
+		$fontSize = 12;
+
+		// -------------------------------------------------------------------------
+		// Font mặc định cho toàn sheet — Times New Roman 12pt
+		// -------------------------------------------------------------------------
+		$font = $sheet->getStyle([1, 1, $COLS, count($examinees) + 100])->getFont();
+		$font->setName('Times New Roman');
+		$font->setSize($fontSize);
+
+		// -------------------------------------------------------------------------
+		// Căn lề trang — y hệt writeExamroomExaminees()
+		// -------------------------------------------------------------------------
+		$sheet->getPageMargins()->setTop(0.5);
+		$sheet->getPageMargins()->setBottom(0.75);
+		$sheet->getPageMargins()->setLeft(0.45);
+		$sheet->getPageMargins()->setRight(0.45);
+		$sheet->getPageMargins()->setHeader(0.3);
+		$sheet->getPageMargins()->setFooter(0.3);
+
+		// -------------------------------------------------------------------------
+		// Độ rộng cột
+		// KTHP (A-J): [5, 5, 12, 20, 8, 7, 7,  8,  8, 15]
+		// Sát hạch   : [5, 5, 12, 20, 8, 7, 7, 15, 23]
+		//   Bỏ cột G (Mã đề) → cột G sát hạch = cột G KTHP (width=7)
+		//   Cột H sát hạch = J cũ (width=15, "Ký tên")
+		//   Cột I sát hạch = H+I cũ gộp (width=23, "Ghi chú")
+		// -------------------------------------------------------------------------
+		$widths = [5, 5, 12, 20, 8, 7, 7, 15, 23];
+		for ($col = 1; $col <= $COLS; $col++) {
+			$sheet->getColumnDimension(Coordinate::stringFromColumnIndex($col))
+				->setWidth($widths[$col - 1]);
+		}
+
+		// -------------------------------------------------------------------------
+		// Row 1-2: Header tổ chức + quốc hiệu — y hệt KTHP
+		// -------------------------------------------------------------------------
+		$row = 1;
+		$sheet->mergeCells([1, $row, 4, $row]);
+		$sheet->setCellValue([1, $row], 'HỌC VIỆN KỸ THUẬT MẬT MÃ');
+
+		$sheet->mergeCells([1, $row + 1, 4, $row + 1]);
+		$sheet->setCellValue([1, $row + 1], 'PHÒNG KT&ĐBCLĐT');
+		$sheet->getStyle([1, $row + 1, 4, $row + 1])->getFont()->setBold(true);
+
+		$sheet->mergeCells([5, $row, $COLS, $row]);
+		$sheet->setCellValue([5, $row], 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM');
+
+		$sheet->mergeCells([5, $row + 1, $COLS, $row + 1]);
+		$sheet->setCellValue([5, $row + 1], 'Độc lập - Tự do - Hạnh phúc');
+		$sheet->getStyle([5, $row, $COLS, $row + 2])->getFont()->setBold(true);
+		$sheet->getStyle([1, $row + 1, $COLS, $row + 1])->getFont()->setUnderline(Font::UNDERLINE_SINGLE);
+
+		// -------------------------------------------------------------------------
+		// Row 4: Tiêu đề danh sách — y hệt KTHP
+		// -------------------------------------------------------------------------
+		$row = 4;
+		$sheet->mergeCells([1, $row, $COLS, $row]);
+		$sheet->setCellValue([1, $row], 'DANH SÁCH THÍ SINH DỰ THI');
+		$sheet->getStyle([1, $row, $COLS, $row])->getFont()->setBold(true);
+
+		$sheet->getStyle([1, 1, $COLS, $row])->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$sheet->getStyle([1, 1, $COLS, $row])->getFont()->setSize($fontSize);
+
+		// -------------------------------------------------------------------------
+		// Row 5: để trống (KTHP ghi "Năm học X - Học kỳ Y")
+		// Row 6: Tên kỳ sát hạch — thay cho "Môn thi" của KTHP
+		// Row 7: để trống (KTHP ghi Lần thi / Hình thức thi / Thời gian làm bài)
+		// -------------------------------------------------------------------------
+		$row = 6;
+		$value = new RichText();
+		$part  = $value->createTextRun('Kỳ sát hạch: ');
+		$part->getFont()->setSize($fontSize)->setName('Times New Roman');
+		$part = $value->createTextRun($examroom->assessmentTitle ?? '');
+		$part->getFont()->setBold(true)->setSize($fontSize)->setName('Times New Roman');
+		$sheet->mergeCells([1, $row, $COLS, $row]);
+		$sheet->setCellValue([1, $row], $value);
+
+		// -------------------------------------------------------------------------
+		// Row 9: Ngày thi, Giờ thi, Phòng thi, Mã phòng thi — y hệt KTHP
+		// -------------------------------------------------------------------------
+		$value = new RichText();
+		$part  = $value->createTextRun('Ngày thi: ');
+		$part->getFont()->setSize($fontSize)->setName('Times New Roman');
+		$part = $value->createTextRun(DatetimeHelper::getFullDate($examroom->examTime));
+		$part->getFont()->setBold(true)->setSize($fontSize)->setName('Times New Roman')->setColor(new Color('FFFF0000'));
+		$part = $value->createTextRun('   Giờ thi: ');
+		$part->getFont()->setSize($fontSize)->setName('Times New Roman');
+		$part = $value->createTextRun(DatetimeHelper::getHourAndMinute($examroom->examTime));
+		$part->getFont()->setBold(true)->setSize($fontSize)->setName('Times New Roman')->setColor(new Color('FFFF0000'));
+		$part = $value->createTextRun('    Phòng thi: ');
+		$part->getFont()->setSize($fontSize)->setName('Times New Roman');
+		$part = $value->createTextRun($examroom->name);
+		$part->getFont()->setBold(true)->setSize($fontSize)->setName('Times New Roman')->setColor(new Color('FFFF0000'));
+		$part = $value->createTextRun('   Mã phòng thi: ' . $examroom->id);
+		$part->getFont()->setSize($fontSize)->setName('Times New Roman');
+		$sheet->mergeCells('A9:I9');
+		$sheet->setCellValue('A9', $value);
+
+		// -------------------------------------------------------------------------
+		// Row 10: Tổng số thí sinh — y hệt KTHP
+		// -------------------------------------------------------------------------
+		$value = 'Tổng số thí sinh: ' . $examroom->examineeCount;
+		$value .= '    Có mặt:......   Vắng: ......    Có lý do: ......    Không lý do: .......';
+		$sheet->getStyle('A10')->getFont()->setSize($fontSize);
+		$sheet->mergeCells('A10:I10');
+		$sheet->setCellValue('A10', $value);
+
+		// -------------------------------------------------------------------------
+		// Row 12: Tiêu đề bảng
+		// A=STT, B=SBD, C=Mã HVSV, D=Họ đệm, E=Tên, F=Lớp, G=Mã đề, H=Ký tên, I=Ghi chú
+		// -------------------------------------------------------------------------
+		$sheet->setCellValue('A12', 'STT');
+		$sheet->setCellValue('B12', 'SBD');
+		$sheet->setCellValue('C12', 'Mã HVSV');
+		$sheet->setCellValue('D12', 'Họ đệm');
+		$sheet->setCellValue('E12', 'Tên');
+		$sheet->setCellValue('F12', 'Lớp');
+		$sheet->setCellValue('G12', 'Mã đề');
+		$sheet->setCellValue('H12', 'Ký tên');
+		$sheet->setCellValue('I12', 'Ghi chú');
+		$sheet->getStyle('A12:I12')->getFont()->setBold(true);
+		$sheet->getStyle('A12:I12')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		// -------------------------------------------------------------------------
+		// Row 13+: Dữ liệu thí sinh
+		// Không ghi cột G (Mã đề) — để trống như KTHP
+		// Ghi bất thường vào cột I (Ghi chú) thay vì cột J
+		// -------------------------------------------------------------------------
+		$seq = 1;
+		$row = 13;
+		foreach ($examinees as $examinee) {
+			$sheet->setCellValue('A' . $row, $seq);
+			$sheet->setCellValue('B' . $row, $examinee->code);
+			$sheet->setCellValue('C' . $row, $examinee->learner_code);
+			$sheet->setCellValue('D' . $row, $examinee->lastname);
+			$sheet->setCellValue('E' . $row, $examinee->firstname);
+			$sheet->setCellValue('F' . $row, $examinee->group);
+
+			// Ghi bất thường vào cột Ghi chú (I) nếu có
+			$anomalyEnum = \Kma\Component\Eqa\Administrator\Enum\Anomaly::tryFrom((int) $examinee->anomaly);
+			if ($anomalyEnum !== null && $anomalyEnum !== \Kma\Component\Eqa\Administrator\Enum\Anomaly::None) {
+				$sheet->setCellValue('I' . $row, $anomalyEnum->getLabel());
+			}
+
+			$row++;
+			$seq++;
+		}
+
+		// -------------------------------------------------------------------------
+		// Định dạng bảng — y hệt KTHP, thay J bằng I
+		// -------------------------------------------------------------------------
+		$lastTableRow = 12 + count($examinees);
+		$sheet->getStyle('A12:I' . $lastTableRow)->getFont()->setSize($fontSize);
+		$sheet->getStyle('A12:C' . $lastTableRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$sheet->getStyle('F12:I' . $lastTableRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$sheet->getStyle('A12:I' . $lastTableRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+		// -------------------------------------------------------------------------
+		// Ending rows — y hệt KTHP, thay J bằng I
+		// (Sát hạch không có thi viết nên bỏ phần "Tổng số bài thi / Tổng số tờ")
+		// -------------------------------------------------------------------------
+		$row++;
+		$sheet->mergeCells('A' . $row . ':I' . $row);
+		$sheet->setCellValue('A' . $row, 'Hà Nội, ngày ..... tháng ..... năm 20....');
+		$sheet->getStyle('A' . $row)->getFont()->setItalic(true);
+		$sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+		$row++;
+		$sheet->mergeCells('A' . $row . ':C' . $row);
+		$sheet->setCellValue('A' . $row, 'CBCT thứ nhất');
+		$sheet->mergeCells('D' . $row . ':F' . $row);
+		$sheet->setCellValue('D' . $row, 'CBCT thứ hai');
+		$sheet->mergeCells('G' . $row . ':I' . $row);
+		$sheet->setCellValue('G' . $row, 'Đại diện Phòng KT&ĐBCLĐT');
+		$sheet->getStyle('A' . $row . ':I' . $row)->getFont()->setBold(true);
+		$sheet->getStyle('A' . $row . ':I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+	}
 	static public function writeExamExaminees(Worksheet $sheet, $exam, $examinees) : void
 	{
 		//Lấy tham số cấu hình của component
@@ -3082,5 +3284,454 @@ abstract class IOHelper extends BaseIOHelper
 			}
 		}
 	}
+
+	// writeAssessmentCouncilReport — Báo cáo kết quả cho Hội đồng thi
+	// =========================================================================
+	// =========================================================================
+
+	/**
+	 * Ghi nội dung Báo cáo kết quả kỳ sát hạch cho Hội đồng thi vào $phpWord.
+	 *
+	 * Cấu trúc tài liệu:
+	 *   - Header quốc hiệu / tiêu ngữ (bảng 3 cột, không viền)
+	 *   - Tiêu đề: BÁO CÁO / Kết quả {title}
+	 *   - Mục 1: Bảng thống kê theo khóa (8 cột)
+	 *   - Mục 2: Bảng kết quả chi tiết (9 cột)
+	 *
+	 * @param  PhpWord  $phpWord       Instance PhpWord đã khởi tạo.
+	 * @param  array    $exportData    Kết quả trả về bởi AssessmentLearnersModel::getExportData().
+	 * @param  string   $signingDate   Chuỗi ngày ký (DatetimeHelper::getSigningDateString()).
+	 *
+	 * @return void
+	 * @since  2.0.8
+	 */
+	public static function writeAssessmentCouncilReport(
+		PhpWord $phpWord,
+		array   $exportData,
+		string  $signingDate
+	): void {
+		self::phpWordDefineCommonStyles($phpWord);
+		self::_addAssessmentFontStyles($phpWord);
+
+		$section = self::_addAssessmentSection($phpWord);
+
+		$assessment    = $exportData['assessment'];
+		$examinees     = $exportData['examinees'];
+		$statsByCourse = $exportData['stats_by_course'];
+
+		self::_addDocumentHeader($section, $signingDate);
+
+		$section->addText('BÁO CÁO', 'Bold', 'Title');
+		$section->addText('Kết quả ' . self::sanitizeTextForWord($assessment->title), null, 'Title');
+		$section->addText('¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯', null, 'Title');
+
+		$section->addText('1. Thống kê theo khóa', 'Bold', 'Left');
+		self::_writeCourseSummaryTable($section, $statsByCourse);
+
+		$section->addTextBreak(1);
+
+		$section->addText('2. Kết quả chi tiết', 'Bold', 'Left');
+		self::_writeDetailedResultsTable($section, $examinees);
+	}
+
+	// =========================================================================
+	// writeAssessmentStudentNotification — Thông báo kết quả cho HVSV
+	// =========================================================================
+
+	/**
+	 * Ghi nội dung Thông báo kết quả kỳ sát hạch cho HVSV vào $phpWord.
+	 *
+	 * Cấu trúc tài liệu:
+	 *   - Header quốc hiệu / tiêu ngữ (bảng 3 cột, không viền)
+	 *   - Tiêu đề: THÔNG BÁO / Kết quả {title}
+	 *   - Bảng kết quả (7 cột)
+	 *
+	 * @param  PhpWord  $phpWord       Instance PhpWord đã khởi tạo.
+	 * @param  array    $exportData    Kết quả trả về bởi AssessmentLearnersModel::getExportData().
+	 * @param  string   $signingDate   Chuỗi ngày ký (DatetimeHelper::getSigningDateString()).
+	 *
+	 * @return void
+	 * @since  2.0.8
+	 */
+	public static function writeAssessmentStudentNotification(
+		PhpWord $phpWord,
+		array   $exportData,
+		string  $signingDate
+	): void {
+		self::phpWordDefineCommonStyles($phpWord);
+		self::_addAssessmentFontStyles($phpWord);
+
+		$section = self::_addAssessmentSection($phpWord);
+
+		$assessment = $exportData['assessment'];
+		$examinees  = $exportData['examinees'];
+
+		self::_addDocumentHeader($section, $signingDate);
+
+		$section->addText('THÔNG BÁO', 'Bold', 'Title');
+		$section->addText('Kết quả ' . self::sanitizeTextForWord($assessment->title), null, 'Title');
+		$section->addText('¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯', null, 'Title');
+
+		self::_writeStudentNotificationTable($section, $examinees);
+	}
+
+	// =========================================================================
+	// Private helpers
+	// =========================================================================
+
+	/**
+	 * Đăng ký font styles bổ sung dùng riêng cho tài liệu báo cáo sát hạch.
+	 * Cỡ chữ 12pt (sz=24 trong XML mẫu), font Times New Roman.
+	 *
+	 * @since 2.0.8
+	 */
+	private static function _addAssessmentFontStyles(PhpWord $phpWord): void
+	{
+		$phpWord->addFontStyle('TableText',   ['size' => 12, 'name' => 'Times New Roman']);
+		$phpWord->addFontStyle('TableBold',   ['size' => 12, 'name' => 'Times New Roman', 'bold' => true]);
+		$phpWord->addFontStyle('TableItalic', ['size' => 12, 'name' => 'Times New Roman', 'italic' => true]);
+	}
+
+	/**
+	 * Tạo section với lề đúng theo file mẫu (khổ Letter):
+	 * top/bottom = 1134 dxa (~2 cm), left = 1134 dxa, right = 567 dxa (~1 cm).
+	 *
+	 * @since 2.0.8
+	 */
+	private static function _addAssessmentSection(PhpWord $phpWord): \PhpOffice\PhpWord\Element\Section
+	{
+		return $phpWord->addSection([
+			'paperSize'    => 'Letter',
+			'marginTop'    => 1134,
+			'marginRight'  => 567,
+			'marginBottom' => 1134,
+			'marginLeft'   => 1134,
+		]);
+	}
+
+	/**
+	 * Ghi header quốc hiệu / tiêu ngữ (bảng 3 cột, không viền).
+	 *
+	 * Chiều rộng ô bằng twip (1 cm ≈ 567 twip).
+	 * Nội dung trang Letter (~21.59 cm) - lề trái 2 cm - lề phải 1 cm ≈ 18.59 cm.
+	 * Phân bổ 3 cột: 3800 / 1340 / 5400 twip.
+	 *
+	 * @since 2.0.8
+	 */
+	private static function _addDocumentHeader(
+		\PhpOffice\PhpWord\Element\Section $section,
+		string $signingDate
+	): void {
+		$noBorder = [
+			'borderTopSize'    => 0,
+			'borderBottomSize' => 0,
+			'borderLeftSize'   => 0,
+			'borderRightSize'  => 0,
+		];
+
+		$table = $section->addTable([
+			'borderSize'  => 0,
+			'borderColor' => 'FFFFFF',
+			'cellMargin'  => 0,
+		]);
+
+		$table->addRow();
+
+		// Cột 1 — tên đơn vị
+		$cell1 = $table->addCell(3800, $noBorder);
+		$cell1->addText('HỌC VIỆN KỸ THUẬT MẬT MÃ', 'TableText', 'Center');
+		$cell1->addText('HỘI ĐỒNG THI SÁT HẠCH', 'TableBold', 'Center');
+		$cell1->addText('¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯', 'TableText', 'Center');
+
+		// Cột 2 — trống
+		$table->addCell(1340, $noBorder)->addText('');
+
+		// Cột 3 — quốc hiệu + ngày ký
+		$cell3 = $table->addCell(5400, $noBorder);
+		$cell3->addText('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', 'TableBold', 'Center');
+		$cell3->addText('Độc lập – Tự do – Hạnh phúc', 'TableBold', 'Center');
+		$cell3->addText('¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯', 'TableText', 'Center');
+		$cell3->addText(self::sanitizeTextForWord($signingDate), 'TableItalic', 'Center');
+	}
+
+	/**
+	 * Ghi bảng thống kê theo khóa (mục 1 của Báo cáo HĐ).
+	 *
+	 * Cột: TT | Khóa | Năm TS | Dự thi | Đạt | Không đạt | Vắng thi | Tỉ lệ đạt (%)
+	 * Widths (twip): 500 | 1200 | 1200 | 1400 | 1100 | 1500 | 1500 | 2140
+	 * Tổng: 10 540 twip ≈ 18.59 cm (khớp với chiều rộng nội dung).
+	 *
+	 * @since 2.0.8
+	 */
+	private static function _writeCourseSummaryTable(
+		\PhpOffice\PhpWord\Element\Section $section,
+		array $statsByCourse
+	): void {
+		$colWidths = [500, 1200, 1200, 1400, 1100, 1500, 1500, 2140];
+
+		$table = $section->addTable([
+			'borderColor' => '000000',
+			'borderSize'  => 4,
+			'cellMargin'  => 57,
+		]);
+
+		// --- Header row ---
+		$headers = ['TT', 'Khóa', 'Năm TS', 'Dự thi', 'Đạt', 'Không đạt', 'Vắng thi', 'Tỉ lệ đạt (%)'];
+		$table->addRow(354);
+		foreach ($headers as $i => $header) {
+			$table->addCell($colWidths[$i])->addText($header, 'TableBold', 'Center');
+		}
+
+		// --- Data rows ---
+		$seq       = 0;
+		$sumTotal  = 0;
+		$sumPassed = 0;
+		$sumFailed = 0;
+		$sumAbsent = 0;
+
+		foreach ($statsByCourse as $stat) {
+			$seq++;
+			$table->addRow(352);
+
+			$passRateStr = number_format($stat->pass_rate, 1, ',', '.');
+
+			$rowData = [
+				[(string) $seq,                'Center'],
+				[$stat->course_code,           'Left'],
+				[(string) $stat->admission_year, 'Center'],
+				[(string) $stat->total,        'Center'],
+				[(string) $stat->passed,       'Center'],
+				[(string) $stat->failed,       'Center'],
+				[(string) $stat->absent,       'Center'],
+				[$passRateStr,                 'Center'],
+			];
+			foreach ($rowData as $idx => [$value, $align]) {
+				$table->addCell($colWidths[$idx])->addText($value, 'TableText', $align);
+			}
+
+			$sumTotal  += $stat->total;
+			$sumPassed += $stat->passed;
+			$sumFailed += $stat->failed;
+			$sumAbsent += $stat->absent;
+		}
+
+		// --- Hàng Tổng (merge ô TT + Khóa bằng gridSpan=2) ---
+		$totalPassRate = $sumTotal > 0
+			? number_format(round($sumPassed / $sumTotal * 100, 1), 1, ',', '.')
+			: '0,0';
+
+		$table->addRow(359);
+
+		// Ô merge TT + Khóa
+		$table->addCell($colWidths[0] + $colWidths[1], ['gridSpan' => 2])
+			->addText('Tổng', 'TableBold', 'Center');
+
+		// Ô Năm TS — trống
+		$table->addCell($colWidths[2])->addText('', 'TableBold', 'Center');
+
+		// Các ô tổng
+		$totalsData = [
+			[(string) $sumTotal,  $colWidths[3]],
+			[(string) $sumPassed, $colWidths[4]],
+			[(string) $sumFailed, $colWidths[5]],
+			[(string) $sumAbsent, $colWidths[6]],
+			[$totalPassRate,      $colWidths[7]],
+		];
+		foreach ($totalsData as [$value, $width]) {
+			$table->addCell($width)->addText($value, 'TableBold', 'Center');
+		}
+	}
+
+	/**
+	 * Ghi bảng kết quả chi tiết (mục 2 của Báo cáo HĐ).
+	 *
+	 * Cột: TT | Mã HVSV | Họ đệm | Tên | Ngưỡng | Lần thi | Điểm | Kết quả | Ghi chú
+	 * Widths (twip): 450 | 1200 | 2100 | 900 | 1000 | 1000 | 1000 | 1500 | 1390
+	 * Tổng: 10 540 twip.
+	 *
+	 * @since 2.0.8
+	 */
+	private static function _writeDetailedResultsTable(
+		\PhpOffice\PhpWord\Element\Section $section,
+		array $examinees
+	): void {
+		$colWidths = [450, 1200, 2100, 900, 1000, 1000, 1000, 1500, 1390];
+
+		$table = $section->addTable([
+			'borderColor' => '000000',
+			'borderSize'  => 4,
+			'cellMargin'  => 57,
+		]);
+
+		// --- Header row ---
+		$headers = ['TT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Ngưỡng', 'Lần thi', 'Điểm', 'Kết quả', 'Ghi chú'];
+		$table->addRow(354);
+		foreach ($headers as $i => $header) {
+			$table->addCell($colWidths[$i])->addText($header, 'TableBold', 'Center');
+		}
+
+		// --- Sắp xếp: Tên ASC (ưu tiên 1), Họ đệm ASC (ưu tiên 2) — tiếng Việt ---
+		$collator = new \Collator('vi_VN');
+		usort($examinees, static function (object $a, object $b) use ($collator): int {
+			$cmp = $collator->compare($a->learner_firstname, $b->learner_firstname);
+			if ($cmp !== 0) {
+				return $cmp;
+			}
+			return $collator->compare($a->learner_lastname, $b->learner_lastname);
+		});
+
+		// --- Data rows ---
+		$seq = 0;
+		foreach ($examinees as $examinee) {
+			$seq++;
+
+			$passing   = self::_getPassingScore((int) $examinee->admission_year);
+			$scoreStr  = ($examinee->score !== null)
+				? (string) (int) round((float) $examinee->score)
+				: '0';
+			$resultStr = ((bool) $examinee->passed) ? 'ĐẠT' : 'Không đạt';
+			$noteStr   = ((int) $examinee->anomaly !== \Kma\Component\Eqa\Administrator\Enum\Anomaly::None->value)
+				? \Kma\Component\Eqa\Administrator\Enum\Anomaly::from((int) $examinee->anomaly)->getLabel()
+				: '';
+
+			$table->addRow(352);
+
+			$rowData = [
+				[(string) $seq,                                          $colWidths[0], 'Center'],
+				[$examinee->learner_code,                                $colWidths[1], 'Left'],
+				[self::sanitizeTextForWord($examinee->learner_lastname), $colWidths[2], 'Left'],
+				[self::sanitizeTextForWord($examinee->learner_firstname),$colWidths[3], 'Left'],
+				[(string) $passing,                                      $colWidths[4], 'Center'],
+				[(string) $examinee->attempt_number,                     $colWidths[5], 'Center'],
+				[$scoreStr,                                              $colWidths[6], 'Center'],
+				[$resultStr,                                             $colWidths[7], 'Center'],
+				[self::sanitizeTextForWord($noteStr),                    $colWidths[8], 'Left'],
+			];
+			foreach ($rowData as [$value, $width, $align]) {
+				$table->addCell($width)->addText($value, 'TableText', $align);
+			}
+		}
+	}
+
+	/**
+	 * Ghi bảng Thông báo kết quả gửi HVSV.
+	 *
+	 * Cột: TT | Mã HVSV | Họ đệm | Tên | Ngưỡng | Kết quả | Ghi chú
+	 * Widths (twip): 450 | 1200 | 2200 | 900 | 1000 | 1500 | 3290
+	 * Tổng: 10 540 twip.
+	 *
+	 * Quy tắc cột Ghi chú:
+	 *   - Đạt                     → trống
+	 *   - Có bất thường           → tên bất thường
+	 *   - Không đạt + bình thường → "Nghe=X, Đọc=Y" từ raw_result
+	 *
+	 * @since 2.0.8
+	 */
+	private static function _writeStudentNotificationTable(
+		\PhpOffice\PhpWord\Element\Section $section,
+		array $examinees
+	): void {
+		$colWidths = [450, 1200, 2200, 900, 1000, 1500, 3290];
+
+		$table = $section->addTable([
+			'borderColor' => '000000',
+			'borderSize'  => 4,
+			'cellMargin'  => 57,
+		]);
+
+		// --- Header row ---
+		$headers = ['TT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Ngưỡng', 'Kết quả', 'Ghi chú'];
+		$table->addRow(354);
+		foreach ($headers as $i => $header) {
+			$table->addCell($colWidths[$i])->addText($header, 'TableBold', 'Center');
+		}
+
+		// --- Sắp xếp: Tên ASC (ưu tiên 1), Họ đệm ASC (ưu tiên 2) — tiếng Việt ---
+		$collator = new \Collator('vi_VN');
+		usort($examinees, static function (object $a, object $b) use ($collator): int {
+			$cmp = $collator->compare($a->learner_firstname, $b->learner_firstname);
+			if ($cmp !== 0) {
+				return $cmp;
+			}
+			return $collator->compare($a->learner_lastname, $b->learner_lastname);
+		});
+
+		// --- Data rows ---
+		$seq = 0;
+		foreach ($examinees as $examinee) {
+			$seq++;
+
+			$passing   = self::_getPassingScore((int) $examinee->admission_year);
+			$resultStr = ((bool) $examinee->passed) ? 'ĐẠT' : 'Không đạt';
+			$noteStr   = self::_buildStudentNoteString($examinee);
+
+			$table->addRow(352);
+
+			$rowData = [
+				[(string) $seq,                                          $colWidths[0], 'Center'],
+				[$examinee->learner_code,                                $colWidths[1], 'Left'],
+				[self::sanitizeTextForWord($examinee->learner_lastname), $colWidths[2], 'Left'],
+				[self::sanitizeTextForWord($examinee->learner_firstname),$colWidths[3], 'Left'],
+				[(string) $passing,                                      $colWidths[4], 'Center'],
+				[$resultStr,                                             $colWidths[5], 'Center'],
+				[self::sanitizeTextForWord($noteStr),                    $colWidths[6], 'Left'],
+			];
+			foreach ($rowData as [$value, $width, $align]) {
+				$table->addCell($width)->addText($value, 'TableText', $align);
+			}
+		}
+	}
+
+	/**
+	 * Xác định ngưỡng điểm TOEIC tối thiểu theo năm nhập học.
+	 *
+	 * Quy định hiện hành:
+	 *   - Nhập học trước 2025 → 450 điểm
+	 *   - Nhập học từ 2025    → 500 điểm
+	 *
+	 * Khi quy định thay đổi, chỉ cần sửa method này.
+	 *
+	 * @param  int  $admissionYear  Năm nhập học.
+	 * @return int  Ngưỡng điểm (thang 990).
+	 * @since  2.0.8
+	 */
+	private static function _getPassingScore(int $admissionYear): int
+	{
+		return $admissionYear < 2025 ? 450 : 500;
+	}
+
+	/**
+	 * Xây dựng nội dung cột Ghi chú cho bảng Thông báo HVSV.
+	 *
+	 * @param  object  $examinee
+	 * @return string
+	 * @since  2.0.8
+	 */
+	private static function _buildStudentNoteString(object $examinee): string
+	{
+		if ((bool) $examinee->passed) {
+			return '';
+		}
+
+		$anomaly = (int) $examinee->anomaly;
+
+		if ($anomaly !== \Kma\Component\Eqa\Administrator\Enum\Anomaly::None->value) {
+			return \Kma\Component\Eqa\Administrator\Enum\Anomaly::from($anomaly)->getLabel();
+		}
+
+		if (!empty($examinee->raw_result)) {
+			$raw = json_decode($examinee->raw_result, true);
+			if (is_array($raw)
+				&& isset($raw['listening_scaled'], $raw['reading_scaled'])
+			) {
+				return 'Nghe=' . (int) $raw['listening_scaled']
+					. ', Đọc=' . (int) $raw['reading_scaled'];
+			}
+		}
+
+		return '';
+	}
+
+
 }
 

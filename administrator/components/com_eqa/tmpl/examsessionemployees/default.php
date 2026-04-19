@@ -1,9 +1,10 @@
 <?php
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
+
+/** @var \Kma\Component\Eqa\Administrator\View\Examsessionemployees\HtmlView $this */
 $examsession = $this->examsession;
 if(empty($examsession))
 	return;
@@ -35,8 +36,7 @@ if(empty($examsession))
 	Môn thi:<br/>
 	<ol>
 		<?php
-		$examNames = DatabaseHelper::getExamNames($examsession->examIds);
-		foreach ($examNames as $examName){
+		foreach ($examsession->exams as $examName){
 			echo "<li>$examName</li>";
 		}
 		?>
