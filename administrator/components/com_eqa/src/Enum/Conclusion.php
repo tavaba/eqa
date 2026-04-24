@@ -6,7 +6,7 @@ use Kma\Library\Kma\Enum\EnumHelper;
 enum Conclusion: int
 {
 	use EnumHelper;
-	case Ineligible = 5;           //Không đủ điều kiện thi
+	case Ineligible = 5;           //Không đủ điều kiện thi do điểm quá trình, phải học lại
 	case Passed = 10;               //Qua môn, hết lượt thi
 	case RetakeExam = 20;               //Không qua môn, thi lại
 	case RetakeCourse = 21;     //Không qua môn, hết lượt thi
@@ -15,7 +15,7 @@ enum Conclusion: int
 	{
 		return match($this)
 		{
-			self::Ineligible => 'Không được thi',
+			self::Ineligible => 'Không được thi, Học lại',
 			self::Passed => 'Đạt',
 			self::RetakeExam => 'Thi lại',
 			self::RetakeCourse => 'Học lại',

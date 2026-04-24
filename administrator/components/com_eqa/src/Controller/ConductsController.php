@@ -139,6 +139,12 @@ class ConductsController extends AdminController {
 			$model->importItem($academicyearCode, $term,$item, $importMark, $importCredits,true);
 		}
 	}
+
+	/**
+	 * Đếm số lượt THI LẠI trong số các môn thi của thí sinh
+	 * @param   array<object>  $exams Kết quả của hàm ConductModel::getLearnerExams()
+	 * @return int
+	 */
 	private function countResitExams(array $exams):int
 	{
 		$count = 0;
@@ -147,11 +153,17 @@ class ConductsController extends AdminController {
 				++$count;
 		return $count;
 	}
+
+	/**
+	 * Đếm số lượt HỌC LẠI trong số các môn thi của thí sinh
+	 * @param   array<object>  $exams Kết quả của hàm ConductModel::getLearnerExams()
+	 * @return int
+	 */
 	private function countRetakeSubjects(array $exams):int
 	{
 		$count = 0;
 		foreach ($exams as $exam)
-			if($exam->conclusion == Conclusion::RetakeCourse->value)
+			if($exam->conclusion == Conclusion::RetakeCourse->value || $exam->conclusion == Conclusion::Ineligible->value)
 				++$count;
 		return $count;
 	}

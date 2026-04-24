@@ -101,6 +101,16 @@ class ConductModel extends AdminModel
 			throw new Exception($msg);
 		}
 	}
+
+	/**
+	 * Lấy danh sách môn thi của thí sinh trong một học kỳ được chỉ định.
+	 * @param   int  $learnerId
+	 * @param   int  $academicyearCode
+	 * @param   int  $term
+	 *
+	 * @return array<object> Mỗi object là thông tin một môn thi.
+	 *
+	 */
 	public function getLearnerExams(int $learnerId, int $academicyearCode, int $term): array
 	{
 		$db      = DatabaseHelper::getDatabaseDriver();
