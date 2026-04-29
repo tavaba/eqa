@@ -54,4 +54,4 @@ $exam = $this->exam;
 <?php
 
 ViewHelper::printItemsDefaultLayout($this->getLayoutData(), $this->getListLayoutItemFields());
-echo $this->loadTemplate('campaign_history');
+ViewHelper::printCampaignHistory($this->campaignHistory);

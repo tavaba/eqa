@@ -1,18 +1,10 @@
 <?php
-
-/**
- * @package     Kma\Component\Kmail\Administrator\View\Notify
- * @since       1.0.0
- */
-
 namespace Kma\Component\Kmail\Administrator\View\Notify;
-
 defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Kma\Component\Kmail\Administrator\Service\ConfigService;
 use Kma\Library\Kma\Enum\MailContextType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;

@@ -490,23 +490,19 @@ abstract class ViewHelper
 	 * Nhận mảng CampaignHistoryItem[] từ MailService::getCampaignHistory()
 	 * và render thành card Bootstrap với bảng tóm tắt campaign.
 	 *
+	 * URL "Xem tất cả" và "Xem log" đều trỏ về com_kmail — component duy nhất
+	 * quản lý tập trung danh sách và delivery log của campaign.
+	 *
 	 * @param  CampaignHistoryItem[]  $campaigns  Danh sách campaign (đã preprocessing)
-	 * @param  string                 $option     Tên component dùng để build URL log
-	 *                                            Ví dụ: 'com_eqa'
-	 * @param  string                 $logView    Tên view hiển thị delivery log
-	 *                                            Ví dụ: 'mailcampaigns'
 	 *
 	 * @return void  — echo trực tiếp, nhất quán với printItemsDefaultLayout()
 	 * @since  1.0.3
 	 */
-	public static function printCampaignHistory(
-		array  $campaigns,
-		string $option,
-		string $logView = 'mailcampaigns'
-	): void {
-		// URL xem toàn bộ campaign (view mailcampaigns không lọc)
+	public static function printCampaignHistory(array $campaigns): void
+	{
+		// URL xem toàn bộ campaign — tập trung tại com_kmail
 		$allUrl = Route::_(
-			'index.php?option=' . $option . '&view=' . $logView,
+			'index.php?option=com_kmail&view=campaigns',
 			false
 		);
 		?>
@@ -543,6 +539,7 @@ abstract class ViewHelper
                         <tbody>
 						<?php foreach ($campaigns as $campaign) : ?>
 							<?php
+							/** @var CampaignHistoryItem $campaign */
 							$total    = $campaign->totalCount;
 							$sent     = $campaign->sentCount;
 							$failed   = $campaign->failedCount;
@@ -550,8 +547,7 @@ abstract class ViewHelper
 							$failPct  = $total > 0 ? (int) round($failed / $total * 100) : 0;
 
 							$logUrl = Route::_(
-								'index.php?option=' . $option
-								. '&view=' . $logView
+								'index.php?option=com_kmail&view=campaigns'
 								. '&layout=log&campaign_id=' . $campaign->id,
 								false
 							);
@@ -608,5 +604,4 @@ abstract class ViewHelper
         </div>
 		<?php
 	}
-
 }
