@@ -2551,6 +2551,16 @@ class ExamModel extends AdminModel{
 
 
 	}
+	public function getExamName(int $examId): ?string
+	{
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select('name')
+			->from('#__eqa_exams')
+			->where('id=' . $examId);
+		$db->setQuery($query);
+		return $db->loadResult();
+	}
 	public function getExaminees(int $examId):array
 	{
 		$db = $this->getDatabase();

@@ -1,8 +1,5 @@
 -- Tắt kiểm tra khóa ngoại để xóa sạch không bị lỗi ràng buộc
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS `#__eqa_mail_queue`;
-DROP TABLE IF EXISTS `#__eqa_mail_campaigns`;
-DROP TABLE IF EXISTS `#__eqa_mail_templates`;
 DROP TABLE IF EXISTS `#__eqa_assessment_learner`;
 DROP TABLE IF EXISTS `#__eqa_secondattempts`;
 DROP TABLE IF EXISTS `#__eqa_conducts`;

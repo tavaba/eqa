@@ -2,15 +2,15 @@
 namespace Kma\Library\Kma\Helper;
 defined('_JEXEC') or die();
 
-use http\Client;
+use Exception;
 use JForm;
-use JHtml;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\DataObject\CampaignHistoryItem;
 use Kma\Library\Kma\View\ItemAction;
 use Kma\Library\Kma\View\ListLayoutData;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -424,45 +424,189 @@ abstract class ViewHelper
 	 * @param   bool    $submit         Hiển thị nút 'Submit' ở cuối form hay không.
 	 *
 	 * @return void
-	 * @throws \Exception
 	 * @since 1.0.0     *
 	 */
 	public static function printForm(Form $form, string $fieldsetName, array $hiddenFields=[], bool $multiPart=false,
                                      string $actionUrl='', string $name='adminForm', string $id='adminForm', bool $submit=false):void
     {
-        HTMLHelper::_('behavior.formvalidator');
-        if(empty($actionUrl))
-            $actionUrl = Route::_('index.php?option='.ComponentHelper::getName(),false);
-        $enctype = $multiPart ? ' enctype="multipart/form-data" ' : ' ';        //spaces are important here!
-        echo "<form action=\"{$actionUrl}\" method=\"post\" {$enctype} name=\"{$name}\" id=\"{$id}\" class=\"form-validate\">";
+	    try
+	    {
+		    HTMLHelper::_('behavior.formvalidator');
+		    if(empty($actionUrl))
+			    $actionUrl = Route::_('index.php?option='.ComponentHelper::getName(),false);
+		    $enctype = $multiPart ? ' enctype="multipart/form-data" ' : ' ';        //spaces are important here!
+		    echo "<form action=\"{$actionUrl}\" method=\"post\" {$enctype} name=\"{$name}\" id=\"{$id}\" class=\"form-validate\">";
+		    {
+			    echo $form->renderFieldset($fieldsetName);
+			    echo HTMLHelper::_('form.token');
+			    foreach ($hiddenFields as $field=>$value)
+				    echo "<input type=\"hidden\" name=\"$field\" value=\"$value\"/>";
+			    if(!isset($hiddenFields['task']))                       //'task' field must always be present
+				    echo "<input type=\"hidden\" name=\"task\"/>";
+			    if($submit)
+				    echo "<input type=\"submit\" value=\"Submit\">";
+		    }
+		    echo "</form>";
+	    }
+        catch (Exception $e)
         {
-            echo $form->renderFieldset($fieldsetName);
-            echo HTMLHelper::_('form.token');
-            foreach ($hiddenFields as $field=>$value)
-                echo "<input type=\"hidden\" name=\"$field\" value=\"$value\"/>";
-            if(!isset($hiddenFields['task']))                       //'task' field must always be present
-                echo "<input type=\"hidden\" name=\"task\"/>";
-            if($submit)
-                echo "<input type=\"submit\" value=\"Submit\">";
+            echo $e->getMessage();
         }
-        echo "</form>";
     }
 
-    /**
-     * Hàm này dùng để in ra layout upload file. Ý nghĩa của nó là
-     * đảm bảo form được thiết lập thuộc tính "enctype=multipart/form-data".
-     * Nếu không có thuộc tính này thì việc upload file sẽ không thành công.
-     *
-     * @param Form $form
-     * @param string $task
-     * @param string $fieldsetName
-     * @since 1.2.0
-     */
-    public static function printUploadForm(Form $form, string $task='', string $fieldsetName='upload'): void
+	/**
+	 * Hàm này dùng để in ra layout upload file. Ý nghĩa của nó là
+	 * đảm bảo form được thiết lập thuộc tính "enctype=multipart/form-data".
+	 * Nếu không có thuộc tính này thì việc upload file sẽ không thành công.
+	 *
+	 * @param   Form    $form
+	 * @param   string  $task
+	 * @param   string  $fieldsetName
+	 * @param   array<string, string>   $hiddenFields
+	 *
+	 * @since 1.2.0
+	 */
+    public static function printUploadForm(Form $form, string $task='', string $fieldsetName='upload', array $hiddenFields=[]): void
     {
-        HTMLHelper::_('behavior.formvalidator');
-        $componentName = ComponentHelper::getName();
-        $actionUrl = Route::_("index.php?option={$componentName}", false);
-        self::printForm($form, $fieldsetName, ['task'=>$task], true, $actionUrl);
+	    try
+	    {
+		    HTMLHelper::_('behavior.formvalidator');
+		    $componentName = ComponentHelper::getName();
+		    $actionUrl = Route::_("index.php?option={$componentName}", false);
+            $allHiddenFields = ['task'=>$task];
+            if(!empty($hiddenFields))
+                $allHiddenFields = array_merge($allHiddenFields, $hiddenFields);
+		    self::printForm($form, $fieldsetName, $allHiddenFields, true, $actionUrl);
+	    }
+        catch (Exception $e)
+        {
+            echo $e->getMessage();
+        }
     }
+
+	/**
+	 * Render HTML section "Lịch sử thông báo email".
+	 *
+	 * Nhận mảng CampaignHistoryItem[] từ MailService::getCampaignHistory()
+	 * và render thành card Bootstrap với bảng tóm tắt campaign.
+	 *
+	 * @param  CampaignHistoryItem[]  $campaigns  Danh sách campaign (đã preprocessing)
+	 * @param  string                 $option     Tên component dùng để build URL log
+	 *                                            Ví dụ: 'com_eqa'
+	 * @param  string                 $logView    Tên view hiển thị delivery log
+	 *                                            Ví dụ: 'mailcampaigns'
+	 *
+	 * @return void  — echo trực tiếp, nhất quán với printItemsDefaultLayout()
+	 * @since  1.0.3
+	 */
+	public static function printCampaignHistory(
+		array  $campaigns,
+		string $option,
+		string $logView = 'mailcampaigns'
+	): void {
+		// URL xem toàn bộ campaign (view mailcampaigns không lọc)
+		$allUrl = Route::_(
+			'index.php?option=' . $option . '&view=' . $logView,
+			false
+		);
+		?>
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <span class="icon-envelope me-1" aria-hidden="true"></span>
+                    Lịch sử thông báo email
+					<?php if (!empty($campaigns)) : ?>
+                        <span class="badge bg-secondary ms-1"><?= count($campaigns) ?></span>
+					<?php endif; ?>
+                </h6>
+                <a href="<?= $allUrl ?>" class="btn btn-sm btn-outline-secondary">
+                    Xem tất cả
+                </a>
+            </div>
+
+            <div class="card-body p-0">
+				<?php if (empty($campaigns)) : ?>
+                    <p class="text-muted text-center py-3 mb-0 small">
+                        Chưa có chiến dịch email nào được gửi cho đối tượng này.
+                    </p>
+				<?php else : ?>
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="text-nowrap">Thời gian</th>
+                            <th>Template</th>
+                            <th class="text-center" style="min-width:130px;">Tiến độ</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+						<?php foreach ($campaigns as $campaign) : ?>
+							<?php
+							$total    = $campaign->totalCount;
+							$sent     = $campaign->sentCount;
+							$failed   = $campaign->failedCount;
+							$sentPct  = $total > 0 ? (int) round($sent   / $total * 100) : 0;
+							$failPct  = $total > 0 ? (int) round($failed / $total * 100) : 0;
+
+							$logUrl = Route::_(
+								'index.php?option=' . $option
+								. '&view=' . $logView
+								. '&layout=log&campaign_id=' . $campaign->id,
+								false
+							);
+							?>
+                            <tr>
+                                <td class="small text-nowrap">
+									<?= htmlspecialchars($campaign->createdAtLocal) ?>
+									<?php if ($campaign->creatorName !== '') : ?>
+                                        <br>
+                                        <span class="text-muted">
+                                            <?= htmlspecialchars($campaign->creatorName) ?>
+                                        </span>
+									<?php endif; ?>
+                                </td>
+                                <td class="small">
+									<?= htmlspecialchars($campaign->templateTitle ?: '—') ?>
+                                </td>
+                                <td class="text-center">
+									<?php if ($total > 0) : ?>
+                                        <div class="progress mb-1" style="height:10px;">
+                                            <div class="progress-bar bg-success"
+                                                 style="width:<?= $sentPct ?>%"
+                                                 title="Đã gửi: <?= $sent ?>">
+                                            </div>
+                                            <div class="progress-bar bg-danger"
+                                                 style="width:<?= $failPct ?>%"
+                                                 title="Thất bại: <?= $failed ?>">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">
+											<?= ($sent + $failed) ?>/<?= $total ?>
+                                        </small>
+									<?php else : ?>
+                                        <span class="text-muted small">—</span>
+									<?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge <?= htmlspecialchars($campaign->statusBadge) ?>">
+                                        <?= htmlspecialchars($campaign->statusLabel) ?>
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="<?= $logUrl ?>"
+                                       class="btn btn-sm btn-outline-secondary">
+                                        Xem log
+                                    </a>
+                                </td>
+                            </tr>
+						<?php endforeach; ?>
+                        </tbody>
+                    </table>
+				<?php endif; ?>
+            </div>
+        </div>
+		<?php
+	}
+
 }

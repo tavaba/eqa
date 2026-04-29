@@ -8,13 +8,16 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Library\Kma\DataObject\CampaignHistoryItem;
+use Kma\Library\Kma\Enum\MailContextType;
+use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Service\MailService;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Enum\MailContextType;
 use Kma\Library\Kma\Enum\MailCampaignStatus;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
@@ -23,9 +26,10 @@ class HtmlView extends ItemsHtmlView {
 
 	/**
 	 * Lịch sử các chiến dịch email đã gửi cho môn thi này.
-	 * Hiển thị ở cuối trang dưới dạng bảng tóm tắt.
+	 * Kiểu: CampaignHistoryItem[] — gán bởi MailService::getCampaignHistory().
+	 * Được render trong sub-template default_campaign_history.php qua $this->loadTemplate().
 	 *
-	 * @var object[]
+	 * @var CampaignHistoryItem[]
 	 * @since 2.0.8
 	 */
 	protected array $campaignHistory = [];
@@ -138,16 +142,19 @@ class HtmlView extends ItemsHtmlView {
 		    [
 			    'context_type' => MailContextType::Exam->value,
 			    'context_id'   => $examId,
-			    // return URL (base64) để sau khi notify xong redirect về view này
 			    'return'       => base64_encode(
 				    'index.php?option=com_eqa&view=examexaminees&exam_id=' . $examId
 			    ),
 		    ]
 	    );
 
-	    // Load lịch sử campaign — dùng trong sub-template default_campaign_history.php
+		// Load mail campaign history
 	    if ($examId > 0) {
-		    $this->campaignHistory = $this->loadCampaignHistory($examId);
+		    $mailService = ComponentHelper::getMailService();
+		    $this->campaignHistory = $mailService->getCampaignHistory(
+			    MailContextType::Exam->value,
+			    $examId
+		    );
 	    }
 
 
@@ -176,59 +183,4 @@ class HtmlView extends ItemsHtmlView {
 	    ToolbarHelper::appendButton(null,'download','Xuất ca iTest','exam.exportitest');
 	    ToolbarHelper::appendButton('core.manage','envelope','Gửi email','mailcampaigns.notify',false,'btn btn-success');
     }
-
-	/**
-	 * Lấy lịch sử các chiến dịch email đã gửi cho một môn thi.
-	 *
-	 * Kết quả được gán vào $this->campaignHistory và render trong sub-template
-	 * tmpl/examexaminees/default_campaign_history.php thông qua $this->loadTemplate().
-	 *
-	 * @param  int  $examId
-	 * @return object[]
-	 * @since  2.0.9
-	 */
-	private function loadCampaignHistory(int $examId): array
-	{
-		$db    = \Joomla\CMS\Factory::getDbo();
-		$query = $db->getQuery(true)
-			->select([
-				$db->quoteName('mc.id'),
-				$db->quoteName('mc.status'),
-				$db->quoteName('mc.total_count'),
-				$db->quoteName('mc.sent_count'),
-				$db->quoteName('mc.failed_count'),
-				$db->quoteName('mc.created_at'),
-				$db->quoteName('t.title',  'template_title'),
-				$db->quoteName('u.name',   'creator_name'),
-			])
-			->from($db->quoteName('#__eqa_mail_campaigns', 'mc'))
-			->leftJoin(
-				$db->quoteName('#__eqa_mail_templates', 't') .
-				' ON ' . $db->quoteName('t.id') . ' = ' . $db->quoteName('mc.template_id')
-			)
-			->leftJoin(
-				$db->quoteName('#__users', 'u') .
-				' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('mc.created_by')
-			)
-			->where($db->quoteName('mc.context_type') . ' = ' . MailContextType::Exam->value)
-			->where($db->quoteName('mc.context_id')   . ' = ' . $examId)
-			->order($db->quoteName('mc.created_at') . ' DESC')
-			->setLimit(10);
-
-		$db->setQuery($query);
-		$items = $db->loadObjectList() ?: [];
-
-		// Preprocessing: bổ sung status_label, status_badge, created_at_local
-		foreach ($items as $item) {
-			$statusEnum             = MailCampaignStatus::tryFrom((int) $item->status);
-			$item->status_label     = $statusEnum?->getLabel()    ?? '?';
-			$item->status_badge     = $statusEnum?->getBadgeClass() ?? 'bg-secondary';
-			$item->created_at_local = !empty($item->created_at)
-				? DatetimeHelper::convertToLocalTime((string) $item->created_at)
-				: '—';
-		}
-
-		return $items;
-	}
-
 }

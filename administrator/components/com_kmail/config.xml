@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<fields name="params" addfieldprefix="Kma\Component\Kmail\Administrator\Field">
+		<fieldset
+				name="general"
+				label="COM_KMAIL_CONFIG_PARAMS_GENERAL_LABEL"
+				description="COM_KMAIL_CONFIG_PARAMS_GENERAL_DESC"
+		>
+			<field
+				name="learner_mail_domain"
+				type="text"
+				label="Domain email người học"
+				description="Domain dùng để tạo địa chỉ email người học. Email = {learner_code}@{domain}"
+				default="actvn.edu.vn"
+				class="form-control"
+			/>
+			<field
+				name="mail_batch_size"
+				type="number"
+				label="Số email mỗi batch"
+				description="Số email tối đa xử lý trong một lần chạy Task Scheduler."
+				default="100"
+				min="10"
+				max="500"
+				class="form-control"
+			/>
+
+			<field
+				name="mail_max_attempts"
+				type="number"
+				label="Số lần thử tối đa"
+				description="Sau khi thử đủ số lần mà vẫn thất bại, email sẽ bị đánh dấu Failed."
+				default="3"
+				min="1"
+				max="10"
+				class="form-control"
+			/>
+
+			<field
+				name="mail_retry_interval"
+				type="number"
+				label="Thời gian chờ retry (phút)"
+				description="Số phút tối thiểu phải chờ giữa hai lần thử gửi."
+				default="5"
+				min="1"
+				max="60"
+				class="form-control"
+			/>
+		</fieldset>
+	</fields>
+	<fieldset
+		name="permissions"
+		label="JCONFIG_PERMISSIONS_LABEL"
+		description="JCONFIG_PERMISSIONS_DESC"
+	>
+		<field
+			name="rules"
+			type="rules"
+			label="JCONFIG_PERMISSIONS_LABEL"
+			validate="rules"
+			filter="rules"
+			component="com_kmail"
+			section="component"
+		/>
+	</fieldset>
+</config>

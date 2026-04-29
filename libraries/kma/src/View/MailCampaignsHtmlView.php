@@ -18,6 +18,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Enum\MailCampaignStatus;
+use Kma\Library\Kma\Enum\MailContextType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
@@ -76,25 +77,6 @@ use Kma\Library\Kma\Model\MailCampaignsModel;
 abstract class MailCampaignsHtmlView extends ItemsHtmlView
 {
     // =========================================================================
-    // Abstract — bắt buộc override ở lớp con
-    // =========================================================================
-    /**
-     * Trả về nhãn hiển thị của context_type.
-     *
-     * lib_kma không biết enum MailContextType của component — lớp con
-     * cung cấp nhãn tương ứng với giá trị int của context_type.
-     *
-     * Ví dụ (com_eqa):
-     *   return MailContextType::tryFrom($contextType)?->getLabel() ?? '?';
-     *
-     * @param  int  $contextType  Giá trị int của MailContextType enum
-     *
-     * @return string
-     * @since  1.0.3
-     */
-    abstract protected function getContextTypeLabel(int $contextType): string;
-
-    // =========================================================================
     // Overridable hooks
     // =========================================================================
 
@@ -135,7 +117,27 @@ abstract class MailCampaignsHtmlView extends ItemsHtmlView
         return 'mailcampaigns.cancelCampaign';
     }
 
-    // =========================================================================
+	/**
+	 * Trả về nhãn hiển thị của context_type.
+	 *
+	 * lib_kma không biết enum MailContextType của component — lớp con
+	 * cung cấp nhãn tương ứng với giá trị int của context_type.
+	 *
+	 * Ví dụ (com_eqa):
+	 *   return MailContextType::tryFrom($contextType)?->getLabel() ?? '?';
+	 *
+	 * @param  int  $contextType  Giá trị int của MailContextType enum
+	 *
+	 * @return string
+	 * @since  1.0.3
+	 */
+	protected function getContextTypeLabel(int $contextType): string
+	{
+		$contextTypeCase = MailContextType::from($contextType);
+		return $contextTypeCase->getLabel();
+	}
+
+	// =========================================================================
     // Cấu hình cột — layout default (danh sách campaign)
     // =========================================================================
 

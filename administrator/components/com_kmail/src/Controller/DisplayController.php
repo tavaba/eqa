@@ -1,0 +1,16 @@
+<?php
+namespace Kma\Component\Kmail\Administrator\Controller;
+defined('_JEXEC') or die();
+
+use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\Input\Input;
+
+class DisplayController extends BaseController{
+    public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSApplication $app = null, ?Input $input = null)
+    {
+        parent::__construct($config, $factory, $app, $input);
+        $this->default_view = 'templates';
+    }
+}

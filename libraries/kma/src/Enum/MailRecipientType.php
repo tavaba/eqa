@@ -27,10 +27,10 @@ enum MailRecipientType: int
 	use EnumHelper;
 
     /** Người học (học viên / sinh viên). */
-    case Learner  = 0;
+    case Learner  = 10;
 
     /** Người lao động (cán bộ / giảng viên / nhân viên). */
-    case Employee = 1;
+    case Employee = 20;
 
     /**
      * Địa chỉ email bên ngoài hệ thống (không có bản ghi trong CSDL nội bộ).

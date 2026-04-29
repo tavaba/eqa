@@ -22,7 +22,6 @@ use Kma\Component\Eqa\Site\Service\Router;
 use Joomla\CMS\Component\Router\RouterInterface;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
-use Kma\Library\Kma\Service\MailService;
 
 return new class implements ServiceProviderInterface
 {
@@ -32,65 +31,6 @@ return new class implements ServiceProviderInterface
 		$container->registerServiceProvider(new MVCFactory('\\Kma\\Component\\Eqa'));
 		$container->registerServiceProvider(new ComponentDispatcherFactory('\\Kma\\Component\\Eqa'));
 	    $container->registerServiceProvider(new RouterFactory('\\Kma\\Component\\Eqa'));
-
-	    // ── Đăng ký ConfigService vào DIC ────────────────────────────────────
-	    // DIC sẽ tạo instance một lần duy nhất (shared = true theo mặc định)
-	    // và tái sử dụng trong suốt vòng đời của request.
-	    $container->set(
-		    ConfigService::class,
-		    fn(Container $container) => new ConfigService()
-	    );
-
-	    // ── Đăng ký LogService vào DIC ────────────────────────────────────
-	    // DIC sẽ tạo instance một lần duy nhất (shared = true theo mặc định)
-	    // và tái sử dụng trong suốt vòng đời của request.
-		$container->set(
-			LogService::class,
-			function (Container $container){
-				$db = $container->get(DatabaseInterface::class);
-				$tableName = '#__eqa_logs';
-				return new LogService($db, $tableName);
-			}
-		);
-
-	    // ── Đăng ký English vào DIC ────────────────────────────────────
-	    // DIC sẽ tạo instance một lần duy nhất (shared = true theo mặc định)
-	    // và tái sử dụng trong suốt vòng đời của request.
-	    $container->set(
-		    EnglishService::class,
-		    function (Container $container){
-			    $map = [
-				    'course' => 'courses',
-				    'mailtemplate' => 'mailtemplates',
-			    ];
-			    return new EnglishService($map);
-		    }
-	    );
-
-	    // ── Đăng ký MailService vào DIC ────────────────────────────────────
-	    // DIC sẽ tạo instance một lần duy nhất (shared = true theo mặc định)
-	    // và tái sử dụng trong suốt vòng đời của request.
-	    $container->set(
-		    MailService::class,
-		    function (Container $container)
-		    {
-			    /**
-			     * @var ConfigService $configService
-			     */
-			    $db = $container->get(DatabaseInterface::class);
-				$configService = $container->get(ConfigService::class);
-			    return new MailService
-			    (
-					$db,
-				    '#__eqa_mail_templates',
-				    '#__eqa_mail_campaigns',
-				    '#__eqa_mail_queue',
-					$configService->getMailBatchSize(),
-				    $configService->getMailMaxAttempts(),
-				    $configService->getMailRetryIntervalMinutes()
-			    );
-		    }
-	    );
 
 	    $container->set(
 		    RouterInterface::class,
@@ -104,15 +44,32 @@ return new class implements ServiceProviderInterface
 
 		$container->set(
 			ComponentInterface::class,
-			function (Container $container) {
+			function (Container $container)
+			{
+				//Init the component
 				$component = new EqaComponent($container->get(ComponentDispatcherFactoryInterface::class));
+
+				//Inject some critical service to the component
 				$component->setRegistry($container->get(Registry::class));
 				$component->setMVCFactory($container->get(MVCFactoryInterface::class));
 				$component->setRouterFactory($container->get(RouterFactoryInterface::class));
-				$component->setConfigService($container->get(ConfigService::class));
-				$component->setEnglishService($container->get(EnglishService::class));
-				$component->setLogService($container->get(LogService::class));
-				$component->setMailService($container->get(MailService::class));
+
+				//Inject the ConfigService into the component
+				$component->setConfigService(new ConfigService());
+
+				//Inject the EnglishService into the component
+				$map = [
+					'course' => 'courses',
+					'mailtemplate' => 'mailtemplates',
+				];
+				$component->setEnglishService(new EnglishService($map));
+
+				//Inject the LogService into the component
+				$db = $container->get(DatabaseInterface::class);
+				$tableName = '#__eqa_logs';
+				$component->setLogService(new LogService($db, $tableName));
+
+				//Finish (return the component to the app container)
 				return $component;
 			}
 		);

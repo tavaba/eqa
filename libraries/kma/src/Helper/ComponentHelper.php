@@ -71,7 +71,6 @@ abstract class ComponentHelper
      * @param $assetName     string|null Unique name of asset in the table #__assets
      * @param $sectionName   string Name of the section where 'actions' are defined
      * @return array
-     * @throws Exception
      * @since 1.0
      */
     public static function getCurrentUserPermissions(?string $assetName=null, string $sectionName='component'): array
@@ -90,6 +89,21 @@ abstract class ComponentHelper
         }
         return $permissions;
     }
+
+	/**
+	 * Trả về danh sách các action mà người dùng hiện tại có thể thực hiện
+	 * trên component
+	 * @return array<string, bool> Với key là tên của action, ví dụ 'core.edit'.
+	 *
+	 * @since 1.0.3
+	 */
+	public static function getAllowedComponentAction(): array
+	{
+		static $_allowedComponentActions;
+		if(empty($_allowedComponentActions))
+			$_allowedComponentActions = self::getCurrentUserPermissions();
+		return $_allowedComponentActions;
+	}
 
     public static function canDo(array|string|null $requiredActions, $permissions=null):bool
     {

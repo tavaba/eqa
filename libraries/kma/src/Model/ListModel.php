@@ -12,6 +12,7 @@ use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
+use Kma\Library\Kma\Service\MailService;
 
 /**
  * Class này sẽ được thừa kế bởi các Items Model
@@ -27,6 +28,7 @@ abstract class ListModel extends BaseListModel
 	 */
 	protected ?LogService $logService=null;
 	protected ?EnglishService $englishService=null;
+	protected ?MailService $mailService=null;
 
 	/** Bật/Tắt chế độ ghi log. Tự động bật trong constructor nếu tồn tại $logService */
 	protected bool $loggingEnabled=false;
@@ -78,6 +80,7 @@ abstract class ListModel extends BaseListModel
 	    if($this->logService)
 		    $this->loggingEnabled = true;
 		$this->englishService = ComponentHelper::getEnglishService();
+		$this->mailService = ComponentHelper::getMailService();
 
         /*
          * Initialize some properties

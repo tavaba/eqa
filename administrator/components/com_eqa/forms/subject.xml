@@ -43,7 +43,7 @@
         <field  name="is_pass_fail"
                 type="radio"
                 required="true"
-                default="1"
+                default="0"
                 label="Là môn điều kiện"
                 description="Nếu là môn điều kiện thì chỉ yêu cầu HVSV phải &quot;ĐẠT&quot;,
                 điểm thi không tính vào trung bình học kỳ, trung bình chung tích lũy.

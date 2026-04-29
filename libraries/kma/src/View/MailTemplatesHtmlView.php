@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Enum\MailContextType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 
@@ -21,7 +22,10 @@ abstract class MailTemplatesHtmlView extends ItemsHtmlView
 	// =========================================================================
 	// Abstract methods that child class must override
 	// =========================================================================
-	abstract protected function getContextTypeLabel(int $contextType): ?string;
+	protected function getContextTypeLabel(int $contextType): ?string
+	{
+		return MailContextType::tryFrom($contextType)?->getLabel();
+	}
 
 
 	// =========================================================================
@@ -38,15 +42,10 @@ abstract class MailTemplatesHtmlView extends ItemsHtmlView
 
         $fields->customFieldset1 = [];
 
-        // Tên template (link sang form edit)
-        $f           = new ListLayoutItemFieldOption('title_link', 'Tên template', true, false, '');
-        $f->printRaw = true;
-        $fields->customFieldset1[] = $f;
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('title', 'Tên template', true, true, '');
 
         // Ngữ cảnh
-        $f           = new ListLayoutItemFieldOption('context_label', 'Ngữ cảnh', true, false, 'text-center');
-        $f->printRaw = true;
-        $fields->customFieldset1[] = $f;
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('contextLabel', 'Ngữ cảnh', true, false, 'text-center');
 
         // Tiêu đề email
         $fields->customFieldset1[] = new ListLayoutItemFieldOption(
@@ -79,31 +78,14 @@ abstract class MailTemplatesHtmlView extends ItemsHtmlView
 
         parent::prepareDataForLayoutDefault();
 
-        // Preprocessing items
-        foreach ($this->layoutData->items as &$item) {
-            $this->preprocessItem($item);
-        }
-        unset($item);
-    }
-
-    /**
-     * @since 2.0.9
-     */
-    private function preprocessItem(object &$item): void
-    {
-        // Link sang form edit
-        $editUrl = Route::_(
-            'index.php?option=com_eqa&view=mailtemplate&layout=edit&id=' . (int) $item->id,
-            false
-        );
-        $item->title_link =
-            '<a href="' . $editUrl . '">' . htmlspecialchars($item->title) . '</a>';
-
-        // Ngữ cảnh: badge theo context_type
-	    $contextLabel = $this->getContextTypeLabel((int) $item->context_type);
-        $item->context_label =
-            '<span class="badge bg-info text-dark">' . $contextLabel . '</span>';
-
+		//Preprocess
+	    if(!empty($this->layoutData->items))
+	    {
+			foreach ($this->layoutData->items as $item)
+			{
+				$item->contextLabel = $this->getContextTypeLabel($item->context_type);
+			}
+	    }
     }
 
 }

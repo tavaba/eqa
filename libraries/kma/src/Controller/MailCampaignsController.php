@@ -2,389 +2,170 @@
 namespace Kma\Library\Kma\Controller;
 defined('_JEXEC') or die();
 
-/**
- * @package     Kma.Library.Kma
- * @subpackage  Controller
- *
- * @copyright   (C) 2025 KMA
- * @license     GNU General Public License version 2 or later
- *
- * @since       1.0.3
- */
-
 use Exception;
-use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
+use Kma\Library\Kma\Enum\MailCampaignResult;
+use Kma\Library\Kma\Enum\MailContextType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Model\MailCampaignsModel;
+use Kma\Library\Kma\Service\MailService;
 
 /**
- * Base AdminController cho tính năng gửi email thông báo (mail campaigns).
+ * Controller quản lý chiến dịch email của component.
+ * Component phải có model tên 'MailCampaigns' kế thừa
+ * lớp cơ sở cùng tên trong lib_kma.
  *
- * Chứa toàn bộ logic chung:
- *   - notify()            : kích hoạt từ nút trong view ngữ cảnh, điều phối Luồng A/B
- *   - create()            : tạo campaign sau khi người dùng chọn template (Luồng B)
- *   - cancelCampaign()    : hủy nghiệp vụ campaign đang Pending (khác với task 'cancel'
- *                           tiêu chuẩn của Joomla FormController vốn chỉ redirect về list)
- *   - getTemplatesJson()  : AJAX — trả JSON danh sách template theo context_type
+ * Chỉ có một task duy nhất: notify().
+ * Toàn bộ logic tạo campaign và queue do MailService::notify() đảm nhận —
+ * kể cả khi template_id đã được chọn sẵn từ layout selecttemplate của com_kmail.
  *
- * Lớp con BẮT BUỘC override:
- *   - getListUrl(): string
- *       URL danh sách campaign của component.
- *       Ví dụ: 'index.php?option=com_eqa&view=mailcampaigns'
- *   - getSelectTemplateUrl(int $contextType, int $contextId, string $encodedReturn): string
- *       URL layout chọn template (Luồng B).
- *   - validateContext(int $contextType, int $contextId): void
- *       Validate context_type và context_id theo enum của component.
- *       Ném Exception nếu không hợp lệ.
- *   - checkSendMailPermission(): void
- *       Kiểm tra quyền gửi thông báo theo cơ chế phân quyền của component.
- *       Ném Exception nếu không có quyền.
+ * Luồng A (1 template):
+ *   notify(templateId=null) → MailService → Queued → redirect return_url
  *
- * Ví dụ lớp con (com_eqa):
- * -----------------------------------------------------------------------
- *   class MailCampaignsController extends \Kma\Library\Kma\Controller\MailCampaignsController
- *   {
- *       protected function getListUrl(): string
- *       {
- *           return 'index.php?option=com_eqa&view=mailcampaigns';
- *       }
- *
- *       protected function getSelectTemplateUrl(int $contextType, int $contextId, string $encodedReturn): string
- *       {
- *           return 'index.php?option=com_eqa&view=mailcampaigns&layout=selecttemplate'
- *               . '&context_type=' . $contextType
- *               . '&context_id='   . $contextId
- *               . '&return='       . $encodedReturn;
- *       }
- *
- *       protected function validateContext(int $contextType, int $contextId): void
- *       {
- *           if (MailContextType::tryFrom($contextType) === null) {
- *               throw new Exception('Ngữ cảnh không hợp lệ.');
- *           }
- *           if ($contextId <= 0 && $contextType !== MailContextType::Manual->value) {
- *               throw new Exception('Không xác định được đối tượng ngữ cảnh.');
- *           }
- *       }
- *
- *       protected function checkSendMailPermission(): void
- *       {
- *           if (!$this->app->getIdentity()->authorise('sendmail', $this->option)) {
- *               throw new Exception('Bạn không có quyền gửi thông báo email.');
- *           }
- *       }
- *   }
- * -----------------------------------------------------------------------
+ * Luồng B (nhiều template):
+ *   notify(templateId=null) → MailService → NeedSelectTemplate
+ *   → redirect com_kmail/notify/selecttemplate
+ *   → user chọn template_id=X
+ *   → com_kmail redirect về: com_XXXX&task=mailcampaigns.notify&template_id=X
+ *   → notify(templateId=X) → MailService → Queued → redirect return_url
  *
  * @since 1.0.3
  */
 abstract class MailCampaignsController extends AdminController
 {
-    // =========================================================================
-    // Abstract — bắt buộc override ở lớp con
-    // =========================================================================
 
-    /**
-     * URL danh sách campaign của component.
-     * Dùng làm fallback redirect khi không có return URL.
-     *
-     * @return string  Ví dụ: 'index.php?option=com_eqa&view=mailcampaigns'
-     * @since  1.0.3
-     */
-    abstract protected function getListUrl(): string;
 
-    /**
-     * URL layout chọn template (Luồng B — nhiều template phù hợp).
-     *
-     * @param  int     $contextType    Giá trị int của context type enum
-     * @param  int     $contextId      ID đối tượng ngữ cảnh
-     * @param  string  $encodedReturn  Return URL đã base64_encode
-     *
-     * @return string
-     * @since  1.0.3
-     */
-    abstract protected function getSelectTemplateUrl(
-        int    $contextType,
-        int    $contextId,
-        string $encodedReturn
-    ): string;
+	/**
+	 * Kiểm tra quyền gửi email trên component.
+	 *
+	 * @throws Exception
+	 * @since  1.0.3
+	 */
+	abstract protected function checkSendMailPermission(int $contextType, int $contextId): void;
 
-    /**
-     * Validate context_type và context_id theo enum của component.
-     * Ném Exception nếu không hợp lệ.
-     *
-     * @param  int  $contextType
-     * @param  int  $contextId
-     *
-     * @return void
-     * @throws Exception
-     * @since  1.0.3
-     */
-    abstract protected function validateContext(int $contextType, int $contextId): void;
 
-    /**
-     * Kiểm tra quyền gửi thông báo theo cơ chế phân quyền của component.
-     * Ném Exception nếu không có quyền.
+	/**
+     * Kích hoạt gửi thông báo email.
      *
-     * @return void
-     * @throws Exception
-     * @since  1.0.3
-     */
-    abstract protected function checkSendMailPermission(): void;
-
-    // =========================================================================
-    // Task: notify — kích hoạt từ nút trong view ngữ cảnh
-    // =========================================================================
-
-    /**
-     * Kích hoạt gửi thông báo từ một view ngữ cảnh.
+     * Khi template_id=null (lần gọi đầu tiên từ nút "Gửi thông báo"):
+     *   MailService tự xác định template phù hợp.
      *
-     * Request params (GET hoặc POST):
-     *   - context_type (int)    : giá trị context type enum
-     *   - context_id   (int)    : ID đối tượng ngữ cảnh
-     *   - return_url   (string) : URL plain-text để redirect về sau khi xong
+     * Khi template_id=X (sau khi user chọn từ selecttemplate):
+     *   MailService dùng template X ngay, bỏ qua bước đếm template.
      *
-     * Luồng A (= 1 template): tạo campaign + queue ngay → redirect về return_url.
-     * Luồng B (> 1 template): redirect sang layout selecttemplate.
-     * Không có template (= 0): báo lỗi → redirect về return_url.
+     * Request params (POST hoặc GET):
+     *   - context_type (int)               : giá trị MailContextType enum
+     *   - context_id   (int)               : ID đối tượng ngữ cảnh
+     *   - recipient_filter (string|null)   : Quy tắc lọc người nhận
+     *   - template_id  (int|null)          : ID template đã chọn (0 = chưa chọn)
+     *   - return       (string)            : URL base64-encoded để redirect tới sau khi xong
      *
      * @return void
      * @since  1.0.3
      */
     public function notify(): void
     {
-        $this->checkToken();
-
-        $contextType = $this->input->getInt('context_type');
-        $contextId   = $this->input->getInt('context_id');
-        $returnUrl   = $this->resolveReturnUrl();
-
-        $this->setRedirect(Route::_($returnUrl, false));
-
         try {
-            $this->checkSendMailPermission();
-            $this->validateContext($contextType, $contextId);
+	        // checkToken('request') chấp nhận token từ cả POST body lẫn GET params.
+	        // Cần thiết vì notify() có thể được gọi từ GET redirect của
+	        // com_kmail/NotifyController::create() (sau khi user chọn template).
+	        $this->checkToken('request');
 
-            $model     = $this->getMailCampaignModel();
-            $templates = $model->getTemplatesByContextType($contextType);
+	        $contextType = $this->input->getInt('context_type',0);
+	        $contextId   = $this->input->getInt('context_id',0);
+			$recipientFilter = $this->input->getString('recipient_filter');
+	        $templateId  = $this->input->getInt('template_id') ?: null;
+	        $returnB64   = $this->input->getString('return', '');
+	        $returnUrl   = $this->decodeReturnUrl($returnB64);
 
-            if (empty($templates)) {
-                throw new Exception(
-                    'Không có template email nào phù hợp với ngữ cảnh này. '
-                    . 'Vui lòng tạo template trước khi gửi thông báo.'
-                );
+	        $this->setRedirect(Route::_($returnUrl, false));
+	        $this->validateContext($contextType, $contextId);
+	        $this->checkSendMailPermission($contextType, $contextId);
+
+            // Resolve recipients — nghiệp vụ đặc thù của model
+            /** @var MailCampaignsModel $model */
+            $model      = ComponentHelper::createModel('MailCampaigns');
+			if(empty($model) || !$model instanceof MailCampaignsModel)
+				throw  new Exception('Model "MailCampaigns" không tồn tại hoặc không phải là lớp con của \\Kma\\Library\\Kma\\Model\\MailCampaignsModel');
+
+            $recipients = $model->resolveRecipients($contextType, $contextId, $recipientFilter);
+
+            if (empty($recipients)) {
+                throw new Exception('Không có người nhận nào phù hợp với ngữ cảnh đã chọn.');
             }
 
-            if (count($templates) === 1) {
-                // Luồng A: 1 template → tạo campaign + queue ngay
-                $template   = $templates[0];
-                $campaignId = $model->createCampaign(
-                    (int) $template->id,
-                    $contextType,
-                    $contextId
-                );
+            // MailService::notify() chịu trách nhiệm toàn bộ:
+            //   - templateId=null : tự xác định template, tạo queue nếu đủ điều kiện
+            //   - templateId=X    : dùng template X, tạo queue ngay
+            /** @var MailService $mailService */
+            $mailService = ComponentHelper::getMailService();
+            $result      = $mailService->notify($contextType, $contextId, $recipients, $templateId);
 
-                $this->setMessage(sprintf(
-                    'Đã xếp hàng gửi email thông báo (<b>%s</b>). '
-                    . 'Email sẽ sớm được gửi đi.',
-                    htmlspecialchars($template->title)
-                ));
-            }
-            else {
-                // Luồng B: nhiều template → redirect sang layout selecttemplate
-                $selectUrl = Route::_(
-                    $this->getSelectTemplateUrl(
-                        $contextType,
-                        $contextId,
-                        base64_encode($returnUrl)
+            match ($result) {
+                MailCampaignResult::Queued =>
+                    $this->setMessage('Đã xếp hàng gửi email thông báo. Email sẽ sớm được gửi đi.'),
+
+                MailCampaignResult::NeedSelectTemplate =>
+                    $this->redirectToSelectTemplate($contextType, $contextId, $returnB64),
+
+                MailCampaignResult::NoTemplate =>
+                    throw new Exception(
+                        'Không có template email nào phù hợp với ngữ cảnh này. '
+                        . 'Vui lòng tạo template trong com_kmail trước khi gửi thông báo.'
                     ),
-                    false
-                );
-                $this->setRedirect($selectUrl);
-            }
+            };
         }
         catch (Exception $e) {
             $this->setMessage($e->getMessage(), 'error');
         }
-    }
-
-    // =========================================================================
-    // Task: create — xác nhận tạo campaign (Luồng B)
-    // =========================================================================
-
-    /**
-     * Tạo campaign sau khi người dùng chọn template trong layout selecttemplate.
-     *
-     * Request params (POST):
-     *   - template_id      (int)         : ID template đã chọn
-     *   - context_type     (int)         : giá trị context type enum
-     *   - context_id       (int)         : ID đối tượng ngữ cảnh
-     *   - recipient_filter (string|null) : JSON filter bổ sung (tùy chọn)
-     *   - return           (string)      : URL base64-encoded để redirect về
-     *
-     * @return void
-     * @since  1.0.3
-     */
-    public function create(): void
-    {
-        $this->checkToken();
-
-        $returnUrl = $this->resolveReturnUrl();
-        $this->setRedirect(Route::_($returnUrl, false));
-
-        try {
-            $this->checkSendMailPermission();
-
-            $templateId      = $this->input->post->getInt('template_id');
-            $contextType     = $this->input->post->getInt('context_type');
-            $contextId       = $this->input->post->getInt('context_id');
-            $recipientFilter = $this->input->post->getString('recipient_filter') ?: null;
-
-            if ($templateId <= 0) {
-                throw new Exception('Chưa chọn template email.');
-            }
-
-            $this->validateContext($contextType, $contextId);
-
-            $model      = $this->getMailCampaignModel();
-            $campaignId = $model->createCampaign(
-                $templateId,
-                $contextType,
-                $contextId,
-                $recipientFilter
-            );
-
-            $this->setMessage(sprintf(
-                'Đã xếp hàng gửi email thông báo (campaign #%d). '
-                . 'Email sẽ được gửi đi trong thời gian ngắn.',
-                $campaignId
-            ));
-        }
-        catch (Exception $e) {
-            $this->setMessage($e->getMessage(), 'error');
-        }
-    }
-
-    // =========================================================================
-    // Task: cancelCampaign — hủy nghiệp vụ campaign đang Pending
-    // =========================================================================
-
-    /**
-     * Hủy vĩnh viễn một campaign đang ở trạng thái Pending.
-     *
-     * Đây là hành động NGHIỆP VỤ có side effect (ghi DB), khác hoàn toàn với
-     * task 'cancel' tiêu chuẩn của Joomla FormController (vốn chỉ redirect về
-     * list mà không thay đổi dữ liệu).
-     *
-     * Request params (GET hoặc POST):
-     *   - campaign_id (int) : ID campaign cần hủy
-     *
-     * @return void
-     * @since  1.0.3
-     */
-    public function cancelCampaign(): void
-    {
-        $this->checkToken();
-
-        $this->setRedirect(Route::_($this->getListUrl(), false));
-
-        try {
-            $this->checkSendMailPermission();
-			$cid = $this->input->get('cid', []);
-			$cid = array_filter($cid);
-			if(count($cid) === 0)
-				throw new Exception('Không có chiến dịch nào được chọn');
-			if(count($cid) > 1)
-				throw new Exception('Mỗi lần chỉ được chọn 1 chiến dịch');
-            $campaignId = $cid[0];
-
-            $model = $this->getMailCampaignModel();
-            $model->cancelCampaign($campaignId);
-
-            $this->setMessage(sprintf('Đã hủy campaign #%d thành công.', $campaignId));
-        }
-        catch (Exception $e) {
-            $this->setMessage($e->getMessage(), 'error');
-        }
-    }
-
-    // =========================================================================
-    // Task: getTemplatesJson — AJAX, trả JSON danh sách template
-    // =========================================================================
-
-    /**
-     * Trả về danh sách template email phù hợp dưới dạng JSON.
-     *
-     * Được gọi bởi modal chọn template (Luồng B) khi cần load động.
-     *
-     * Request params (GET):
-     *   - context_type (int) : giá trị context type enum
-     *
-     * Response (Joomla JsonResponse):
-     *   Thành công : {success: true,  data: [{id, title, subject, body}, ...]}
-     *   Thất bại   : {success: false, message: "..."}
-     *
-     * @return void
-     * @since  1.0.3
-     */
-    public function getTemplatesJson(): void
-    {
-        $this->app->setHeader('Content-Type', 'application/json; charset=utf-8');
-
-        try {
-            $this->checkSendMailPermission();
-
-            $contextType = $this->input->getInt('context_type');
-            if ($contextType <= 0) {
-                throw new Exception('context_type không hợp lệ.');
-            }
-
-            $model     = $this->getMailCampaignModel();
-            $templates = $model->getTemplatesByContextType($contextType);
-
-            echo new JsonResponse($templates);
-        }
-        catch (Exception $e) {
-            echo new JsonResponse(null, $e->getMessage(), true);
-        }
-
-        $this->app->close();
     }
 
     // =========================================================================
     // Private helpers
     // =========================================================================
 
-    /**
-     * Lấy MailCampaignModel qua ComponentHelper.
-     *
-     * @return MailCampaignsModel
-     * @since  1.0.3
-     */
-    private function getMailCampaignModel(): MailCampaignsModel
-    {
-        /** @var MailCampaignsModel $model */
-        $model = ComponentHelper::createModel('MailCampaigns');
+	/**
+	 * Redirect sang com_kmail/notify/selecttemplate để user chọn template.
+	 *
+	 * @param   int     $contextType  Giá trị ContextType mà caller muốn callee giữ hộ
+	 * @param   int     $contextId    Giá trị Context Id mà caller muốn callee giữ hộ
+	 * @param   string  $returnB64    Giá trị Return URL mà caller muốn callee giữ hộ
+	 *
+	 * @throws Exception
+	 * @since  1.0.3
+	 */
+    protected function redirectToSelectTemplate(
+        int    $contextType,
+        int    $contextId,
+        string $returnB64,
+    ): void {
+        // notify_url: URL của task notify trong component.
+        // com_kmail redirect về đây kèm template_id sau khi user chọn.
+        //$notifyUrl    = 'index.php?option=com_eqa&task=mailcampaigns.notify';
+	    $controllerName = $this->getName();
+	    $notifyUrl = "index.php?option={$this->option}&task={$controllerName}.notify";
+        $notifyUrlB64 = base64_encode($notifyUrl);
 
-        return $model;
+        $this->setRedirect(Route::_(
+            'index.php?option=com_kmail&view=notify&layout=selecttemplate'
+            . '&context_type=' . $contextType
+            . '&context_id='   . $contextId
+            . '&notify_url='   . $notifyUrlB64
+            . '&return='       . $returnB64,
+            false
+        ));
     }
 
     /**
-     * Lấy return URL từ request theo thứ tự ưu tiên:
-     *   1. Tham số 'return' (base64-encoded) — dùng trong Luồng B
-     *   2. Tham số 'return_url' (plain text) — dùng trong Luồng A
-     *   3. Fallback: getListUrl()
+     * Decode return URL từ base64. Chỉ chấp nhận URL bắt đầu bằng 'index.php'.
+     * Fallback về trang chủ của component nếu không hợp lệ.
      *
-     * Chỉ chấp nhận URL bắt đầu bằng 'index.php' để tránh open redirect.
-     *
-     * @return string  URL đã decode, chưa qua Route::_()
+     * @param  string  $returnB64
+     * @return string
      * @since  1.0.3
      */
-    private function resolveReturnUrl(): string
+    protected function decodeReturnUrl(string $returnB64): string
     {
-        // 1. Tham số 'return' (base64)
-        $returnB64 = $this->input->getBase64('return', '');
         if ($returnB64 !== '') {
             $decoded = base64_decode($returnB64);
             if ($decoded !== false && str_starts_with($decoded, 'index.php')) {
@@ -392,13 +173,27 @@ abstract class MailCampaignsController extends AdminController
             }
         }
 
-        // 2. Tham số 'return_url' (plain)
-        $returnUrl = $this->input->getString('return_url', '');
-        if ($returnUrl !== '' && str_starts_with($returnUrl, 'index.php')) {
-            return $returnUrl;
+        return 'index.php?option='.$this->option;
+    }
+
+    /**
+     * Validate context_type và context_id theo MailContextType enum (lib_kma).
+     *
+     * @throws Exception
+     * @since  1.0.3
+     */
+    protected function validateContext(int $contextType, int $contextId): void
+    {
+        $type = MailContextType::tryFrom($contextType);
+
+        if ($type === null) {
+            throw new Exception(
+                'Ngữ cảnh gửi email không hợp lệ (context_type = ' . $contextType . ').'
+            );
         }
 
-        // 3. Fallback
-        return $this->getListUrl();
+        if ($contextId <= 0 && $type !== MailContextType::Manual) {
+            throw new Exception('Không xác định được đối tượng ngữ cảnh (context_id).');
+        }
     }
 }

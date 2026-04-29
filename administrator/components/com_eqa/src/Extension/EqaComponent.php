@@ -16,9 +16,11 @@ use Joomla\CMS\Categories\CategoryServiceTrait;
 use Joomla\CMS\Component\Router\RouterServiceTrait;
 use Joomla\CMS\Extension\BootableExtensionInterface;
 use Joomla\CMS\Extension\MVCComponent;
+use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLRegistryAwareTrait;
 use Kma\Component\Eqa\Administrator\Service\ConfigService;
 use Kma\Component\Eqa\Administrator\Service\HTML\AdministratorService;
+use Kma\Component\Kmail\Administrator\Extension\KmailComponent;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
 use Kma\Library\Kma\Service\MailService;
@@ -143,17 +145,6 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	}
 
 	/**
-	 * Nhận MailService từ DIC (được gọi trong provider.php).
-	 *
-	 * @param   MailService  $mailService
-	 * @since 2.0.8
-	 */
-	public function setMailService(MailService $mailService): void
-	{
-		$this->mailService = $mailService;
-	}
-
-	/**
 	 * Trả về MailService để các class trong component sử dụng
 	 * @return MailService
 	 *
@@ -161,6 +152,14 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	 */
 	public function getMailService(): MailService
 	{
+		if(empty($this->mailService)) {
+			// Lấy MailService qua bootComponent('com_kmail') — không dùng
+			// Factory::getContainer() vì MailService nằm trong component
+			// container của com_kmail, không phải application container.
+			/** @var KmailComponent $kmailComponent */
+			$kmailComponent = Factory::getApplication()->bootComponent('com_kmail');
+			$this->mailService = $kmailComponent->getMailService();
+		}
 		return $this->mailService;
 	}
 

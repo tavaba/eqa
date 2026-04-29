@@ -136,13 +136,11 @@ abstract class MailCampaignsModel extends ListModel
      * @return array
      * @since  1.0.3
      */
-    protected function resolveRecipients(
+    abstract  protected function resolveRecipients(
         int     $contextType,
         int     $contextId,
         ?string $recipientFilter
-    ): array {
-        return [];
-    }
+    ): array;
 
 
     // =========================================================================

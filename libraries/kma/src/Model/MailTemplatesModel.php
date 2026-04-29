@@ -5,6 +5,8 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\QueryInterface;
+use Kma\Library\Kma\Enum\MailContextType;
+use Kma\Library\Kma\Service\MailService;
 
 /**
  * Model danh sách Mail Template.
@@ -13,18 +15,6 @@ use Joomla\Database\QueryInterface;
  */
 abstract class MailTemplatesModel extends ListModel
 {
-	//----------------------------------------------------
-	// Abstract methods
-	//----------------------------------------------------
-	/**
-	 * Trả về mảng options [value => label] cho filter context_type.
-	 * Dùng trong View để render dropdown filter.
-	 *
-	 * @return array<int, string>
-	 * @since  2.0.9
-	 */
-	abstract protected function getContextTypeOptions(): array;
-
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields'] = [
@@ -59,7 +49,7 @@ abstract class MailTemplatesModel extends ListModel
                 $db->quoteName('t.modified_at'),
                 $db->quoteName('u.name', 'creator_name'),
             ])
-            ->from($db->quoteName('#__eqa_mail_templates', 't'))
+            ->from($db->quoteName($this->mailService->getTableTemplates(), 't'))
             ->leftJoin(
                 $db->quoteName('#__users', 'u') .
                 ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('t.created_by')
@@ -106,4 +96,19 @@ abstract class MailTemplatesModel extends ListModel
 
         return parent::getStoreId($id);
     }
+
+	/**
+	 * Trả về mảng options [value => label] cho filter context_type.
+	 * Dùng trong View để render dropdown filter.
+	 *
+	 * @return array<int, string>
+	 * @since  2.0.9
+	 */
+	protected function getContextTypeOptions(): array
+	{
+		return MailContextType::getOptions();
+	}
+
+
+
 }

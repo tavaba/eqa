@@ -18,6 +18,8 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Mail\MailerFactoryInterface;
 use Joomla\Database\DatabaseDriver;
+use Kma\Library\Kma\DataObject\CampaignHistoryItem;
+use Kma\Library\Kma\Enum\MailCampaignResult;
 use Kma\Library\Kma\Enum\MailCampaignStatus;
 use Kma\Library\Kma\Enum\MailQueueStatus;
 use Kma\Library\Kma\Enum\MailRecipientType;
@@ -36,9 +38,9 @@ use Kma\Library\Kma\Helper\DatetimeHelper;
  *   $container->share(MailService::class, static function (Container $c): MailService {
  *       return new MailService(
  *           db             : $c->get(\Joomla\Database\DatabaseDriver::class),
- *           tableTemplates : '#__eqa_mail_templates',
- *           tableCampaigns : '#__eqa_mail_campaigns',
- *           tableQueue     : '#__eqa_mail_queue',
+ *           tableTemplates : '#__kmail_templates',
+ *           tableCampaigns : '#__kmail_campaigns',
+ *           tableQueue     : '#__kmail_queue',
  *           emailDomain    : 'actvn.edu.vn',
  *           // batchSize, maxAttempts, retryIntervalMinutes: dùng default nếu không truyền
  *       );
@@ -78,6 +80,15 @@ class MailService
     // Default values cho các tham số cấu hình tùy chọn
     // =========================================================================
 
+	/** Tên mặc định cho bảng Templates */
+	public const string DEFAULT_TABLE_TEMPLATES = '#__kmail_templates';
+
+	/** Tên mặc định cho bảng Campaigns */
+	public const string DEFAULT_TABLE_CAMPAIGNS = '#__kmail_campaigns';
+
+	/** Tên mặc định cho bảng Queue */
+	public const string DEFAULT_QUEUE= '#__kmail_queue';
+
     /** Số lần thử gửi tối đa (mặc định). */
     public const int DEFAULT_MAX_ATTEMPTS = 3;
 
@@ -102,9 +113,9 @@ class MailService
      */
     public function __construct(
         private readonly DatabaseDriver $db,
-        private readonly string         $tableTemplates,
-        private readonly string         $tableCampaigns,
-        private readonly string         $tableQueue,
+        private readonly string         $tableTemplates        = self::DEFAULT_TABLE_TEMPLATES,
+        private readonly string         $tableCampaigns        = self::DEFAULT_TABLE_CAMPAIGNS,
+        private readonly string         $tableQueue            = self::DEFAULT_QUEUE,
         private readonly int            $batchSize             = self::DEFAULT_BATCH_SIZE,
         private readonly int            $maxAttempts           = self::DEFAULT_MAX_ATTEMPTS,
         private readonly int            $retryIntervalMinutes  = self::DEFAULT_RETRY_INTERVAL_MINUTES,
@@ -573,4 +584,210 @@ class MailService
         $this->db->setQuery($query);
         $this->db->execute();
     }
+
+	// =========================================================================
+	// Notify — điều phối tạo campaign từ ngữ cảnh bên ngoài
+	// =========================================================================
+
+	/**
+	 * Điều phối việc tạo campaign email từ một ngữ cảnh nghiệp vụ.
+	 *
+	 * Caller chịu trách nhiệm:
+	 *   - Resolve danh sách người nhận ($recipients) trước khi gọi
+	 *   - Xử lý kết quả trả về (redirect, hiển thị message...)
+	 *
+	 * MailService chỉ:
+	 *   - Kiểm tra số lượng template phù hợp với $contextType
+	 *   - Nếu đúng 1 template: tạo campaign + build queue → trả về Queued
+	 *   - Nếu >1 template: trả về NeedSelectTemplate (caller tự redirect)
+	 *   - Nếu 0 template: trả về NoTemplate (caller tự hiển thị lỗi)
+	 *
+	 * Placeholder được tạo tự động từ properties của từng $recipient
+	 * qua resolvePlaceholders() — không cần truyền callback riêng.
+	 *
+	 * @param  int      $contextType      Giá trị MailContextType enum
+	 * @param  int      $contextId        ID đối tượng ngữ cảnh
+	 * @param  array    $recipients       Danh sách người nhận (đã resolve bởi caller)
+	 * @param  int|null $templateId       Template đã chọn từ selecttemplate (null = tự xác định)
+	 * @param  string|null $recipientFilter  JSON filter bổ sung (nullable)
+	 *
+	 * @return MailCampaignResult
+	 * @since  1.0.3
+	 */
+	public function notify(
+		int     $contextType,
+		int     $contextId,
+		array   $recipients,
+		?int    $templateId      = null,
+		?string $recipientFilter = null
+	): MailCampaignResult {
+		// Nếu template_id đã được chỉ định (từ layout selecttemplate),
+		// bỏ qua bước đếm template và tạo queue ngay với template đó.
+		if ($templateId !== null) {
+			$query = $this->db->getQuery(true)
+				->select($this->db->quoteName(['id', 'subject', 'body']))
+				->from($this->db->quoteName($this->tableTemplates))
+				->where($this->db->quoteName('id')        . ' = ' . (int) $templateId)
+				->where($this->db->quoteName('published') . ' = 1');
+			$this->db->setQuery($query);
+			$template = $this->db->loadObject();
+
+			if ($template === null) {
+				return MailCampaignResult::NoTemplate;
+			}
+
+			$this->insertCampaignAndBuildQueue(
+				$template, $contextType, $contextId, $recipients, $recipientFilter
+			);
+
+			return MailCampaignResult::Queued;
+		}
+
+		// template_id chưa được chỉ định → kiểm tra số lượng template phù hợp
+		$templates = $this->getTemplatesByContextType($contextType);
+
+		if (empty($templates)) {
+			return MailCampaignResult::NoTemplate;
+		}
+
+		if (count($templates) > 1) {
+			return MailCampaignResult::NeedSelectTemplate;
+		}
+
+		// Đúng 1 template → tạo campaign + build queue ngay
+		$template = $templates[0];
+
+		$this->insertCampaignAndBuildQueue(
+			$template, $contextType, $contextId, $recipients, $recipientFilter
+		);
+
+		return MailCampaignResult::Queued;
+	}
+
+	/**
+	 * Insert một campaign vào DB và build queue email.
+	 * Dùng chung cho cả trường hợp 1 template và template_id được chỉ định.
+	 *
+	 * @param  object       $template
+	 * @param  int          $contextType
+	 * @param  int          $contextId
+	 * @param  array        $recipients
+	 * @param  string|null  $recipientFilter
+	 * @return void
+	 * @since  1.0.3
+	 */
+	private function insertCampaignAndBuildQueue(
+		object  $template,
+		int     $contextType,
+		int     $contextId,
+		array   $recipients,
+		?string $recipientFilter
+	): void {
+		$now    = DatetimeHelper::getCurrentUtcTime();
+		$userId = (int) Factory::getApplication()->getIdentity()->id;
+
+		$query = $this->db->getQuery(true)
+			->insert($this->db->quoteName($this->tableCampaigns))
+			->columns($this->db->quoteName([
+				'template_id', 'context_type', 'context_id',
+				'recipient_filter', 'status',
+				'total_count', 'sent_count', 'failed_count',
+				'created_by', 'created_at',
+			]))
+			->values(implode(',', [
+				(int) $template->id,
+				(int) $contextType,
+				(int) $contextId,
+				$recipientFilter !== null ? $this->db->quote($recipientFilter) : 'NULL',
+				MailCampaignStatus::Pending->value,
+				0, 0, 0,
+				$userId,
+				$this->db->quote($now),
+			]));
+		$this->db->setQuery($query);
+		$this->db->execute();
+		$campaignId = (int) $this->db->insertid();
+
+		$this->buildQueue($campaignId, $template->subject, $template->body, $recipients);
+	}
+
+	// =========================================================================
+	// Campaign history
+	// =========================================================================
+
+	/**
+	 * Lấy lịch sử các chiến dịch email của một ngữ cảnh cụ thể.
+	 *
+	 * Tổng quát hóa từ loadCampaignHistory() trong View để dùng lại
+	 * ở nhiều View khác nhau (ExamExaminees, ExamseasonExams, ...).
+	 *
+	 * Kết quả đã được preprocessing đầy đủ (status_label, status_badge,
+	 * created_at_local) và đóng gói vào DTO CampaignHistoryItem — sẵn sàng
+	 * để truyền vào ViewHelper::printCampaignHistory() mà không cần xử lý thêm.
+	 *
+	 * @param  int  $contextType  Giá trị int của MailContextType enum
+	 * @param  int  $contextId    ID đối tượng ngữ cảnh (exam_id, examseason_id...)
+	 * @param  int  $limit        Số campaign tối đa trả về (mặc định: 10)
+	 *
+	 * @return CampaignHistoryItem[]
+	 * @since  1.0.3
+	 */
+	public function getCampaignHistory(
+		int $contextType,
+		int $contextId,
+		int $limit = 10
+	): array {
+		$query = $this->db->getQuery(true)
+			->select([
+				$this->db->quoteName('mc.id'),
+				$this->db->quoteName('mc.status'),
+				$this->db->quoteName('mc.total_count'),
+				$this->db->quoteName('mc.sent_count'),
+				$this->db->quoteName('mc.failed_count'),
+				$this->db->quoteName('mc.created_at'),
+				$this->db->quoteName('t.title', 'template_title'),
+				$this->db->quoteName('u.name',  'creator_name'),
+			])
+			->from($this->db->quoteName($this->tableCampaigns, 'mc'))
+			->leftJoin(
+				$this->db->quoteName($this->tableTemplates, 't') .
+				' ON ' . $this->db->quoteName('t.id') . ' = ' . $this->db->quoteName('mc.template_id')
+			)
+			->leftJoin(
+				$this->db->quoteName('#__users', 'u') .
+				' ON ' . $this->db->quoteName('u.id') . ' = ' . $this->db->quoteName('mc.created_by')
+			)
+			->where($this->db->quoteName('mc.context_type') . ' = ' . (int) $contextType)
+			->where($this->db->quoteName('mc.context_id')   . ' = ' . (int) $contextId)
+			->order($this->db->quoteName('mc.created_at') . ' DESC')
+			->setLimit($limit);
+
+		$this->db->setQuery($query);
+		$rows = $this->db->loadObjectList() ?: [];
+
+		// Mapping DB rows → CampaignHistoryItem DTOs
+		$items = [];
+		foreach ($rows as $row) {
+			$statusEnum = MailCampaignStatus::tryFrom((int) $row->status);
+
+			$item                 = new CampaignHistoryItem();
+			$item->id             = (int) $row->id;
+			$item->status         = (int) $row->status;
+			$item->statusLabel    = $statusEnum?->getLabel()      ?? '?';
+			$item->statusBadge    = $statusEnum?->getBadgeClass() ?? 'bg-secondary';
+			$item->totalCount     = (int) $row->total_count;
+			$item->sentCount      = (int) $row->sent_count;
+			$item->failedCount    = (int) $row->failed_count;
+			$item->templateTitle  = $row->template_title ?? '';
+			$item->creatorName    = $row->creator_name   ?? '';
+			$item->createdAtLocal = !empty($row->created_at)
+				? DatetimeHelper::convertToLocalTime((string) $row->created_at)
+				: '—';
+
+			$items[] = $item;
+		}
+
+		return $items;
+	}
+
 }
