@@ -26,7 +26,7 @@ use Kma\Library\Kma\Service\MailService;
  *   notify(templateId=null) → MailService → NeedSelectTemplate
  *   → redirect com_kmail/notify/selecttemplate
  *   → user chọn template_id=X
- *   → com_kmail redirect về: com_XXXX&task=mailcampaigns.notify&template_id=X
+ *   → user POST thẳng về: com_XXXX&task=mailcampaigns.notify&template_id=X
  *   → notify(templateId=X) → MailService → Queued → redirect return_url
  *
  * @since 1.0.3
@@ -66,10 +66,11 @@ abstract class MailCampaignsController extends AdminController
     public function notify(): void
     {
         try {
-	        // checkToken('request') chấp nhận token từ cả POST body lẫn GET params.
-	        // Cần thiết vì notify() có thể được gọi từ GET redirect của
-	        // com_kmail/NotifyController::create() (sau khi user chọn template).
-	        $this->checkToken('request');
+	        // Token luôn nằm trong POST body:
+	        //   - Lần đầu: nút 'Gửi thông báo' submit POST
+	        //   - Sau selecttemplate: form POST thẳng từ com_kmail/notify/selecttemplate
+	        //     về đây kèm template_id (không qua GET redirect)
+	        $this->checkToken();
 
 	        $contextType = $this->input->getInt('context_type',0);
 	        $contextId   = $this->input->getInt('context_id',0);
@@ -127,9 +128,13 @@ abstract class MailCampaignsController extends AdminController
 	/**
 	 * Redirect sang com_kmail/notify/selecttemplate để user chọn template.
 	 *
-	 * @param   int     $contextType  Giá trị ContextType mà caller muốn callee giữ hộ
-	 * @param   int     $contextId    Giá trị Context Id mà caller muốn callee giữ hộ
-	 * @param   string  $returnB64    Giá trị Return URL mà caller muốn callee giữ hộ
+	 * com_kmail render layout selecttemplate với form action = notify_url.
+	 * User chọn template rồi form POST thẳng về task notify() của component
+	 * kèm template_id — không qua NotifyController::create() của com_kmail.
+	 *
+	 * @param   int     $contextType  Giá trị ContextType
+	 * @param   int     $contextId    Giá trị Context Id
+	 * @param   string  $returnB64    Return URL (base64) để truyền tiếp qua selecttemplate
 	 *
 	 * @throws Exception
 	 * @since  1.0.3
@@ -140,14 +145,13 @@ abstract class MailCampaignsController extends AdminController
         string $returnB64,
     ): void {
         // notify_url: URL của task notify trong component.
-        // com_kmail redirect về đây kèm template_id sau khi user chọn.
-        //$notifyUrl    = 'index.php?option=com_eqa&task=mailcampaigns.notify';
+        // Dùng làm form action trong selecttemplate.php — form POST thẳng về đây.
 	    $controllerName = $this->getName();
 	    $notifyUrl = "index.php?option={$this->option}&task={$controllerName}.notify";
         $notifyUrlB64 = base64_encode($notifyUrl);
 
         $this->setRedirect(Route::_(
-            'index.php?option=com_kmail&view=notify&layout=selecttemplate'
+            'index.php?option=com_kmail&view=templates&layout=selecttemplate'
             . '&context_type=' . $contextType
             . '&context_id='   . $contextId
             . '&notify_url='   . $notifyUrlB64

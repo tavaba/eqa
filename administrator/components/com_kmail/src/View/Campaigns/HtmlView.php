@@ -124,7 +124,7 @@ class HtmlView extends ItemsHtmlView
     protected function addToolbarForLayoutDefault(): void
     {
         ToolbarHelper::title('Chiến dịch email');
-        ToolbarHelper::appendGoHome();
+        ToolbarHelper::back();
         ToolbarHelper::appendConfirmButton(
             'Bạn có chắc muốn hủy chiến dịch?',
             'ban-circle',
