@@ -19,14 +19,11 @@ use Kma\Library\Kma\Service\MailService;
  * Toàn bộ logic tạo campaign và queue do MailService::notify() đảm nhận —
  * kể cả khi template_id đã được chọn sẵn từ layout selecttemplate của com_kmail.
  *
- * Luồng A (1 template):
- *   notify(templateId=null) → MailService → Queued → redirect return_url
- *
- * Luồng B (nhiều template):
- *   notify(templateId=null) → MailService → NeedSelectTemplate
+ * Luồng khi templateId=null (lần đầu — người dùng nhấn nút "Gửi thông báo"):
+ *   notify(templateId=null) → MailService → NeedSelectTemplate (luôn luôn, kể cả 1 template)
  *   → redirect com_kmail/notify/selecttemplate
- *   → user chọn template_id=X
- *   → user POST thẳng về: com_XXXX&task=mailcampaigns.notify&template_id=X
+ *   → người dùng xem danh sách, chọn template (hoặc hủy nếu không có template phù hợp)
+ *   → user POST thẳng về: com_foo&task=mailcampaigns.notify&template_id=X
  *   → notify(templateId=X) → MailService → Queued → redirect return_url
  *
  * @since 1.0.3
@@ -95,12 +92,16 @@ abstract class MailCampaignsController extends AdminController
                 throw new Exception('Không có người nhận nào phù hợp với ngữ cảnh đã chọn.');
             }
 
+            // Resolve context label — do model của component cung cấp,
+            // được lưu vào DB để com_kmail hiển thị mà không cần query nghiệp vụ.
+            $contextLabel = $model->resolveContextLabel($contextType, $contextId);
+
             // MailService::notify() chịu trách nhiệm toàn bộ:
             //   - templateId=null : tự xác định template, tạo queue nếu đủ điều kiện
             //   - templateId=X    : dùng template X, tạo queue ngay
             /** @var MailService $mailService */
             $mailService = ComponentHelper::getMailService();
-            $result      = $mailService->notify($contextType, $contextId, $recipients, $templateId);
+            $result      = $mailService->notify($contextType, $contextId, $recipients, $templateId, null, $contextLabel);
 
             match ($result) {
                 MailCampaignResult::Queued =>
@@ -146,6 +147,7 @@ abstract class MailCampaignsController extends AdminController
     ): void {
         // notify_url: URL của task notify trong component.
         // Dùng làm form action trong selecttemplate.php — form POST thẳng về đây.
+        //$notifyUrl    = 'index.php?option=com_eqa&task=mailcampaigns.notify';
 	    $controllerName = $this->getName();
 	    $notifyUrl = "index.php?option={$this->option}&task={$controllerName}.notify";
         $notifyUrlB64 = base64_encode($notifyUrl);

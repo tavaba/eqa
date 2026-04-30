@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `#__kmail_campaigns` (
     `template_id`      INT UNSIGNED    NOT NULL COMMENT 'FK → #__kmail_templates',
     `context_type`     TINYINT UNSIGNED NOT NULL COMMENT 'MailContextType enum value',
     `context_id`       INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT 'ID đối tượng ngữ cảnh',
+    `context_label`    VARCHAR(500)     NOT NULL DEFAULT '' COMMENT 'Nhãn ngữ cảnh tại thời điểm tạo campaign',
     `recipient_filter` JSON            NULL     COMMENT 'Filter bổ sung (vd: {"learner_ids":[1,2,3]})',
     `status`           TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0=Pending,1=Processing,2=Done,3=Cancelled',
     `total_count`      INT UNSIGNED    NOT NULL DEFAULT 0,

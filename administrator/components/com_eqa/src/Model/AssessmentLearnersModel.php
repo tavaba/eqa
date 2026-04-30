@@ -1377,7 +1377,7 @@ class AssessmentLearnersModel extends ListModel
 	 * @param  int  $admissionYear  Năm nhập học (từ cột admissionyear của #__eqa_courses).
 	 *
 	 * @return int  Ngưỡng điểm tối thiểu (thang 990).
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	protected function getToeicPassingScore(int $admissionYear): int
 	{
@@ -1400,7 +1400,7 @@ class AssessmentLearnersModel extends ListModel
 	 * @return array{total: int, passed: int, failed: int}
 	 *
 	 * @throws \Exception  Nếu file không hợp lệ, dữ liệu không toàn vẹn, hoặc lỗi DB.
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	public function importITestResult(string $filePath, int $assessmentId, int $operatorId): array
 	{
@@ -1453,7 +1453,7 @@ class AssessmentLearnersModel extends ListModel
 	 * }>  Mảng indexed bởi examinee_code.
 	 *
 	 * @throws \Exception  Nếu file không đọc được hoặc dữ liệu không hợp lệ.
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	private function parseITestResultFile(string $filePath): array
 	{
@@ -1622,7 +1622,7 @@ class AssessmentLearnersModel extends ListModel
 	 * @param  mixed  $cellValue  Giá trị ô từ PhpSpreadsheet.
 	 *
 	 * @return int|null  Số câu đúng, hoặc null nếu không parse được.
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	private function parseRawScoreCell(mixed $cellValue): ?int
 	{
@@ -1663,7 +1663,7 @@ class AssessmentLearnersModel extends ListModel
 	 * }>  Mảng indexed bởi examinee_code.
 	 *
 	 * @throws \Exception
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	private function loadEligibleExaminees(int $assessmentId): array
 	{
@@ -1738,7 +1738,7 @@ class AssessmentLearnersModel extends ListModel
 	 *
 	 * @return void
 	 * @throws \Exception
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	private function validateITestResultData(array $fileRows, array $dbRows): void
 	{
@@ -1803,7 +1803,7 @@ class AssessmentLearnersModel extends ListModel
 	 *
 	 * @return array{total: int, passed: int, failed: int}
 	 * @throws \Exception
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	private function saveITestResults(
 		array $fileRows,
@@ -1909,7 +1909,7 @@ class AssessmentLearnersModel extends ListModel
 	 *
 	 * @return array{assessment: object, examinees: object[], stats_by_course: object[]}
 	 * @throws \Exception
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	public function getExportData(int $assessmentId): array
 	{

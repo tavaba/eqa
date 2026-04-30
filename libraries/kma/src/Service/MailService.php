@@ -597,10 +597,13 @@ class MailService
 	 *   - Xử lý kết quả trả về (redirect, hiển thị message...)
 	 *
 	 * MailService chỉ:
-	 *   - Kiểm tra số lượng template phù hợp với $contextType
-	 *   - Nếu đúng 1 template: tạo campaign + build queue → trả về Queued
-	 *   - Nếu >1 template: trả về NeedSelectTemplate (caller tự redirect)
+	 *   - Kiểm tra có template phù hợp với $contextType không
+	 *   - Nếu $templateId đã chỉ định: tạo campaign + build queue → trả về Queued
+	 *   - Nếu có ít nhất 1 template: trả về NeedSelectTemplate (caller redirect sang selecttemplate)
 	 *   - Nếu 0 template: trả về NoTemplate (caller tự hiển thị lỗi)
+	 *
+	 * Lưu ý: khi $templateId=null, luôn trả về NeedSelectTemplate (kể cả khi chỉ có 1 template)
+	 * để người dùng luôn được xem và xác nhận template trước khi gửi.
 	 *
 	 * Placeholder được tạo tự động từ properties của từng $recipient
 	 * qua resolvePlaceholders() — không cần truyền callback riêng.
@@ -608,8 +611,11 @@ class MailService
 	 * @param  int      $contextType      Giá trị MailContextType enum
 	 * @param  int      $contextId        ID đối tượng ngữ cảnh
 	 * @param  array    $recipients       Danh sách người nhận (đã resolve bởi caller)
-	 * @param  int|null $templateId       Template đã chọn từ selecttemplate (null = tự xác định)
+	 * @param  int|null    $templateId       Template đã chọn từ selecttemplate (null = tự xác định)
 	 * @param  string|null $recipientFilter  JSON filter bổ sung (nullable)
+	 * @param  string      $contextLabel     Nhãn ngữ cảnh do component cung cấp tại thời điểm tạo
+	 *                                       Ví dụ: "Toán cao cấp 1 (HK1/2024-2025)", "Kỳ thi HK1 2024"
+	 *                                       Lưu vào DB để com_kmail hiển thị mà không cần query nghiệp vụ
 	 *
 	 * @return MailCampaignResult
 	 * @since  1.0.3
@@ -619,7 +625,8 @@ class MailService
 		int     $contextId,
 		array   $recipients,
 		?int    $templateId      = null,
-		?string $recipientFilter = null
+		?string $recipientFilter = null,
+		string  $contextLabel    = ''
 	): MailCampaignResult {
 		// Nếu template_id đã được chỉ định (từ layout selecttemplate),
 		// bỏ qua bước đếm template và tạo queue ngay với template đó.
@@ -637,31 +644,23 @@ class MailService
 			}
 
 			$this->insertCampaignAndBuildQueue(
-				$template, $contextType, $contextId, $recipients, $recipientFilter
+				$template, $contextType, $contextId, $recipients, $recipientFilter, $contextLabel
 			);
 
 			return MailCampaignResult::Queued;
 		}
 
-		// template_id chưa được chỉ định → kiểm tra số lượng template phù hợp
+		// template_id chưa được chỉ định → kiểm tra có template không,
+		// sau đó luôn cho người dùng chọn (kể cả khi chỉ có 1 template).
+		// Lý do: người dùng nhìn thấy danh sách template có thể nhận ra
+		// không có template phù hợp và cần hủy để tạo template trước.
 		$templates = $this->getTemplatesByContextType($contextType);
 
 		if (empty($templates)) {
 			return MailCampaignResult::NoTemplate;
 		}
 
-		if (count($templates) > 1) {
-			return MailCampaignResult::NeedSelectTemplate;
-		}
-
-		// Đúng 1 template → tạo campaign + build queue ngay
-		$template = $templates[0];
-
-		$this->insertCampaignAndBuildQueue(
-			$template, $contextType, $contextId, $recipients, $recipientFilter
-		);
-
-		return MailCampaignResult::Queued;
+		return MailCampaignResult::NeedSelectTemplate;
 	}
 
 	/**
@@ -681,7 +680,8 @@ class MailService
 		int     $contextType,
 		int     $contextId,
 		array   $recipients,
-		?string $recipientFilter
+		?string $recipientFilter,
+		string  $contextLabel    = ''
 	): void {
 		$now    = DatetimeHelper::getCurrentUtcTime();
 		$userId = (int) Factory::getApplication()->getIdentity()->id;
@@ -689,7 +689,7 @@ class MailService
 		$query = $this->db->getQuery(true)
 			->insert($this->db->quoteName($this->tableCampaigns))
 			->columns($this->db->quoteName([
-				'template_id', 'context_type', 'context_id',
+				'template_id', 'context_type', 'context_id', 'context_label',
 				'recipient_filter', 'status',
 				'total_count', 'sent_count', 'failed_count',
 				'created_by', 'created_at',
@@ -698,6 +698,7 @@ class MailService
 				(int) $template->id,
 				(int) $contextType,
 				(int) $contextId,
+				$this->db->quote($contextLabel),
 				$recipientFilter !== null ? $this->db->quote($recipientFilter) : 'NULL',
 				MailCampaignStatus::Pending->value,
 				0, 0, 0,

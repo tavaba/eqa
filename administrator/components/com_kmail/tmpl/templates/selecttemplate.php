@@ -37,9 +37,9 @@ $cancelUrl = $data->cancelUrl;
     <div class="alert alert-info d-flex align-items-center gap-2">
         <span class="icon-envelope fs-5" aria-hidden="true"></span>
         <div>
-            Có nhiều mẫu thông báo phù hợp với ngữ cảnh
+            Vui lòng chọn một mẫu để gửi thông báo cho ngữ cảnh
             <strong><?= $contextTypeLabel ?></strong>.
-            Vui lòng chọn một mẫu để gửi thông báo.
+
         </div>
     </div>
 

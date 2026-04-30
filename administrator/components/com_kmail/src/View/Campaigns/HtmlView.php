@@ -200,22 +200,8 @@ class HtmlView extends ItemsHtmlView
             false
         );
 
-        // Nút Hủy: chỉ hiển thị khi campaign còn có thể hủy
-        $cancelButton = '';
-        if (MailCampaignStatus::tryFrom((int) $item->status)?->isCancellable()) {
-            $cancelUrl    = Route::_(
-                'index.php?option=com_kmail&task=campaigns.cancelCampaign&campaign_id=' . (int) $item->id,
-                false
-            );
-            $cancelButton =
-                ' <a href="' . $cancelUrl . '" class="btn btn-sm btn-outline-danger"'
-                . ' onclick="return confirm(\'Bạn có chắc muốn hủy chiến dịch này?\');">'
-                . 'Hủy</a>';
-        }
-
         $item->actions_html =
-            '<a href="' . $logUrl . '" class="btn btn-sm btn-outline-secondary">Xem log</a>'
-            . $cancelButton;
+            '<a href="' . $logUrl . '" class="btn btn-sm btn-outline-secondary">Xem log</a>';
     }
 
     // =========================================================================

@@ -18,4 +18,12 @@ class CampaignsModel extends BaseMailCampaignModel
 	{
 		return [];
 	}
+
+	/**
+	 * Phương thức rỗng để đáp ứng yêu cầu override phương thức trừu tượng.
+	 */
+	public function resolveContextLabel(int $contextType, int $contextId): string
+	{
+		return '';
+	}
 }

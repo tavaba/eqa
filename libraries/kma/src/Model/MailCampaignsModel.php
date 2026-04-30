@@ -1,17 +1,5 @@
 <?php
-
-/**
- * @package     Kma.Library.Kma
- * @subpackage  Model
- *
- * @copyright   (C) 2025 KMA
- * @license     GNU General Public License version 2 or later
- *
- * @since       1.0.3
- */
-
 namespace Kma\Library\Kma\Model;
-
 defined('_JEXEC') or die();
 
 use Exception;
@@ -46,10 +34,12 @@ use Kma\Library\Kma\Service\MailService;
  *   - getMailService(): MailService
  *       Trả về instance MailService (lấy từ DI Container hoặc tạo mới).
  *
+ * Lớp con BẮT BUỘC override (thêm):
+ *   - resolveContextLabel(int $contextType, int $contextId): string
+ *       Trả về nhãn ngữ cảnh để lưu vào DB tại thời điểm tạo campaign.
+ *       Ví dụ: 'Toán cao cấp 1 (HK1/2024-2025)', 'Kỳ thi HK1 2024-2025'.
+ *
  * Lớp con CÓ THỂ override:
- *   - getContextLabel(int $contextType, int $contextId): string
- *       Trả về nhãn hiển thị của ngữ cảnh, ví dụ: tên môn thi, tên kỳ thi.
- *       Mặc định trả về "#{$contextId}".
  *   - resolveRecipients(int $contextType, int $contextId, ?string $recipientFilter): array
  *       Resolve danh sách người nhận từ ngữ cảnh nghiệp vụ.
  *       Mặc định trả về mảng rỗng — lớp con phải override nếu muốn tạo queue.
@@ -65,15 +55,6 @@ use Kma\Library\Kma\Service\MailService;
  *       protected function getMailService(): MailService
  *       {
  *           return Factory::getContainer()->get(MailService::class);
- *       }
- *
- *       protected function getContextLabel(int $contextType, int $contextId): string
- *       {
- *           return match (MailContextType::from($contextType)) {
- *               MailContextType::Exam       => DatabaseHelper::getExamInfo($contextId)?->name ?? "#{$contextId}",
- *               MailContextType::ExamSeason => DatabaseHelper::getExamseasonInfo($contextId)?->name ?? "#{$contextId}",
- *               default                     => "#{$contextId}",
- *           };
  *       }
  *
  *       protected function resolveRecipients(int $contextType, int $contextId, ?string $recipientFilter): array
@@ -103,24 +84,6 @@ abstract class MailCampaignsModel extends ListModel
     // =========================================================================
 
     /**
-     * Trả về nhãn hiển thị của ngữ cảnh (context).
-     *
-     * Ví dụ: contextType=Exam, contextId=42 → "Toán cao cấp 1 (HK1/2024-2025)"
-     *
-     * Mặc định trả về "#{$contextId}" — lớp con override để hiển thị tên thật.
-     *
-     * @param  int  $contextType  Giá trị MailContextType enum
-     * @param  int  $contextId    ID đối tượng ngữ cảnh
-     *
-     * @return string
-     * @since  1.0.3
-     */
-    protected function getContextLabel(int $contextType, int $contextId): string
-    {
-        return '#' . $contextId;
-    }
-
-    /**
      * Resolve danh sách người nhận từ ngữ cảnh nghiệp vụ.
      *
      * Mỗi phần tử trả về PHẢI có $recipient->learner (object) với:
@@ -141,6 +104,21 @@ abstract class MailCampaignsModel extends ListModel
         int     $contextId,
         ?string $recipientFilter
     ): array;
+
+    /**
+     * Trả về nhãn hiển thị của ngữ cảnh — được lưu vào cột context_label
+     * trong #__kmail_campaigns tại thời điểm tạo campaign.
+     *
+     * com_kmail dùng giá trị này để hiển thị mà không cần query nghiệp vụ.
+     * Ví dụ: 'Toán cao cấp 1 (HK1/2024-2025)', 'Kỳ thi HK1 2024-2025'.
+     *
+     * @param  int  $contextType  Giá trị MailContextType enum
+     * @param  int  $contextId    ID đối tượng ngữ cảnh
+     *
+     * @return string
+     * @since  1.0.3
+     */
+    abstract public function resolveContextLabel(int $contextType, int $contextId): string;
 
 
     // =========================================================================
@@ -217,6 +195,7 @@ abstract class MailCampaignsModel extends ListModel
                 $db->quoteName('mc.total_count'),
                 $db->quoteName('mc.sent_count'),
                 $db->quoteName('mc.failed_count'),
+                $db->quoteName('mc.context_label'),
                 $db->quoteName('mc.created_by'),
                 $db->quoteName('mc.created_at'),
                 $db->quoteName('u.name',     'creator_name'),
@@ -308,7 +287,8 @@ abstract class MailCampaignsModel extends ListModel
      * Thêm vào mỗi item:
      *   - status_label    : nhãn tiếng Việt của status
      *   - status_badge    : CSS class Bootstrap badge
-     *   - context_label   : nhãn ngữ cảnh (gọi getContextLabel() của lớp con)
+     *   - context_label   : nhãn ngữ cảnh đọc từ DB (lưu lúc tạo campaign)
+     *                       Ví dụ: 'Toán cao cấp 1 (HK1/2024-2025)'
      *   - progress_pct    : phần trăm tiến độ gửi (0-100)
      *
      * Gọi trong View trước khi render, ví dụ:
@@ -328,11 +308,14 @@ abstract class MailCampaignsModel extends ListModel
             $item->status_label = $statusEnum?->getLabel() ?? '?';
             $item->status_badge = $statusEnum?->getBadgeClass() ?? 'bg-secondary';
 
-            // Context label — gọi lớp con để lấy tên thật
-            $item->context_label = $this->getContextLabel(
-                (int) $item->context_type,
-                (int) $item->context_id
-            );
+            // context_label đã được lưu vào DB tại thời điểm tạo campaign
+            // bởi component gọi notify() — không cần tính lại ở đây.
+            // Nếu rỗng (campaign cũ trước khi migration), fallback về context_id.
+            if (empty($item->context_label)) {
+                $item->context_label = '#' . (int) $item->context_id;
+            }
+			else
+				$item->context_label = "{$item->context_label} (#{$item->context_id})";
 
             // Tiến độ gửi
             $total              = (int) $item->total_count;

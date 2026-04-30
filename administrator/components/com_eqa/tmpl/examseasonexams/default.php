@@ -4,7 +4,7 @@ defined('_JEXEC') or die();
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\ViewHelper;
-$examseason = $this->item;
+$examseason = $this->examseason;
 if(!empty($examseason)){
     echo 'Kỳ thi: <b>'. htmlentities($examseason->name) . '</b><br/>';
     echo '(Học kỳ '.$examseason->term.'. Năm học '. DatetimeHelper::decodeAcademicYear($examseason->academicyear).')';
@@ -66,3 +66,4 @@ if(!empty($examseason)){
 </div>
 <?php
 ViewHelper::printItemsDefaultLayout($this->layoutData, $this->itemFields);
+ViewHelper::printCampaignHistory($this->campaignHistory);

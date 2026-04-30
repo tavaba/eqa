@@ -6,6 +6,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
+use Kma\Library\Kma\Enum\MailContextType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -17,6 +18,7 @@ use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
 class HtmlView extends ItemsHtmlView
 {
     protected $examseason;
+	protected array $campaignHistory;
     protected function configureItemFieldsForLayoutDefault():void{
         $fields = new ListLayoutItemFields();
         $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
@@ -58,7 +60,7 @@ class HtmlView extends ItemsHtmlView
 	     * @var ExamseasonModel $itemModel
 	     **/
 		$itemModel = ComponentHelper::createModel('Examseason');
-		$this->item = $itemModel->getItem($examseasonId);
+		$this->examseason = $itemModel->getItem($examseasonId);
 
 	    /**
 	     * Prepare the list model by setting state filter for the examseason id
@@ -90,18 +92,31 @@ class HtmlView extends ItemsHtmlView
             }
         }
 
+		//Retrieve data for email history
+	    $mailService = ComponentHelper::getMailService();
+	    $this->campaignHistory = $mailService->getCampaignHistory(
+		    MailContextType::ExamSeason->value,
+		    $examseasonId
+	    );
+
 		//Setup form params to keep the examseason id
 	    $this->layoutData->formActionParams = [
 			'view'=>'examseasonExams',
 			'examseason_id' => $examseasonId
 	    ];
+		$this->layoutData->formHiddenFields = [
+			'context_type' => MailContextType::ExamSeason->value,
+			'context_id' => $examseasonId,
+			'return' => base64_encode('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId)
+		];
 
     }
     public function addToolbarForLayoutDefault(): void
     {
         ToolbarHelper::title('Danh sách môn thi của kỳ thi');
         ToolbarHelper::appendGoHome();
-        ToolbarHelper::appendButton(null,'arrow-up-2','COM_EQA_EXAMSEASON','examseason.cancel',false);
+		$url = 'index.php?option=com_eqa&view=examseasons';
+        ToolbarHelper::appendLink(null, $url,'COM_EQA_EXAMSEASON','arrow-up-2');
         ToolbarHelper::appendDelete('exams.delete');
         ToolbarHelper::appendButton('core.create','plus-2','COM_EQA_BUTTON_ADD_MANUALLY','exam.add',false,'btn btn-success');
 	    ToolbarHelper::appendButton('core.create','plus-circle','Thêm theo môn học','examseason.addExams',false, 'btn btn-success');
@@ -116,6 +131,14 @@ class HtmlView extends ItemsHtmlView
 		ToolbarHelper::appendButton(null,'download','Danh sách thi','exams.export',true);
 	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm CHƯA xử lý kỷ luật', 'exams.concludeWithDisciplineAlreadyApplied',true);
 	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm ĐÃ xử lý kỷ luật', 'exams.concludeWithDisciplineNotApplied',true);
+	    ToolbarHelper::appendButton(
+		    'core.manage',
+		    'envelope',
+		    'Gửi email cho thí sinh',
+		    'mailcampaigns.notify',
+		    false,
+		    'btn btn-danger'
+	    );
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm SV', 'exams.exportResultForLearners', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 1)', 'exams.exportResultForEms', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 2)', 'exams.exportResultForEms2', true);

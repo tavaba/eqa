@@ -785,7 +785,7 @@ class AssessmentLearnersController extends AdminController
 	 *   - assessment_id      : int  — ID kỳ sát hạch
 	 *   - itest_result_file  : file — File .xlsx bảng điểm iTest
 	 *
-	 * @since 2.0.9
+	 * @since 2.0.8
 	 */
 	public function importITestResult(): void
 	{
@@ -858,7 +858,7 @@ class AssessmentLearnersController extends AdminController
 	 * @param  array{total: int, passed: int, failed: int}  $result
 	 *
 	 * @return string  HTML message.
-	 * @since  2.0.9
+	 * @since  2.0.8
 	 */
 	private function buildITestImportResultMessage(array $result): string
 	{
@@ -885,7 +885,7 @@ class AssessmentLearnersController extends AdminController
 	 *   - Bảng 1: Thống kê theo khóa đào tạo (8 cột)
 	 *   - Bảng 2: Kết quả chi tiết từng thí sinh (9 cột)
 	 *
-	 * @since 2.0.9
+	 * @since 2.0.8
 	 */
 	public function exportCouncilReport(): void
 	{
@@ -939,7 +939,7 @@ class AssessmentLearnersController extends AdminController
 	 *   - Tiêu đề: THÔNG BÁO / Kết quả {tên kỳ sát hạch}
 	 *   - Bảng kết quả (7 cột), cột Ghi chú ghi điểm thành phần nếu không đạt
 	 *
-	 * @since 2.0.9
+	 * @since 2.0.8
 	 */
 	public function exportStudentNotification(): void
 	{
