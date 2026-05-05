@@ -25,7 +25,9 @@ class HtmlView extends ItemsHtmlView {
         $option->customFieldset1[] = new ListLayoutItemFieldOption('start', 'COM_EQA_EXAM_TIME', true, false, 'text-center');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('examsessionName', 'COM_EQA_EXAMSESSION');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('code','COM_EQA_ROOM');
-        $option->customFieldset1[] = new ListLayoutItemFieldOption('exams', 'COM_EQA_EXAM');
+        $f = new ListLayoutItemFieldOption('exams', 'COM_EQA_EXAM');
+		$f->printRaw = true;
+	    $option->customFieldset1[] = $f;
 
 		/*
 		 * URL này không dẫn đến một view/layout cụ thể mà gửi truy vấn đến controller
@@ -69,6 +71,10 @@ class HtmlView extends ItemsHtmlView {
 	            {
 		            $examIds = explode(',', $item->examIds);
 					$examNames = DatabaseHelper::getExamNames($examIds);
+					foreach ($examNames as &$examName){
+						$examName = htmlspecialchars($examName);
+					}
+					unset($examName);
 		            $item->exams = implode('<br/>',$examNames);
 	            }
 				else
