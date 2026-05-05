@@ -39,7 +39,7 @@ class HtmlView extends ItemsHtmlView
         $f = new ListLayoutItemFieldOption('respondentCount', 'Số người',true,false,'text-center');
         $f->urlFormatString='index.php?option=com_survey&view=surveyrespondents&survey_id=%d';
         $option->customFieldset1[] = $f;
-        $f = new ListLayoutItemFieldOption('progress','Đã phản hồi',true,false,'text-center');
+        $f = new ListLayoutItemFieldOption('progress','Đã phản hồi',false,false,'text-center');
         $f->printRaw = true;
         $f->columnCssClasses = 'text-center w-10';
         $option->customFieldset1[] = $f;
