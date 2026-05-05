@@ -238,6 +238,9 @@ class SurveyModel extends AdminModel
          * 2. Delete the respondents from the table `#__survey_survey_respondent`
          * 3. Return the number of actually deleted respondents
          */
+		if(empty($respondentIds))
+			return 0;
+
         $db = DatabaseHelper::getDatabaseDriver();
         $respondentIdSet = '(' . implode(',', $respondentIds) . ')';
 
