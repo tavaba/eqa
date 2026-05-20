@@ -188,6 +188,10 @@ class ConductsController extends AdminController {
 			if($exam->isPassFail)
 				continue;
 
+			//Skip exams whose conclusion is NULL
+			if(null == $exam->conclusion)
+				continue;
+
 			$subjectId = $exam->subjectId;
 			$mark = $exam->moduleBase4Mark ? $exam->moduleBase4Mark*$exam->creditNumber : 0;
 			if(array_key_exists($subjectId, $weightedMarks))
@@ -298,7 +302,7 @@ class ConductsController extends AdminController {
 			$ids = $input->post->get('cid',[],'array');
 			$ids = array_filter($ids,'intval'); //Filter out non-integer values
 			$ids = array_unique($ids); //Remove duplicate entries
-			if(count($ids)==0) throw new Exception('Chưa chọn mục nào để tính điểm rèn luyện');
+			if(count($ids)==0) throw new Exception('Chưa chọn mục nào để tính điểm học kỳ');
 
 			/** @var ConductModel $conductModel */
 			$conductModel = $this->getModel();
