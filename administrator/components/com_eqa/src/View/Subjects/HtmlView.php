@@ -44,7 +44,7 @@ class HtmlView extends ItemsHtmlView
 		    false,
 		    false
 	    );
-
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('class_count','Lớp HP', true, false,'text-center');
         $option->published = ListLayoutItemFields::defaultFieldPublished();
 
         //Set the option

@@ -28,7 +28,12 @@ class SubjectsModel extends ListModel{
         );
         $query->from('#__eqa_subjects AS a')
             ->leftJoin('#__eqa_units AS b','a.unit_id = b.id')
-            ->select($columns);
+            ->select($columns)
+	        ->select(
+		        '(SELECT COUNT(*) FROM ' . $db->quoteName('#__eqa_classes') . ' AS cl'
+		        . ' WHERE cl.' . $db->quoteName('subject_id') . ' = a.' . $db->quoteName('id') . ') AS '
+		        . $db->quoteName('class_count')
+	        );
 
         /*
          * Special filter
