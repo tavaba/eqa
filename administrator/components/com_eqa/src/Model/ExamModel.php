@@ -361,86 +361,84 @@ class ExamModel extends AdminModel{
 			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể thêm thí sinh');
 
 		$app = Factory::getApplication();
-		$db = $this->getDatabase();
-
-		//Các bước tiếp theo cần thực hiện
-		//1. Xác định ID của môn học
-		//2. Lấy danh sách tất cả các lớp học phần của học phần đó
-		//3. Lấy danh sách tất cả các HVSV trong các lớp học phần đã xác định
-		//   mà đã thi tối thiểu một lần ('not_taken'>0) và vẫn còn quyền dự thi ('expired'=0)
-		//4. Thêm các HVSV đã chọn vào môn thi
+		$db  = $this->getDatabase();
 
 		$db->transactionStart();
-		try{
+		try {
 			//1. Xác định ID của môn học
 			$query = $db->getQuery(true)
 				->select('subject_id')
 				->from('#__eqa_exams')
-				->where('id='.$examId);
+				->where('id = ' . (int) $examId);
 			$db->setQuery($query);
 			$subjectId = $db->loadResult();
 			if (empty($subjectId))
-				throw new Exception("Không tìm thấy môn học");
+				throw new Exception('Không tìm thấy môn học');
 
-			//2. Lấy danh sách tất cả các lớp học phần của học phần đó
+			//2. Lấy danh sách tất cả các lớp học phần của môn học đó
 			$query = $db->getQuery(true)
 				->select('id')
 				->from('#__eqa_classes')
-				->where('subject_id='.$subjectId);
+				->where('subject_id = ' . (int) $subjectId);
 			$db->setQuery($query);
 			$classIds = $db->loadColumn();
 			if (empty($classIds))
-				throw new Exception("Không tìm thấy lớp học phần nào");
+				throw new Exception('Không tìm thấy lớp học phần nào');
 
-			//3. Lấy danh sách tất cả các HVSV trong các lớp học phần đã xác định
-			//   mà đã thi tối thiểu một lần ('ntaken'>0) và vẫn còn quyền dự thi ('expired'=0)
+			//3. Lấy danh sách HVSV đã thi tối thiểu một lần (ntaken > 0)
+			//   và vẫn còn quyền dự thi (expired = 0)
 			$columns = $db->quoteName(
-				array('a.class_id', 'a.learner_id', 'a.pam1', 'a.pam2', 'a.pam', 'a.ntaken', 'b.debtor'),
-				array('classId',    'learnerId',     'pam1',  'pam2',   'pam',   'ntaken',   'debtor')
+				['a.class_id', 'a.learner_id', 'a.ntaken', 'b.debtor'],
+				['classId',    'learnerId',    'ntaken',   'debtor']
 			);
 			$query = $db->getQuery(true)
 				->select($columns)
-				->from('#__eqa_class_learner as a')
-				->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
+				->from('#__eqa_class_learner AS a')
+				->leftJoin('#__eqa_learners AS b', 'b.id = a.learner_id')
 				->where([
-					'a.class_id IN (' . implode(',', $classIds) . ')',
+					'a.class_id IN (' . implode(',', array_map('intval', $classIds)) . ')',
 					'a.ntaken > 0',
-					'a.expired=0'
+					'a.expired = 0',
 				]);
 			$db->setQuery($query);
 			$examinees = $db->loadObjectList();
 			if (empty($examinees))
-				throw new Exception("Không tìm thấy HVSV nào");
+				throw new Exception('Không tìm thấy HVSV nào thỏa điều kiện');
 
-			//4. Thêm các HVSV đã chọn vào môn thi
+			//4. Thêm HVSV vào môn thi, bỏ qua các thí sinh đã có trong danh sách thi
 			$insertTuples = [];
-			foreach ($examinees as $examinee){
-				$insertTuple = [
-					$examId,                    //exam_id
-					$examinee->classId,         //class_id
-					$examinee->learnerId,       //learner_id
-					$examinee->debtor,          //debtor
-					$examinee->ntaken+1         //attempt
-				];
-				$insertTuples[] = implode(',', $insertTuple);
+			foreach ($examinees as $examinee) {
+				$insertTuples[] = implode(',', [
+					(int) $examId,
+					(int) $examinee->classId,
+					(int) $examinee->learnerId,
+					(int) $examinee->debtor,
+					(int) $examinee->ntaken + 1,
+				]);
 			}
+
 			$query = $db->getQuery(true)
 				->insert('#__eqa_exam_learner')
 				->columns('exam_id, class_id, learner_id, debtor, attempt')
 				->values($insertTuples);
-			$db->setQuery($query);
-			if(!$db->execute()){
-				throw new Exception('Lỗi thêm thí sinh vào môn thi');
-			}
-		}
-		catch(Exception $e){
+
+			// INSERT IGNORE để bỏ qua thí sinh đã tồn tại trong danh sách thi
+			$sql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', (string) $query);
+			$db->setQuery($sql);
+			$db->execute();
+
+			$countAdded = $db->getAffectedRows();
+			$db->transactionCommit();
+
+			$app->enqueueMessage(
+				sprintf('Đã thêm %d thí sinh vào môn thi', $countAdded),
+				'success'
+			);
+			return true;
+		} catch (Exception $e) {
 			$db->transactionRollback();
 			$app->enqueueMessage($e->getMessage(), 'error');
 			return false;
-		}
-		finally{
-			$db->transactionCommit();
-			return true;
 		}
 	}
 
