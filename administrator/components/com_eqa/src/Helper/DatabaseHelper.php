@@ -233,6 +233,23 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery($query);
 		$examInfo->countToTake = $db->loadResult();
 
+		//6. Tổng số thí sinh đã có thông tin về bài thi
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__eqa_papers')
+			->where('exam_id='.$examId);
+		$db->setQuery($query);
+		$examInfo->countHavePaperInfo = $db->loadResult();
+
+		//7. Tổng số thí sinh đã có kết luận
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__eqa_exam_learner')
+			->where('exam_id='.$examId)
+			->where('conclusion IS NOT NULL');
+		$db->setQuery($query);
+		$examInfo->countConcluded = $db->loadResult();
+
 
 		return $examInfo;
 	}

@@ -19,58 +19,6 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use stdClass;
 
 class ExamroomsController extends AdminController {
-    public function export_bak(): void
-    {
-        $app = $this->app;
-        $this->checkToken();
-        if(!$app->getIdentity()->authorise('core.manage', $this->option))
-        {
-            echo Text::_('COM_EQA_MSG_UNAUTHORISED');
-            exit();
-        }
-
-        $examroomIds = (array) $this->input->get('cid', [], 'int');
-
-	    /**
-	     * Prepare the spreadsheet
-	     * @var ExamroomModel $model
-	     */
-	    $model = $this->getModel();
-        $spreadsheet = new Spreadsheet();
-        $spreadsheet->removeSheetByIndex(0);
-        foreach ($examroomIds as $index => $examroomId) {
-	        $examroom = DatabaseHelper::getExamroomInfo($examroomId);
-
-			//Kiểm tra xem đã phân công CBCT, CBChT chưa
-	        if(!$model->canExport($examroomId))
-	        {
-				$msg = "Phòng thi <b>$examroom->name</b>: chưa phân công CBCT, CBCT-ChT";
-				$this->setMessage($msg, 'error');
-				$url = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id='.$examroom->examsessionId;
-				$this->setRedirect(Route::_($url, false));
-				return;
-	        }
-
-            $examinees = $model->getExaminees($examroomId);
-
-            // Create a new worksheet for each exam room and Set the worksheet title
-            $sheet = $spreadsheet->createSheet($index);
-			$sheetTitle = $examroom->name;
-			if(strlen($sheetTitle)>20)
-				$sheetTitle = substr($sheetTitle,0,20);
-			$sheetTitle .= ' (' . $examroomId . ')';
-            $sheet->setTitle($sheetTitle);
-
-			//Write
-	        IOHelper::writeExamroomExaminees($sheet, $examroom, $examinees);
-        }
-
-	    // Force download of the Excel file
-	    $fileName = 'Danh sách thí sinh phòng thi.xlsx';
-		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-	    exit();
-    }
-
 	/**
 	 * Xuất danh sách thí sinh của các phòng thi được chọn ra file Excel.
 	 * Tự động phân nhánh theo loại phòng thi (KTHP hoặc sát hạch).
