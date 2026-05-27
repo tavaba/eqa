@@ -1,5 +1,3 @@
--- Tắt kiểm tra khóa ngoại để xóa sạch không bị lỗi ràng buộc
-SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `#__eqa_assessment_learner`;
 DROP TABLE IF EXISTS `#__eqa_secondattempts`;
 DROP TABLE IF EXISTS `#__eqa_conducts`;
@@ -30,6 +28,3 @@ DROP TABLE IF EXISTS `#__eqa_subjects`;
 DROP TABLE IF EXISTS `#__eqa_employees`;
 DROP TABLE IF EXISTS `#__eqa_units`;
 DROP TABLE IF EXISTS `#__eqa_logs`;
-
--- Bật lại kiểm tra khóa ngoại
-SET FOREIGN_KEY_CHECKS = 1;

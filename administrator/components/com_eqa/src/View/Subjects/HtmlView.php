@@ -6,6 +6,7 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Service\RoomService;
+use Kma\Library\Kma\View\ItemAction;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\CourseHelper;
@@ -44,8 +45,16 @@ class HtmlView extends ItemsHtmlView
 		    false,
 		    false
 	    );
-	    $option->customFieldset1[] = new ListLayoutItemFieldOption('class_count','Lớp HP', true, false,'text-center');
+	    $f = new ListLayoutItemFieldOption('class_count','Lớp HP', true, false,'text-center');
+		$f->urlFormatString = 'index.php?option=com_eqa&view=classes&filter[subject_id]=%d';
+	    $option->customFieldset1[] = $f;
         $option->published = ListLayoutItemFields::defaultFieldPublished();
+
+		//Actions
+	    $action = new ItemAction();
+		$action->urlFormatString = 'index.php?option=com_eqa&view=subject&layout=statistics&subject_id=%d';
+		$action->icon='chart';
+		$option->actions = [$action];
 
         //Set the option
         $this->itemFields = $option;

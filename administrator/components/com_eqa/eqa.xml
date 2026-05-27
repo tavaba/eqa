@@ -3,7 +3,7 @@
     <name>COM_EQA</name>
 	<version>2.0.8</version>
     <author>Nguyễn Tuấn Anh</author>
-    <creationDate>2026-04-03</creationDate>
+    <creationDate>2026-05-27</creationDate>
     <description>COM_EQA_DESC</description>
 	
 	<namespace path="src/">Kma\Component\Eqa</namespace>

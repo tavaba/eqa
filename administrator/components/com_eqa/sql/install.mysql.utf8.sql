@@ -443,6 +443,37 @@ CREATE TABLE `#__eqa_examseasons`(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Đợt/kỳ thi';
 
 -- =============================================================================
+-- Thi sát hạch
+-- =============================================================================
+DROP TABLE IF EXISTS `#__eqa_assessments`;
+CREATE TABLE `#__eqa_assessments` (
+    `id`                    INT UNSIGNED AUTO_INCREMENT,
+    `title`                 VARCHAR(255) NOT NULL,
+    `type`                  TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentType Enum',
+    `result_type`           TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentResultType Enum',
+    `start_date`            DATE NOT NULL,
+    `end_date`              DATE NOT NULL,
+    `fee`                   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Phí sát hạch (VNĐ)',
+    `bank_napas_code`       VARCHAR(10)  DEFAULT NULL COMMENT 'Mã ngân hàng theo chuẩn NAPAS (dùng với VietQR)',
+    `bank_account_number`   VARCHAR(50)  DEFAULT NULL COMMENT 'Số tài khoản ngân hàng thu phí',
+    `bank_account_owner`    VARCHAR(255) DEFAULT NULL COMMENT 'Tên chủ tài khoản ngân hàng thu phí',
+    `max_candidates`        INT UNSIGNED DEFAULT 0 COMMENT 'Giới hạn số lượng thí sinh (0 = không giới hạn)',
+    `registration_start`    DATETIME DEFAULT NULL,
+    `registration_end`      DATETIME DEFAULT NULL,
+    `allow_registration`    BOOLEAN DEFAULT false,
+    `completed`             BOOLEAN DEFAULT false,
+    `published`             BOOLEAN NOT NULL DEFAULT TRUE,
+    `ordering`              INT UNSIGNED NOT NULL DEFAULT 0,
+    `created_at`            DATETIME,
+    `created_by`            INT UNSIGNED,
+    `modified_at`           DATETIME,
+    `modified_by`           INT UNSIGNED,
+    `checked_out`           INT UNSIGNED DEFAULT NULL,
+    `checked_out_time`      DATETIME DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Kỳ thi sát hạch';
+
+-- =============================================================================
 -- Ca thi
 -- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_examsessions`;
@@ -797,36 +828,8 @@ CREATE TABLE `#__eqa_secondattempts`(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Danh sách thi lần hai';
 
 -- =============================================================================
--- Thi sát hạch
+-- Danh sách thi sát hạch
 -- =============================================================================
-DROP TABLE IF EXISTS `#__eqa_assessments`;
-CREATE TABLE `#__eqa_assessments` (
-    `id`                    INT UNSIGNED AUTO_INCREMENT,
-    `title`                 VARCHAR(255) NOT NULL,
-    `type`                  TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentType Enum',
-    `result_type`           TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentResultType Enum',
-    `start_date`            DATE NOT NULL,
-    `end_date`              DATE NOT NULL,
-    `fee`                   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Phí sát hạch (VNĐ)',
-    `bank_napas_code`       VARCHAR(10)  DEFAULT NULL COMMENT 'Mã ngân hàng theo chuẩn NAPAS (dùng với VietQR)',
-    `bank_account_number`   VARCHAR(50)  DEFAULT NULL COMMENT 'Số tài khoản ngân hàng thu phí',
-    `bank_account_owner`    VARCHAR(255) DEFAULT NULL COMMENT 'Tên chủ tài khoản ngân hàng thu phí',
-    `max_candidates`        INT UNSIGNED DEFAULT 0 COMMENT 'Giới hạn số lượng thí sinh (0 = không giới hạn)',
-    `registration_start`    DATETIME DEFAULT NULL,
-    `registration_end`      DATETIME DEFAULT NULL,
-    `allow_registration`    BOOLEAN DEFAULT false,
-    `completed`             BOOLEAN DEFAULT false,
-    `published`             BOOLEAN NOT NULL DEFAULT TRUE,
-    `ordering`              INT UNSIGNED NOT NULL DEFAULT 0,
-    `created_at`            DATETIME,
-    `created_by`            INT UNSIGNED,
-    `modified_at`           DATETIME,
-    `modified_by`           INT UNSIGNED,
-    `checked_out`           INT UNSIGNED DEFAULT NULL,
-    `checked_out_time`      DATETIME DEFAULT NULL,
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Kỳ thi sát hạch';
-
 DROP TABLE IF EXISTS `#__eqa_assessment_learner`;
 CREATE TABLE `#__eqa_assessment_learner` (
      `id`                    INT UNSIGNED AUTO_INCREMENT,
@@ -859,6 +862,9 @@ CREATE TABLE `#__eqa_assessment_learner` (
          REFERENCES `#__eqa_learners`(`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Thí sinh sát hạch';
 
+-- =============================================================================
+-- Logs
+-- =============================================================================
 DROP TABLE IF EXISTS `#__eqa_logs`;
 CREATE TABLE `#__eqa_logs` (
     `id`            BIGINT UNSIGNED     NOT NULL AUTO_INCREMENT,
