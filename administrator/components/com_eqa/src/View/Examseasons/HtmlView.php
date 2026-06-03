@@ -70,9 +70,8 @@ class HtmlView extends ItemsHtmlView
 				$timeover=false;
 	            if (!empty($item->ppaa_req_deadline))
 	            {
-		            $deadlineTime = DateTime::createFromFormat('Y-m-d H:i:s', $item->ppaa_req_deadline);
-					if($deadlineTime && $deadlineTime < new DateTime())
-						$timeover=true;
+		            $timeover = DatetimeHelper::isTimeOver($item->ppaa_req_deadline);
+		            $item->ppaa_req_deadline = DatetimeHelper::convertToLocalTime($item->ppaa_req_deadline);
 	            }
 				if($item->ppaa_req_enabled && !$timeover)
 					$item->ppaa_req_enabled = '<span class="icon-eye text-success"> </span>';

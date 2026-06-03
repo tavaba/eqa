@@ -86,6 +86,8 @@ class ExamseasonModel extends AdminModel{
 		// ppaa_req_deadline: calendar nullable
 		if (empty($table->ppaa_req_deadline))
 			$table->ppaa_req_deadline = null;
+		else
+			$table->ppaa_req_deadline = DatetimeHelper::convertToUtc($table->ppaa_req_deadline);
 
 		// Các trường thông tin ngân hàng: text nullable
 		if (empty($table->bank_napas_code)) {
@@ -400,7 +402,7 @@ class ExamseasonModel extends AdminModel{
 		if(empty($ppaaReq->deadline))
 			$app->enqueueMessage('Thời hạn phúc khảo không xác định', 'warning');
 		else
-			$app->enqueueMessage('Thời hạn phúc khảo: ' . htmlspecialchars($ppaaReq->deadline),'info');
+			$app->enqueueMessage('Thời hạn phúc khảo: ' . htmlspecialchars(DatetimeHelper::convertToLocalTime($ppaaReq->deadline)),'info');
 	}
 
 	public function disablePpaaReq(int $examseasonId):void

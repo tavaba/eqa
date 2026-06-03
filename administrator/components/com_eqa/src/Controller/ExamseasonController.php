@@ -183,10 +183,11 @@ class ExamseasonController extends FormController
 				$exam['name'] = $class->name;
 				$exam['subject_id'] = $class->subject_id;
 				$exam['examseason_id'] = $examseasonId;
-				$exam['testtype'] = $subject->finaltesttype; //Copy test type from subject
-				$exam['duration'] = $subject->finaltestduration; //Copy duration from subject
-				$exam['kmonitor'] = $subject->kmonitor; //Copy duration from subject
-				$exam['kassess'] = $subject->kassess; //Copy duration from subject
+				$exam['testtype']   = $subject->finaltesttype; //Copy test type from subject
+				$exam['duration']   = $subject->finaltestduration; //Copy duration from subject
+				$exam['kmonitor']   = $subject->kmonitor; //Copy kmonitor from subject
+				$exam['kassess']    = $subject->kassess; //Copy kassess from subject
+				$exam['kquestion']  = $subject->kquestion;   //Copy kquestion from subject. Since 2.0.9
 				$exam['allowed_rooms'] = $subject->allowed_rooms;
 				$exam['usetestbank'] = empty($subject->testbankyear)?0:1;
 				$exam['status'] = ExamStatus::Unknown->value;
@@ -308,8 +309,9 @@ class ExamseasonController extends FormController
 					$examData['examseason_id'] = $examseasonId;
 					$examData['testtype']      = $subject->finaltesttype; //Copy test type from subject
 					$examData['duration']      = $subject->finaltestduration; //Copy duration from subject
-					$examData['kmonitor']      = $subject->kmonitor; //Copy duration from subject
-					$examData['kassess']       = $subject->kassess; //Copy duration from subject
+					$examData['kmonitor']      = $subject->kmonitor; //Copy kmonitor from subject
+					$examData['kassess']       = $subject->kassess; //Copy kassess from subject
+					$examData['kquestion']     = $subject->kquestion;   //Copy kquestion from subject. Since 2.0.9
 					$examData['usetestbank']   = empty($subject->testbankyear) ? 0 : 1;
 					$examData['allowed_rooms'] = $subject->allowed_rooms;
 					$examData['status']        = ExamStatus::Unknown->value;

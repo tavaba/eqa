@@ -635,7 +635,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$examseason->term             = $obj->term;
 		$examseason->completed        = $obj->completed;
 		$examseason->ppaaRequestEnabled  = $obj->ppaa_req_enabled;
-		$examseason->ppaaRequestDeadline = $obj->ppaa_req_deadline;
+		$examseason->ppaaRequestDeadline = $obj->ppaa_req_deadline?DatetimeHelper::convertToLocalTime($obj->ppaa_req_deadline):null;
 
 		return $examseason;
 	}
