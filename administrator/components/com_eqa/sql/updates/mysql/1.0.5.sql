@@ -1,1 +1,0 @@
-ALTER TABLE `#__eqa_classes` DROP `testtype`;
