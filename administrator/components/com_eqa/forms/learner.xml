@@ -51,7 +51,9 @@
         />
         <field
                 name="created_at"
-                type="text"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
                 readonly="true"
                 label="JGLOBAL_FIELD_CREATED_LABEL"
         />
@@ -63,7 +65,9 @@
         />
         <field
                 name="modified_at"
-                type="text"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
                 readonly="true"
                 label="JGLOBAL_FIELD_MODIFIED_LABEL"
         />

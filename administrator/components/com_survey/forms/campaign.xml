@@ -37,6 +37,8 @@
                 description="Thời điểm bắt đầu khảo sát; áp dụng mặc định cho các cuộc khảo sát
                     của đợt khảo sát. Có thể thay đổi thời gian trong từng cuộc khảo sát nếu cần."
                 showtime="true"
+                filter="user_utc"
+                format="%Y-%m-%d %H:%M:%S"
                 singleheader="true"
                 translateformat="true"
                 required="true"
@@ -48,6 +50,8 @@
                     của đợt khảo sát. Có thể thay đổi thời gian trong từng cuộc khảo sát nếu cần."
                 type="calendar"
                 showtime="true"
+                filter="user_utc"
+                format="%Y-%m-%d %H:%M:%S"
                 singleheader="true"
                 translateformat="true"
                 required="true"
@@ -97,6 +101,7 @@
                 type="calendar"
                 label="JGLOBAL_FIELD_CREATED_LABEL"
                 format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
                 readonly="true"
         />
 
@@ -114,6 +119,7 @@
                 label="JGLOBAL_FIELD_MODIFIED_LABEL"
                 readonly="true"
                 format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
         />
 
         <field

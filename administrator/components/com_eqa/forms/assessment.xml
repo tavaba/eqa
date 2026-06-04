@@ -97,6 +97,7 @@
         <field  name="registration_start"
                 type="calendar"
                 showtime="true"
+                filter="user_utc"
                 format="%Y-%m-%d %H:%M:%S"
                 required="false"
                 label="Bắt đầu nhận đăng ký"
@@ -107,6 +108,7 @@
         <field  name="registration_end"
                 type="calendar"
                 showtime="true"
+                filter="user_utc"
                 format="%Y-%m-%d %H:%M:%S"
                 required="false"
                 label="Hết hạn đăng ký"
@@ -188,20 +190,26 @@
                 readonly="true"
         />
 
-        <field  name="created_at"
-                type="text"
+        <field
+                name="created_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
                 readonly="true"
                 label="JGLOBAL_FIELD_CREATED_LABEL"
         />
 
-        <field  name="updated_by"
+        <field  name="modified_by"
                 type="user"
                 label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
                 readonly="true"
         />
 
-        <field  name="updated_at"
-                type="text"
+        <field
+                name="modified_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
                 readonly="true"
                 label="JGLOBAL_FIELD_MODIFIED_LABEL"
         />

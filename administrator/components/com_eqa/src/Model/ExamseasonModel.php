@@ -86,8 +86,6 @@ class ExamseasonModel extends AdminModel{
 		// ppaa_req_deadline: calendar nullable
 		if (empty($table->ppaa_req_deadline))
 			$table->ppaa_req_deadline = null;
-		else
-			$table->ppaa_req_deadline = DatetimeHelper::convertToUtc($table->ppaa_req_deadline);
 
 		// Các trường thông tin ngân hàng: text nullable
 		if (empty($table->bank_napas_code)) {

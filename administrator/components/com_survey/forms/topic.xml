@@ -48,6 +48,7 @@
                 type="calendar"
                 label="JGLOBAL_FIELD_CREATED_LABEL"
                 format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
                 readonly="true"
         />
 
@@ -65,6 +66,7 @@
                 label="JGLOBAL_FIELD_MODIFIED_LABEL"
                 readonly="true"
                 format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
         />
 
         <field

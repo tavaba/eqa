@@ -57,18 +57,6 @@ abstract class AdminModel extends BaseAdminModel
      */
     protected ?string $ownerIdField=null;
 
-	/**
-	 * Cache danh sách cột DATETIME của bảng chính, lazy-init trong một request.
-	 *
-	 * null  = chưa khởi tạo.
-	 * []    = bảng không có cột DATETIME (hoặc Table không phải KmaTable).
-	 * [...] = danh sách tên cột DATETIME.
-	 *
-	 * @var string[]|null
-	 * @since 1.0.0
-	 */
-	private ?array $datetimeFields = null;
-
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?FormFactoryInterface $formFactory = null)
     {
         parent::__construct($config, $factory, $formFactory);
@@ -193,124 +181,7 @@ abstract class AdminModel extends BaseAdminModel
 			return false;
 		}
 
-		// Convert các trường DATETIME từ UTC (giá trị lưu trong CSDL)
-		// sang Local Time (để hiển thị trên giao diện).
-		$datetimeFields = $this->getDatetimeFields();
-		foreach ($datetimeFields as $field) {
-			if (!property_exists($item, $field)) {
-				continue;
-			}
-			$item->$field = $this->convertUtcToLocal($item->$field);
-		}
-
 		return $item;
-	}
-
-	// =========================================================================
-	// Helper: lấy danh sách DATETIME fields (lazy-init, cached)
-	// =========================================================================
-
-	/**
-	 * Trả về danh sách tên các cột DATETIME của bảng chính.
-	 *
-	 * Gọi $this->getTable() để lấy Table instance, sau đó kiểm tra instanceof KmaTable
-	 * trước khi gọi getDatetimeFields(). Kết quả được cache vào $this->datetimeFields
-	 * để tránh khởi tạo Table nhiều lần trong cùng một request.
-	 *
-	 * @return  string[]  Mảng tên cột DATETIME. Rỗng nếu không có hoặc Table không phải KmaTable.
-	 * @since   1.0.0
-	 */
-	private function getDatetimeFields(): array
-	{
-		if ($this->datetimeFields !== null) {
-			return $this->datetimeFields;
-		}
-
-		$table = $this->getTable();
-
-		if (!($table instanceof Table)) {
-			// Table không kế thừa KmaTable → không hỗ trợ getDatetimeFields(),
-			// bỏ qua conversion một cách an toàn.
-			$this->datetimeFields = [];
-
-			return $this->datetimeFields;
-		}
-
-		$this->datetimeFields = $table->getDatetimeFields();
-
-		return $this->datetimeFields;
-	}
-
-	// =========================================================================
-	// Helper: kiểm tra giá trị có đủ điều kiện để convert không
-	// =========================================================================
-
-	/**
-	 * Kiểm tra xem một chuỗi có đủ điều kiện để thực hiện timezone conversion không.
-	 *
-	 * Trả về false (bỏ qua) khi:
-	 *   - Giá trị null hoặc rỗng.
-	 *   - Giá trị '0000-00-00 00:00:00'.
-	 *   - Giá trị chỉ chứa Date, không có Time (không khớp 'YYYY-MM-DD HH:MM:SS').
-	 *
-	 * @param   mixed  $value  Giá trị cần kiểm tra.
-	 *
-	 * @return  bool  TRUE nếu đủ điều kiện convert, FALSE nếu cần bỏ qua.
-	 * @since   1.0.0
-	 */
-	private function isConvertible(mixed $value): bool
-	{
-		if ($value === null || $value === '') {
-			return false;
-		}
-
-		if ($value === '0000-00-00 00:00:00') {
-			return false;
-		}
-
-		// Chỉ convert khi chuỗi có đúng định dạng 'YYYY-MM-DD HH:MM:SS'.
-		// Bỏ qua các chuỗi chỉ chứa Date ('YYYY-MM-DD') hoặc định dạng khác.
-		if (!preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string) $value)) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Convert một giá trị UTC sang Local Time nếu đủ điều kiện.
-	 * Trả về giá trị gốc nếu không đủ điều kiện convert.
-	 *
-	 * @param   mixed  $value  Giá trị UTC từ CSDL.
-	 *
-	 * @return  mixed  Local Time string hoặc giá trị gốc.
-	 * @since   1.0.0
-	 */
-	private function convertUtcToLocal(mixed $value): mixed
-	{
-		if (!$this->isConvertible($value)) {
-			return $value;
-		}
-
-		return DatetimeHelper::convertToLocalTime((string) $value);
-	}
-
-	/**
-	 * Convert một giá trị Local Time sang UTC nếu đủ điều kiện.
-	 * Trả về giá trị gốc nếu không đủ điều kiện convert.
-	 *
-	 * @param   mixed  $value  Giá trị Local Time từ form.
-	 *
-	 * @return  mixed  UTC string hoặc giá trị gốc.
-	 * @since   1.0.0
-	 */
-	private function convertLocalToUtc(mixed $value): mixed
-	{
-		if (!$this->isConvertible($value)) {
-			return $value;
-		}
-
-		return DatetimeHelper::convertToUtc((string) $value);
 	}
 
 	/**
@@ -625,16 +496,6 @@ abstract class AdminModel extends BaseAdminModel
 		$oldSnap = (!$isNew && $table instanceof Table)
 			? $table->loadSnapshot((int) $data['id'])
 			: null;
-
-		//Trước khi lưu, convert các trường DATETIME
-		//từ Local Time (giá trị nhập từ form) sang UTC (để lưu vào CSDL).
-		$datetimeFields = $this->getDatetimeFields();
-		foreach ($datetimeFields as $field) {
-			if (!array_key_exists($field, $data)) {
-				continue;
-			}
-			$data[$field] = $this->convertLocalToUtc($data[$field]);
-		}
 
 		$result = parent::save($data);
 
