@@ -78,15 +78,19 @@ class GradecorrectionController extends  FormController {
 				return;
 			}
 
-			//Phase 2. Reject the grade correction request
+			/**
+			 * Phase 2. Reject the grade correction request
+			 * @var GradecorrectionModel $model
+			 */
+
 			$itemId = $post->get('id', '');
 			$description = $post->getString('description');
 			if(empty($itemId) || empty($description))
 				throw new Exception('Dữ liệu không hợp lệ');
-			$currentUsername = $this->app->getIdentity()->username;
+			$currentUserId = (int)$this->app->getIdentity()->id;
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');
-			$model->reject($itemId, $description, $currentUsername, $currentTime);
+			$model->reject($itemId, $description, $currentUserId, $currentTime);
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 		}
 		catch(Exception $e)

@@ -121,7 +121,7 @@ class GradecorrectionModel extends AdminModel {
 		$form->bind($data);
 		return $form;
 	}
-	public function reject(int $itemId, string $description, string $currentUsername, string $currentTime)
+	public function reject(int $itemId, string $description, int $currentUserId, string $currentTime)
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -153,7 +153,7 @@ class GradecorrectionModel extends AdminModel {
 			->set([
 				'status = ' . PpaaStatus::Rejected->value,
 				'description = ' . $db->quote($description),
-				'handled_by = ' . $db->quote($currentUsername),
+				'handled_by = ' . $currentUserId,
 				'handled_at = ' . $db->quote($currentTime)
 			])
 			->where('id = ' . $itemId);
