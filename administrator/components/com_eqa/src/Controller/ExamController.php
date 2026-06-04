@@ -984,6 +984,7 @@ class ExamController extends  FormController
 	 *   "duration":      90,
 	 *   "kmonitor":      1.0,
 	 *   "kassess":       1.0,
+	 *   "kquestion":     0.0,      //Since 2.0.9
 	 *   "usetestbank":   1            // 1 nếu testbankyear != NULL, 0 nếu NULL
 	 * }
 	 *
@@ -1014,6 +1015,7 @@ class ExamController extends  FormController
 						'finaltestduration',
 						'kmonitor',
 						'kassess',
+						'kquestion',    //Since 2.0.9
 						'testbankyear',
 					])
 				)
@@ -1049,6 +1051,7 @@ class ExamController extends  FormController
 				'duration'      => (int) $subject->finaltestduration,
 				'kmonitor'      => (float) $subject->kmonitor,
 				'kassess'       => (float) $subject->kassess,
+				'kquestion'     => (float) $subject->kquestion,   //Since 2.0.9
 				'usetestbank'   => $useTestbank,
 			];
 

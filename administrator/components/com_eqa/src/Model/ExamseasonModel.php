@@ -736,327 +736,413 @@ class ExamseasonModel extends AdminModel{
 		}
 		return $marks;
 	}
-	public function getQuestionProductions(array $examseasonIds): array|null
+
+	/**
+	 * Lấy dữ liệu sản lượng ra đề cho một kỳ thi, chi tiết từng môn thi.
+	 *
+	 * Áp dụng cho tất cả môn thi KHÔNG sử dụng ngân hàng đề (usetestbank = 0),
+	 * kể cả khi nquestion = 0 hoặc kquestion = 0.
+	 *
+	 * Cấu trúc mỗi phần tử trả về:
+	 *   unit_code, employee_code, lastname, firstname,
+	 *   exam_code, exam_name, nquestion, kquestion, hours
+	 *
+	 * @param  int  $examseasonId
+	 * @return array  Mảng associative, đã sắp xếp theo unit_code, firstname, lastname.
+	 * @since  2.0.9
+	 */
+	public function getQuestionProductionDetails(int $examseasonId): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		$examseasonIds = array_filter($examseasonIds, 'intval');
-		if(empty($examseasonIds))
-			return null;
+		$columns = [
+			$db->quoteName('u.code',        'unit_code'),
+			$db->quoteName('em.code',       'employee_code'),
+			$db->quoteName('em.lastname',   'lastname'),
+			$db->quoteName('em.firstname',  'firstname'),
+			$db->quoteName('ex.code',       'exam_code'),
+			$db->quoteName('ex.name',       'exam_name'),
+			$db->quoteName('ex.nquestion',  'nquestion'),
+			$db->quoteName('ex.kquestion',  'kquestion'),
+		];
 
-		$examseasonIdSet = '(' . implode(',', $examseasonIds) . ')';
-
-		//Lấy tất cả record về bàn giao đề thi
-		$columns = $db->quoteName(
-			array('a.questionauthor_id', 'b.lastname', 'b.firstname', 'c.code', 'a.name', 'a.nquestion'),
-			array('id',                  'lastname',   'firstname',   'unit',   'exam',   'nquestion')
-		);
+		// Lưu ý: quoteName() không hỗ trợ alias dạng mảng 2 phần tử,
+		// nên dùng cú pháp quoteName('alias_src', 'alias_dest') của Joomla
 		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_exams AS a')
-			->leftJoin('#__eqa_employees AS b', 'b.id=a.questionauthor_id')
-			->leftJoin('#__eqa_units AS c', 'c.id=b.unit_id')
-			->where([
-				'a.nquestion>0',
-				'a.examseason_id IN ' . $examseasonIdSet
-			])
-			->order('unit, firstname');
+			->select($db->quoteName(
+				['u.code',    'em.code',       'em.lastname', 'em.firstname',
+					'ex.code',   'ex.name',       'ex.nquestion', 'ex.kquestion'],
+				['unit_code', 'employee_code', 'lastname',    'firstname',
+					'exam_code', 'exam_name',     'nquestion',   'kquestion']
+			))
+			->from($db->quoteName('#__eqa_exams', 'ex'))
+			->leftJoin(
+				$db->quoteName('#__eqa_employees', 'em'),
+				$db->quoteName('em.id') . ' = ' . $db->quoteName('ex.questionauthor_id')
+			)
+			->leftJoin(
+				$db->quoteName('#__eqa_units', 'u'),
+				$db->quoteName('u.id') . ' = ' . $db->quoteName('em.unit_id')
+			)
+			->where($db->quoteName('ex.examseason_id') . ' = ' . (int) $examseasonId)
+			->where($db->quoteName('ex.usetestbank')   . ' = 0')
+			->order([
+				$db->quoteName('u.code')      . ' ASC',
+				$db->quoteName('em.firstname') . ' ASC',
+				$db->quoteName('em.lastname')  . ' ASC',
+			]);
 		$db->setQuery($query);
-		$questionAuthors = $db->loadAssocList();
+		$rows = $db->loadAssocList();
 
-		//If empty
-		if(empty($questionAuthors))
-			return null;
+		// Tính hours trong PHP để tránh phụ thuộc kiểu dữ liệu REAL trong SQL
+		foreach ($rows as &$row) {
+			$row['hours'] = (float) $row['nquestion'] * (float) $row['kquestion'];
+		}
+		unset($row);
 
-		//Gộp lại theo tác giả đề thi
-		$questionProduction = [];
-		foreach ($questionAuthors as $author)
-		{
-			$key = $author['id'];
-			if(array_key_exists($key, $questionProduction))
-			{
-				$questionProduction[$key]['count'] += $author['nquestion'];
-				$questionProduction[$key]['details'] .= ', ' . $author['exam'] . ' (' . $author['nquestion'] . ')';
+		return $rows;
+	}
+
+	/**
+	 * Lấy dữ liệu sản lượng coi thi cho một kỳ thi, chi tiết từng cặp (monitor, examroom).
+	 *
+	 * Với mỗi phòng thi, lấy MAX(kmonitor) của tất cả môn thi trong phòng (exam_ids).
+	 * Mỗi monitor không NULL tạo ra một dòng riêng.
+	 * Thời gian ca thi (examsession.start) được chuyển từ UTC sang Local Time.
+	 *
+	 * Cấu trúc mỗi phần tử:
+	 *   unit_code, employee_code, lastname, firstname,
+	 *   exam_date (d/m/Y), session_name, room_name, hours
+	 *
+	 * @param  int  $examseasonId
+	 * @return array  Mảng associative, đã sắp xếp theo unit_code, firstname, lastname.
+	 * @since  2.0.9
+	 */
+	public function getMonitoringProductionDetails(int $examseasonId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		// Lấy tất cả examroom của kỳ thi, kèm thông tin ca thi
+		$query = $db->getQuery(true)
+			->select($db->quoteName(
+				['er.id',    'er.name',     'er.exam_ids',
+					'er.monitor1_id', 'er.monitor2_id', 'er.monitor3_id',
+					'es.name',  'es.start'],
+				['room_id',  'room_name',   'exam_ids',
+					'monitor1_id', 'monitor2_id', 'monitor3_id',
+					'session_name', 'session_start']
+			))
+			->from($db->quoteName('#__eqa_examrooms', 'er'))
+			->leftJoin(
+				$db->quoteName('#__eqa_examsessions', 'es'),
+				$db->quoteName('es.id') . ' = ' . $db->quoteName('er.examsession_id')
+			)
+			->where($db->quoteName('es.examseason_id') . ' = ' . (int) $examseasonId);
+		$db->setQuery($query);
+		$examrooms = $db->loadAssocList();
+
+		if (empty($examrooms)) {
+			return [];
+		}
+
+		// Lấy thông tin tất cả employee cần thiết (batch query)
+		// Thu thập tất cả monitor IDs không NULL
+		$allMonitorIds = [];
+		foreach ($examrooms as $examroom) {
+			foreach (['monitor1_id', 'monitor2_id', 'monitor3_id'] as $field) {
+				if (!empty($examroom[$field])) {
+					$allMonitorIds[] = (int) $examroom[$field];
+				}
 			}
-			else
-			{
-				$questionProduction[$key] = [
-					'lastname'  => $author['lastname'],
-					'firstname' => $author['firstname'],
-					'unit'      => $author['unit'],
-					'count'     => $author['nquestion'],
-					'details'   => $author['exam'] . ' (' . $author['nquestion'] . ')'
+		}
+		$allMonitorIds = array_unique($allMonitorIds);
+
+		if (empty($allMonitorIds)) {
+			return [];
+		}
+
+		// Batch load thông tin employee
+		$monitorIdSet = '(' . implode(',', $allMonitorIds) . ')';
+		$query = $db->getQuery(true)
+			->select($db->quoteName(
+				['em.id', 'em.code',   'em.lastname', 'em.firstname', 'u.code'],
+				['id',    'emp_code',  'lastname',    'firstname',    'unit_code']
+			))
+			->from($db->quoteName('#__eqa_employees', 'em'))
+			->leftJoin(
+				$db->quoteName('#__eqa_units', 'u'),
+				$db->quoteName('u.id') . ' = ' . $db->quoteName('em.unit_id')
+			)
+			->where($db->quoteName('em.id') . ' IN ' . $monitorIdSet);
+		$db->setQuery($query);
+		$employeeInfos = $db->loadAssocList('id');
+
+		// Lấy timezone người dùng để convert thời gian
+		$userTimezone = \Kma\Library\Kma\Helper\DatetimeHelper::getUserTimezone();
+
+		// Build kết quả: 1 dòng / (monitor, examroom)
+		$rows = [];
+		foreach ($examrooms as $examroom) {
+			// Tính MAX(kmonitor), MAX(duration) cho phòng này qua exam_ids (CSV string)
+			$maxKmonitor  = 0.0;
+			$maxDuration  = 0;
+			if (!empty($examroom['exam_ids'])) {
+				$examIdSet = '(' . $examroom['exam_ids'] . ')';
+				$examKQuery = $db->getQuery(true)
+					->select([
+						'MAX(' . $db->quoteName('kmonitor')  . ')',
+						'MAX(' . $db->quoteName('duration')  . ')',
+					])
+					->from($db->quoteName('#__eqa_exams'))
+					->where($db->quoteName('id') . ' IN ' . $examIdSet);
+				$db->setQuery($examKQuery);
+				$examKRow    = $db->loadRow();          // [0] => max_kmonitor, [1] => max_duration
+				$maxKmonitor = (float) ($examKRow[0] ?? 0);
+				$maxDuration = (int)   ($examKRow[1] ?? 0);
+			}
+
+			// Convert exam_date từ UTC sang Local Time
+			$examDate = '';
+			if (!empty($examroom['session_start'])) {
+				$examDate = \Kma\Library\Kma\Helper\DatetimeHelper::convertToLocalTime(
+					$examroom['session_start'],
+					$userTimezone,
+					'd/m/Y'
+				);
+			}
+
+			// Tạo 1 dòng cho mỗi monitor không NULL
+			foreach (['monitor1_id', 'monitor2_id', 'monitor3_id'] as $monitorField) {
+				$monitorId = (int) ($examroom[$monitorField] ?? 0);
+				if (empty($monitorId)) {
+					continue;
+				}
+
+				$emp = $employeeInfos[$monitorId] ?? null;
+				if ($emp === null) {
+					continue;
+				}
+
+				$rows[] = [
+					'unit_code'    => $emp['unit_code']  ?? '',
+					'employee_code'=> $emp['emp_code']   ?? '',
+					'lastname'     => $emp['lastname']   ?? '',
+					'firstname'    => $emp['firstname']  ?? '',
+					'exam_date'    => $examDate,
+					'session_name' => $examroom['session_name'] ?? '',
+					'duration'     => $maxDuration,
+					'room_name'    => $examroom['room_name']    ?? '',
+					'hours'        => $maxKmonitor,
 				];
 			}
 		}
 
-		//Return
-		return $questionProduction;
+		// Sắp xếp: unit_code ASC, firstname ASC, lastname ASC
+		usort($rows, static function (array $a, array $b): int {
+			$cmp = strcmp($a['unit_code'], $b['unit_code']);
+			if ($cmp !== 0) return $cmp;
+			$cmp = strcmp($a['firstname'], $b['firstname']);
+			if ($cmp !== 0) return $cmp;
+			return strcmp($a['lastname'], $b['lastname']);
+		});
+
+		return $rows;
 	}
 
-	public function getMonitoringProductions(array $examseasonIds): array|null
+	/**
+	 * Lấy dữ liệu sản lượng chấm thi cho một kỳ thi, chi tiết từng cặp (examiner, exam).
+	 *
+	 * Tổng hợp từ 3 nguồn:
+	 *   1. Túi bài thi (#__eqa_packages / #__eqa_papers): đếm số bài qua papers
+	 *   2. Phòng thi (#__eqa_examrooms / #__eqa_exam_learner): đếm thí sinh (thực hành/vấn đáp)
+	 *   3. Chấm thi trên máy (#__eqa_mmproductions)
+	 * Mỗi examiner được tính sản lượng độc lập (không gộp).
+	 * Cột "Vai trò": "Chấm 1" hoặc "Chấm 2".
+	 *
+	 * Cấu trúc mỗi phần tử:
+	 *   unit_code, employee_code, lastname, firstname,
+	 *   exam_code, exam_name, role, quantity, kassess, hours
+	 *
+	 * @param  int  $examseasonId
+	 * @return array  Mảng associative, đã sắp xếp theo unit_code, firstname, lastname.
+	 * @since  2.0.9
+	 */
+	public function getMarkingProductionDetails(int $examseasonId): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		$examseasonIds = array_filter($examseasonIds, 'intval');
-		if(empty($examseasonIds))
-			return null;
-
-		$examseasonIdSet = '(' . implode(',', $examseasonIds) . ')';
-
-		//Lấy tất cả các records về coi thi
-		$columns = $db->quoteName(
-			array('a.monitor1_id', 'a.monitor2_id', 'a.monitor3_id', 'a.exam_ids', 'b.start'),
-			array('monitor1_id',   'monitor2_id',   'monitor3_id',   'exam_ids',   'start')
-		);
+		// =========================================================
+		// Bước 0: Lấy danh sách exam_id và thông tin của kỳ thi này
+		// =========================================================
 		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_examrooms AS a')
-			->leftJoin('#__eqa_examsessions AS b', 'b.id=a.examsession_id')
-			->where([
-				'b.examseason_id IN ' . $examseasonIdSet
-			]);
-		$db->setQuery($query);
-		$items = $db->loadAssocList();
-
-		//Tính toán hệ số sản lượng coi thi
-		$examrooms = [];
-		foreach ($items as $item)
-		{
-			$examIdSet = '(' . $item['exam_ids'] . ')';
-			$query = $db->getQuery(true)
-				->select('kmonitor')
-				->from('#__eqa_exams')
-				->where('id IN ' . $examIdSet);
-			$db->setQuery($query);
-			$kmonitors = $db->loadColumn();
-			$item['kmonitor'] = max($kmonitors);
-			$examrooms[] = $item;
-		}
-
-		//Đếm năng suất, có tính đến hệ số coi thi
-		$monitoringProductions = [];
-		$kWeekendMonitoring = ConfigHelper::getKWeekendMonitoring();
-		foreach ($examrooms as $examroom){
-			$examTime = $examroom['start'];
-			$examroomMonitoringProduction = $examroom['kmonitor'];
-			if(DatetimeHelper::isWeekend($examTime))
-				$examroomMonitoringProduction *= $kWeekendMonitoring;
-
-			$monitorId = $examroom['monitor1_id'];
-			if(!is_null($monitorId)){
-				if(array_key_exists($monitorId, $monitoringProductions))
-				{
-					$count = $monitoringProductions[$monitorId]['count'] + 1;
-					$production = $monitoringProductions[$monitorId]['production'] + $examroomMonitoringProduction;
-					$monitoringProductions[$monitorId] = [
-						'count' => $count,
-						'production' => $production
-					];
-				}
-				else{
-					$monitoringProductions[$monitorId] = [
-						'count' => 1,
-						'production' => $examroomMonitoringProduction
-					];
-				}
-			}
-
-			$monitorId = $examroom['monitor2_id'];
-			if(!is_null($monitorId)){
-				if(array_key_exists($monitorId, $monitoringProductions))
-				{
-					$count = $monitoringProductions[$monitorId]['count'] + 1;
-					$production = $monitoringProductions[$monitorId]['production'] + $examroomMonitoringProduction;
-					$monitoringProductions[$monitorId] = [
-						'count' => $count,
-						'production' => $production
-					];
-				}
-				else{
-					$monitoringProductions[$monitorId] = [
-						'count' => 1,
-						'production' => $examroomMonitoringProduction
-					];
-				}
-			}
-
-			$monitorId = $examroom['monitor3_id'];
-			if(!is_null($monitorId)){
-				if(array_key_exists($monitorId, $monitoringProductions))
-				{
-					$count = $monitoringProductions[$monitorId]['count'] + 1;
-					$production = $monitoringProductions[$monitorId]['production'] + $examroomMonitoringProduction;
-					$monitoringProductions[$monitorId] = [
-						'count' => $count,
-						'production' => $production
-					];
-				}
-				else{
-					$monitoringProductions[$monitorId] = [
-						'count' => 1,
-						'production' => $examroomMonitoringProduction
-					];
-				}
-			}
-		}
-
-		//Định dạng dữ liệu trả về
-		$monitorIds = array_keys($monitoringProductions);
-		$monitorIdSet = '(' . implode(',', $monitorIds) . ')';
-		$columns = $db->quoteName(
-			array('a.id', 'b.code', 'a.lastname', 'a.firstname'),
-			array('id',   'unit',   'lastname',   'firstname')
-		);
-		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_employees AS a')
-			->leftJoin('#__eqa_units AS b', 'b.id=a.unit_id')
-			->where('a.id IN ' . $monitorIdSet)
-			->order('firstname, lastname');
-		$db->setQuery($query);
-		$items = $db->loadAssocList();
-		$monitors = [];
-		foreach ($items as $item)
-		{
-			$monitorId = $item['id'];
-			$item['count'] = $monitoringProductions[$monitorId]['count'];
-			$item['production'] = $monitoringProductions[$monitorId]['production'];
-			$monitors[] = $item;
-		}
-
-		return $monitors;
-	}
-
-	public function getMarkingProductions(array $examseasonIds): array|null
-	{
-		$db = DatabaseHelper::getDatabaseDriver();
-
-		$examseasonIds = array_filter($examseasonIds, 'intval');
-		if(empty($examseasonIds))
-			return null;
-
-		//Lấy danh sách các môn thi của các kỳ thi này
-		$examseasonIdSet = '(' . implode(',', $examseasonIds) . ')';
-		$query = $db->getQuery(true)
-			->select('id, kassess, name')
-			->from('#__eqa_exams')
-			->where('examseason_id IN ' . $examseasonIdSet);
+			->select($db->quoteName(['id', 'code', 'name', 'kassess'], ['id', 'code', 'name', 'kassess']))
+			->from($db->quoteName('#__eqa_exams'))
+			->where($db->quoteName('examseason_id') . ' = ' . (int) $examseasonId);
 		$db->setQuery($query);
 		$examInfos = $db->loadAssocList('id');
-		$examIds = array_keys($examInfos);
-		$examIdSet = '(' . implode(',' , $examIds) . ')';
 
-		/**
-		 * Cấu trúc của kết quả cốt lõi sẽ như sau
-		 * [employee_id] =>[exam_id] [count1, count2, kassess, name]
-		 */
-		$markingProductions = [];
-
-		//1. Sản lượng chấm thi thực hành, vấn đáp, tự luận
-		//a) Query tự luận
-		$columns = $db->quoteName(
-			array('a.exam_id', 'b.examiner1_id', 'b.examiner2_id'),
-			array('exam_id',   'examiner1_id',   'examiner2_id')
-		);
-		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_papers AS a')
-			->leftJoin('#__eqa_packages AS b', 'b.id = a.package_id')
-			->where([
-				'a.exam_id IN ' .  $examIdSet,
-				'b.examiner1_id IS NOT NULL',
-				'b.examiner2_id IS NOT NULL'
-			]);
-		$db->setQuery($query);
-		$items1 = $db->loadAssocList();
-
-		//b) Query thi thực hành, vấn đáp, đồ án
-		$columns = $db->quoteName(
-			array('a.exam_id', 'b.examiner1_id', 'b.examiner2_id'),
-			array('exam_id',   'examiner1_id',   'examiner2_id')
-		);
-		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_examrooms AS b', 'b.id=a.examroom_id')
-			->where([
-				'a.exam_id IN ' . $examIdSet,
-				'b.examiner1_id IS NOT NULL',
-				'b.examiner2_id IS NOT NULL'
-			]);
-		$db->setQuery($query);
-		$items2 = $db->loadAssocList();
-
-		//c) Kêt hợp kết quả và xử lý
-		$items = array_merge($items1, $items2);
-		foreach ($items as $item)
-		{
-			$examId = $item['exam_id'];
-
-			$examinerId = $item['examiner1_id'];
-			if(!array_key_exists($examinerId, $markingProductions))
-				$markingProductions[$examinerId] = [];
-			if(array_key_exists($examId, $markingProductions[$examinerId]))
-				$markingProductions[$examinerId][$examId]['count1']++;
-			else
-				$markingProductions[$examinerId][$examId]=[
-					'count1' => 1,
-					'count2' => 0,
-					'kassess' => $examInfos[$examId]['kassess'],
-					'name' => $examInfos[$examId]['name']
-				];
-
-			$examinerId = $item['examiner2_id'];
-			if(!array_key_exists($examinerId, $markingProductions))
-				$markingProductions[$examinerId] = [];
-			if(array_key_exists($examId, $markingProductions[$examinerId]))
-				$markingProductions[$examinerId][$examId]['count2']++;
-			else
-				$markingProductions[$examinerId][$examId]=[
-					'count1' => 0,
-					'count2' => 1,
-					'kassess' => $examInfos[$examId]['kassess'],
-					'name' => $examInfos[$examId]['name']
-				];
+		if (empty($examInfos)) {
+			return [];
 		}
 
-		//2. Sản lượng chấm thi trên máy
-		$query = $db->getQuery(true)
-			->select('exam_id, examiner_id, role, quantity')
-			->from('#__eqa_mmproductions')
-			->where('exam_id IN ' . $examIdSet);
-		$db->setQuery($query);
-		$items = $db->loadAssocList();
-		foreach ($items as $item)
-		{
-			$examId = $item['exam_id'];
-			$examinerId = $item['examiner_id'];
-			$role = $item['role'];
-			$quantity = $item['quantity'];
-			if(!array_key_exists($examinerId, $markingProductions))
-				$markingProductions[$examinerId] = [];
-			if(!array_key_exists($examId, $markingProductions[$examinerId]))
-			{
-				$markingProductions[$examinerId][$examId] = [
-					'count1' => $role==1 ? $quantity : 0,
-					'count2' => $role==2 ? $quantity : 0,
-					'kassess' => $examInfos[$examId]['kassess'],
-					'name' => $examInfos[$examId]['name']
-				];
+		$examIds    = array_keys($examInfos);
+		$examIdSet  = '(' . implode(',', array_map('intval', $examIds)) . ')';
+
+		// =========================================================
+		// Cấu trúc tích lũy: $productions[examiner_id][exam_id][role] = quantity
+		//   role: 1 = Chấm 1, 2 = Chấm 2
+		// =========================================================
+		$productions = [];
+
+		$addProduction = static function (int $examinerId, int $examId, int $role, int $quantity) use (&$productions): void {
+			if (!isset($productions[$examinerId][$examId][$role])) {
+				$productions[$examinerId][$examId][$role] = 0;
 			}
-			else{
-				if($role==1)
-					$markingProductions[$examinerId][$examId]['count1'] += $quantity;
-				elseif($role==2)
-					$markingProductions[$examinerId][$examId]['count2'] += $quantity;
+			$productions[$examinerId][$examId][$role] += $quantity;
+		};
+
+		// =========================================================
+		// Nguồn 1: Túi bài thi (packages + papers)
+		// Đếm số bài thi (papers) theo từng túi, groupBy (exam_id, examiner, role)
+		// =========================================================
+		$query = $db->getQuery(true)
+			->select($db->quoteName(
+				['p.exam_id', 'pk.examiner1_id', 'pk.examiner2_id', 'p.id'],
+				['exam_id',   'examiner1_id',    'examiner2_id',    'paper_id']
+			))
+			->from($db->quoteName('#__eqa_papers', 'p'))
+			->leftJoin(
+				$db->quoteName('#__eqa_packages', 'pk'),
+				$db->quoteName('pk.id') . ' = ' . $db->quoteName('p.package_id')
+			)
+			->where($db->quoteName('p.exam_id') . ' IN ' . $examIdSet);
+		$db->setQuery($query);
+		$paperRows = $db->loadAssocList();
+
+		foreach ($paperRows as $row) {
+			$examId = (int) $row['exam_id'];
+			// examiner1
+			if (!empty($row['examiner1_id'])) {
+				$addProduction((int) $row['examiner1_id'], $examId, 1, 1);
+			}
+			// examiner2
+			if (!empty($row['examiner2_id'])) {
+				$addProduction((int) $row['examiner2_id'], $examId, 2, 1);
 			}
 		}
 
-		//Return
-		return $markingProductions;
+		// =========================================================
+		// Nguồn 2: Phòng thi (examrooms + exam_learner) — thực hành, vấn đáp
+		// Đếm số thí sinh trong phòng thi theo (exam_id, examiner, role)
+		// =========================================================
+		$query = $db->getQuery(true)
+			->select($db->quoteName(
+				['el.exam_id', 'er.examiner1_id', 'er.examiner2_id'],
+				['exam_id',    'examiner1_id',    'examiner2_id']
+			))
+			->select('COUNT(' . $db->quoteName('el.id') . ') AS quantity')
+			->from($db->quoteName('#__eqa_exam_learner', 'el'))
+			->leftJoin(
+				$db->quoteName('#__eqa_examrooms', 'er'),
+				$db->quoteName('er.id') . ' = ' . $db->quoteName('el.examroom_id')
+			)
+			->where($db->quoteName('el.exam_id') . ' IN ' . $examIdSet)
+			->where($db->quoteName('el.examroom_id') . ' IS NOT NULL')
+			->group([
+				$db->quoteName('el.exam_id'),
+				$db->quoteName('er.examiner1_id'),
+				$db->quoteName('er.examiner2_id'),
+			]);
+		$db->setQuery($query);
+		$roomRows = $db->loadAssocList();
+
+		foreach ($roomRows as $row) {
+			$examId   = (int) $row['exam_id'];
+			$quantity = (int) $row['quantity'];
+			if (!empty($row['examiner1_id'])) {
+				$addProduction((int) $row['examiner1_id'], $examId, 1, $quantity);
+			}
+			if (!empty($row['examiner2_id'])) {
+				$addProduction((int) $row['examiner2_id'], $examId, 2, $quantity);
+			}
+		}
+
+		// =========================================================
+		// Nguồn 3: Chấm thi trên máy (mmproductions)
+		// Theo yêu cầu nghiệp vụ: không phân biệt Chấm 1/Chấm 2,
+		// tất cả ghi vào role = 1 (vì mmproductions chỉ có 1 examiner_id)
+		// =========================================================
+		$query = $db->getQuery(true)
+			->select($db->quoteName(['exam_id', 'examiner_id', 'quantity']))
+			->from($db->quoteName('#__eqa_mmproductions'))
+			->where($db->quoteName('exam_id') . ' IN ' . $examIdSet)
+			->where($db->quoteName('examiner_id') . ' IS NOT NULL');
+		$db->setQuery($query);
+		$mmRows = $db->loadAssocList();
+
+		foreach ($mmRows as $row) {
+			$addProduction((int) $row['examiner_id'], (int) $row['exam_id'], 1, (int) $row['quantity']);
+		}
+
+		if (empty($productions)) {
+			return [];
+		}
+
+		// =========================================================
+		// Bước cuối: Lấy thông tin employee và build kết quả
+		// =========================================================
+		$examinerIds    = array_keys($productions);
+		$examinerIdSet  = '(' . implode(',', array_map('intval', $examinerIds)) . ')';
+
+		$query = $db->getQuery(true)
+			->select($db->quoteName(
+				['em.id', 'em.code',    'em.lastname', 'em.firstname', 'u.code'],
+				['id',    'emp_code',   'lastname',    'firstname',    'unit_code']
+			))
+			->from($db->quoteName('#__eqa_employees', 'em'))
+			->leftJoin(
+				$db->quoteName('#__eqa_units', 'u'),
+				$db->quoteName('u.id') . ' = ' . $db->quoteName('em.unit_id')
+			)
+			->where($db->quoteName('em.id') . ' IN ' . $examinerIdSet);
+		$db->setQuery($query);
+		$employeeInfos = $db->loadAssocList('id');
+
+		$rows = [];
+		foreach ($productions as $examinerId => $examData) {
+			$emp = $employeeInfos[$examinerId] ?? null;
+
+			foreach ($examData as $examId => $roleData) {
+				$examInfo = $examInfos[$examId] ?? null;
+				$kassess  = $examInfo !== null ? (float) $examInfo['kassess'] : 0.0;
+
+				foreach ($roleData as $role => $quantity) {
+					$rows[] = [
+						'unit_code'     => $emp['unit_code'] ?? '',
+						'employee_code' => $emp['emp_code']  ?? '',
+						'lastname'      => $emp['lastname']  ?? '',
+						'firstname'     => $emp['firstname'] ?? '',
+						'exam_code'     => $examInfo['code'] ?? '',
+						'exam_name'     => $examInfo['name'] ?? '',
+						'role'          => $role === 1 ? 'Chấm 1' : 'Chấm 2',
+						'quantity'      => $quantity,
+						'kassess'       => $kassess,
+						'hours'         => $quantity * $kassess,
+					];
+				}
+			}
+		}
+
+		// Sắp xếp: exam_code ASC, quantity DESC, role ASC
+		usort($rows, static function (array $a, array $b): int {
+			$cmp = strcmp($a['exam_code'], $b['exam_code']);
+			if ($cmp !== 0) return $cmp;
+			$cmp = $b['quantity'] - $a['quantity'];   // DESC: lớn hơn lên trước
+			if ($cmp !== 0) return $cmp;
+			return strcmp($a['role'], $b['role']);     // "Chấm 1" < "Chấm 2"
+		});
+		return $rows;
 	}
-
 	public function getMarkStatistic(array $examseasonIds): array
 	{
 		//Init

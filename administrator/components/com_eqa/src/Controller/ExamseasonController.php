@@ -593,4 +593,69 @@ class ExamseasonController extends FormController
 		jexit();
 	}
 
+	/**
+	 * Xuất sản lượng ra đề, coi thi, chấm thi cho một kỳ thi cụ thể.
+	 * Được gọi qua GET link từ action button trên mỗi dòng trong view Examseasons.
+	 * Không cần CSRF token (GET, không thay đổi dữ liệu).
+	 *
+	 * @return void
+	 * @since 2.0.9
+	 */
+	public function exportProductionByItem(): void
+	{
+		// Set redirect mặc định trong mọi trường hợp
+		$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons', false));
+
+		// Kiểm tra quyền
+		if (!$this->app->getIdentity()->authorise('core.manage', $this->option)) {
+			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
+			return;
+		}
+
+		// Lấy examseason_id từ GET
+		$examseasonId = $this->input->getInt('examseason_id');
+		if (empty($examseasonId)) {
+			$this->setMessage('Không xác định được kỳ thi', 'error');
+			return;
+		}
+
+		/** @var ExamseasonModel $model */
+		$model = $this->getModel();
+
+		// Lấy thông tin tên kỳ thi để đặt tên file
+		$db = \Kma\Component\Eqa\Administrator\Helper\DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('name'))
+			->from($db->quoteName('#__eqa_examseasons'))
+			->where($db->quoteName('id') . ' = ' . (int) $examseasonId);
+		$db->setQuery($query);
+		$examseasonName = $db->loadResult() ?? 'Kỳ thi';
+
+		// Xây dựng Spreadsheet
+		$spreadsheet = new Spreadsheet();
+		$spreadsheet->removeSheetByIndex(0);
+
+		// Sheet 1: Sản lượng ra đề
+		$questionProductions = $model->getQuestionProductionDetails($examseasonId);
+		$sheet1 = $spreadsheet->createSheet();
+		$sheet1->setTitle('Sản lượng đề thi');
+		IOHelper::writeExamseasonProductionQuestions($sheet1, $questionProductions);
+
+		// Sheet 2: Sản lượng coi thi
+		$monitoringProductions = $model->getMonitoringProductionDetails($examseasonId);
+		$sheet2 = $spreadsheet->createSheet();
+		$sheet2->setTitle('Sản lượng coi thi');
+		IOHelper::writeExamseasonProductionMonitoring($sheet2, $monitoringProductions);
+
+		// Sheet 3: Sản lượng chấm thi
+		$markingProductions = $model->getMarkingProductionDetails($examseasonId);
+		$sheet3 = $spreadsheet->createSheet();
+		$sheet3->setTitle('Sản lượng chấm thi');
+		IOHelper::writeExamseasonProductionMarking($sheet3, $markingProductions);
+
+		// Xuất file
+		$fileName = 'Sản lượng ra đề, coi thi, chấm thi. ' . $examseasonName . '.xlsx';
+		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+		exit();
+	}
 }

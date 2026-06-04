@@ -38,7 +38,14 @@
  * 8. #__eqa_conducts
  *    - This file: MODIFY academic_score  : REAL → DOUBLE
  *    - This file: MODIFY conduct_score   : REAL → DOUBLE
- */
+ *
+ * C. BỔ SUNG MỘT SỐ THUỘC TÍNH VÀO CÁC BẢNG
+ * 1. Bảng #__eqa_subjects
+ *    - ADD COLUMN `kquestion`: 'Số giờ chuẩn quy đổi cho mỗi đề thi'
+ *
+ * 2. Bảng #__eqa_exams
+ *    - ADD COLUMN `kquestion`: 'Số giờ chuẩn quy đổi cho mỗi đề thi'
+*/
 
 -- =============================================================================
 -- Tòa nhà
@@ -327,6 +334,7 @@ CREATE TABLE `#__eqa_subjects` (
     `programs`          TEXT COMMENT 'Các CTĐT có môn học',
     `kmonitor`          REAL NOT NULL DEFAULT 1.0 COMMENT 'Hệ số tính sản lượng coi thi',
     `kassess`           REAL NOT NULL DEFAULT 1.0 COMMENT 'Hệ số tính sản lượng chấm thi',
+    `kquestion`         REAL NOT NULL DEFAULT 0 COMMENT 'Số giờ chuẩn quy đổi cho mỗi đề thi',
     `description`       TEXT,
     `published`         BOOLEAN NOT NULL DEFAULT TRUE,
     `ordering`          INT UNSIGNED NOT NULL DEFAULT 0,
@@ -554,6 +562,7 @@ CREATE TABLE `#__eqa_exams`(
     `duration`         INT UNSIGNED COMMENT 'Thời gian làm bài, tính bằng phút',
     `kmonitor`         DOUBLE NOT NULL DEFAULT 1 COMMENT 'Hệ số sản lượng coi thi',
     `kassess`          DOUBLE NOT NULL DEFAULT 1 COMMENT 'Hệ số sản lượng chấm thi',
+    `kquestion`        DOUBLE NOT NULL DEFAULT 0 COMMENT 'Số giờ chuẩn quy đổi cho mỗi đề thi',
     `usetestbank`      BOOLEAN NOT NULL COMMENT 'Có sử dụng ngân hàng đề hay không',
     `allowed_rooms`    TEXT NULL COMMENT 'JSON: danh sách ID phòng được phép sử dụng; NULL = không giới hạn; ghi đè allowed_rooms của subject',
     `questiondeadline` DATE NULL COMMENT 'Thời hạn bàn giao đề thi (nếu có)',

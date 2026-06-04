@@ -1611,196 +1611,210 @@ abstract class IOHelper extends BaseIOHelper
 	}
 
 	/**
-	 * Thống kê sản lượng ra đề thi
-	 * @param   Worksheet  $sheet
-	 * @param   array      $questionProduction
+	 * Ghi sheet "Sản lượng đề thi" vào Worksheet.
 	 *
+	 * Cột: Đơn vị | Mã CBGV | Họ đệm | Tên | Mã môn thi | Tên môn thi | Số đề | Hệ số | Số giờ chuẩn
 	 *
-	 * @since version
+	 * @param  Worksheet  $sheet
+	 * @param  array      $rows  Output của ExamseasonModel::getQuestionProductionDetails()
+	 * @return void
+	 * @since  2.1.0
 	 */
-	static public function writeExamseasonQuestionProductions(Worksheet $sheet, array $questionProduction)
+	public static function writeExamseasonProductionQuestions(Worksheet $sheet, array $rows): void
 	{
-		$headers = ['STT', 'Họ đệm', 'Tên', 'Đơn vị', 'Số đề', 'Diễn giải'];
-		$widths =  [6,      20,       8,          10,     10,    50];
-		$COLS = sizeof($headers);
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		$headers = ['Đơn vị', 'Mã CBGV', 'Họ đệm', 'Tên', 'Mã môn thi', 'Tên môn thi', 'Số đề', 'Hệ số', 'Số giờ chuẩn'];
+		$widths  = [10,        12,         20,        10,    12,            40,             8,        8,        12];
+		$COLS    = count($headers);
+
+		// Độ rộng cột
+		for ($i = 1; $i <= $COLS; $i++) {
+			$sheet->getColumnDimension(Coordinate::stringFromColumnIndex($i))
+				->setWidth($widths[$i - 1]);
 		}
 
-		$row=1;
-		$sheet->setCellValue([1,$row], 'THỐNG KÊ SẢN LƯỢNG RA ĐỀ THI');
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-		$style = $sheet->getStyle([1,$row, $COLS, $row]);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-		$style->getFont()->setBold(true);
+		// Tiêu đề bảng
+		$row = 1;
+		$sheet->setCellValue([1, $row], 'THỐNG KÊ SẢN LƯỢNG RA ĐỀ THI');
+		$sheet->mergeCells([1, $row, $COLS, $row]);
+		$sheet->getStyle([1, $row, $COLS, $row])
+			->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$sheet->getStyle([1, $row, $COLS, $row])
+			->getFont()->setBold(true);
 
+		// Dòng tiêu đề cột
 		$row += 2;
 		$headingRow = $row;
-		foreach ($headers as $index => $header)
-			$sheet->setCellValue([$index+1, $row], $header);
-		$style = $sheet->getStyle([1,$row,$COLS,$row]);
+		foreach ($headers as $index => $header) {
+			$sheet->setCellValue([$index + 1, $row], $header);
+		}
+		$style = $sheet->getStyle([1, $row, $COLS, $row]);
 		$style->getFont()->setBold(true);
 		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-
-		$seq=0;
-		foreach ($questionProduction as $employee)
-		{
-			$seq++;
+		// Dữ liệu
+		foreach ($rows as $item) {
 			$row++;
-			$data = [
-				$seq,
-				$employee['lastname'],
-				$employee['firstname'],
-				$employee['unit'],
-				$employee['count'],
-				$employee['details']
-			];
-			foreach ($data as $index => $value)
-				$sheet->setCellValue([$index+1, $row], $value);
+			$sheet->setCellValue([1, $row], $item['unit_code']);
+			$sheet->setCellValue([2, $row], $item['employee_code']);
+			$sheet->setCellValue([3, $row], $item['lastname']);
+			$sheet->setCellValue([4, $row], $item['firstname']);
+			$sheet->setCellValue([5, $row], $item['exam_code']);
+			$sheet->setCellValue([6, $row], $item['exam_name']);
+			$sheet->setCellValue([7, $row], (int) $item['nquestion']);
+			$sheet->setCellValue([8, $row], (float) $item['kquestion']);
+			$sheet->setCellValue([9, $row], (float) $item['hours']);
 		}
 
-		//Kẻ bảng
-		$style = $sheet->getStyle([1,$headingRow, $COLS, $row]);
-		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-	}
-	static public function writeExamseasonMonitoringProductions(Worksheet $sheet, array $monitoringProductions)
-	{
-		$headers = ['STT', 'Họ đệm', 'Tên', 'Đơn vị', 'Số ca', 'Quy đổi'];
-		$widths =  [6,      20,       8,          10,     10,    10];
-		$COLS = sizeof($headers);
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
+		// Kẻ bảng
+		if ($row >= $headingRow) {
+			$sheet->getStyle([1, $headingRow, $COLS, $row])
+				->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 		}
 
-		$row=1;
-		$sheet->setCellValue([1,$row], 'THỐNG KÊ SẢN LƯỢNG COI THI');
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-		$style = $sheet->getStyle([1,$row, $COLS, $row]);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-		$style->getFont()->setBold(true);
-
-		$row += 2;
-		$headingRow = $row;
-		foreach ($headers as $index => $header)
-			$sheet->setCellValue([$index+1, $row], $header);
-		$style = $sheet->getStyle([1,$row,$COLS,$row]);
-		$style->getFont()->setBold(true);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		$seq=0;
-		foreach ($monitoringProductions as $employee)
-		{
-			$seq++;
-			$row++;
-			$data = [
-				$seq,
-				$employee['lastname'],
-				$employee['firstname'],
-				$employee['unit'],
-				$employee['count'],
-				(float)$employee['production']
-			];
-			foreach ($data as $index => $value)
-				$sheet->setCellValue([$index+1, $row], $value);
-		}
-
-		//Kẻ bảng
-		$style = $sheet->getStyle([1,$headingRow, $COLS, $row]);
-		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-	}
-
-	static public function writeExamseasonMarkingProductions(Worksheet $sheet, array $markingProductions)
-	{
-		/**
-		 * Cấu trúc của $markingProduction
-		 * [employee_id] => [exam_id][count1, count2, kassess, name]
-		 */
-
-		//Lấy bổ sung thông tin về giảng viên
-		$employeeIds = array_keys($markingProductions);
-		$employeeInfos = DatabaseHelper::getEmployeeInfos($employeeIds, 'assoc');
-
-		//Ghi tiêu đề
-		$headers = ['STT', 'Họ đệm', 'Tên', 'Đơn vị', 'Số bài chấm 1', 'Quy đổi chấm 1', 'Số bài chấm 2', 'Quy đổi chấm 2', 'Diễn giải'];
-		$widths =  [6,      20,       8,          10,  20,              20,               20,              20,               70];
-		$COLS = sizeof($headers);
-		for($i=1; $i<=$COLS; $i++)
-		{
-			$columnLetter = Coordinate::stringFromColumnIndex($i);
-			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i-1]);
-		}
-
-		$row=1;
-		$sheet->setCellValue([1,$row], 'THỐNG KÊ SẢN LƯỢNG CHẤM THI');
-		$sheet->mergeCells([1,$row, $COLS, $row]);
-		$style = $sheet->getStyle([1,$row, $COLS, $row]);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-		$style->getFont()->setBold(true);
-
-		$row += 2;
-		$headingRow = $row;
-		foreach ($headers as $index => $header)
-			$sheet->setCellValue([$index+1, $row], $header);
-		$style = $sheet->getStyle([1,$row,$COLS,$row]);
-		$style->getFont()->setBold(true);
-		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-		//Ghi dữ liệu
-		$seq=0;
-		foreach ($markingProductions as $employeeId => $production)
-		{
-			//Tính toán
-			$count1 = $count2 = $production1 = $production2 = 0;
-			$description = '';
-
-			foreach ($production as $examId => $examProduction)
-			{
-				$count1 += $examProduction['count1'];
-				$production1 += $examProduction['count1'] * $examProduction['kassess'];
-				$count2 += $examProduction['count2'];
-				$production2 += $examProduction['count2'] * $examProduction['kassess'];
-
-				if(!empty($description))
-					$description .= "; \n";
-				$description .= sprintf('%s: %d Chấm 1, %d Chấm 2',
-					$examProduction['name'],
-					$examProduction['count1'],
-					$examProduction['count2']
-				);
+		// Căn giữa các cột số
+		$dataRow = $headingRow + 1;
+		if ($row >= $dataRow) {
+			foreach ([1, 2, 7, 8, 9] as $col) {
+				$colLetter = Coordinate::stringFromColumnIndex($col);
+				$sheet->getStyle($colLetter . $dataRow . ':' . $colLetter . $row)
+					->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 			}
-
-			//Ghi dữ liệu
-			$seq++;
-			$row++;
-			$data = [
-				$seq,
-				$employeeInfos[$employeeId]['lastname'],
-				$employeeInfos[$employeeId]['firstname'],
-				$employeeInfos[$employeeId]['unit'],
-				$count1,
-				(float) $production1,
-				$count2,
-				(float) $production2,
-				$description
-			];
-			foreach ($data as $index => $value)
-				$sheet->setCellValue([$index+1, $row], $value);
 		}
-
-		// Enable text wrapping
-		$sheet->getStyle([$COLS,$headingRow, $COLS, $row])->getAlignment()->setWrapText(true);
-
-		//Kẻ bảng
-		$style = $sheet->getStyle([1,$headingRow, $COLS, $row]);
-		$style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-
 	}
 
+	/**
+	 * Ghi sheet "Sản lượng coi thi" vào Worksheet.
+	 *
+	 * Cột: Đơn vị | Mã CBGV | Họ đệm | Tên | Ngày thi | Ca thi | Phòng thi | Số giờ chuẩn
+	 *
+	 * @param  Worksheet  $sheet
+	 * @param  array      $rows  Output của ExamseasonModel::getMonitoringProductionDetails()
+	 * @return void
+	 * @since  2.1.0
+	 */
+	public static function writeExamseasonProductionMonitoring(Worksheet $sheet, array $rows): void
+	{
+		$headers = ['Đơn vị', 'Mã CBGV', 'Họ đệm', 'Tên', 'Ngày thi', 'Ca thi', 'Thời gian', 'Phòng thi', 'Số giờ chuẩn'];
+		$widths  = [10,        12,         20,        10,    12,          25,        12,           15,           12];
+		$COLS    = count($headers);
+
+		for ($i = 1; $i <= $COLS; $i++) {
+			$sheet->getColumnDimension(Coordinate::stringFromColumnIndex($i))
+				->setWidth($widths[$i - 1]);
+		}
+
+		$row = 1;
+		$sheet->setCellValue([1, $row], 'THỐNG KÊ SẢN LƯỢNG COI THI');
+		$sheet->mergeCells([1, $row, $COLS, $row]);
+		$sheet->getStyle([1, $row, $COLS, $row])
+			->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$sheet->getStyle([1, $row, $COLS, $row])
+			->getFont()->setBold(true);
+
+		$row += 2;
+		$headingRow = $row;
+		foreach ($headers as $index => $header) {
+			$sheet->setCellValue([$index + 1, $row], $header);
+		}
+		$style = $sheet->getStyle([1, $row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		// Ghi dữ liệu từng dòng
+		foreach ($rows as $item) {
+			$row++;
+			$sheet->setCellValue([1, $row], $item['unit_code']);
+			$sheet->setCellValue([2, $row], $item['employee_code']);
+			$sheet->setCellValue([3, $row], $item['lastname']);
+			$sheet->setCellValue([4, $row], $item['firstname']);
+			$sheet->setCellValue([5, $row], $item['exam_date']);
+			$sheet->setCellValue([6, $row], $item['session_name']);
+			$sheet->setCellValue([7, $row], (int) $item['duration']);   // <-- thêm
+			$sheet->setCellValue([8, $row], $item['room_name']);
+			$sheet->setCellValue([9, $row], (float) $item['hours']);
+		}
+
+		if ($row >= $headingRow) {
+			$sheet->getStyle([1, $headingRow, $COLS, $row])
+				->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+		}
+
+		$dataRow = $headingRow + 1;
+		if ($row >= $dataRow) {
+			foreach ([1, 2, 5, 7, 9] as $col) {
+				$colLetter = Coordinate::stringFromColumnIndex($col);
+				$sheet->getStyle($colLetter . $dataRow . ':' . $colLetter . $row)
+					->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+			}
+		}
+	}
+
+	/**
+	 * Ghi sheet "Sản lượng chấm thi" vào Worksheet.
+	 *
+	 * Cột: Đơn vị | Mã CBGV | Họ đệm | Tên | Mã môn thi | Tên môn thi | Vai trò | Số bài/phách | Hệ số | Số giờ chuẩn
+	 *
+	 * @param  Worksheet  $sheet
+	 * @param  array      $rows  Output của ExamseasonModel::getMarkingProductionDetails()
+	 * @return void
+	 * @since  2.1.0
+	 */
+	public static function writeExamseasonProductionMarking(Worksheet $sheet, array $rows): void
+	{
+		$headers = ['Đơn vị', 'Mã CBGV', 'Họ đệm', 'Tên', 'Mã môn thi', 'Tên môn thi', 'Vai trò', 'Số bài/phách', 'Hệ số', 'Số giờ chuẩn'];
+		$widths  = [10,        12,         20,        10,    12,            40,             10,         12,             8,        12];
+		$COLS    = count($headers);
+
+		for ($i = 1; $i <= $COLS; $i++) {
+			$sheet->getColumnDimension(Coordinate::stringFromColumnIndex($i))
+				->setWidth($widths[$i - 1]);
+		}
+
+		$row = 1;
+		$sheet->setCellValue([1, $row], 'THỐNG KÊ SẢN LƯỢNG CHẤM THI');
+		$sheet->mergeCells([1, $row, $COLS, $row]);
+		$sheet->getStyle([1, $row, $COLS, $row])
+			->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+		$sheet->getStyle([1, $row, $COLS, $row])
+			->getFont()->setBold(true);
+
+		$row += 2;
+		$headingRow = $row;
+		foreach ($headers as $index => $header) {
+			$sheet->setCellValue([$index + 1, $row], $header);
+		}
+		$style = $sheet->getStyle([1, $row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		foreach ($rows as $item) {
+			$row++;
+			$sheet->setCellValue([1,  $row], $item['unit_code']);
+			$sheet->setCellValue([2,  $row], $item['employee_code']);
+			$sheet->setCellValue([3,  $row], $item['lastname']);
+			$sheet->setCellValue([4,  $row], $item['firstname']);
+			$sheet->setCellValue([5,  $row], $item['exam_code']);
+			$sheet->setCellValue([6,  $row], $item['exam_name']);
+			$sheet->setCellValue([7,  $row], $item['role']);
+			$sheet->setCellValue([8,  $row], (int) $item['quantity']);
+			$sheet->setCellValue([9,  $row], (float) $item['kassess']);
+			$sheet->setCellValue([10, $row], (float) $item['hours']);
+		}
+
+		if ($row >= $headingRow) {
+			$sheet->getStyle([1, $headingRow, $COLS, $row])
+				->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+		}
+
+		$dataRow = $headingRow + 1;
+		if ($row >= $dataRow) {
+			foreach ([1, 2, 5, 7, 8, 9, 10] as $col) {
+				$colLetter = Coordinate::stringFromColumnIndex($col);
+				$sheet->getStyle($colLetter . $dataRow . ':' . $colLetter . $row)
+					->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+			}
+		}
+	}
 	static public function writeExamseasonMarkStatistic(Worksheet $sheet,  array $markStatistic)
 	{
 		$headers = ['TT', 'Môn thi', 'Hình thức', 'Tổng', 'Đạt', '%', 'Trượt', '%', 'Khác', '%', 'Trung bình', 'TB Đạt'];

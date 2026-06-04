@@ -3,11 +3,22 @@
 -- Date     : 2026
 
 -- =============================================================================
+-- Bảng #__eqa_subjects
+-- ADD 1 cột 'kquestion' (đặt sau 'kassess'): số giờ chuẩn quy đổi trên mỗi đề thi
+ALTER TABLE `#__eqa_subjects`
+    ADD COLUMN `kquestion` REAL NOT NULL DEFAULT 0
+        COMMENT 'Số giờ chuẩn quy đổi cho mỗi đề thi'
+        AFTER `kassess`;
 
 -- Bảng #__eqa_exams
 -- DROP 1 cột không dùng đến là 'anomaly'
+-- ADD 1 cột 'kquestion' (đặt sau 'kassess'): số giờ chuẩn quy đổi trên mỗi đề thi
 ALTER TABLE `#__eqa_exams`
     DROP column `anomaly`;
+ALTER TABLE `#__eqa_exams`
+    ADD COLUMN `kquestion` DOUBLE NOT NULL DEFAULT 0
+        COMMENT 'Số giờ chuẩn quy đổi cho mỗi đề thi'
+        AFTER `kassess`;
 
 -- Bảng #__eqa_packages`
 -- Thêm ràng buộc khóa ngoại cho cột 'exam_id'

@@ -7,6 +7,7 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\Enum\ExamType;
 use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Library\Kma\View\ItemAction;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
@@ -40,6 +41,14 @@ class HtmlView extends ItemsHtmlView
 	    $option->customFieldset1[] = $field;
         $option->default = ListLayoutItemFields::defaultFieldDefault();
         $option->customFieldset2[] = new ListLayoutItemFieldOption('completed','COM_EQA_COMPLETED',false,false,'text-center');
+
+		//Actions
+	    $actionExportProduction = new ItemAction();
+	    $actionExportProduction->icon = 'basket';
+	    $actionExportProduction->text = 'Xuất sản lượng ra đề, coi thi, chấm thi';
+	    $actionExportProduction->urlFormatString =
+		    'index.php?option=com_eqa&task=examseason.exportProductionByItem&examseason_id=%d';
+	    $option->actions = [$actionExportProduction];
 
         //Set the option
         $this->itemFields = $option;
@@ -94,7 +103,6 @@ class HtmlView extends ItemsHtmlView
 	    ToolbarHelper::appendButton('core.manage', 'download','DS cấm thi','examseason.exportIneligibleEntries',true);
 	    ToolbarHelper::appendButton('core.manage', 'download','DS kỷ luật','examseason.exportSanctions',true);
 	    ToolbarHelper::appendButton('core.manage','download','Bảng điểm tổng hợp', 'examseason.exportLearnerMarks',true);
-	    ToolbarHelper::appendButton('core.manage','download','Sản lượng', 'examseasons.exportProduction',true);
 	    ToolbarHelper::appendButton('core.manage','download','Phổ điểm','examseasons.exportMarkStatistic',true);
 	    ToolbarHelper::appendButton('core.manage','download','Báo cáo','examseasons.exportStatistic',true);
     }

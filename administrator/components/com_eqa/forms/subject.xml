@@ -77,6 +77,38 @@
                 required='true'
         />
         <field
+                name="kmonitor"
+                type="number"
+                label="COM_EQA_EXAM_KMONITOR"
+                description="Số giờ chuẩn quy đổi cho việc coi thi 1 ca thi"
+                required="true"
+                default="0"
+                min="0"
+                step="0.1"
+        />
+        <field
+                name="kassess"
+                type="number"
+                label="COM_EQA_EXAM_KASSESS"
+                description="Số giờ chuẩn quy đổi cho việc chấm 1 bài thi
+                (đối với thi viết, thi thực hành, thi vấn đáp, đồ án môn học)
+                hoặc 1 số phách (đối với thi trên iTest)"
+                required="true"
+                default="0"
+                min="0"
+                step="0.1"
+        />
+        <field
+                name="kquestion"
+                type="number"
+                label="Hệ số đề thi"
+                description="Số giờ chuẩn quy đổi cho mỗi đề thi (để tính sản lượng người ra đề)"
+                required="true"
+                default="0"
+                min="0"
+                step="0.5"
+        />
+        <field
                 name="allowed_rooms"
                 type="room"
                 multiple="true"

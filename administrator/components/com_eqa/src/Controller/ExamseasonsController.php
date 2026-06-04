@@ -81,66 +81,6 @@ class ExamseasonsController extends AdminController
 		$model->setCompleteStatus($cid, false);
 	}
 
-	public function exportProduction()
-	{
-		//Check token
-		$this->checkToken();
-
-		//Set redirect in any other case
-		$url = Route::_('index.php?option=com_eqa', false);
-		$this->setRedirect($url);
-
-		//Check permissions
-		if (!$this->app->getIdentity()->authorise('core.manage', $this->option))
-		{
-			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
-
-			return;
-		}
-
-		//Get examseason ids
-		$examseasonIds = $this->input->get('cid', [], 'int');
-		if (empty($examseasonIds))
-		{
-			$this->setMessage('Không xác định được kỳ thi', 'error');
-
-			return;
-		}
-
-		/**
-		 * Lấy dữ liệu từ model và ghi vào file Excel
-		 */
-		$spreadsheet = new Spreadsheet();
-		$spreadsheet->removeSheetByIndex(0);
-		$model               = $this->getModel();
-		$questionProductions = $model->getQuestionProductions($examseasonIds);
-		if (!empty($questionProductions))
-		{
-			$sheet = $spreadsheet->createSheet();
-			$sheet->setTitle('Ra đề');
-			IOHelper::writeExamseasonQuestionProductions($sheet, $questionProductions);
-		}
-		$monitoringProductions = $model->getMonitoringProductions($examseasonIds);
-		if (!empty($monitoringProductions))
-		{
-			$sheet = $spreadsheet->createSheet();
-			$sheet->setTitle('Coi thi');
-			IOHelper::writeExamseasonMonitoringProductions($sheet, $monitoringProductions);
-		}
-		$markingProductions = $model->getMarkingProductions($examseasonIds);
-		if (!empty($markingProductions))
-		{
-			$sheet = $spreadsheet->createSheet();
-			$sheet->setTitle('Chấm thi');
-			IOHelper::writeExamseasonMarkingProductions($sheet, $markingProductions);
-		}
-
-		//Send the spreadsheet
-		$fileName = 'Thống kê sản lượng ra đề, coi thi, chấm thi.xlsx';
-		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-		exit();
-	}
-
 	public function exportMarkStatistic()
 	{
 		//CSRF
