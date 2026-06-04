@@ -8,6 +8,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -636,7 +637,12 @@ class ExamseasonController extends FormController
 		$spreadsheet->removeSheetByIndex(0);
 
 		// Sheet 1: Sản lượng ra đề
+		// Convert testtype code → label
 		$questionProductions = $model->getQuestionProductionDetails($examseasonId);
+		foreach ($questionProductions as &$qp) {
+			$qp['testtype'] = TestType::from((int) $qp['testtype'])->getLabel();
+		}
+		unset($qp);
 		$sheet1 = $spreadsheet->createSheet();
 		$sheet1->setTitle('Sản lượng đề thi');
 		IOHelper::writeExamseasonProductionQuestions($sheet1, $questionProductions);

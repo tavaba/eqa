@@ -760,6 +760,7 @@ class ExamseasonModel extends AdminModel{
 			$db->quoteName('em.firstname',  'firstname'),
 			$db->quoteName('ex.code',       'exam_code'),
 			$db->quoteName('ex.name',       'exam_name'),
+			$db->quoteName('ex.testtype',   'testtype'),
 			$db->quoteName('ex.nquestion',  'nquestion'),
 			$db->quoteName('ex.kquestion',  'kquestion'),
 		];
@@ -767,12 +768,7 @@ class ExamseasonModel extends AdminModel{
 		// Lưu ý: quoteName() không hỗ trợ alias dạng mảng 2 phần tử,
 		// nên dùng cú pháp quoteName('alias_src', 'alias_dest') của Joomla
 		$query = $db->getQuery(true)
-			->select($db->quoteName(
-				['u.code',    'em.code',       'em.lastname', 'em.firstname',
-					'ex.code',   'ex.name',       'ex.nquestion', 'ex.kquestion'],
-				['unit_code', 'employee_code', 'lastname',    'firstname',
-					'exam_code', 'exam_name',     'nquestion',   'kquestion']
-			))
+			->select($columns)
 			->from($db->quoteName('#__eqa_exams', 'ex'))
 			->leftJoin(
 				$db->quoteName('#__eqa_employees', 'em'),
@@ -822,14 +818,16 @@ class ExamseasonModel extends AdminModel{
 
 		// Lấy tất cả examroom của kỳ thi, kèm thông tin ca thi
 		$query = $db->getQuery(true)
-			->select($db->quoteName(
-				['er.id',    'er.name',     'er.exam_ids',
-					'er.monitor1_id', 'er.monitor2_id', 'er.monitor3_id',
-					'es.name',  'es.start'],
-				['room_id',  'room_name',   'exam_ids',
-					'monitor1_id', 'monitor2_id', 'monitor3_id',
-					'session_name', 'session_start']
-			))
+			->select([
+				$db->quoteName('er.id',           'room_id'),
+				$db->quoteName('er.name',         'room_name'),
+				$db->quoteName('er.exam_ids',     'exam_ids'),
+				$db->quoteName('er.monitor1_id',  'monitor1_id'),
+				$db->quoteName('er.monitor2_id',  'monitor2_id'),
+				$db->quoteName('er.monitor3_id',  'monitor3_id'),
+				$db->quoteName('es.name',         'session_name'),
+				$db->quoteName('es.start',        'session_start'),
+			])
 			->from($db->quoteName('#__eqa_examrooms', 'er'))
 			->leftJoin(
 				$db->quoteName('#__eqa_examsessions', 'es'),
@@ -862,10 +860,13 @@ class ExamseasonModel extends AdminModel{
 		// Batch load thông tin employee
 		$monitorIdSet = '(' . implode(',', $allMonitorIds) . ')';
 		$query = $db->getQuery(true)
-			->select($db->quoteName(
-				['em.id', 'em.code',   'em.lastname', 'em.firstname', 'u.code'],
-				['id',    'emp_code',  'lastname',    'firstname',    'unit_code']
-			))
+			->select([
+				$db->quoteName('em.id',        'id'),
+				$db->quoteName('em.code',      'emp_code'),
+				$db->quoteName('em.lastname',  'lastname'),
+				$db->quoteName('em.firstname', 'firstname'),
+				$db->quoteName('u.code',       'unit_code'),
+			])
 			->from($db->quoteName('#__eqa_employees', 'em'))
 			->leftJoin(
 				$db->quoteName('#__eqa_units', 'u'),
@@ -973,7 +974,9 @@ class ExamseasonModel extends AdminModel{
 		// Bước 0: Lấy danh sách exam_id và thông tin của kỳ thi này
 		// =========================================================
 		$query = $db->getQuery(true)
-			->select($db->quoteName(['id', 'code', 'name', 'kassess'], ['id', 'code', 'name', 'kassess']))
+			->select(
+				$db->quoteName(['id', 'code', 'name', 'kassess'])
+			)
 			->from($db->quoteName('#__eqa_exams'))
 			->where($db->quoteName('examseason_id') . ' = ' . (int) $examseasonId);
 		$db->setQuery($query);
@@ -1004,10 +1007,12 @@ class ExamseasonModel extends AdminModel{
 		// Đếm số bài thi (papers) theo từng túi, groupBy (exam_id, examiner, role)
 		// =========================================================
 		$query = $db->getQuery(true)
-			->select($db->quoteName(
-				['p.exam_id', 'pk.examiner1_id', 'pk.examiner2_id', 'p.id'],
-				['exam_id',   'examiner1_id',    'examiner2_id',    'paper_id']
-			))
+			->select([
+				$db->quoteName('p.exam_id',       'exam_id'),
+				$db->quoteName('pk.examiner1_id', 'examiner1_id'),
+				$db->quoteName('pk.examiner2_id', 'examiner2_id'),
+				$db->quoteName('p.id',            'paper_id'),
+			])
 			->from($db->quoteName('#__eqa_papers', 'p'))
 			->leftJoin(
 				$db->quoteName('#__eqa_packages', 'pk'),
@@ -1034,11 +1039,12 @@ class ExamseasonModel extends AdminModel{
 		// Đếm số thí sinh trong phòng thi theo (exam_id, examiner, role)
 		// =========================================================
 		$query = $db->getQuery(true)
-			->select($db->quoteName(
-				['el.exam_id', 'er.examiner1_id', 'er.examiner2_id'],
-				['exam_id',    'examiner1_id',    'examiner2_id']
-			))
-			->select('COUNT(' . $db->quoteName('el.id') . ') AS quantity')
+			->select([
+				$db->quoteName('el.exam_id',       'exam_id'),
+				$db->quoteName('er.examiner1_id',  'examiner1_id'),
+				$db->quoteName('er.examiner2_id',  'examiner2_id'),
+				'COUNT(' . $db->quoteName('el.id') . ') AS ' . $db->quoteName('quantity'),
+			])
 			->from($db->quoteName('#__eqa_exam_learner', 'el'))
 			->leftJoin(
 				$db->quoteName('#__eqa_examrooms', 'er'),
@@ -1071,7 +1077,11 @@ class ExamseasonModel extends AdminModel{
 		// tất cả ghi vào role = 1 (vì mmproductions chỉ có 1 examiner_id)
 		// =========================================================
 		$query = $db->getQuery(true)
-			->select($db->quoteName(['exam_id', 'examiner_id', 'quantity']))
+			->select([
+				$db->quoteName('exam_id',    'exam_id'),
+				$db->quoteName('examiner_id','examiner_id'),
+				$db->quoteName('quantity',   'quantity'),
+			])
 			->from($db->quoteName('#__eqa_mmproductions'))
 			->where($db->quoteName('exam_id') . ' IN ' . $examIdSet)
 			->where($db->quoteName('examiner_id') . ' IS NOT NULL');
@@ -1093,10 +1103,13 @@ class ExamseasonModel extends AdminModel{
 		$examinerIdSet  = '(' . implode(',', array_map('intval', $examinerIds)) . ')';
 
 		$query = $db->getQuery(true)
-			->select($db->quoteName(
-				['em.id', 'em.code',    'em.lastname', 'em.firstname', 'u.code'],
-				['id',    'emp_code',   'lastname',    'firstname',    'unit_code']
-			))
+			->select([
+				$db->quoteName('em.id',        'id'),
+				$db->quoteName('em.code',      'emp_code'),
+				$db->quoteName('em.lastname',  'lastname'),
+				$db->quoteName('em.firstname', 'firstname'),
+				$db->quoteName('u.code',       'unit_code'),
+			])
 			->from($db->quoteName('#__eqa_employees', 'em'))
 			->leftJoin(
 				$db->quoteName('#__eqa_units', 'u'),

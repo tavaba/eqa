@@ -1622,8 +1622,8 @@ abstract class IOHelper extends BaseIOHelper
 	 */
 	public static function writeExamseasonProductionQuestions(Worksheet $sheet, array $rows): void
 	{
-		$headers = ['Đơn vị', 'Mã CBGV', 'Họ đệm', 'Tên', 'Mã môn thi', 'Tên môn thi', 'Số đề', 'Hệ số', 'Số giờ chuẩn'];
-		$widths  = [10,        12,         20,        10,    12,            40,             8,        8,        12];
+		$headers = ['Đơn vị', 'Mã CBGV', 'Họ đệm', 'Tên', 'Mã môn thi', 'Tên môn thi', 'Hình thức', 'Số đề', 'Hệ số', 'Số giờ chuẩn'];
+		$widths  = [10,        12,         20,        10,    12,            40,             12,           8,        8,        12];
 		$COLS    = count($headers);
 
 		// Độ rộng cột
@@ -1654,15 +1654,16 @@ abstract class IOHelper extends BaseIOHelper
 		// Dữ liệu
 		foreach ($rows as $item) {
 			$row++;
-			$sheet->setCellValue([1, $row], $item['unit_code']);
-			$sheet->setCellValue([2, $row], $item['employee_code']);
-			$sheet->setCellValue([3, $row], $item['lastname']);
-			$sheet->setCellValue([4, $row], $item['firstname']);
-			$sheet->setCellValue([5, $row], $item['exam_code']);
-			$sheet->setCellValue([6, $row], $item['exam_name']);
-			$sheet->setCellValue([7, $row], (int) $item['nquestion']);
-			$sheet->setCellValue([8, $row], (float) $item['kquestion']);
-			$sheet->setCellValue([9, $row], (float) $item['hours']);
+			$sheet->setCellValue([1,  $row], $item['unit_code']);
+			$sheet->setCellValue([2,  $row], $item['employee_code']);
+			$sheet->setCellValue([3,  $row], $item['lastname']);
+			$sheet->setCellValue([4,  $row], $item['firstname']);
+			$sheet->setCellValue([5,  $row], $item['exam_code']);
+			$sheet->setCellValue([6,  $row], $item['exam_name']);
+			$sheet->setCellValue([7,  $row], $item['testtype']);    // <-- thêm
+			$sheet->setCellValue([8,  $row], (int)   $item['nquestion']);
+			$sheet->setCellValue([9,  $row], (float) $item['kquestion']);
+			$sheet->setCellValue([10, $row], (float) $item['hours']);
 		}
 
 		// Kẻ bảng
@@ -1674,7 +1675,7 @@ abstract class IOHelper extends BaseIOHelper
 		// Căn giữa các cột số
 		$dataRow = $headingRow + 1;
 		if ($row >= $dataRow) {
-			foreach ([1, 2, 7, 8, 9] as $col) {
+			foreach ([1, 2, 5, 7, 8, 9, 10] as $col) {
 				$colLetter = Coordinate::stringFromColumnIndex($col);
 				$sheet->getStyle($colLetter . $dataRow . ':' . $colLetter . $row)
 					->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
