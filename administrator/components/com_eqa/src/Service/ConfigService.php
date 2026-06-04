@@ -402,4 +402,96 @@ class ConfigService
 	{
 		return (int) $this->params->get('params.mail_retry_interval_minutes', 5);
 	}
+
+	// =====================================================================
+	// Nhóm tham số: Đánh giá rèn luyện
+	// =====================================================================
+
+	/**
+	 * Trả về tên đơn vị quản lý đào tạo (dùng trong biểu mẫu đánh giá rèn luyện).
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductTrainingUnit(): string
+	{
+		return $this->params->get('params.conduct_training_unit', 'PHÒNG ĐÀO TẠO');
+	}
+
+	/**
+	 * Trả về chức danh lãnh đạo đơn vị quản lý đào tạo.
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductTrainingUnitLeaderTitle(): string
+	{
+		return $this->params->get('params.conduct_training_unit_leader_title', 'P. TRƯỞNG PHÒNG');
+	}
+
+	/**
+	 * Trả về tên lãnh đạo đơn vị quản lý đào tạo.
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductTrainingUnitLeaderName(): string
+	{
+		return $this->params->get('params.conduct_training_unit_leader_name', 'Trần Cao Thanh');
+	}
+
+	/**
+	 * Trả về tên đơn vị quản lý học viên, sinh viên (HVSV).
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductLearnerUnit(): string
+	{
+		return $this->params->get('params.conduct_learner_unit', 'HỆ QUẢN LÝ HVSV');
+	}
+
+	/**
+	 * Trả về chức danh lãnh đạo đơn vị quản lý HVSV.
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductLearnerUnitLeaderTitle(): string
+	{
+		return $this->params->get('params.conduct_learner_unit_leader_title', 'P. HỆ TRƯỞNG');
+	}
+
+	/**
+	 * Trả về tên lãnh đạo đơn vị quản lý HVSV.
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductLearnerUnitLeaderName(): string
+	{
+		return $this->params->get('params.conduct_learner_unit_leader_name', 'Chu Mạnh Phấn');
+	}
+
+	/**
+	 * Trả về chức danh của người lập biểu (trong biểu mẫu đánh giá rèn luyện).
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductPreparerTitle(): string
+	{
+		return $this->params->get('params.conduct_preparer_title', 'TRỢ LÝ QUẢN LÝ HVSV');
+	}
+
+	/**
+	 * Trả về tên người lập biểu.
+	 *
+	 * @return  string
+	 * @since   2.0.9
+	 */
+	public function getConductPreparerName(): string
+	{
+		return $this->params->get('params.conduct_preparer_name', 'Trịnh Đình Hợp');
+	}
 }

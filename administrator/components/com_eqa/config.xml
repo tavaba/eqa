@@ -226,6 +226,60 @@
 					required="true"
 			/>
 		</fieldset>
+		<fieldset
+				name="conduct_assessment"
+				label="Đánh giá rèn luyện"
+				description="Cấu hình các tham số dùng trong biểu mẫu đánh giá rèn luyện"
+		>
+			<field
+					name="conduct_training_unit"
+					type="text"
+					default="PHÒNG ĐÀO TẠO"
+					label="Đơn vị quản lý đào tạo"
+			/>
+			<field
+					name="conduct_training_unit_leader_title"
+					type="text"
+					default="P. TRƯỞNG PHÒNG"
+					label="Chức danh lãnh đạo đơn vị quản lý đào tạo"
+			/>
+			<field
+					name="conduct_training_unit_leader_name"
+					type="text"
+					default="Trần Cao Thanh"
+					label="Tên lãnh đạo đơn vị quản lý đào tạo"
+			/>
+			<field
+					name="conduct_learner_unit"
+					type="text"
+					default="HỆ QUẢN LÝ HVSV"
+					label="Đơn vị quản lý HVSV"
+			/>
+			<field
+					name="conduct_learner_unit_leader_title"
+					type="text"
+					default="P. HỆ TRƯỞNG"
+					label="Chức danh lãnh đạo đơn vị quản lý HVSV"
+			/>
+			<field
+					name="conduct_learner_unit_leader_name"
+					type="text"
+					default="Chu Mạnh Phấn"
+					label="Tên lãnh đạo đơn vị quản lý HVSV"
+			/>
+			<field
+					name="conduct_preparer_title"
+					type="text"
+					default="TRỢ LÝ QUẢN LÝ HVSV"
+					label="Chức danh người lập biểu"
+			/>
+			<field
+					name="conduct_preparer_name"
+					type="text"
+					default="Trịnh Đình Hợp"
+					label="Tên người lập biểu"
+			/>
+		</fieldset>
 	</fields>
 	<fieldset
 		name="permissions"

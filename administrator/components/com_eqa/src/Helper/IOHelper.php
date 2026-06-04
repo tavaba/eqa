@@ -17,6 +17,7 @@ use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
 use Kma\Component\Eqa\Administrator\DataObject\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\DataObject\PackageInfo;
+use Kma\Component\Eqa\Administrator\Service\ConfigService;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
@@ -2715,8 +2716,8 @@ abstract class IOHelper extends BaseIOHelper
 
 	static public function writeConductReport(Worksheet $sheet, string $academicyear, int $termCode, string $title, int $studyYear, array $conducts): void
 	{
-		$headers = ['TT', 'Mã HVSV', 'Họ và tên', 'LD', 'KLD', 'Tổng', 'HL', 'TL', 'KT', 'KL', 'Điểm', 'PL', 'Điểm', 'PL', 'Ghi chú'];
-		$widths = [5,     12,          25,          4,    5,     6,     4,    4,    4,    4,     6,     4,      6,    4,      15];
+		$headers = ['TT', 'Mã HVSV', 'Họ và tên', 'LD', 'KLD', 'Tổng', 'HL', 'TL', 'KT', 'KL', 'TC', 'Điểm', 'PL', 'Điểm', 'PL', 'Ghi chú'];
+		$widths  = [5,     12,         25,          4,    5,     6,      4,    4,    4,    4,     4,    6,     4,      6,    4,      11];
 		$COLS = count($headers);
 
 		//Set column widths
@@ -2801,11 +2802,12 @@ abstract class IOHelper extends BaseIOHelper
 
 		$col++;
 		$sheet->setCellValue([$col,$row],'Học tập');
-		$sheet->mergeCells([$col, $row, $col+1, $row]);
-		$sheet->setCellValue([$col,$row+1],'Điểm');
-		$sheet->setCellValue([$col+1,$row+1],'PL');
+		$sheet->mergeCells([$col, $row, $col+2, $row]);
+		$sheet->setCellValue([$col,$row+1],'TC');
+		$sheet->setCellValue([$col+1,$row+1],'Điểm');
+		$sheet->setCellValue([$col+2,$row+1],'PL');
 
-		$col +=2;
+		$col += 3;
 		$sheet->setCellValue([$col,$row],'Rèn luyện');
 		$sheet->mergeCells([$col, $row, $col+1, $row]);
 		$sheet->setCellValue([$col,$row+1],'Điểm');
@@ -2854,6 +2856,7 @@ abstract class IOHelper extends BaseIOHelper
 				$conduct->resitCount ?: null,
 				$conduct->awardCount ?: null,
 				$conduct->disciplinaryCount ?: null,
+				$conduct->totalCredits ?: null,
 				$conduct->academicScore,
 				$conduct->academicRating?RatingHelper::decodeToAbbr($conduct->academicRating):null,
 				$conduct->conductScore,
@@ -2872,8 +2875,8 @@ abstract class IOHelper extends BaseIOHelper
 		$fulnameColumnStyle = $sheet->getStyle([3,$firstDataRow, 3, $lastDataRow]);
 		$fulnameColumnStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-		//Values in column 'K' (academic score) should have exactly 2 decimal places
-		$sheet->getStyle('K'.$firstDataRow.':K'.$lastDataRow)
+		//Values in column 'L' (academic score) should have exactly 2 decimal places
+		$sheet->getStyle('L'.$firstDataRow.':L'.$lastDataRow)
 			->getNumberFormat()
 			->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
 
@@ -3017,14 +3020,50 @@ abstract class IOHelper extends BaseIOHelper
 		/**
 		 * Print the signing areas
 		 */
+		$config = new ConfigService();
+		$trainingUnit               = $config->getConductTrainingUnit();
+		$trainingUnitLeaderTitle    = $config->getConductTrainingUnitLeaderTitle();
+		$trainingUnitLeaderName     = $config->getConductTrainingUnitLeaderName();
+		$learnerUnit                = $config->getConductLearnerUnit();
+		$learnerUnitLeaderTitle     = $config->getConductLearnerUnitLeaderTitle();
+		$learnerUnitLeaderName      = $config->getConductLearnerUnitLeaderName();
+		$preparerTitle              = $config->getConductPreparerTitle();
+		$preparerName               = $config->getConductPreparerName();
+
+		// Dòng chức danh
+		//Vai trò
 		$row += 2;
-		$sheet->setCellValue('A'.$row, 'TRƯỞNG PHÒNG ĐÀO TẠO');
-		$sheet->mergeCells([1,$row, 3, $row]);
-		$sheet->setCellValue('D'.$row, 'HỆ TRƯỞNG HỆ QLHVSV');
-		$sheet->mergeCells([4,$row, 10, $row]);
+		$signingAreaFirstRow = $row;
+		$sheet->setCellValue('A'.$row, $trainingUnit);
+		$sheet->mergeCells([1, $row, 3, $row]);
+		$sheet->setCellValue('D'.$row, $learnerUnit);
+		$sheet->mergeCells([4, $row, 10, $row]);
 		$sheet->setCellValue('K'.$row, 'NGƯỜI LẬP BIỂU');
-		$sheet->mergeCells([11,$row, $COLS, $row]);
-		$style = $sheet->getStyle([1,$row, $COLS, $row]);
+		$sheet->mergeCells([11, $row, $COLS, $row]);
+
+		//Chức danh lãnh đạo
+		$row++;
+		$sheet->setCellValue('A'.$row, $trainingUnitLeaderTitle);
+		$sheet->mergeCells([1, $row, 3, $row]);
+		$sheet->setCellValue('D'.$row, $learnerUnitLeaderTitle);
+		$sheet->mergeCells([4, $row, 10, $row]);
+
+		//Tên lãnh đạo + Chức danh người lập biểu
+		$row+=4;
+		$sheet->setCellValue('A'.$row, $trainingUnitLeaderName);
+		$sheet->mergeCells([1, $row, 3, $row]);
+		$sheet->setCellValue('D'.$row, $learnerUnitLeaderName);
+		$sheet->mergeCells([4, $row, 10, $row]);
+		$sheet->setCellValue('K'.$row, $preparerTitle);
+		$sheet->mergeCells([11, $row, $COLS, $row]);
+
+		//Tên người lập biểu
+		$row++;
+		$sheet->setCellValue('K'.$row, $preparerName);
+		$sheet->mergeCells([11, $row, $COLS, $row]);
+
+		//Định dạng: căn giữa, in đậm
+		$style = $sheet->getStyle([1, $signingAreaFirstRow, $COLS, $row]);
 		$style->getFont()->setBold(true);
 		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
