@@ -3,6 +3,7 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 
 defined('_JEXEC') or die();
+require_once JPATH_ROOT . '/vendor/autoload.php';
 
 use Exception;
 use Joomla\CMS\Factory;

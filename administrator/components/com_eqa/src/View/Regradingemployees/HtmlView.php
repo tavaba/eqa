@@ -21,8 +21,12 @@ class HtmlView extends ItemsHtmlView {
 		$option->customFieldset1 = array();
 		$option->customFieldset1[] = new ListLayoutItemFieldOption('name','Môn thi');
 		$option->customFieldset1[] = new ListLayoutItemFieldOption('count','Số bài', false, false,'text-center');
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner1','Cán bộ chấm thi 1');
-		$option->customFieldset1[] = new ListLayoutItemFieldOption('examiner2','Cán bộ chấm thi 2');
+		$f = new ListLayoutItemFieldOption('examiner1','Cán bộ chấm thi 1');
+		$f->printRaw = true;
+		$option->customFieldset1[] = $f;
+		$f = new ListLayoutItemFieldOption('examiner2','Cán bộ chấm thi 2');
+		$f->printRaw = true;
+		$option->customFieldset1[] = $f;
 
 		//Set the option
 		$this->itemFields = $option;
