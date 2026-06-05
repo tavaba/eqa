@@ -44,7 +44,7 @@ class GradecorrectionModel extends AdminModel {
 	 * @throws Exception
 	 * @since 1.1.10
 	 */
-	public function accept(int $itemId, string $currentUsername, string $currentTime)
+	public function accept(int $itemId, int $currentUserId, string $currentTime)
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -75,7 +75,7 @@ class GradecorrectionModel extends AdminModel {
 			->update('#__eqa_gradecorrections')
 			->set([
 				'status = ' . PpaaStatus::Accepted->value,
-				'handled_by = ' . $db->quote($currentUsername),
+				'handled_by = ' . $currentUserId,
 				'handled_at = ' . $db->quote($currentTime)
 			])
 			->where('id = ' . $itemId);

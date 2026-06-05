@@ -34,10 +34,10 @@ class GradecorrectionController extends  FormController {
 			 * 4. Accept the grade correction request
 			 * @var GradecorrectionModel $model
 			 */
-			$currentUsername = $this->app->getIdentity()->username;
+			$currentUserId = $this->app->getIdentity()->id;
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');
-			$model->accept($itemId, $currentUsername, $currentTime);
+			$model->accept($itemId, $currentUserId, $currentTime);
 
 			//5. Redirect back
 			//   (The success message should be sent by the model)
