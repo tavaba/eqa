@@ -21,13 +21,13 @@ class HtmlView extends ItemsHtmlView {
         $fields->customFieldset1[] = new ListLayoutItemFieldOption('group', 'COM_EQA_GROUP',true,false,'text-center');
         $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldLastname();
         $fields->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
-        $f = new ListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam1', 'COM_EQA_PAM1_ABBR', true, false, 'text-center');
         $f->titleDesc = Text::_('COM_EQA_PAM1');
         $fields->customFieldset1[] = $f;
-        $f = new ListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', true, false, 'text-center');
         $f->titleDesc = Text::_('COM_EQA_PAM2');
         $fields->customFieldset1[] = $f;
-        $f = new ListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', true, false, 'text-center');
         $f->titleDesc = Text::_('COM_EQA_PAM');
         $fields->customFieldset1[] = $f;
         $f = new ListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');

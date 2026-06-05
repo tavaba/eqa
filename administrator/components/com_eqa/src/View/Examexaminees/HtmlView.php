@@ -53,7 +53,7 @@ class HtmlView extends ItemsHtmlView {
         $f = new ListLayoutItemFieldOption('pam2', 'COM_EQA_PAM2_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM2');
         $fields->customFieldset1[] = $f;
-        $f = new ListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('pam', 'COM_EQA_PAM_ABBR', true, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_PAM');
         $fields->customFieldset1[] = $f;
         $f = new ListLayoutItemFieldOption('allowed', 'COM_EQA_ALLOWED_TO_TAKE_EXAM_ABBR', true, false, 'text-center');
@@ -64,14 +64,14 @@ class HtmlView extends ItemsHtmlView {
 		$f->titleDesc = 'Chế độ khuyến khích (nếu có)';
 	    $fields->customFieldset1[] = $f;
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('anomaly', 'Bất thường');
-	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('mark_orig', 'Thi', false, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('mark_orig', 'Thi', true, false, 'text-center');
 	    $f = new ListLayoutItemFieldOption('mark_final', 'COM_EQA_MARK_FINALEXAM_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MARK_FINALEXAM');
         $fields->customFieldset1[] = $f;
-        $f = new ListLayoutItemFieldOption('module_mark', 'COM_EQA_MODULE_MARK_ABBR', false, false, 'text-center');
+        $f = new ListLayoutItemFieldOption('module_mark', 'COM_EQA_MODULE_MARK_ABBR', true, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_MARK');
         $fields->customFieldset1[] = $f;
-	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('module_base4_mark', 'Hệ 4', false, false, 'text-center');
+	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('module_base4_mark', 'Hệ 4', true, false, 'text-center');
 	    $f = new ListLayoutItemFieldOption('module_grade', 'COM_EQA_MODULE_GRADE_ABBR', false, false, 'text-center');
         $f->titleDesc=Text::_('COM_EQA_MODULE_GRADE');
         $fields->customFieldset1[] = $f;
