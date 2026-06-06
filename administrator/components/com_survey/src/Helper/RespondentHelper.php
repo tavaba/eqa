@@ -28,10 +28,6 @@ abstract class RespondentHelper
     const RESPONDENT_UNIT_TYPE_COURSE=10;
     const RESPONDENT_UNIT_TYPE_DEPARTMENT=20;
     const RESPONDENT_UNIT_TYPE_COMPANY=50;
-
-    //Respondent genders
-    const RESPONDENT_GENDER_MALE = 1;
-    const RESPONDENT_GENDER_FEMALE=2;
     static  public function decodeType(int $code): string
     {
         return match ($code) {
@@ -100,20 +96,6 @@ abstract class RespondentHelper
             self::RESPONDENT_UNIT_TYPE_COURSE=>self::decodeUnitType(self::RESPONDENT_UNIT_TYPE_COURSE),
             self::RESPONDENT_UNIT_TYPE_DEPARTMENT=>self::decodeUnitType(self::RESPONDENT_UNIT_TYPE_DEPARTMENT),
             self::RESPONDENT_UNIT_TYPE_COMPANY=>self::decodeUnitType(self::RESPONDENT_UNIT_TYPE_COMPANY)
-        ];
-    }
-    public static function decodeGender(int $genderCode): string
-    {
-        return match($genderCode){
-            self::RESPONDENT_GENDER_MALE=>'Nam',
-            self::RESPONDENT_GENDER_FEMALE=>'Nữ'
-        };
-    }
-    public static function getGenders(): array
-    {
-        return [
-            self::RESPONDENT_GENDER_MALE=>self::decodeGender(self::RESPONDENT_GENDER_MALE),
-            self::RESPONDENT_GENDER_FEMALE=>self::decodeGender(self::RESPONDENT_GENDER_FEMALE)
         ];
     }
 }

@@ -9,6 +9,7 @@ use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Component\Survey\Administrator\Model\CampaignModel;
 use Kma\Component\Survey\Administrator\Model\RespondentsModel;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
+use Kma\Library\Kma\Enum\Gender;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\FormHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
@@ -87,7 +88,7 @@ class HtmlView extends ItemHtmlView
             {
                 $item->type = RespondentHelper::decodeType($item->type);
                 if($item->gender)
-                    $item->gender = RespondentHelper::decodeGender($item->gender);
+	                $item->gender = Gender::tryFrom((int) $item->gender)?->getLabel() ?? '';
                 if(!$isPersonList && $item->is_person)
                     $item->name = implode(' ',[$item->lastname,$item->firstname]);
             }

@@ -9,6 +9,7 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Component\Survey\Administrator\Model\RespondentgroupModel;
+use Kma\Library\Kma\Enum\Gender;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -74,7 +75,7 @@ class HtmlView extends ItemsHtmlView
             foreach ($this->layoutData->items as &$item) {
                 $item->type = RespondentHelper::decodeType($item->type);
                 if($item->gender)
-                    $item->gender = RespondentHelper::decodeGender($item->gender);
+	                $item->gender = Gender::tryFrom((int) $item->gender)?->getLabel() ?? '';
                 if(!$isPersonList && $item->isPerson)
                     $item->name = implode(' ',[$item->lastname,$item->firstname]);
             }

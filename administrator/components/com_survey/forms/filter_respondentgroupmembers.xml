@@ -32,7 +32,8 @@
         >
             <option value="">-Đơn vị-</option>
         </field>
-        <field  name="gender"
+        <field  addfieldprefix="Kma\Library\Kma\Field"
+                name="gender"
                 type="gender"
                 label="Giới tính"
                 onchange="this.form.submit();"

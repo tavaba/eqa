@@ -44,7 +44,7 @@
                 label="Tên"
                 showon="is_person:1"
         />
-        <field
+        <field addfieldprefix="Kma\Library\Kma\Field"
                 name="gender"
                 type="gender"
                 label="Giới tính"

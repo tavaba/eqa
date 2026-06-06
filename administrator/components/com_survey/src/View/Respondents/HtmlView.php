@@ -6,6 +6,7 @@ defined('_JEXEC') or die;
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Component\Survey\Administrator\Model\RespondentsModel;
+use Kma\Library\Kma\Enum\Gender;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
@@ -56,7 +57,7 @@ class HtmlView extends ItemsHtmlView
             {
                 $item->type = RespondentHelper::decodeType($item->type);
                 if($item->gender)
-                    $item->gender = RespondentHelper::decodeGender($item->gender);
+	                $item->gender = Gender::tryFrom((int) $item->gender)?->getLabel() ?? '';
                 if(!$isPersonList && $item->is_person)
                     $item->name = implode(' ',[$item->lastname,$item->firstname]);
             }

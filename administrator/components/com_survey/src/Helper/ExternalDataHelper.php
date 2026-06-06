@@ -5,6 +5,7 @@ namespace Kma\Component\Survey\Administrator\Helper;
 use Exception;
 use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Log\Log;
+use Kma\Library\Kma\Enum\Gender;
 use Kma\Library\Kma\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
@@ -309,12 +310,12 @@ abstract class ExternalDataHelper
 
                 $fullName = trim($student['FULLNAME']);
                 [$lastName,$firstName] = StringHelper::parseVietnameseFullName($fullName);
-                $gender = match ($student['GENDER']) {
-                    'Nam' => RespondentHelper::RESPONDENT_GENDER_MALE,
-                    'Nu','Nữ' => RespondentHelper::RESPONDENT_GENDER_FEMALE,
-                    default => null
-                };
-                $learners[] = [
+	            $gender = match ($student['GENDER']) {
+		            'Nam'      => Gender::Male->value,
+		            'Nu','Nữ'  => Gender::Female->value,
+		            default    => null
+	            };
+				$learners[] = [
                     'firstname'=>$firstName,
                     'lastname'=>$lastName,
                     'gender'=>$gender,
@@ -351,9 +352,9 @@ abstract class ExternalDataHelper
             $fullName = trim($teacher['FULLNAME']);
             [$lastName,$firstName] = StringHelper::parseVietnameseFullName($fullName);
             $gender = match ($teacher['GENDER']) {
-                'Nam' => RespondentHelper::RESPONDENT_GENDER_MALE,
-                'Nu','Nữ' => RespondentHelper::RESPONDENT_GENDER_FEMALE,
-                default => null
+	            'Nam'      => Gender::Male->value,
+	            'Nu','Nữ'  => Gender::Female->value,
+	            default => null
             };
 
             $employees[] = [
@@ -384,8 +385,8 @@ abstract class ExternalDataHelper
             $fullName = trim(preg_replace('/\s*\(GVM\)$/u', '', $fullName));
             [$lastName,$firstName] = StringHelper::parseVietnameseFullName($fullName);
             $gender = match ($teacher['GENDER']) {
-                'Nam' => RespondentHelper::RESPONDENT_GENDER_MALE,
-                'Nu','Nữ' => RespondentHelper::RESPONDENT_GENDER_FEMALE,
+	            'Nam'      => Gender::Male->value,
+	            'Nu','Nữ'  => Gender::Female->value,
                 default => null
             };
 
