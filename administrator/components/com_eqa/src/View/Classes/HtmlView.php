@@ -32,7 +32,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = new ListLayoutItemFieldOption('academicyear','COM_EQA_ACADEMICYEAR', true,false,'text-center');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('term','COM_EQA_TERM', true,false,'text-center');
         $field = new ListLayoutItemFieldOption('size','COM_EQA_CLASS_SIZE', true,false,'text-center');
-        $field->urlFormatString = 'index.php?option=com_eqa&view=classlearners&class_id=%d';
+        $field->urlFormatString = 'index.php?option=com_eqa&view=classLearners&class_id=%d';
         $option->customFieldset1[] = $field;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('npam','COM_EQA_PAM_ABBR',true,false,'text-center');
 

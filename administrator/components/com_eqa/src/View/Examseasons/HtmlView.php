@@ -29,7 +29,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = new ListLayoutItemFieldOption('attempt', 'COM_EQA_EXAM_ATTEMPT', false, false, 'text-center');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('name', 'COM_EQA_EXAMSEASON_NAME', false, true);
         $field = new ListLayoutItemFieldOption('nexam', 'COM_EQA_EXAM',true,false,'text-center');
-        $field->urlFormatString = 'index.php?option=com_eqa&view=examseasonexams&examseason_id=%d';
+        $field->urlFormatString = 'index.php?option=com_eqa&view=examseasonExams&examseason_id=%d';
         $option->customFieldset1[] = $field;
         $field = new ListLayoutItemFieldOption('nexamsession', 'COM_EQA_EXAMSESSION',true,false,'text-center');
         $field->urlFormatString = 'index.php?option=com_eqa&view=examsessions&filter[examseason_id]=%d';

@@ -35,12 +35,12 @@ class HtmlView extends ItemsHtmlView
 		$actionViewClasses = new ItemAction();
 		$actionViewClasses->icon = 'users';
 		$actionViewClasses->text = 'Danh sách các lớp học phần';
-		$actionViewClasses->urlFormatString = Route::_('index.php?option=com_eqa&view=learnerclasses&learner_id=%d');
+		$actionViewClasses->urlFormatString = Route::_('index.php?option=com_eqa&view=learnerClasses&learner_id=%d');
 		$option->actions[] = $actionViewClasses;
 	    $actionViewClasses = new ItemAction();
 	    $actionViewClasses->icon = 'puzzle';
 	    $actionViewClasses->text = 'Danh sách môn thi';
-	    $actionViewClasses->urlFormatString = Route::_('index.php?option=com_eqa&view=learnerexams&learner_id=%d');
+	    $actionViewClasses->urlFormatString = Route::_('index.php?option=com_eqa&view=learnerExams&learner_id=%d');
 	    $option->actions[] = $actionViewClasses;
 
         //Set the option

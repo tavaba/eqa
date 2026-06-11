@@ -25,7 +25,7 @@ class HtmlView extends ItemsHtmlView
 	    $fields->customFieldset1[] = $f;
 
 		$f = new ListLayoutItemFieldOption('nexaminee','COM_EQA_EXAMINEE',true,false,'text-center');
-		$f->urlFormatString = 'index.php?option=com_eqa&view=examexaminees&exam_id=%d';
+		$f->urlFormatString = 'index.php?option=com_eqa&view=examExaminees&exam_id=%d';
 	    $fields->customFieldset1[] = $f;
 
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('npaper', 'COM_EQA_NPAPER',true,false,'text-center');

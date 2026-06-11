@@ -54,7 +54,7 @@ class ExamController extends  FormController
 
 		//3. Determine the redirect target URL
 		if(!empty($data['examseason_id']))
-			$redirect = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.(int)$data['examseason_id'],false);
+			$redirect = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.(int)$data['examseason_id'],false);
 		else
 			$redirect = Route::_('index.php?option=com_eqa&view=exams',false);
 		$this->setRedirect($redirect);
@@ -158,7 +158,7 @@ class ExamController extends  FormController
 			$model->removeExaminees($examId, $learnerIds);
 
 			//Set redirect to the examinees list page
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -166,7 +166,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false);
 			$this->setRedirect($url);
 		}
 
@@ -227,7 +227,7 @@ class ExamController extends  FormController
 		    //Redirect to examinees list page
 		    $msg = sprintf('Có %d/%d thí sinh được thêm vào môn thi', $countAdded, count($examineeCodes));
 		    $this->setMessage($msg, 'info');
-		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 	    }
 		catch (Exception $e)
 		{
@@ -235,7 +235,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false);
 			$this->setRedirect($url);
 		}
     }
@@ -262,7 +262,7 @@ class ExamController extends  FormController
 			$model->addFailedExaminees($examId);
 
 			//Set redirect to the examinees list page
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch(Exception $e)
 		{
@@ -270,7 +270,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false);
 			$this->setRedirect($url);
 		}
 	}
@@ -283,7 +283,7 @@ class ExamController extends  FormController
 
 		//Determine exam id (if there is)
 		$examId = $this->input->getInt('exam_id');
-		$url = 'index.php?option=com_eqa&view=examexaminees';
+		$url = 'index.php?option=com_eqa&view=examExaminees';
 		if(is_numeric($examId))
 			$url .= '&exam_id=' . $examId;
 		$this->setRedirect(Route::_($url, false));
@@ -314,7 +314,7 @@ class ExamController extends  FormController
 
 		//Determine exam id (if there is)
 		$examId = $this->input->getInt('exam_id');
-		$url = 'index.php?option=com_eqa&view=examexaminees';
+		$url = 'index.php?option=com_eqa&view=examExaminees';
 		if(is_numeric($examId))
 			$url .= '&exam_id=' . $examId;
 		$this->setRedirect(Route::_($url, false));
@@ -455,7 +455,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa&view=exams', false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId, false);
 			$this->setRedirect($url);
 		}
 	}
@@ -507,7 +507,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa&view=exams', false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId, false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId, false);
 			$this->setRedirect($url);
 		}
 	}
@@ -564,14 +564,14 @@ class ExamController extends  FormController
 		// 2. Quyền truy cập
 		if (!$this->app->getIdentity()->authorise('core.manage', $this->option)) {
 			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees', false));
 			return;
 		}
 
 		// 3. Xác định exam_id — đặt redirect mặc định
 		$examId  = $this->input->getInt('exam_id', 0);
 		$listUrl = Route::_(
-			'index.php?option=com_eqa&view=examexaminees&exam_id=' . $examId,
+			'index.php?option=com_eqa&view=examExaminees&exam_id=' . $examId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -677,7 +677,7 @@ class ExamController extends  FormController
 
 			//Set redirect in case of success
 			$this->setMessage($msg);
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -685,7 +685,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false);
 			$this->setRedirect($url);
 			return;
 		}
@@ -715,7 +715,7 @@ class ExamController extends  FormController
 
 			//Set redirect in any case
 			$this->setMessage(implode('. ', $messages));
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -723,7 +723,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false);
 			$this->setRedirect($url);
 		}
 	}
@@ -752,7 +752,7 @@ class ExamController extends  FormController
 
 			//Set redirect in any case
 			$this->setMessage(implode('. ', $messages));
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -760,7 +760,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false);
 			$this->setRedirect($url);
 		}
 	}
@@ -819,7 +819,7 @@ class ExamController extends  FormController
 					throw new Exception($msg);
 				}
 			}
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
@@ -827,7 +827,7 @@ class ExamController extends  FormController
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$examId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false);
 			$this->setRedirect($url);
 		}
 	}

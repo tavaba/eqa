@@ -18,7 +18,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = new ListLayoutItemFieldOption('code', 'Ký hiệu', true,true);
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('name','Tên gọi',true,false);
         $field = new ListLayoutItemFieldOption('size','Số HVSV', true,false,'text-center');
-        $field->urlFormatString = 'index.php?option=com_eqa&view=cohortlearners&cohort_id=%d';
+        $field->urlFormatString = 'index.php?option=com_eqa&view=cohortLearners&cohort_id=%d';
         $option->customFieldset1[] = $field;
 
 		$option->published = ListLayoutItemFields::defaultFieldPublished();

@@ -33,7 +33,7 @@ class ExamsController extends AdminController {
 		//If an examseason id was specified then redirect to that page
 		$examseasonId = $this->input->getInt('examseason_id');
 		if(!empty($examseasonId))
-			$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+			$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 		else
 			$url = Route::_('index.php?option=com_eqa&view=exams',false);
 		$this->setRedirect($url);
@@ -94,7 +94,7 @@ class ExamsController extends AdminController {
 		if(empty($examseasonId))
 			$url = Route::_('index.php?option=com_eqa&view=exams',false);
 		else
-			$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+			$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 		$this->setRedirect($url);
 
 		//Check token

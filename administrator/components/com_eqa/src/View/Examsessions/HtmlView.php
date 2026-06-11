@@ -35,11 +35,11 @@ class HtmlView extends ItemsHtmlView {
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('nexaminee','COM_EQA_EXAMINEE',true,false,'text-center');
 
         $f = new ListLayoutItemFieldOption('nmonitor', 'COM_EQA_EXAM_MONITOR_ABBR',true,false,'text-center');
-	    $f->urlFormatString = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id=%d';
+	    $f->urlFormatString = 'index.php?option=com_eqa&view=examsessionEmployees&examsession_id=%d';
 	    $option->customFieldset1[] = $f;
 
         $f = new ListLayoutItemFieldOption('nexaminer','COM_EQA_EXAM_EXAMINER_ABBR',true,false,'text-center');
-	    $f->urlFormatString = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id=%d';
+	    $f->urlFormatString = 'index.php?option=com_eqa&view=examsessionEmployees&examsession_id=%d';
 	    $option->customFieldset1[] = $f;
 
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldDescription();

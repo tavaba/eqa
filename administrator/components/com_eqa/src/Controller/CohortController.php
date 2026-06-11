@@ -44,7 +44,7 @@ class CohortController extends  FormController {
 			$model->addLearners($cohortId,$learnerIds);
 
 			//5. Redirect back to the view 'Cohortlearners'
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohortlearners&cohort_id='.$cohortId, false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohortLearners&cohort_id='.$cohortId, false));
 			$this->setMessage('HVSV được thêm thành công', 'success');
 			return;
 		}
@@ -83,7 +83,7 @@ class CohortController extends  FormController {
 
 			//6. Redirect back to the view 'Cohortlearners'
 			$this->setMessage('HVSV đã được xóa thành công khỏi nhóm', 'success');
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohortlearners&cohort_id='.$cohortId, false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohortLearners&cohort_id='.$cohortId, false));
 		}
 		catch(Exception $e)
 		{

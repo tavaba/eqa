@@ -28,14 +28,14 @@ class HtmlView extends ItemHtmlView{
 		$this->toolbarOption->clearAllTask();
 		$this->toolbarOption->title = Text::_('COM_EQA_EXAMINEES_OF_EXAM');
 		$this->toolbarOption->taskCancel = true;
-		$this->form = FormHelper::getBackendForm('com_eqa.addexamexaminees','addexamexaminees.xml', []);
+		$this->form = FormHelper::getBackendForm('com_eqa.addExamExaminees','addExamExaminees.xml', []);
 	}
 	protected function addToolbarForLayoutAddexaminees() : void
 	{
 		$option = $this->toolbarOption;
 		ToolbarHelper::title($option->title);
 		ToolbarHelper::save('exam.addExaminees','COM_EQA_BUTTON_ADD' );
-		$cancelUrl = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$this->exam->id,false);
+		$cancelUrl = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$this->exam->id,false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 
@@ -48,7 +48,7 @@ class HtmlView extends ItemHtmlView{
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_MANAGER_EXAM_DISTRIBUTE_EXAMINEES'));
 		ToolbarHelper::appendButton('core.create','save','JTOOLBAR_SAVE','exam.distribute',false,null,true);
-		$cancelUrl = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$this->exam->id,false);
+		$cancelUrl = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$this->exam->id,false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 
@@ -61,7 +61,7 @@ class HtmlView extends ItemHtmlView{
 	{
 		ToolbarHelper::title(Text::_('COM_EQA_MANAGER_EXAM_DISTRIBUTE_EXAMINEES'));
 		ToolbarHelper::appendButton('core.create','save','JTOOLBAR_SAVE','exam.distribute2',false,null,true);
-		$cancelUrl = Route::_('index.php?option=com_eqa&view=examexaminees&exam_id='.$this->exam->id,false);
+		$cancelUrl = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$this->exam->id,false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 

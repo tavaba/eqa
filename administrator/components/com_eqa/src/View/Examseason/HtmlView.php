@@ -98,7 +98,7 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Thêm môn thi theo môn học');
 		ToolbarHelper::save('examseason.addExams');
-		$cancelLink = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$this->examseason->id);
+		$cancelLink = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$this->examseason->id);
 		ToolbarHelper::appendCancelLink($cancelLink);
 	}
 	protected function prepareDataForLayoutAddExamsForClasses(): void
@@ -169,7 +169,7 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Thêm môn thi theo lớp học phần');
 		ToolbarHelper::save('examseason.addExamsForClasses');
-		$cancelLink = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$this->examseason->id);
+		$cancelLink = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$this->examseason->id);
 		ToolbarHelper::appendCancelLink($cancelLink);
 	}
 }

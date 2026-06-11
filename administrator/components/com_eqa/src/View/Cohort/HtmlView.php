@@ -26,7 +26,7 @@ class HtmlView extends ItemHtmlView {
 			die('Không tìm thấy thông tin nhóm HVSV');
 
 		//Load form
-		$this->form = FormHelper::getBackendForm('com_eqa.cohort.addlearners','addcohortlearners.xml', ['control'=>'jform']);
+		$this->form = FormHelper::getBackendForm('com_eqa.cohort.addlearners','addCohortLearners.xml', ['control'=>'jform']);
 
 		//Load asset
 		$this->wa->useScript('com_eqa.dependent_lists');
@@ -45,6 +45,6 @@ class HtmlView extends ItemHtmlView {
 	protected function addToolbarForLayoutAddlearners() {
 		ToolbarHelper::title('Thêm HVSV vào nhóm');
 		ToolbarHelper::save('cohort.addLearners');
-		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=cohortlearners&cohort_id='.$this->item->id,false));
+		ToolbarHelper::appendCancelLink(Route::_('index.php?option=com_eqa&view=cohortLearners&cohort_id='.$this->item->id,false));
 	}
 }

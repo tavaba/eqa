@@ -16,7 +16,7 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Field\ExamineeanomalyField;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Model\ExamroomexamineesModel;
+use Kma\Component\Eqa\Administrator\Model\ExamroomExamineesModel;
 
 class HtmlView extends ItemHtmlView {
     protected ?ExamroomInfo $examroom;
@@ -34,7 +34,7 @@ class HtmlView extends ItemHtmlView {
 
         /**
          * Prepare model
-         * @var ExamroomexamineesModel $model
+         * @var ExamroomExamineesModel $model
          */
         $model = ComponentHelper::createModel('examroomexaminees');
         $this->setModel($model,true);
@@ -249,7 +249,7 @@ class HtmlView extends ItemHtmlView {
         //Determine the exam id and get the exam
         $examroomId = $app->input->getInt('examroom_id');
         $this->examroom = DatabaseHelper::getExamroomInfo($examroomId);
-	    $this->form = FormHelper::getBackendForm('com_eqa.addexamroomexaminees','addexamroomexaminees.xml', []);
+	    $this->form = FormHelper::getBackendForm('com_eqa.addExamroomExaminees','addexamroomexaminees.xml', []);
     }
     protected function addToolbarForLayoutAddexaminees() : void
     {

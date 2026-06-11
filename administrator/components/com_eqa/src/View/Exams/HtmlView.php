@@ -24,7 +24,7 @@ class HtmlView extends ItemsHtmlView
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('name','Tên môn thi');
 
         $f = new ListLayoutItemFieldOption('nexaminee','COM_EQA_EXAMINEE',true,false,'text-center');
-        $f->urlFormatString='index.php?option=com_eqa&view=examexaminees&exam_id=%d';
+        $f->urlFormatString='index.php?option=com_eqa&view=examExaminees&exam_id=%d';
         $fields->customFieldset1[] = $f;
 
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('neligible', 'Được thi', true, false, 'text-center');

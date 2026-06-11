@@ -23,4 +23,4 @@ $hiddenFields = [
 	'exam_id' => $exam->id,
 	'phase' => 'getdata',
 ];
-ViewHelper::printForm($this->form,'addexamexaminees', $hiddenFields);
+ViewHelper::printForm($this->form,'addExamExaminees', $hiddenFields);

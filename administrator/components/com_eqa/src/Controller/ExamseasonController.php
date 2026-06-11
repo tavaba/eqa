@@ -115,7 +115,7 @@ class ExamseasonController extends FormController
 			$model->addExams($examseasonId, $subjectIds);
 
 			//Redirect to list view
-			$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+			$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 			$this->setRedirect($url);
 		}
 		catch(Exception $e)
@@ -124,7 +124,7 @@ class ExamseasonController extends FormController
 			if(empty($examseasonId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 			$this->setRedirect($url);
 			return;
 		}
@@ -223,7 +223,7 @@ class ExamseasonController extends FormController
 			}
 
 			//Redirect to list view
-			$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+			$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 			$this->setRedirect($url);
 		}
 		catch(Exception $e)
@@ -232,7 +232,7 @@ class ExamseasonController extends FormController
 			if(empty($examseasonId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 			$this->setRedirect($url);
 			return;
 		}
@@ -364,7 +364,7 @@ class ExamseasonController extends FormController
 			if(empty($examseasonId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
-				$url = Route::_('index.php?option=com_eqa&view=examseasonexams&examseason_id='.$examseasonId,false);
+				$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 			$this->setRedirect($url);
 		}
 	}
