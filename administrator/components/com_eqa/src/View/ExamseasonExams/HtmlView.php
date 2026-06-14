@@ -129,8 +129,8 @@ class HtmlView extends ItemsHtmlView
 		Do phải rà soát toàn CSDL nên thời gian thực hiện có thể tốn vài phút.';
 	    ToolbarHelper::appendConfirmButton('core.create',$msg,'plus-circle','Thêm môn thi lại','examseason.addRetakeExams',false, 'btn btn-danger');
 		ToolbarHelper::appendButton(null,'download','Danh sách thi','exams.export',true);
-	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm CHƯA xử lý kỷ luật', 'exams.concludeWithDisciplineAlreadyApplied',true);
-	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm ĐÃ xử lý kỷ luật', 'exams.concludeWithDisciplineNotApplied',true);
+	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm CHƯA xử lý kỷ luật', 'exams.concludeWithDisciplineNotApplied',true);
+	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm ĐÃ xử lý kỷ luật', 'exams.concludeWithDisciplineAlreadyApplied',true);
 	    ToolbarHelper::appendButton(
 		    'core.manage',
 		    'envelope',

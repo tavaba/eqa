@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "com_kmail",
+  "version": "4.0.0",
+  "description": "KMA Email Managerment Tool",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "select2.script",
+      "type": "script",
+      "dependencies": ["jquery"],
+      "uri": "com_kmail/select2.4.0.13.min.js",
+      "version": "4.0.13"
+    },
+    {
+      "name": "com_kmail.script",
+      "type": "script",
+      "uri": "com_kmail/script.js",
+      "dependencies": ["select2.script"],
+      "version": "1.0.2"
+    },
+    {
+      "name": "select2.style",
+      "type": "style",
+      "uri":"com_kmail/select2.4.0.13.min.css",
+      "version": "4.0.13"
+    }
+  ]
+}
