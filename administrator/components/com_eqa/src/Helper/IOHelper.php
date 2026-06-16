@@ -2110,12 +2110,25 @@ abstract class IOHelper extends BaseIOHelper
 		foreach ($learnersByCourse as $course => $learnersInACourse)
 		{
 
-			//Sort $learnersInACourse by the column 'firstname'. Comparison must use vietnamse collator
-			$collator = new Collator('vi_VN');
-			$comparator = function($a, $b) use ($collator) {
-				return $collator->compare($a['firstname'], $b['firstname']);
-			};
-			usort($learnersInACourse, $comparator);
+			// Sắp xếp theo tham số cấu hình
+			if (ConfigHelper::getPersonSortOrder() === 'code')
+			{
+				//Tùy chọn: sắp xếp theo mã
+				usort($learnersInACourse, function ($a, $b) {
+					return strcmp($a['code'], $b['code']);
+				});
+			}
+			else
+			{
+				// Mặc định: sắp theo tên rồi họ đệm, dùng Collator tiếng Việt
+				$collator = new Collator('vi_VN');
+				usort($learnersInACourse, function ($a, $b) use ($collator) {
+					$res = $collator->compare($a['firstname'], $b['firstname']);
+					if ($res !== 0)
+						return $res;
+					return $collator->compare($a['lastname'], $b['lastname']);
+				});
+			}
 
 			//Prepare data to write to the spreadsheet
 			$data = [];

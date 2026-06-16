@@ -5,6 +5,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
+use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
@@ -374,7 +375,7 @@ class ClassModel extends AdminModel
 		if(!$db->execute())
 			throw new Exception($this->getError());
 	}
-	public function exportPams(int $classId): array
+	public function exportPams_bak(int $classId): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
@@ -397,7 +398,62 @@ class ClassModel extends AdminModel
 		$db->setQuery($query);
 		return $db->loadObjectList();
 	}
-    public function addLearners(int $classId, array $learnerCodes): void
+
+	/**
+	 * Xuất danh sách điểm quá trình của một lớp học phần.
+	 * Thứ tự sắp xếp được lấy từ tham số cấu hình 'pam_sort_order':
+	 *   - 'name': sắp theo tên (firstname) rồi họ đệm (lastname)
+	 *   - 'code': sắp theo mã người học
+	 *
+	 * @param   int  $classId  ID của lớp học phần
+	 *
+	 * @return array
+	 */
+	/**
+	 * Xuất danh sách điểm quá trình của một lớp học phần.
+	 * Thứ tự sắp xếp được lấy từ tham số cấu hình 'pam_sort_order':
+	 *   - 'name': sắp theo tên (firstname) rồi họ đệm (lastname)
+	 *   - 'code': sắp theo mã người học
+	 *
+	 * @param   int  $classId  ID của lớp học phần
+	 *
+	 * @return array
+	 */
+	public function exportPams(int $classId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+		$columns = [
+			$db->quoteName('b.code'),
+			$db->quoteName('b.lastname'),
+			$db->quoteName('b.firstname'),
+			$db->quoteName('c.code') . ' AS ' . $db->quoteName('group'),
+			$db->quoteName('a.pam1'),
+			$db->quoteName('a.pam2'),
+			$db->quoteName('a.pam'),
+			$db->quoteName('a.description'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_class_learner AS a')
+			->leftJoin('#__eqa_learners AS b', 'a.learner_id=b.id')
+			->leftJoin('#__eqa_groups AS c', 'c.id=b.group_id')
+			->where('a.class_id = ' . $classId);
+
+		// Áp dụng thứ tự sắp xếp theo tham số cấu hình
+		if (ConfigHelper::getPersonSortOrder() === 'code')
+		{
+			$query->order($db->quoteName('b.code') . ' ASC');
+		}
+		else
+		{
+			// Mặc định: sắp theo tên (firstname) trước, rồi họ đệm (lastname)
+			$query->order($db->quoteName('b.firstname') . ' ASC, ' . $db->quoteName('b.lastname') . ' ASC');
+		}
+
+		$db->setQuery($query);
+		return $db->loadObjectList();
+	}
+	public function addLearners(int $classId, array $learnerCodes): void
     {
         $db = $this->getDatabase();
 

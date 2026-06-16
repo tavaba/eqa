@@ -38,6 +38,16 @@
 					label="Khoảng lệch năm học thấp nhất"
 					description="Số năm trừ đi từ năm hiện tại để xác định năm học thấp nhất trong danh sách chọn. Ví dụ: nhập 5 khi năm hiện tại là 2026 thì năm học thấp nhất là 2020-2021."
 			/>
+			<field
+					name="person_sort_order"
+					type="list"
+					default="name"
+					label="Thứ tự sắp xếp danh sách người"
+					description="Xác định thứ tự sắp xếp danh sách người học, cán bộ trong các file xuất"
+			>
+				<option value="name">Theo họ và tên (sắp theo tên, rồi họ đệm)</option>
+				<option value="code">Theo mã</option>
+			</field>
 		</fieldset>
 		<fieldset
 				name="exam"

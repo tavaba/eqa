@@ -153,6 +153,18 @@ abstract class ConfigHelper{
 			self::init();
 		return self::$params->get('params.second_attempt_fee_rate', 90000);
 	}
+
+	/**
+	 * Lấy tham số thứ tự sắp xếp khi xuất danh sách người học, cán bộ.
+	 *
+	 * @return string 'name' (sắp theo tên rồi họ đệm) hoặc 'code' (sắp theo mã)
+	 */
+	public static function getPersonSortOrder(): string
+	{
+		if (self::$uninitialized)
+			self::init();
+		return self::$params->get('params.person_sort_order', 'name');
+	}
 }
 
 
