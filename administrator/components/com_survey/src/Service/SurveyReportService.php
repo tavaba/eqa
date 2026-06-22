@@ -1058,7 +1058,315 @@ class SurveyReportService
         // Add spacing after this question
         $section->addTextBreak(1);
     }
-    public function writeReportToWord(PhpWord $doc):void
+	/**
+	 * Write (append) statistics for a matrix question to a Word document.
+	 *
+	 * Renders a cross-tabulation table: one row per matrix row, one column per
+	 * matrix column, each cell showing the count and the in-row percentage,
+	 * plus a trailing "Tổng" column with the per-row answer count.
+	 * Supports the SurveyJS 'matrix' type (cellType radiogroup or checkbox);
+	 * it does not handle 'matrixdropdown' nor 'matrixdynamic'.
+	 *
+	 * @param Section $section The section to append to
+	 * @param array $question The question definition
+	 * @param array $data The calculated statistics for this question
+	 *          ['rows' => [val=>label], 'columns' => [val=>label],
+	 *           'counts' => [rowVal][colVal] => int, 'total' => int]
+	 * @param array $option Options for writing the data to Word
+	 *          'show_question_label' (bool): Whether to show the question label before the title
+	 *          'question_label' (string): Label for questions, default = 'Câu'
+	 *          'question_id' (int|string): The sequence number or id of this question
+	 * @return void
+	 * @since 1.0.0
+	 */
+	protected function addMatrixStatisticsToWord(Section $section, array $question, array $data, array $option = []): void
+	{
+		// Parse options with defaults (same pattern as the other writers)
+		$showQuestionLabel = $option['show_question_label'] ?? true;
+		$questionLabel = $option['question_label'] ? IOHelper::sanitizeTextForWord($option['question_label']) : 'Câu';
+		$questionId = $option['question_id'] ?? '';
+
+		// Add question title
+		$titleText = '';
+		if ($showQuestionLabel && $questionId !== '') {
+			$titleText = $questionLabel . ' ' . $questionId . ': ';
+		}
+		$titleText .= $question['title'] ?? $question['name'];
+		$section->addText(IOHelper::sanitizeTextForWord($titleText), 'QuestionTitleFont', 'QuestionTitle');
+
+		// Add question description if exists
+		if (!empty($question['description'])) {
+			$section->addText(
+				IOHelper::sanitizeTextForWord($question['description']),
+				'QuestionDescFont',
+				'QuestionDescription'
+			);
+		}
+
+		// Total number of respondents who answered this matrix
+		$total = $data['total'];
+		$section->addText(
+			"Tổng số phản hồi: {$total}",
+			'StatsSummaryFont',
+			'StatsSummary'
+		);
+
+		$rows    = $data['rows'] ?? [];
+		$columns = $data['columns'] ?? [];   // value => label
+		$counts  = $data['counts'] ?? [];    // [rowValue][colValue] => int
+
+		if ($total > 0 && !empty($rows) && !empty($columns)) {
+			// The table style is 100% width, so these widths act as column proportions.
+			$numCols      = count($columns);
+			$labelWidth   = 3000;
+			$usableWidth  = 9000;
+			$dataColWidth = (int) max(900, floor(($usableWidth - $labelWidth) / ($numCols + 1))); // +1 for the "Tổng" column
+
+			$table = $section->addTable('StatsTable');
+
+			// Header row: blank corner + one cell per column + a trailing total column
+			$table->addRow();
+			$table->addCell($labelWidth)->addText('', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+			foreach ($columns as $colLabel) {
+				$table->addCell($dataColWidth)->addText(
+					IOHelper::sanitizeTextForWord($colLabel),
+					'SectionLabelFont',
+					['alignment' => Jc::CENTER]
+				);
+			}
+			$table->addCell($dataColWidth)->addText('Tổng', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+
+			// One row per matrix row
+			foreach ($rows as $rowValue => $rowLabel) {
+				$rowCounts = $counts[$rowValue] ?? [];
+				$rowTotal  = array_sum($rowCounts);
+
+				$table->addRow();
+				$table->addCell($labelWidth)->addText(
+					IOHelper::sanitizeTextForWord($rowLabel),
+					'AnswerItemFont'
+				);
+
+				// Percentages are computed within the row so each row sums to 100%.
+				foreach ($columns as $colValue => $_colLabel) {
+					$count   = $rowCounts[$colValue] ?? 0;
+					$percent = $rowTotal > 0 ? number_format(($count / $rowTotal) * 100, 1) : '0.0';
+					$table->addCell($dataColWidth)->addText(
+						$count . ' (' . $percent . '%)',
+						'AnswerItemFont',
+						['alignment' => Jc::CENTER]
+					);
+				}
+
+				// Row total
+				$table->addCell($dataColWidth)->addText((string) $rowTotal, 'AnswerItemFont', ['alignment' => Jc::CENTER]);
+			}
+		} else {
+			$section->addText(
+				'Không có câu trả lời nào.',
+				'EmptyMessageFont',
+				'EmptyMessage'
+			);
+		}
+
+		// Add spacing after this question
+		$section->addTextBreak(1);
+	}
+	/**
+	 * Write (append) statistics for a boolean (Yes/No) question to a Word document.
+	 *
+	 * @param Section $section The section to append to
+	 * @param array $question The question definition
+	 * @param array $data The calculated statistics for this question
+	 *          ['distribution' => [valueTrue => int, valueFalse => int], 'total' => int]
+	 * @param array $option Options for writing the data to Word (see addChoiceStatisticsToWord)
+	 * @return void
+	 * @since 1.0.0
+	 */
+	protected function addBooleanStatisticsToWord(Section $section, array $question, array $data, array $option = []): void
+	{
+		// Parse options with defaults
+		$showQuestionLabel = $option['show_question_label'] ?? true;
+		$questionLabel = $option['question_label'] ? IOHelper::sanitizeTextForWord($option['question_label']) : 'Câu';
+		$questionId = $option['question_id'] ?? '';
+
+		// Add question title
+		$titleText = '';
+		if ($showQuestionLabel && $questionId !== '') {
+			$titleText = $questionLabel . ' ' . $questionId . ': ';
+		}
+		$titleText .= $question['title'] ?? $question['name'];
+		$section->addText(IOHelper::sanitizeTextForWord($titleText), 'QuestionTitleFont', 'QuestionTitle');
+
+		// Add question description if exists
+		if (!empty($question['description'])) {
+			$section->addText(
+				IOHelper::sanitizeTextForWord($question['description']),
+				'QuestionDescFont',
+				'QuestionDescription'
+			);
+		}
+
+		$total = $data['total'];
+		$section->addText("Tổng số phản hồi: {$total}", 'StatsSummaryFont', 'StatsSummary');
+
+		if ($total > 0) {
+			// Resolve display labels and counts for the two options
+			$valueTrue  = $question['valueTrue']  ?? 'true';
+			$valueFalse = $question['valueFalse'] ?? 'false';
+			$labelTrue  = !empty($question['labelTrue'])  ? $question['labelTrue']  : 'Có';
+			$labelFalse = !empty($question['labelFalse']) ? $question['labelFalse'] : 'Không';
+
+			$distribution = $data['distribution'];
+			$displayRows = [
+				[$labelTrue,  $distribution[$valueTrue]  ?? 0],
+				[$labelFalse, $distribution[$valueFalse] ?? 0],
+			];
+
+			$section->addText('Phân bố câu trả lời:', 'SectionLabelFont', 'SectionLabel');
+
+			$table = $section->addTable('StatsTable');
+			$table->addRow();
+			$table->addCell(3000)->addText('Lựa chọn', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+			$table->addCell(3000)->addText('Số lượng', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+			$table->addCell(3000)->addText('Tỷ lệ (%)', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+
+			foreach ($displayRows as [$label, $count]) {
+				$percent = number_format(($count / $total) * 100, 1);
+				$table->addRow();
+				$table->addCell(3000)->addText(IOHelper::sanitizeTextForWord($label), 'AnswerItemFont');
+				$table->addCell(3000)->addText((string) $count, 'AnswerItemFont', ['alignment' => Jc::CENTER]);
+				$table->addCell(3000)->addText($percent . '%', 'AnswerItemFont', ['alignment' => Jc::CENTER]);
+			}
+		} else {
+			$section->addText('Không có câu trả lời nào.', 'EmptyMessageFont', 'EmptyMessage');
+		}
+
+		$section->addTextBreak(1);
+	}
+	/**
+	 * Write (append) statistics for a ranking question to a Word document.
+	 *
+	 * Items are listed ordered by their average rank (smaller = more preferred),
+	 * showing the average rank, how many respondents ranked the item, and — when
+	 * "select to rank" is enabled — how many left it unranked.
+	 *
+	 * @param Section $section The section to append to
+	 * @param array $question The question definition
+	 * @param array $data The calculated statistics for this question
+	 *          ['avgRanks' => [val=>float|null], 'rankCounts' => [val][pos]=>int,
+	 *           'unrankedCounts' => [val=>int]|null, 'total' => int]
+	 * @param array $option Options for writing the data to Word (see addChoiceStatisticsToWord)
+	 * @return void
+	 * @since 1.0.0
+	 */
+	protected function addRankingStatisticsToWord(Section $section, array $question, array $data, array $option = []): void
+	{
+		// Parse options with defaults
+		$showQuestionLabel = $option['show_question_label'] ?? true;
+		$questionLabel = $option['question_label'] ? IOHelper::sanitizeTextForWord($option['question_label']) : 'Câu';
+		$questionId = $option['question_id'] ?? '';
+
+		// Add question title
+		$titleText = '';
+		if ($showQuestionLabel && $questionId !== '') {
+			$titleText = $questionLabel . ' ' . $questionId . ': ';
+		}
+		$titleText .= $question['title'] ?? $question['name'];
+		$section->addText(IOHelper::sanitizeTextForWord($titleText), 'QuestionTitleFont', 'QuestionTitle');
+
+		// Add question description if exists
+		if (!empty($question['description'])) {
+			$section->addText(
+				IOHelper::sanitizeTextForWord($question['description']),
+				'QuestionDescFont',
+				'QuestionDescription'
+			);
+		}
+
+		$total = $data['total'];
+		$section->addText("Tổng số phản hồi: {$total}", 'StatsSummaryFont', 'StatsSummary');
+
+		if ($total > 0) {
+			// Rebuild value => label map from the question's choices
+			// (calculateRankingStatistics keys everything by item value, not label)
+			$items = $question['choices'] ?? [];
+			$itemMap = [];
+			foreach ($items as $item) {
+				if (is_array($item)) {
+					$value = $item['value'] ?? $item['text'];
+					$text  = $item['text'] ?? $value;
+				} else {
+					$value = (string) $item;
+					$text  = $value;
+				}
+				$itemMap[$value] = $text;
+			}
+
+			$avgRanks       = $data['avgRanks'] ?? [];
+			$rankCounts     = $data['rankCounts'] ?? [];
+			$unrankedCounts = $data['unrankedCounts'] ?? null;
+			$selectToRank   = $unrankedCounts !== null;
+
+			// Order items by average rank ascending; never-ranked items go last
+			$itemValues = array_keys($itemMap);
+			usort($itemValues, static function ($a, $b) use ($avgRanks) {
+				$ra = $avgRanks[$a] ?? null;
+				$rb = $avgRanks[$b] ?? null;
+				if ($ra === null && $rb === null) return 0;
+				if ($ra === null) return 1;
+				if ($rb === null) return -1;
+				return $ra <=> $rb;
+			});
+
+			$section->addText(
+				'Thứ hạng trung bình (giá trị càng nhỏ càng được ưu tiên):',
+				'SectionLabelFont',
+				'SectionLabel'
+			);
+
+			// Column widths (table style is 100% width, so these act as proportions)
+			$numCols    = $selectToRank ? 4 : 3;
+			$labelWidth = 4000;
+			$otherWidth = (int) floor((9000 - $labelWidth) / ($numCols - 1));
+
+			$table = $section->addTable('StatsTable');
+			$table->addRow();
+			$table->addCell($labelWidth)->addText('Lựa chọn', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+			$table->addCell($otherWidth)->addText('Thứ hạng TB', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+			$table->addCell($otherWidth)->addText('Số lượt xếp hạng', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+			if ($selectToRank) {
+				$table->addCell($otherWidth)->addText('Không xếp hạng', 'SectionLabelFont', ['alignment' => Jc::CENTER]);
+			}
+
+			foreach ($itemValues as $value) {
+				$label       = $itemMap[$value];
+				$avg         = $avgRanks[$value] ?? null;
+				$rankedCount = array_sum($rankCounts[$value] ?? []);
+
+				$table->addRow();
+				$table->addCell($labelWidth)->addText(IOHelper::sanitizeTextForWord($label), 'AnswerItemFont');
+				$table->addCell($otherWidth)->addText(
+					$avg !== null ? number_format($avg, 2) : '—',
+					'AnswerItemFont',
+					['alignment' => Jc::CENTER]
+				);
+				$table->addCell($otherWidth)->addText((string) $rankedCount, 'AnswerItemFont', ['alignment' => Jc::CENTER]);
+				if ($selectToRank) {
+					$table->addCell($otherWidth)->addText(
+						(string) ($unrankedCounts[$value] ?? 0),
+						'AnswerItemFont',
+						['alignment' => Jc::CENTER]
+					);
+				}
+			}
+		} else {
+			$section->addText('Không có câu trả lời nào.', 'EmptyMessageFont', 'EmptyMessage');
+		}
+
+		$section->addTextBreak(1);
+	}
+    public function writeReportToWord_bak(PhpWord $doc):void
     {
         $questions = $this->getQuestions($this->modelJson);
         $responses = $this->responses;
@@ -1103,7 +1411,62 @@ class SurveyReportService
                     break;
                 case SurveyQuestionType::MATRIX:
                     $data = $this->calculateMatrixStatistics($question, $responses);
+	                $this->addMatrixStatisticsToWord($section, $question, $data, $option);
+					break;
             }
         }
     }
+	public function writeReportToWord(PhpWord $doc):void
+	{
+		$questions = $this->getQuestions($this->modelJson);
+		$responses = $this->responses;
+		IOHelper::phpWordDefineCommonStyles($doc);
+		$this->defineReportStyles($doc);
+		$section = IOHelper::phpWordAddCommonSection($doc);
+		$section->addText("Báo cáo thống kê ý kiến phản hồi",'Bold', 'Title');
+		$section->addText("({$this->title})",'Italic', 'Center');
+		$seq=0;
+		foreach ($questions as $question) {
+			self::checkIfSupported($question, true);
+			$seq++;
+			$option=[
+				'show_question_label'=>true,
+				'question_label'=>'Câu số',
+				'question_id'=>$seq               // trước đây là null nên số câu không bao giờ hiển thị
+			];
+			switch ($question['type']) {
+				case SurveyQuestionType::TEXT:
+				case SurveyQuestionType::COMMENT:
+					$data = $this->calculateTextStatistics($question, $responses);
+					$this->addTextStatisticsToWord($section, $question, $data, $option);
+					break;
+				case SurveyQuestionType::RATING:
+				case SurveyQuestionType::NPS:
+				case SurveyQuestionType::SLIDER:
+				$data = $this->calculateScoreStatistics($question, $responses);
+					$this->addScoreStatisticsToWord($section, $question, $data, $option);
+					break;
+				case SurveyQuestionType::CHECKBOX:
+				case SurveyQuestionType::RADIO_GROUP:
+				case SurveyQuestionType::DROPDOWN:
+				case SurveyQuestionType::TAGBOX:
+				case SurveyQuestionType::IMAGE_PICKER:
+					$data = $this->calculateChoiceStatistics($question, $responses);
+					$this->addChoiceStatisticsToWord($section, $question, $data, $option);
+					break;
+				case SurveyQuestionType::BOOLEAN:
+					$data = $this->calculateBooleanStatistics($question, $responses);
+					$this->addBooleanStatisticsToWord($section, $question, $data, $option);
+					break;
+				case SurveyQuestionType::RANKING:
+					$data = $this->calculateRankingStatistics($question, $responses);
+					$this->addRankingStatisticsToWord($section, $question, $data, $option);
+					break;
+				case SurveyQuestionType::MATRIX:
+					$data = $this->calculateMatrixStatistics($question, $responses);
+					$this->addMatrixStatisticsToWord($section, $question, $data, $option);
+					break;
+			}
+		}
+	}
 }
