@@ -5,11 +5,11 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Controller\BaseController;
-use JRoute;
+use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 
 /* The DEFAULT controller for the front end */
-class LearnerexamController extends BaseController
+class LearnerExamController extends BaseController
 {
 	public function RequestRegrading(): void
 	{
@@ -18,7 +18,7 @@ class LearnerexamController extends BaseController
 		$learnerCode = GeneralHelper::getSignedInLearnerCode();
 
 		//Redirect in any case
-		$url = JRoute::_('index.php?option=com_eqa&view=learnerexams', false);
+		$url = Route::_('index.php?option=com_eqa&view=learnerExams', false);
 		$this->setRedirect($url);
 
 		if(!is_integer($examId) || !is_string($learnerCode))
@@ -41,7 +41,7 @@ class LearnerexamController extends BaseController
 		$learnerCode = GeneralHelper::getSignedInLearnerCode();
 
 		//Redirect in any case
-		$url = JRoute::_('index.php?option=com_eqa&view=learnerexams', false);
+		$url = Route::_('index.php?option=com_eqa&view=learnerExams', false);
 		$this->setRedirect($url);
 
 		if(!is_int($examId) || !is_int($markConstituent) || !is_string($reason) || !is_string($learnerCode))
@@ -63,13 +63,13 @@ class LearnerexamController extends BaseController
 			$examId = $cid[0];
 
 			//Redirect in any case
-			$url = JRoute::_('index.php?option=com_eqa&view=learnerexam&layout=requestcorrection&exam_id='. $examId, false);
+			$url = Route::_('index.php?option=com_eqa&view=learnerExam&layout=requestCorrection&exam_id='. $examId, false);
 			$this->setRedirect($url);
 		}
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$url = JRoute::_('index.php?option=com_eqa&view=learnerexams', false);
+			$url = Route::_('index.php?option=com_eqa&view=learnerExams', false);
 			$this->setRedirect($url);
 		}
 	}

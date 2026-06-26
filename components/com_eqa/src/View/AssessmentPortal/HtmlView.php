@@ -5,6 +5,7 @@ namespace Kma\Component\Eqa\Site\View\AssessmentPortal;
 defined('_JEXEC') or die();
 
 use Exception;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\View\ItemHtmlView as BaseHtmlView;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
@@ -68,7 +69,7 @@ class HtmlView extends BaseHtmlView
 
             // 3. Gọi Model lấy danh sách kỳ sát hạch
             /** @var AssessmentPortalModel $model */
-            $model  = $this->getModel();
+			$model = ComponentHelper::createModel('AssessmentPortal');
             $result = $model->getAssessmentsForLearner($this->learnerCode);
 
             $this->activeAssessments = $result->active;

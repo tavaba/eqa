@@ -1,6 +1,6 @@
 <?php
 
-namespace Kma\Component\Eqa\Site\View\Learnerretake;
+namespace Kma\Component\Eqa\Site\View\LearnerRetake;
 
 defined('_JEXEC') or die();
 

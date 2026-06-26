@@ -11,7 +11,7 @@ use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Site\Model\LearnerexamModel;
 
 /* The DEFAULT controller for the front end */
-class LearnerexamsController extends BaseController
+class LearnerExamsController extends BaseController
 {
 	public function RequestRegrading(): void
 	{
@@ -37,7 +37,7 @@ class LearnerexamsController extends BaseController
 		catch (Exception $e)
 		{
 			$this->app->enqueueMessage($e->getMessage(),'error');
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=learnerexams', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=learnerExams', false));
 		}
 	}
 
@@ -54,7 +54,7 @@ class LearnerexamsController extends BaseController
 			$learnerCode = GeneralHelper::getSignedInLearnerCode();
 
 			//Redirect in any case
-			$url = Route::_('index.php?option=com_eqa&view=learnerexams', false);
+			$url = Route::_('index.php?option=com_eqa&view=learnerExams', false);
 			$this->setRedirect($url);
 
 			/**

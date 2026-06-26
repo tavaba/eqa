@@ -29,6 +29,11 @@ class Dispatcher extends ComponentDispatcher
 	 */
 	private const VIEW_MAP = [
 		'assessmentportal' => 'AssessmentPortal',
+		'learnerexams' => 'LearnerExams',
+		'learnerinfo' => 'LearnerInfo',
+		'learnerregradings' => 'LearnerRegradings',
+		'learnergradecorrections' => 'LearnerGradecorrections',
+		'learnerretake' => 'LearnerRetake',
 		// Thêm vào đây nếu sau này có view multi-word khác:
 		// 'myotherview' => 'MyOtherView',
 	];

@@ -16,6 +16,7 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 
 class HtmlView extends ItemsHtmlView{
+	protected ?string $listModelName = 'LearnerExams';
 	protected $examseason;
 	protected $learner;
 	protected ?string $errorMessage=null;
@@ -101,8 +102,8 @@ class HtmlView extends ItemsHtmlView{
 		ToolbarHelper::title('Danh sách môn thi của thí sinh');
 
 		// Add buttons to the toolbar
-		ToolbarHelper::appendButton(null,'dashboard','Yêu cầu phúc khảo','learnerexams.RequestRegrading',true);
-		ToolbarHelper::appendButton(null,'warning','Yêu cầu đính chính điểm','learnerexam.ShowCorrectionRequestForm',true, 'btn btn-warning');
+		ToolbarHelper::appendButton(null,'dashboard','Yêu cầu phúc khảo','learnerExam.requestRegrading',true);
+		ToolbarHelper::appendButton(null,'warning','Yêu cầu đính chính điểm','learnerExam.showCorrectionRequestForm',true, 'btn btn-warning');
 
 		// Render the toolbar
 		ToolbarHelper::render();

@@ -38,7 +38,7 @@ $examInfo = $this->examInfo;
 $learnerInfo = $this->learnerInfo;
 $action = 'index.php?option=com_eqa';
 $hiddenFields = [
-	'task' => 'learnerexam.RequestCorrection',
+	'task' => 'learnerExam.RequestCorrection',
 	'exam_id' => $examInfo->id
 ];
 ViewHelper::printForm($this->form, 'requestcorrection', $hiddenFields, false,'','adminForm','adminForm',true);

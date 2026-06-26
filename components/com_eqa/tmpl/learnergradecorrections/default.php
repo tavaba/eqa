@@ -9,14 +9,14 @@ defined('_JEXEC') or die();
  */
 if($this->errorMessage)
 {
-	echo '<div class="alert alert-danger">' . $this->errorMessage . '</div>';
+	echo '<div class="alert alert-danger">' . htmlspecialchars($this->errorMessage) . '</div>';
 	return;
 }
 $learner = $this->learner;
 $examseason = $this->examseason;
 ?>
 <div>
-	<div>Thí sinh: <?php echo $learner->code, '. ', $learner->getFullName();?></div>
+	<div>Thí sinh: <?php echo htmlspecialchars($learner->code), '. ', htmlspecialchars($learner->getFullName());?></div>
 	<div>Kỳ thi: <?php echo $examseason ? htmlspecialchars($examseason->name) : 'Tất cả'; ?></div>
 </div>
 <?php

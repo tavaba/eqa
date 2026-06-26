@@ -1,5 +1,5 @@
 <?php
-namespace Kma\Component\Eqa\Site\View\Learnerinfo;   //Must end with the View Name
+namespace Kma\Component\Eqa\Site\View\LearnerInfo;   //Must end with the View Name
 defined('_JEXEC') or die();
 
 use Joomla\CMS\Factory;
