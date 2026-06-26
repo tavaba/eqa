@@ -201,8 +201,17 @@ abstract class ItemsHtmlView extends BaseHtmlView{
 		//Init
 		if(!empty($this->listModelName))
 		{
+			//Try to create a model with the default prefix (site or administrator)
 			$listModel = ComponentHelper::createModel($this->listModelName);
-			$this->setModel($listModel, true);
+
+			//If failed, try to create a model with 'administrator' prefix
+			//because front-end sometimes uses back-end models
+			if(empty($listModel))
+				$listModel = ComponentHelper::createModel($this->listModelName,'administrator');
+
+			//If a model created successfully, make it the default model
+			if(!empty($listModel))
+				$this->setModel($listModel, true);
 		}
 
 		$viewName = $this->getName();
