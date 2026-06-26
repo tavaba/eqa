@@ -364,13 +364,13 @@ abstract class AdminModel extends BaseAdminModel
 
 
         //2. If $record is an integer, will try to fetch the corresponding item from DB
-        if(is_int($record))
-        {
-            $table = $this->getTable();
-            if(!$table->load($record))
-                return false;
-            $record=$table;
-        }
+	    if(is_numeric($record))
+	    {
+		    $table = $this->getTable();
+		    if(!$table->load((int)$record))
+			    return false;
+		    $record=$table;
+	    }
 
         //3. If the current user is the owner of the record,
         // we must then check whether he/she also has 'core.edit.own' permission
@@ -408,13 +408,13 @@ abstract class AdminModel extends BaseAdminModel
         }
 
         //2. If $record is an integer, will try to fetch the corresponding item from DB
-        if(is_int($record))
-        {
-            $table = $this->getTable();
-            if(!$table->load($record))
-                return false;
-            $record=$table;
-        }
+	    if(is_numeric($record))
+	    {
+		    $table = $this->getTable();
+		    if(!$table->load((int)$record))
+			    return false;
+		    $record=$table;
+	    }
 
         //3. If the current user is the owner of the record,
         // we must then check whether he/she also has 'core.edit.own' permission
@@ -455,10 +455,10 @@ abstract class AdminModel extends BaseAdminModel
             return false;
 
         //3. If $record is an integer, we'll try to fetch the corresponding item from DB
-        if(is_int($record))
+        if(is_numeric($record))
         {
             $table = $this->getTable();
-            if(!$table->load($record))
+            if(!$table->load((int)$record))
                 return false;
             $record=$table;
         }
