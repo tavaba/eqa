@@ -98,7 +98,7 @@ class HtmlView extends ItemHtmlView
     {
         ToolbarHelper::title('Thêm người được khảo sát');
         ToolbarHelper::appendButton('save','Thêm','survey.addRespondents',true);
-        $cancelUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$this->item->id, false);
+        $cancelUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$this->item->id, false);
         ToolbarHelper::appendCancelLink($cancelUrl);
     }
 
@@ -116,7 +116,7 @@ class HtmlView extends ItemHtmlView
     {
         ToolbarHelper::title('Thêm thí sinh kỳ thi vào cuộc khảo sát');
         ToolbarHelper::save('survey.addExaminees');
-        $cancelUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$this->item->id, false);
+        $cancelUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$this->item->id, false);
         ToolbarHelper::appendCancelLink($cancelUrl);
 
     }
@@ -163,7 +163,7 @@ class HtmlView extends ItemHtmlView
     {
         ToolbarHelper::title('Phân tích kết quả khảo sát');
         if(!empty($this->item->campaign_id))
-            $cancelUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$this->item->campaign_id, false);
+            $cancelUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$this->item->campaign_id, false);
         else
             $cancelUrl = Route::_('index.php?option=com_survey&view=surveys', false);
         ToolbarHelper::appendCancelLink($cancelUrl,'JTOOLBAR_CLOSE');

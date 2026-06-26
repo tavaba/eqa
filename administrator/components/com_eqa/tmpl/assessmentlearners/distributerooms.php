@@ -6,7 +6,7 @@ defined('_JEXEC') or die();
  *
  * Luồng 2 phase:
  *   Phase 1 (showform): Controller lưu selectedIds vào session, redirect về layout này.
- *   Phase 2 (getdata):  Form này POST lên task=assessmentlearners.distributeRooms.
+ *   Phase 2 (getdata):  Form này POST lên task=assessmentLearners.distributeRooms.
  *
  * @package     Com_Eqa
  * @subpackage  tmpl/assessmentlearners

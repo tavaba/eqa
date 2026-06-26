@@ -16,6 +16,7 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 
 class HtmlView extends ItemsHtmlView
 {
+	protected ?string $listModelName = 'CampaignRespondents';
     protected function configureItemFieldsForLayoutDefault(): void
     {
         /**
@@ -93,7 +94,7 @@ class HtmlView extends ItemsHtmlView
 
         //Add action params to keep URL parameters when click on actions
         $this->layoutData->formActionParams = [
-            'view' => 'campaignrespondents',
+            'view' => 'campaignRespondents',
             'campaign_id'=>$campaignId,
         ];
     }

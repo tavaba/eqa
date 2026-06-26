@@ -58,7 +58,7 @@
         />
         <field
                 name="auth_mode"
-                type="authmode"
+                type="authMode"
                 label="Quyền gửi phản hồi"
                 description="&quot;Bất kỳ ai&quot;: ai cũng có thể gửi yêu cầu mà không
                     cần phải xác thực; hệ quả là mỗi người có thể gửi phản hồi nhiều lần.

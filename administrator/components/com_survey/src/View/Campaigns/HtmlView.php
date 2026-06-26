@@ -34,14 +34,14 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = $f;
 
         $f = new ListLayoutItemFieldOption('countSurveys', 'Cuộc khảo sát',true, false,'text-center');
-        $f->urlFormatString = 'index.php?option=com_survey&view=campaignsurveys&campaign_id=%s';
+        $f->urlFormatString = 'index.php?option=com_survey&view=campaignSurveys&campaign_id=%s';
         $option->customFieldset1[] = $f;
         $f = new ListLayoutItemFieldOption('countUnits', 'Đơn vị', true, false,'text-center');
-        $f->urlFormatString = 'index.php?option=com_survey&view=campaignunits&campaign_id=%s';
+        $f->urlFormatString = 'index.php?option=com_survey&view=campaignUnits&campaign_id=%s';
         $f->showLinkConditionField='canMonitor';
         $option->customFieldset1[] = $f;
         $f = new ListLayoutItemFieldOption('countRespondents', 'Tổng lượt người', true, false,'text-center');
-        $f->urlFormatString='index.php?option=com_survey&view=campaignrespondents&campaign_id=%s';
+        $f->urlFormatString='index.php?option=com_survey&view=campaignRespondents&campaign_id=%s';
         $f->showLinkConditionField='canMonitor';
         $option->customFieldset1[] = $f;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('countResponded', 'Tổng lượt ý kiến', true, false,'text-center');

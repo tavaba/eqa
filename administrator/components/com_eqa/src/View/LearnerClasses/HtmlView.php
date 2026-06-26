@@ -13,6 +13,7 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView {
+	protected ?string $listModelName = 'learnerClasses';
     protected $learner;
     protected function configureItemFieldsForLayoutDefault():void{
         $fields = $this->itemFields;      //Just shorten the name

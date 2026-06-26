@@ -46,7 +46,7 @@ class AssessmentLearnersController extends AdminController
 
         $assessmentId = $this->input->getInt('assessment_id');
         $listUrl      = Route::_(
-            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
             false
         );
         $this->setRedirect($listUrl);
@@ -119,7 +119,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -168,7 +168,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->post->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -233,7 +233,7 @@ class AssessmentLearnersController extends AdminController
     {
         $assessmentId = $this->input->post->getInt('assessment_id', 0);
         $listUrl      = Route::_(
-            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
             false
         );
 
@@ -263,7 +263,7 @@ class AssessmentLearnersController extends AdminController
             }
 
             $this->setRedirect(Route::_(
-                'index.php?option=com_eqa&view=assessmentlearners&layout=setpayment&id=' . $id,
+                'index.php?option=com_eqa&view=assessmentLearners&layout=setpayment&id=' . $id,
                 false
             ));
             return;
@@ -293,7 +293,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -333,7 +333,7 @@ class AssessmentLearnersController extends AdminController
 				);
 
 				$this->setRedirect(Route::_(
-					'index.php?option=com_eqa&view=assessmentlearners' .
+					'index.php?option=com_eqa&view=assessmentLearners' .
 					'&layout=distributerooms&assessment_id=' . $assessmentId,
 					false
 				));
@@ -399,7 +399,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -441,7 +441,7 @@ class AssessmentLearnersController extends AdminController
 				);
 
 				$this->setRedirect(Route::_(
-					'index.php?option=com_eqa&view=assessmentlearners' .
+					'index.php?option=com_eqa&view=assessmentLearners' .
 					'&layout=distributerooms&assessment_id=' . $assessmentId,
 					false
 				));
@@ -501,7 +501,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -572,7 +572,7 @@ class AssessmentLearnersController extends AdminController
     {
         $assessmentId = $this->input->post->getInt('assessment_id', 0);
         $listUrl      = Route::_(
-            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
             false
         );
         $this->setRedirect($listUrl);
@@ -630,7 +630,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->post->getInt('assessment_id');
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -729,7 +729,7 @@ class AssessmentLearnersController extends AdminController
 		// 3. Xác định assessment_id
 		$assessmentId = $this->input->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -791,7 +791,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->post->getInt('assessment_id');
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -892,7 +892,7 @@ class AssessmentLearnersController extends AdminController
 		// Lấy assessment_id từ GET (nút không dùng POST form)
 		$assessmentId = $this->input->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);
@@ -945,7 +945,7 @@ class AssessmentLearnersController extends AdminController
 	{
 		$assessmentId = $this->input->getInt('assessment_id', 0);
 		$listUrl      = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		$this->setRedirect($listUrl);

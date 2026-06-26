@@ -8,6 +8,7 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Survey\Administrator\Helper\RespondentHelper;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
+use Kma\Library\Kma\Enum\Gender;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
@@ -79,7 +80,13 @@ class HtmlView extends ItemsHtmlView
             {
                 $item->type = RespondentHelper::decodeType($item->type);
                 if($item->gender)
-                    $item->gender = RespondentHelper::decodeGender($item->gender);
+                {
+					$genderCase = Gender::tryFrom((int)$item->gender);
+					if($genderCase)
+						$item->gender = $genderCase->getLabel();
+					else
+						$item->gender = '';
+                }
                 if(!$isPersonList && $item->isPerson)
                     $item->name = implode(' ',[$item->lastname,$item->firstname]);
             }
@@ -90,7 +97,7 @@ class HtmlView extends ItemsHtmlView
 
         //Add action params to keep URL parameters when click on actions
         $this->layoutData->formActionParams = [
-            'view' => 'surveyrespondents',
+            'view' => 'surveyRespondents',
             'survey_id'=>$surveyId,
         ];
     }
@@ -108,7 +115,7 @@ class HtmlView extends ItemsHtmlView
         if($currentSurvey->campaign_id == 0)
             $url = Route::_('index.php?option=com_survey&view=surveys',false);
         else
-            $url = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$currentSurvey->campaign_id,false);
+            $url = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$currentSurvey->campaign_id,false);
         ToolbarHelper::appendGobackLink($url,'Cuộc khảo sát');
 
         /**

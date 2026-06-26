@@ -3,6 +3,7 @@ namespace Kma\Component\Survey\Administrator\Model;
 
 use Exception;
 use Joomla\Database\ParameterType;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Survey\Administrator\Base\AdminModel;
 
@@ -14,6 +15,30 @@ class CampaignModel extends AdminModel
     {
         return parent::canCreate($specificAction);
     }
+
+	public function canEdit(object|int|null $record = null): bool
+	{
+		//Kiểm tra như bất kỳ asset nào khác
+		if(!parent::canEdit($record))
+			return false;
+
+		//Kiểm tra, nếu đã có bất kỳ cuộc khảo sát nào thì không cho edit nữa
+		if(is_object($record))
+			$campaignId = (int)$record->id;
+		else
+			$campaignId = (int)$record;
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('COUNT(1)')
+			->from('#__survey_surveys')
+			->where('campaign_id = ' . $campaignId)
+			->setLimit(1);
+		$result = $db->setQuery($query)->loadResult();
+		if($result>0)
+			return false;
+
+		return true;
+	}
 
     public function canAddSurvey(object $campaignItem):bool
     {

@@ -83,16 +83,18 @@ class ItemHtmlView extends BaseHtmlView{
         if(!$this->toolbarOption->showToolbar)
             return;
 
-        /**
-         * @var AdminModel $adminModel
-         */
-        $adminModel = $this->getModel();
-        $canEdit = $adminModel->canEdit($this->item)
-            || (empty($this->item->id) && $adminModel->canCreate());
-
         ToolbarHelper::title($this->toolbarOption->title);
 
-        //Buttons
+	    /**
+	     * @var AdminModel $adminModel
+	     */
+	    $adminModel = $this->getModel();
+		if(empty($adminModel))
+			return;
+	    $canEdit = $adminModel->canEdit($this->item)
+		    || (empty($this->item->id) && $adminModel->canCreate());
+
+	    //Buttons
         $prefix = $this->toolbarOption->taskPrefixItem;
         if($this->toolbarOption->taskApply && $canEdit)
             ToolbarHelper::apply($prefix.'.apply');

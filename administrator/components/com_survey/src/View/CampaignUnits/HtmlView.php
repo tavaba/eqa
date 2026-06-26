@@ -16,6 +16,7 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 
 class HtmlView extends ItemsHtmlView
 {
+	protected ?string $listModelName = 'campaignUnits';
     protected function configureItemFieldsForLayoutDefault(): void
     {
         $option = new ListLayoutItemFields();

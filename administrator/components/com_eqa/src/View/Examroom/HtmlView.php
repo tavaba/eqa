@@ -230,7 +230,7 @@ class HtmlView extends ItemHtmlView {
 		if(!empty($this->examroom->assessmentId))
 		{
 			$backUrl = Route::_(
-				'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $this->examroom->assessmentId,
+				'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $this->examroom->assessmentId,
 				false
 			);
 			ToolbarHelper::appendLink('core.manage', $backUrl, 'Danh sách kỳ sát hạch', 'arrow-up-2');

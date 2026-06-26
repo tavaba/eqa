@@ -13,6 +13,7 @@ use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView {
     protected $class;
+	protected ?string $listModelName = 'classLearners';
     protected function configureItemFieldsForLayoutDefault():void{
         $fields = $this->itemFields;      //Just shorten the name
         $fields->sequence = ListLayoutItemFields::defaultFieldSequence();
@@ -52,7 +53,7 @@ class HtmlView extends ItemsHtmlView {
         //Tham số dưới đây sẽ khiến DisplayController luôn redirect tới view và layout mong muốn
         //giúp cố định 'class_id'
         $this->layoutData->formActionParams = [
-            'view'=>'classlearners',
+            'view'=>'classLearners',
             'class_id'=>$classId
         ];
 

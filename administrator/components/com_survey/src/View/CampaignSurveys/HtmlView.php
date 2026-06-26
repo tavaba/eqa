@@ -19,7 +19,8 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 
 class HtmlView extends ItemsHtmlView
 {
-    protected function configureItemFieldsForLayoutDefault(): void
+	protected ?string $listModelName = 'campaignSurveys';
+	protected function configureItemFieldsForLayoutDefault(): void
     {
         $option = new ListLayoutItemFields();
 
@@ -31,7 +32,7 @@ class HtmlView extends ItemsHtmlView
         $f->altField = 'description';
         $option->customFieldset1[] = $f;
         $f = new ListLayoutItemFieldOption('respondentCount', 'Số người',true,false,'text-center');
-        $f->urlFormatString='index.php?option=com_survey&view=surveyrespondents&survey_id=%d';
+        $f->urlFormatString='index.php?option=com_survey&view=surveyRespondents&survey_id=%d';
         $f->showLinkConditionField='canMonitor';
         $option->customFieldset1[] = $f;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('responseCount','Đã phản hồi',true,false,'text-center');

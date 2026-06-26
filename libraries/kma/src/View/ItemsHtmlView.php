@@ -12,6 +12,14 @@ use Kma\Library\Kma\Model\ListModel;
 use Kma\Library\Kma\Service\EnglishService;
 
 abstract class ItemsHtmlView extends BaseHtmlView{
+	/**
+	 * Trong trường hợp tên model có nhiều từ (multi-word) theo dạng CamelCase
+	 * thì cơ chế nạp model của Joomla sẽ không phát hiện được model khi thực
+	 * thi trong Linux (case-sensitive). Việc chỉ định tên của model sẽ giúp
+	 * xử lý tình huống này.
+	 * Ví dụ: $listModelName = 'ExamseasonExams'
+	 */
+	protected ?string $listModelName=null;
 	protected ?EnglishService $englishService=null;
     protected WebAssetManager $wa;
     protected ListLayoutData $layoutData;
@@ -26,7 +34,7 @@ abstract class ItemsHtmlView extends BaseHtmlView{
 	    $this->layoutData = new ListLayoutData();
         $this->itemFields = new ListLayoutItemFields();
         $this->toolbarOption = new ToolbarOption();
-    }
+	}
 
 
     /**
@@ -93,12 +101,6 @@ abstract class ItemsHtmlView extends BaseHtmlView{
         if(!$this->toolbarOption->showToolbar)
             return;
 
-        /**
-         * @var ListModel $listModel
-         */
-        $listModel = $this->getModel();
-        $items = $this->layoutData->items;
-
         //Title
         ToolbarHelper::title($this->toolbarOption->title);
 
@@ -110,7 +112,18 @@ abstract class ItemsHtmlView extends BaseHtmlView{
         if($this->toolbarOption->taskGoHome){
             ToolbarHelper::appendGoHome();
         }
-        if($option->taskAddNew && $listModel->canCreate())
+
+	    /**
+	     * @var ListModel $listModel
+	     */
+	    $listModel = $this->getModel();
+		if(empty($listModel))
+			return;
+	    $items = $this->layoutData->items;
+		if(empty($items))
+			$items = [];
+
+	    if($option->taskAddNew && $listModel->canCreate())
             ToolbarHelper::addNew($prefixSingle.'.add');
 
         if($option->taskEditList && $listModel->canEditAny($items))
@@ -185,6 +198,13 @@ abstract class ItemsHtmlView extends BaseHtmlView{
 
     protected function init(): void
     {
+		//Init
+		if(!empty($this->listModelName))
+		{
+			$listModel = ComponentHelper::createModel($this->listModelName);
+			$this->setModel($listModel, true);
+		}
+
 		$viewName = $this->getName();
         if(!isset($this->toolbarOption->taskPrefixItems))
             $this->toolbarOption->taskPrefixItems = $viewName;

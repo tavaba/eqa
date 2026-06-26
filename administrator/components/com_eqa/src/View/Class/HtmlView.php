@@ -41,7 +41,11 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Nhập danh sách HVSV vào lớp học phần');
 		ToolbarHelper::appendUpload('class.importLearners');
-		ToolbarHelper::cancel('classlearners.cancel');
+		if(empty($this->class))
+			$cancelUrl = 'index.php?option=com_eqa&view=classes';
+		else
+			$cancelUrl = 'index.php?option=com_eqa&view=classLearners&class_id=' . $this->class->id;
+		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 	protected function prepareDataForLayoutImportpams(): void
 	{
@@ -60,7 +64,11 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Nhập ĐQT cho lớp học phần');
 		ToolbarHelper::appendUpload('class.importPams');
-		ToolbarHelper::cancel('classlearners.cancel');
+		if(empty($this->class))
+			$cancelUrl = 'index.php?option=com_eqa&view=classes';
+		else
+			$cancelUrl = 'index.php?option=com_eqa&view=classLearners&class_id=' . $this->class->id;
+		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
     protected function prepareDataForLayoutAddlearners(): void
     {
@@ -78,7 +86,11 @@ class HtmlView extends ItemHtmlView {
     {
         ToolbarHelper::title($this->toolbarOption->title);
         ToolbarHelper::save('class.addLearners');
-		ToolbarHelper::cancel('classlearners.cancel');
+	    if(empty($this->class))
+		    $cancelUrl = 'index.php?option=com_eqa&view=classes';
+	    else
+		    $cancelUrl = 'index.php?option=com_eqa&view=classLearners&class_id=' . $this->class->id;
+	    ToolbarHelper::appendCancelLink($cancelUrl);
     }
 	protected function prepareDataForLayoutEditPam(): void
 	{
@@ -113,7 +125,10 @@ class HtmlView extends ItemHtmlView {
 	{
 		ToolbarHelper::title('Chỉnh sửa điểm quá trình');
 		ToolbarHelper::save('class.editPam');
-		$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$this->item->classId, false);
-		ToolbarHelper::appendCancelLink($url);
+		if(empty($this->class))
+			$cancelUrl = 'index.php?option=com_eqa&view=classes';
+		else
+			$cancelUrl = 'index.php?option=com_eqa&view=classLearners&class_id=' . $this->class->id;
+		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 }

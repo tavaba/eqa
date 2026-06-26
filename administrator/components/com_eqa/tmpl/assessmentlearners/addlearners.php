@@ -30,7 +30,7 @@ $actionUrl    = Route::_('index.php?option=com_eqa', false);
         </div>
 
         <form action="<?php echo $actionUrl; ?>" method="POST" name="adminForm" id="adminForm">
-            <input type="hidden" name="task"          value="assessmentlearners.addLearners">
+            <input type="hidden" name="task"          value="assessmentLearners.addLearners">
             <input type="hidden" name="assessment_id" value="<?php echo $assessmentId; ?>">
             <?php echo HTMLHelper::_('form.token'); ?>
 

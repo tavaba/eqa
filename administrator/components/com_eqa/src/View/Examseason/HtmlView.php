@@ -159,7 +159,7 @@ class HtmlView extends ItemHtmlView {
 		// ==> Ở phần layout cần căn cứ vào lecturer_id để tính toán Họ và tên của lecturer.
 		$option->customFieldset1[] = new ListLayoutItemFieldOption('lecturer','COM_EQA_LECTURER');
 		$field = new ListLayoutItemFieldOption('size','COM_EQA_CLASS_SIZE', true,false,'text-center');
-		$field->urlFormatString = 'index.php?option=com_eqa&view=classlearners&class_id=%d';
+		$field->urlFormatString = 'index.php?option=com_eqa&view=classLearners&class_id=%d';
 		$option->customFieldset1[] = $field;
 
 		//Set the option

@@ -52,7 +52,7 @@ class HtmlView extends ItemsHtmlView
 
 		// Cột "Số TS" có link drill-down sang danh sách thí sinh
 		$f = new ListLayoutItemFieldOption('ncandidate', 'Số TS', false, false, 'text-center');
-		$f->urlFormatString = 'index.php?option=com_eqa&view=assessmentlearners&assessment_id=%d';
+		$f->urlFormatString = 'index.php?option=com_eqa&view=assessmentLearners&assessment_id=%d';
 		$fields->customFieldset1[] = $f;
 
 		$f = new ListLayoutItemFieldOption('completedLabel', 'Hoàn thành', false, false, 'text-center');

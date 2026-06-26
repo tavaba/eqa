@@ -2,7 +2,7 @@
 <!--
     Form cập nhật thông tin thanh toán thí sinh sát hạch.
     Sử dụng tại layout 'setpayment' của view AssessmentLearners.
-    Task xử lý: assessmentlearners.savePaymentInfo
+    Task xử lý: assessmentLearners.savePaymentInfo
 -->
 <form>
     <fieldset name="setassessmentpayment">

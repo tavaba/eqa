@@ -27,7 +27,7 @@ class SurveyController extends  FormController
          */
         $campaignId = $this->app->input->getInt('campaign_id');
         if($campaignId)
-            $this->setRedirect(Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false));
+            $this->setRedirect(Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false));
         return $res;
     }
 
@@ -162,7 +162,7 @@ class SurveyController extends  FormController
             $msg = sprintf('%d/%d người đã được thêm vào cuộc khảo sát',
                 $countAdded, count($respondentIds));
             $this->setMessage($msg,'success');
-            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
             return;
         }
@@ -172,7 +172,7 @@ class SurveyController extends  FormController
             if(empty($surveyId))
                 $redirectUrl = Route::_('index.php?option=com_survey&view=surveys',false);
             else
-                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
             return;
         }
@@ -216,7 +216,7 @@ class SurveyController extends  FormController
                 $count['added'], $count['total']
             );
             $this->setMessage($msg,'success');
-            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
             return;
         }
@@ -226,7 +226,7 @@ class SurveyController extends  FormController
             if(empty($surveyId))
                 $redirectUrl = Route::_('index.php?option=com_survey&view=surveys',false);
             else
-                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
         }
     }
@@ -266,7 +266,7 @@ class SurveyController extends  FormController
             $countRemoved = $model->removeRespondents($surveyId,$respondentIds);
             $msg = sprintf('%d người đã bị xóa khỏi cuộc khảo sát',$countRemoved);
             $this->setMessage($msg,'success');
-            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
             return;
         }
@@ -275,7 +275,7 @@ class SurveyController extends  FormController
             if(empty($surveyId)) {
                 $redirectUrl = Route::_('index.php?option=com_survey&view=surveys',false);
             }else {
-                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             }
             $this->setRedirect($redirectUrl);
         }
@@ -315,7 +315,7 @@ class SurveyController extends  FormController
             $countGenerated = $model->generateTokens($surveyId,$respondentIds);
             $msg = sprintf('Đã sinh token cho %d người được khảo sát',$countGenerated);
             $this->setMessage($msg,'success');
-            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
         }
         catch (Exception $e){
@@ -323,7 +323,7 @@ class SurveyController extends  FormController
             if(empty($surveyId))
                 $redirectUrl = Route::_('index.php?option=com_survey&view=surveys',false);
             else
-                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
         }
     }
@@ -361,7 +361,7 @@ class SurveyController extends  FormController
             $model->clearTokens($surveyId,$respondentIds);
             $msg = sprintf('Đã xóa token cho %d người được khảo sát',count($respondentIds));
             $this->setMessage($msg,'success');
-            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
         }
         catch (Exception $e){
@@ -369,7 +369,7 @@ class SurveyController extends  FormController
             if(empty($surveyId))
                 $redirectUrl = Route::_('index.php?option=com_survey&view=surveys',false);
             else
-                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyrespondents&survey_id='.$surveyId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=surveyRespondents&survey_id='.$surveyId,false);
             $this->setRedirect($redirectUrl);
         }
     }
@@ -453,7 +453,7 @@ class SurveyController extends  FormController
             if(empty($survey->campaign_id))
                 $url = Route::_('index.php?option=com_survey&view=surveys',false);
             else
-                $url = Route::_('index.php?option=com_survey&view=campaignsurveys&id='.$survey->campaign_id,false);
+                $url = Route::_('index.php?option=com_survey&view=campaignSurveys&id='.$survey->campaign_id,false);
             $this->setRedirect($url);
             return;
         }
@@ -477,7 +477,7 @@ class SurveyController extends  FormController
             if(empty($campaignId))
                 $url = Route::_('index.php?option=com_survey&view=surveys',false);
             else
-                $url = Route::_('index.php?option=com_survey&view=campaignsurveys&id='.$campaignId,false);
+                $url = Route::_('index.php?option=com_survey&view=campaignSurveys&id='.$campaignId,false);
             $this->setRedirect($url);
         }
     }
@@ -529,7 +529,7 @@ class SurveyController extends  FormController
             if(empty($campaignId))
                 $url = Route::_('index.php?option=com_survey&view=surveys',false);
             else
-                $url = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false);
+                $url = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false);
             $this->setRedirect($url);
         }
     }

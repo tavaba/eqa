@@ -92,7 +92,7 @@ class ClassController extends  FormController
 		{
 			$this->setMessage(Text::_($e->getMessage()), 'error');
 		}
-		$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$classId,false);
+		$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id='.$classId,false);
 		$this->setRedirect($url);
 	}
 	public function importPams(): void
@@ -184,7 +184,7 @@ class ClassController extends  FormController
 		{
 			$this->setMessage(Text::_($e->getMessage()), 'error');
 		}
-		$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$classId,false);
+		$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id='.$classId,false);
 		$this->setRedirect($url);
 	}
 
@@ -208,7 +208,7 @@ class ClassController extends  FormController
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_BATCH_CANNOT_CREATE'), 'error');
             $this->setRedirect(
                 Route::_(
-                    'index.php?option=com_eqa&view=classlearners&class_id='.$classId,
+                    'index.php?option=com_eqa&view=classLearners&class_id='.$classId,
                     false
                 )
             );
@@ -248,7 +248,7 @@ class ClassController extends  FormController
             //Add xong thì redirect về trang xem danh sách lớp học phần
             $this->setRedirect(
                 Route::_(
-                    'index.php?option=com_eqa&view=classlearners&class_id='.$classId,
+                    'index.php?option=com_eqa&view=classLearners&class_id='.$classId,
                     false
                 )
             );
@@ -270,7 +270,7 @@ class ClassController extends  FormController
         }
 
         //Set redirect in any other case
-        $url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$classId,false);
+        $url = Route::_('index.php?option=com_eqa&view=classLearners&class_id='.$classId,false);
         $this->setRedirect($url);
 
 
@@ -308,7 +308,7 @@ class ClassController extends  FormController
         }
 
         //Set redirect in any other case
-        $url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$classId,false);
+        $url = Route::_('index.php?option=com_eqa&view=classLearners&class_id='.$classId,false);
         $this->setRedirect($url);
 
 
@@ -346,7 +346,7 @@ class ClassController extends  FormController
         }
 
         //Set redirect in any other case
-        $url = Route::_('index.php?option=com_eqa&view=classlearners&class_id='.$classId,false);
+        $url = Route::_('index.php?option=com_eqa&view=classLearners&class_id='.$classId,false);
         $this->setRedirect($url);
 
 
@@ -463,14 +463,14 @@ class ClassController extends  FormController
 			$name = htmlspecialchars($name);
 			$msg          = "Đã cập nhận ĐQT cho <b>{$name} ({$learner->code})</b>";
 			$this->setMessage($msg, 'success');
-			$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id=' . $classId, false);
+			$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id=' . $classId, false);
 			$this->setRedirect($url);
 		}
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
 			if (!empty($classId))
-				$url = Route::_('index.php?option=com_eqa&view=classlearners&class_id=' . $classId, false);
+				$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id=' . $classId, false);
 			else
 				$url = Route::_('index.php?option=com_eqa&view=classes', false);
 			$this->setRedirect($url);

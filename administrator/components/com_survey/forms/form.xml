@@ -10,7 +10,7 @@
                 type="text"
                 label="Tên phiếu"
                 required="true"
-                validate="assetname"
+                validate="assetName"
                 addruleprefix="Kma\Component\Survey\Administrator\Rule"
         />
         <field

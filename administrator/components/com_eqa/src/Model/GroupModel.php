@@ -8,7 +8,8 @@ defined('_JEXEC') or die();
 class GroupModel extends AdminModel {
     public function prepareTable($table): void
     {
-        $table->size=null;  //Không cho phép cập nhật trực tiếp sĩ số
+	    if(isset($table->size))
+			unset($table->size);    //Không cho cập nhật trực tiếp sĩ số
         if(empty($table->homeroom_id))
             $table->homeroom_id = null;
         if(empty($table->adviser_id))

@@ -70,7 +70,7 @@ $feeLabel = (int) $item->payment_amount > 0
             $this->setPaymentForm,
             'setassessmentpayment',
             [
-                'task'          => 'assessmentlearners.savePaymentInfo',
+                'task'          => 'assessmentLearners.savePaymentInfo',
                 'assessment_id' => (int) $item->assessment_id,
             ]
         );

@@ -12,7 +12,6 @@ use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
 
 class HtmlView extends ItemsHtmlView

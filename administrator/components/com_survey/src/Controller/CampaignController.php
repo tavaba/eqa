@@ -38,7 +38,7 @@ class CampaignController extends  FormController {
             {
                 $msg = 'Bạn không có quyền tạo cuộc khảo sát cho đợt này. 
                 Hãy đảm bảo rằng thời hạn phản hồi chưa kết thúc.';
-                $redirectUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false);
                 $this->setMessage($msg,'error');
                 $this->setRedirect($redirectUrl);
                 return;
@@ -187,7 +187,7 @@ class CampaignController extends  FormController {
                 $this->app->enqueueMessage("Đã tạo mới cuộc khảo sát cho {$countCreated} lớp học phần",'success');
             else
                 $this->app->enqueueMessage("Không có cuộc khảo sát nào được thêm mới");
-            $redirectUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false);
             $this->setRedirect($redirectUrl);
         }
         catch(Exception $e) {
@@ -220,7 +220,7 @@ class CampaignController extends  FormController {
             {
                 $msg = 'Bạn không có quyền tạo cuộc khảo sát cho đợt này. 
                 Hãy đảm bảo rằng thời hạn phản hồi chưa kết thúc.';
-                $redirectUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false);
                 $this->setMessage($msg,'error');
                 $this->setRedirect($redirectUrl);
                 return;
@@ -304,7 +304,7 @@ class CampaignController extends  FormController {
                 $this->app->enqueueMessage("Đã tạo mới cuộc khảo sát cho {$countCreated} lớp học phần",'success');
             else
                 $this->app->enqueueMessage("Không có cuộc khảo sát nào được thêm mới");
-            $redirectUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false);
             $this->setRedirect($redirectUrl);
         }
         catch(Exception $e) {
@@ -356,7 +356,7 @@ class CampaignController extends  FormController {
 
             //Enqueue a message and redirect back to the list view
             $this->setMessage("{$deletedCount} cuộc khảo sát đã được xóa");
-            $redirectUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false);
+            $redirectUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false);
             $this->setRedirect($redirectUrl);
         }
         catch(Exception $e) {
@@ -364,7 +364,7 @@ class CampaignController extends  FormController {
             if(empty($campaignId))
                 $redirectUrl = Route::_('index.php?option=com_survey&view=campaigns',false);
             else
-                $redirectUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$campaignId,false);
+                $redirectUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$campaignId,false);
             $this->setRedirect($redirectUrl);
         }
     }

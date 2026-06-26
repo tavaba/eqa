@@ -5,7 +5,6 @@ defined('_JEXEC') or die;
 
 use Kma\Component\Survey\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Survey\Administrator\Enum\AuthorizationMode;
-use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
@@ -46,7 +45,11 @@ class HtmlView extends ItemsHtmlView
         if(!empty($this->layoutData->items))
         {
             foreach ($this->layoutData->items as $item) {
-                //Field: 'responded'
+	            //Chuyển đổi thời gian sang local time
+	            $item->startTime = DatetimeHelper::convertToLocalTime($item->startTime);
+	            $item->endTime = DatetimeHelper::convertToLocalTime($item->endTime);
+
+	            //Field: 'responded'
                 $hasResponded = $item->responded;
                 if (is_null($hasResponded))
                     $item->responded = 'N/A';

@@ -58,7 +58,7 @@
         />
         <field
                 name="auth_mode"
-                type="authmode"
+                type="authMode"
                 label="Quyền gửi phản hồi"
                 description="Cơ chế kiểm soát quyền gửi phản hồi mặc định cho các cuộc
                     kháo sát. Có thể thay đổi thời gian trong từng cuộc khảo sát nếu cần.

@@ -9,6 +9,7 @@ use Kma\Component\Survey\Administrator\Helper\SurveyHelper;
 use Kma\Component\Survey\Administrator\Model\SurveyModel;
 use Kma\Component\Survey\Administrator\Model\SurveysModel;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\Service\InlineProgressBar;
@@ -37,7 +38,7 @@ class HtmlView extends ItemsHtmlView
         $f->urlFormatStringField = 'formId';
         $option->customFieldset1[] = $f;
         $f = new ListLayoutItemFieldOption('respondentCount', 'Số người',true,false,'text-center');
-        $f->urlFormatString='index.php?option=com_survey&view=surveyrespondents&survey_id=%d';
+        $f->urlFormatString='index.php?option=com_survey&view=surveyRespondents&survey_id=%d';
         $option->customFieldset1[] = $f;
         $f = new ListLayoutItemFieldOption('progress','Đã phản hồi',false,false,'text-center');
         $f->printRaw = true;
@@ -89,6 +90,10 @@ class HtmlView extends ItemsHtmlView
 
                 //A link to survey form preview page
                 $item->form = '<span class="fa fa-eye"></span>';
+
+				//Chuyển đổi thời gian sang local time
+	            $item->startTime = DatetimeHelper::convertToLocalTime($item->startTime);
+				$item->endTime = DatetimeHelper::convertToLocalTime($item->endTime);
 
                 //Progress bar for response count
                 if($authMode == AuthorizationMode::AssignedRespondent && $item->respondentCount>0)

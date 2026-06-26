@@ -33,7 +33,7 @@ use Kma\Library\Kma\Helper\ViewHelper;
         </div>
 
         <!-- Form upload -->
-        <?php ViewHelper::printUploadForm($this->uploadStatementForm, 'assessmentlearners.importStatement'); ?>
+        <?php ViewHelper::printUploadForm($this->uploadStatementForm, 'assessmentLearners.importStatement'); ?>
 
     </div>
 </div>

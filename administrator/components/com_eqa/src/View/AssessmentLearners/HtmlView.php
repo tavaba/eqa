@@ -23,12 +23,14 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
 /**
  * View danh sách thí sinh (người học) của một kỳ sát hạch.
  *
- * URL truy cập: index.php?option=com_eqa&view=assessmentlearners&assessment_id=X
+ * URL truy cập: index.php?option=com_eqa&view=assessmentLearners&assessment_id=X
  *
  * @since 2.0.5
  */
 class HtmlView extends ItemsHtmlView
 {
+	protected ?string $listModelName = 'assessmentLearners';
+
 	/** @var int ID của kỳ sát hạch */
 	protected int $assessmentId;
 
@@ -175,7 +177,7 @@ class HtmlView extends ItemsHtmlView
         // 6. Ghim assessment_id vào formActionParams để pagination/filter giữ đúng context
 	    //    và vào hidden fiels để lấy qua POST khi cần
         $this->layoutData->formActionParams = [
-            'view'          => 'assessmentlearners',
+            'view'          => 'assessmentLearners',
             'assessment_id' => $assessmentId,
         ];
 		$this->layoutData->formHiddenFields = [
@@ -369,17 +371,17 @@ class HtmlView extends ItemsHtmlView
         if ($this->isEditable) {
             // Nút Thêm thí sinh
             $addUrl = Route::_(
-                'index.php?option=com_eqa&view=assessmentlearners&layout=addlearners&assessment_id=' . $assessmentId,
+                'index.php?option=com_eqa&view=assessmentLearners&layout=addlearners&assessment_id=' . $assessmentId,
                 false
             );
             ToolbarHelper::appendLink('core.edit', $addUrl, 'Thêm thí sinh', 'plus');
 
 	        // Nút Xóa thí sinh (yêu cầu chọn ít nhất 1 bản ghi)
-	        ToolbarHelper::appendButton('core.edit','trash','Xóa thí sinh','assessmentlearners.removeLearners',true,'btn btn-danger');
+	        ToolbarHelper::appendButton('core.edit','trash','Xóa thí sinh','assessmentLearners.removeLearners',true,'btn btn-danger');
 
 	        // Nút Nhập sao kê
 	        $importUrl = Route::_(
-		        'index.php?option=com_eqa&view=assessmentlearners&layout=importstatement&assessment_id=' . $assessmentId,
+		        'index.php?option=com_eqa&view=assessmentLearners&layout=importstatement&assessment_id=' . $assessmentId,
 		        false
 	        );
 	        ToolbarHelper::appendLink('eqa.assessment.payment', $importUrl, 'Nhập sao kê', 'file');
@@ -389,7 +391,7 @@ class HtmlView extends ItemsHtmlView
                 'eqa.assessment.payment',
                 'flag',
                 'Đổi trạng thái nộp phí',
-                'assessmentlearners.setPaymentInfo',
+                'assessmentLearners.setPaymentInfo',
                 true,
                 'btn btn-primary'
             );
@@ -398,7 +400,7 @@ class HtmlView extends ItemsHtmlView
                 'core.edit',
                 'grid-2',
                 'Chia phòng thi',
-                'assessmentlearners.distributeRooms',
+                'assessmentLearners.distributeRooms',
                 false,
                 'btn btn-secondary'
             );
@@ -408,7 +410,7 @@ class HtmlView extends ItemsHtmlView
 		        'core.edit',
 		        'grid-2',
 		        'Chia phòng (chưa chia)',
-		        'assessmentlearners.distributeUnassignedRooms',
+		        'assessmentLearners.distributeUnassignedRooms',
 		        false,
 		        'btn btn-secondary'
 	        );
@@ -419,18 +421,18 @@ class HtmlView extends ItemsHtmlView
 		        'Bạn có chắc muốn xóa thông tin chia phòng thi? Các phòng thi rỗng sau khi xóa cũng sẽ bị xóa theo.',
 		        'cancel-2',
 		        'Xóa chia phòng',
-		        'assessmentlearners.clearRoomAssignments',
+		        'assessmentLearners.clearRoomAssignments',
 		        false,
 		        'btn btn-danger'
 	        );
         }
 
 	    // Nút Xuất ca iTest (luôn hiển thị, không cần quyền edit)
-	    ToolbarHelper::appendButton('core.manage', 'download', 'Xuất ca iTest', 'assessmentlearners.exportItest');
+	    ToolbarHelper::appendButton('core.manage', 'download', 'Xuất ca iTest', 'assessmentLearners.exportItest');
 
 	    //Nút Nhập điểm iTest
 	    $importItestUrl = Route::_(
-		    'index.php?option=com_eqa&view=assessmentlearners&layout=importitestresult&assessment_id=' . $assessmentId,
+		    'index.php?option=com_eqa&view=assessmentLearners&layout=importitestresult&assessment_id=' . $assessmentId,
 		    false
 	    );
 	    ToolbarHelper::appendLink('eqa.assessment.score', $importItestUrl, 'Nhập điểm', 'upload');
@@ -440,7 +442,7 @@ class HtmlView extends ItemsHtmlView
 	        'eqa.assessment.score',
 	        'download',
 	        'Báo cáo HĐ',
-	        'assessmentlearners.exportCouncilReport',
+	        'assessmentLearners.exportCouncilReport',
 	    );
 
 	    // Nút Thông báo SV
@@ -448,7 +450,7 @@ class HtmlView extends ItemsHtmlView
 	        'eqa.assessment.score',
 	        'download',
 	        'Thông báo SV',
-	        'assessmentlearners.exportStudentNotification',
+	        'assessmentLearners.exportStudentNotification',
 	    );
 
     }
@@ -483,11 +485,11 @@ class HtmlView extends ItemsHtmlView
             $title .= ' — ' . $this->assessment->title;
         }
         ToolbarHelper::title($title);
-        ToolbarHelper::save('assessmentlearners.addLearners');
+        ToolbarHelper::save('assessmentLearners.addLearners');
 
         $assessmentId = (int) ($this->assessment->id ?? 0);
         $cancelUrl    = Route::_(
-            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
             false
         );
         ToolbarHelper::appendCancelLink($cancelUrl);
@@ -530,11 +532,11 @@ class HtmlView extends ItemsHtmlView
 	protected function addToolbarForLayoutImportstatement(): void
 	{
 		ToolbarHelper::title('Nhập sao kê ngân hàng');
-		ToolbarHelper::appendUpload('assessmentlearners.importStatement', 'Đối chiếu & Cập nhật', 'upload', 'core.edit', true);
+		ToolbarHelper::appendUpload('assessmentLearners.importStatement', 'Đối chiếu & Cập nhật', 'upload', 'core.edit', true);
 
 		$assessmentId = (int) ($this->assessment->id ?? 0);
 		$cancelUrl    = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		ToolbarHelper::appendCancelLink($cancelUrl);
@@ -579,11 +581,11 @@ class HtmlView extends ItemsHtmlView
     protected function addToolbarForLayoutSetpayment(): void
     {
         ToolbarHelper::title('Cập nhật thông tin thanh toán');
-        ToolbarHelper::appendButton('core.edit', 'save', 'Lưu', 'assessmentlearners.savePaymentInfo', false, 'btn btn-success');
+        ToolbarHelper::appendButton('core.edit', 'save', 'Lưu', 'assessmentLearners.savePaymentInfo', false, 'btn btn-success');
 
         $assessmentId = (int) ($this->item->assessment_id ?? 0);
         $cancelUrl    = Route::_(
-            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
             false
         );
         ToolbarHelper::appendCancelLink($cancelUrl);
@@ -630,7 +632,7 @@ class HtmlView extends ItemsHtmlView
 
         $this->distributeToRoomsForm = FormHelper::getBackendForm(
             'com_eqa.assessmentlearners.distributerooms',
-            'assessmentlearners_distribution.xml'
+            'assessmentLearners_distribution.xml'
         );
     }
 
@@ -650,14 +652,14 @@ class HtmlView extends ItemsHtmlView
             'core.edit',
             'save',
             'Lưu',
-            'assessmentlearners.distributeRooms',
+            'assessmentLearners.distributeRooms',
             false,
             'btn btn-success',
             true  // formValidate
         );
 
         $cancelUrl = Route::_(
-            'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+            'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
             false
         );
         ToolbarHelper::appendCancelLink($cancelUrl);
@@ -741,7 +743,7 @@ class HtmlView extends ItemsHtmlView
 
 		// Load form upload và inject assessment_id
 		$this->uploadItestResultForm = FormHelper::getBackendForm(
-			'eqa.assessmentlearners.importitestresult',
+			'com_eqa.assessmentlearners.importitestresult',
 			'upload_excelfile.xml',
 			[]
 		);
@@ -768,7 +770,7 @@ class HtmlView extends ItemsHtmlView
 		}
 		ToolbarHelper::title($title);
 		ToolbarHelper::appendUpload(
-			'assessmentlearners.importITestResult',
+			'assessmentLearners.importITestResult',
 			'Nhập điểm',
 			'upload',
 			'core.edit',
@@ -777,7 +779,7 @@ class HtmlView extends ItemsHtmlView
 
 		$assessmentId = (int) ($this->assessment->id ?? 0);
 		$cancelUrl    = Route::_(
-			'index.php?option=com_eqa&view=assessmentlearners&assessment_id=' . $assessmentId,
+			'index.php?option=com_eqa&view=assessmentLearners&assessment_id=' . $assessmentId,
 			false
 		);
 		ToolbarHelper::appendCancelLink($cancelUrl);

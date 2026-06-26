@@ -4,5 +4,5 @@ defined('_JEXEC') or die();
 
 use Kma\Library\Kma\Controller\AdminController;
 
-class ClasslearnersController extends AdminController{
+class ClassLearnersController extends AdminController{
 }

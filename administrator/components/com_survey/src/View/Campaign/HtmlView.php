@@ -50,7 +50,7 @@ class HtmlView extends ItemHtmlView
         //Prepare data for display in layout
         $this->listLayoutData = new ListLayoutData();
         $this->loadCommonListLayoutData($this->listLayoutData,$listModel);
-    }
+	}
     public function addToolbarForLayoutAddClassSurveys()
     {
         /**
@@ -64,7 +64,7 @@ class HtmlView extends ItemHtmlView
         if($campaignModel->canEdit($campaign))
             ToolbarHelper::save('campaign.addClassSurveys');
 
-        $cancelUrl = Route::_('index.php?option=com_survey&view=campaignsurveys&campaign_id='.$this->item->id,false);
+        $cancelUrl = Route::_('index.php?option=com_survey&view=campaignSurveys&campaign_id='.$this->item->id,false);
         ToolbarHelper::appendCancelLink($cancelUrl);
     }
 }
