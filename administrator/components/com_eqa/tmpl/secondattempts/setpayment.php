@@ -88,8 +88,8 @@ $feeLabel = (float) $item->payment_amount > 0
         <?php
         ViewHelper::printForm(
             $this->form,
-            'setpaymentstatus',
-            ['task' => 'secondattempts.savePaymentStatus']
+            'setPaymentStatus',
+            ['task' => 'secondAttempts.savePaymentStatus']
         );
         ?>
 

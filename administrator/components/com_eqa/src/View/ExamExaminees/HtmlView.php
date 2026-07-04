@@ -22,6 +22,7 @@ use Kma\Library\Kma\Enum\MailCampaignStatus;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
 class HtmlView extends ItemsHtmlView {
+	protected ?string $listModelName = 'ExamExaminees';
     protected $exam;
 
 	/**

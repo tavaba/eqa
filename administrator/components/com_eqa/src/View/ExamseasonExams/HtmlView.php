@@ -16,6 +16,7 @@ use Kma\Component\Eqa\Administrator\Model\ExamseasonModel;
 
 class HtmlView extends ItemsHtmlView
 {
+	protected ?string $listModelName = 'ExamseasonExams';
     protected $examseason;
 	protected array $campaignHistory;
     protected function configureItemFieldsForLayoutDefault():void{

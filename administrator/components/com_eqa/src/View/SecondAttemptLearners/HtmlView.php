@@ -20,6 +20,7 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
  */
 class HtmlView extends ItemsHtmlView
 {
+	protected ?string $listModelName = 'SecondAttemptLearners';
     /**
      * Khai báo các cột hiển thị cho layout default.
      *
@@ -77,7 +78,7 @@ class HtmlView extends ItemsHtmlView
     {
         ToolbarHelper::title('Người học — Danh sách thi lần 2');
 
-        $backUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+        $backUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts', false);
         ToolbarHelper::appendLink('core.manage', $backUrl, 'Danh sách thí sinh', 'list');
     }
 }

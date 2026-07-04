@@ -565,7 +565,7 @@ class HtmlView extends ItemsHtmlView
         // Load form XML và pre-fill giá trị hiện tại
         $this->setPaymentForm = FormHelper::getBackendForm(
             'com_eqa.assessmentlearner.setpayment',
-            'setassessmentpayment.xml',
+            'setAssessmentPayment.xml',
             []
         );
 

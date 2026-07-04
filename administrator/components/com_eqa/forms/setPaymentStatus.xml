@@ -2,10 +2,10 @@
 <!--
     Form cập nhật trạng thái nộp phí thi lần hai.
     Sử dụng tại layout 'setpayment' của view SecondAttempts.
-    Task xử lý: secondattempts.savePaymentStatus
+    Task xử lý: secondAttempts.savePaymentStatus
 -->
 <form>
-    <fieldset name="setpaymentstatus">
+    <fieldset name="setPaymentStatus">
 
         <!-- ID bản ghi — hidden, truyền qua POST -->
         <field

@@ -25,6 +25,8 @@ use Kma\Library\Kma\View\ListLayoutItemFields;
  */
 class HtmlView extends ItemsHtmlView
 {
+	protected ?string $listModelName = 'SecondAttempts';
+
     /** @var object Số liệu thống kê tổng hợp */
     protected object $statistics;
 
@@ -136,13 +138,13 @@ class HtmlView extends ItemsHtmlView
 		    'core.create',
 		    'plus-circle',
 		    'Thêm vào',
-		    'secondattempts.addNew',
+		    'secondAttempts.addNew',
 		    false,
 		    'btn btn-success'
 	    );
 
 	    // Nút Nhập sao kê — chuyển sang layout importstatement
-        $importUrl = Route::_('index.php?option=com_eqa&view=secondattempts&layout=importstatement', false);
+        $importUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts&layout=importstatement', false);
         ToolbarHelper::appendLink('core.edit', $importUrl, 'Nhập sao kê', 'file');
 
 		//Nút Đổi trạng thái nộp phí
@@ -150,16 +152,16 @@ class HtmlView extends ItemsHtmlView
 		    'core.edit',
 		    'flag',
 		    'Đổi trạng thái nộp phí',
-		    'secondattempts.setPaymentStatus',
+		    'secondAttempts.setPaymentStatus',
 		    true,
 		    'btn btn-primary'
 	    );
 
 		//Xuất danh sách đầy đủ ra Excel
-	    \Kma\Library\Kma\Helper\ToolbarHelper::appendButton('download','Xuất danh sách đầy đủ','secondattempts.exportFullList');
+	    \Kma\Library\Kma\Helper\ToolbarHelper::appendButton('download','Xuất danh sách đầy đủ','secondAttempts.exportFullList');
 
 		//Xuất danh sách đã đóng phí ra Excel
-	    \Kma\Library\Kma\Helper\ToolbarHelper::appendButton('download','Xuất danh sách đã đóng phí','secondattempts.exportPaidList');
+	    \Kma\Library\Kma\Helper\ToolbarHelper::appendButton('download','Xuất danh sách đã đóng phí','secondAttempts.exportPaidList');
 	}
 	
     // =========================================================================
@@ -195,7 +197,7 @@ class HtmlView extends ItemsHtmlView
         ToolbarHelper::appendUpload('secondattempts.importStatement', 'Đối chiếu & Cập nhật', 'upload','core.edit', true);
 
         // Nút Hủy — quay về list view
-        $cancelUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+        $cancelUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts', false);
         ToolbarHelper::appendCancelLink($cancelUrl);
     }
 
@@ -225,7 +227,7 @@ class HtmlView extends ItemsHtmlView
 		// Load form XML và bind giá trị hiện tại vào form để pre-fill
 		$this->form = FormHelper::getBackendForm(
 			'com_eqa.secondattempts.setpaymentstatus',
-			'setpaymentstatus.xml',
+			'setPaymentStatus.xml',
 			[]
 		);
 
@@ -248,12 +250,12 @@ class HtmlView extends ItemsHtmlView
 			'core.edit',
 			'save',
 			'Lưu',
-			'secondattempts.savePaymentStatus',
+			'secondAttempts.savePaymentStatus',
 			false,
 			'btn btn-success'
 		);
 
-		$cancelUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+		$cancelUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts', false);
 		ToolbarHelper::appendCancelLink($cancelUrl);
 	}
 }

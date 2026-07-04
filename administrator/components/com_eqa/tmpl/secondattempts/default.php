@@ -33,7 +33,7 @@ $formatMoney = static fn(float $amount): string =>
 
     <!-- Card "Môn thi" — nhấn để chuyển sang view SecondAttemptSubjects -->
     <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?php echo Route::_('index.php?option=com_eqa&view=secondattemptsubjects', false); ?>"
+        <a href="<?php echo Route::_('index.php?option=com_eqa&view=SecondAttemptSubjects', false); ?>"
            class="text-decoration-none" title="Xem danh sách theo môn thi">
             <div class="card text-center border-secondary h-100 eqa-card-link">
                 <div class="card-body py-2 px-1">
@@ -46,7 +46,7 @@ $formatMoney = static fn(float $amount): string =>
 
     <!-- Card "Người học" — nhấn để chuyển sang view SecondAttemptLearners -->
     <div class="col-6 col-md-4 col-xl-2">
-        <a href="<?php echo Route::_('index.php?option=com_eqa&view=secondattemptlearners', false); ?>"
+        <a href="<?php echo Route::_('index.php?option=com_eqa&view=SecondAttemptLearners', false); ?>"
            class="text-decoration-none" title="Xem danh sách theo HVSV">
             <div class="card text-center border-secondary h-100 eqa-card-link">
                 <div class="card-body py-2 px-1">

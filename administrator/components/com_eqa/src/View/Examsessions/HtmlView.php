@@ -68,7 +68,7 @@ class HtmlView extends ItemsHtmlView {
 	            $item->start = DatetimeHelper::convertToLocalTime($item->start);
                 $item->flexible = $item->flexible ? Text::_('JYES') : Text::_('JNO');
                 $item->dayofweek = DatetimeHelper::getDayOfWeek($item->start);
-                $item->dayofmonth = DatetimeHelper::getDayAndMonth($item->start);
+                $item->dayofmonth = DatetimeHelper::getDayAndMonth($item->start,'d/m/y');
                 $item->time = DatetimeHelper::getHourAndMinute($item->start);
 	            $item->nmonitor = DatabaseHelper::getExamsessionMonitorCount($item->id);
 	            $item->nexaminer = DatabaseHelper::getExamsessionExaminerCount($item->id);

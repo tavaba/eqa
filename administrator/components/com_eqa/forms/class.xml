@@ -9,7 +9,7 @@
                 label="COM_EQA_COURSEGROUP"
                 description="COM_EQA_COURSEGROUP_DESC"
                 pattern="[A-Z0-9]+"
-                validate="uppercasealnum"
+                validate="UppercaseAlnum"
                 addruleprefix="Kma\Component\Eqa\Administrator\Rule"
         />
         <field  name="code"

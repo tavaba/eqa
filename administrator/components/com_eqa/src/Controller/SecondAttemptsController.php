@@ -49,7 +49,7 @@ class SecondAttemptsController extends AdminController
         }
 
         $this->setRedirect(
-            Route::_('index.php?option=com_eqa&view=secondattempts', false)
+            Route::_('index.php?option=com_eqa&view=SecondAttempts', false)
         );
     }
 
@@ -61,7 +61,7 @@ class SecondAttemptsController extends AdminController
 	 */
 	public function addNew(): void
 	{
-		$redirectUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+		$redirectUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts', false);
 
 		try {
 			$this->checkToken();
@@ -103,7 +103,7 @@ class SecondAttemptsController extends AdminController
     {
         $this->setRedirect(
             Route::_(
-                'index.php?option=com_eqa&view=secondattempts&layout=importstatement',
+                'index.php?option=com_eqa&view=SecondAttempts&layout=importstatement',
                 false
             )
         );
@@ -128,7 +128,7 @@ class SecondAttemptsController extends AdminController
 	 */
 	public function importStatement(): void
 	{
-		$listUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+		$listUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts', false);
 		$this->setRedirect($listUrl);
 
 		try {
@@ -202,7 +202,7 @@ class SecondAttemptsController extends AdminController
 	 */
 	public function setPaymentStatus(): void
 	{
-		$listUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+		$listUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts', false);
 
 		try {
 			$this->checkToken();
@@ -223,7 +223,7 @@ class SecondAttemptsController extends AdminController
 
 			$this->setRedirect(
 				Route::_(
-					'index.php?option=com_eqa&view=secondattempts&layout=setpayment&id=' . $id,
+					'index.php?option=com_eqa&view=SecondAttempts&layout=setpayment&id=' . $id,
 					false
 				)
 			);
@@ -245,7 +245,7 @@ class SecondAttemptsController extends AdminController
 	 */
 	public function savePaymentStatus(): void
 	{
-		$listUrl = Route::_('index.php?option=com_eqa&view=secondattempts', false);
+		$listUrl = Route::_('index.php?option=com_eqa&view=SecondAttempts', false);
 
 		try {
 			$this->checkToken();
@@ -322,7 +322,7 @@ class SecondAttemptsController extends AdminController
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=secondattempts', false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=SecondAttempts', false));
 			return;
 		}
 	}

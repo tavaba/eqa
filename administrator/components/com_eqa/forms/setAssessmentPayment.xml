@@ -5,7 +5,7 @@
     Task xử lý: assessmentLearners.savePaymentInfo
 -->
 <form>
-    <fieldset name="setassessmentpayment">
+    <fieldset name="setAssessmentPayment">
 
         <field  name="id"
                 type="hidden"

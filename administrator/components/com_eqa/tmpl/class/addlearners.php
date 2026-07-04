@@ -23,4 +23,4 @@ $hiddenFields = [
         'class_id' => $class->id,
         'phase'=> 'getdata'
 ];
-ViewHelper::printForm($this->form,'addlearners', $hiddenFields);
+ViewHelper::printForm($this->form,'addLearners', $hiddenFields);
