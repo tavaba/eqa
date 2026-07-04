@@ -66,26 +66,25 @@ class ExamsessionController extends  FormController {
         $data    = $this->input->post->get('jform', [], 'array');
         $form = $model->getAddbatchForm();
 
-        //Filter and Validate $data.
-        //This returns filtered valid data or FALSE
-        $validData = $model->validate($form, $data);
-        if($validData === false)
-        {
-            //Save the data in the session and Redirect to edit screen
-            $app->setUserState($context . '.data', $data);
-            $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch',false));
-            return;
-        }
+//Filter and Validate $data.
+	    //This returns filtered valid data or FALSE.
+	    //Với subform multiple, Joomla đệ quy filter từng dòng => $validData['examsessions'][N]['start']
+	    //đã được filter="user_utc" chuyển sang UTC.
+	    $validData = $model->validate($form, $data);
+	    if ($validData === false) {
+		    // Lưu dữ liệu THÔ (local, như người dùng đã gõ) vào session để repopulate form
+		    $app->setUserState($context . '.data', $data);
+		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch', false));
+		    return;
+	    }
 
-        if(!$model->saveBatch($data)){
-            //Save the data in the session and Redirect to edit screen
-            $app->setUserState($context . '.data', $data);
-            $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch',false));
-        }
-        else{
-            //Clear data and Redirect to list view
-            $app->setUserState($context . '.data', null);
-            $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsessions',false));
-        }
-    }
+	    // Lưu dữ liệu ĐÃ FILTER (start đã là UTC), KHÔNG dùng $data thô.
+	    if (!$model->saveBatch($validData)) {
+		    $app->setUserState($context . '.data', $data);
+		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch', false));
+	    } else {
+		    $app->setUserState($context . '.data', null);
+		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsessions', false));
+	    }
+	}
 }

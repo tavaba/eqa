@@ -114,73 +114,84 @@ class ExamsessionModel extends AdminModel
         return $form ?: false;
     }
 
-    /**
-     * Lưu nhiều ca thi cùng lúc (batch add).
-     *
-     * Dữ liệu đầu vào từ form examsessions.xml:
-     *   $data['session_type']  = '1' | '2'
-     *   $data['examseason_id'] = int | ''    (loại 1)
-     *   $data['assessment_id'] = int | ''    (loại 2)
-     *   $data['examsessions']  = array of {start, name, flexible}
-     *
-     * @param  array $data
-     * @return bool
-     */
-    public function saveBatch(array $data): bool
-    {
-        $app = Factory::getApplication();
-        $db  = $this->getDatabase();
+	/**
+	 * Lưu nhiều ca thi cùng lúc (batch add).
+	 *
+	 * Dữ liệu đầu vào là dữ liệu form ĐÃ QUA validate()/filter() của Joomla
+	 * (xem ExamsessionController::saveBatch). Nhờ subform khai báo
+	 * filter="user_utc", trường `start` của mỗi dòng đã được chuyển sang UTC
+	 * TRƯỚC khi tới đây — tuyệt đối không convert lại trong hàm này.
+	 *
+	 * Mỗi dòng được lưu qua Table::save() (không INSERT thô) để tự động điền
+	 * các trường timestamp (created_at, created_by, modified_at, modified_by)
+	 * và đi đúng pipeline chung. Toàn bộ được bọc trong một transaction:
+	 * hoặc thêm được tất cả, hoặc không thêm dòng nào.
+	 *
+	 * @param   array  $data  Dữ liệu form đã validate:
+	 *                        - session_type  : '1' | '2'
+	 *                        - examseason_id : int|'' (loại 1)
+	 *                        - assessment_id : int|'' (loại 2)
+	 *                        - examsessions  : array of {start (UTC), name, flexible}
+	 *
+	 * @return  bool   true nếu thêm thành công toàn bộ.
+	 *
+	 * @since   1.0.0
+	 */
+	public function saveBatch(array $data): bool
+	{
+		$app = Factory::getApplication();
 
-        // --- Validate context ---
-        if (!$this->validateSessionContext($data)) {
-            return false;
-        }
+		// --- Validate context: đúng 1 trong 2 (examseason_id / assessment_id) phải có ---
+		if (!$this->validateSessionContext($data)) {
+			return false;
+		}
 
-        $hasAssessment  = !empty($data['assessment_id']);
-        $examseasonId   = $hasAssessment ? null : (int) $data['examseason_id'];
-        $assessmentId   = $hasAssessment ? (int) $data['assessment_id'] : null;
+		$rows = $data['examsessions'] ?? [];
+		if (empty($rows)) {
+			$app->enqueueMessage('Không có ca thi nào để thêm.', 'warning');
+			return false;
+		}
 
-        $examsessions = $data['examsessions'] ?? [];
-        if (empty($examsessions)) {
-            $app->enqueueMessage('Không có ca thi nào để thêm.', 'warning');
-            return false;
-        }
+		// --- Xác định cột ngữ cảnh (chỉ một trong hai có giá trị) ---
+		$hasAssessment = !empty($data['assessment_id']);
+		$examseasonId  = $hasAssessment ? null : (int) $data['examseason_id'];
+		$assessmentId  = $hasAssessment ? (int) $data['assessment_id'] : null;
 
-        // --- Build INSERT ---
-        $columns = $db->quoteName(['examseason_id', 'assessment_id', 'start', 'name', 'flexible']);
+		$db = $this->getDatabase();
+		$db->transactionStart();
 
-        $query = $db->getQuery(true)
-            ->insert($db->quoteName('#__eqa_examsessions'))
-            ->columns($columns);
+		try {
+			foreach ($rows as $row) {
+				// Lấy instance Table mới cho mỗi dòng để tránh dính state của dòng trước.
+				$table = $this->getTable();
 
-        foreach ($examsessions as $item) {
-            $values = [
-                $examseasonId !== null ? (int) $examseasonId : 'NULL',
-                $assessmentId !== null ? (int) $assessmentId : 'NULL',
-                $db->quote($item['start']),
-                $db->quote($item['name']),
-                (int) $item['flexible'],
-            ];
-            $query->values(implode(',', $values));
-        }
+				$record = [
+					'id'            => 0,
+					'examseason_id' => $examseasonId,
+					'assessment_id' => $assessmentId,
+					// `start` đã là UTC (subform filter="user_utc" đã convert ở validate()).
+					'start'         => $row['start'] ?? '',
+					'name'          => $row['name'] ?? '',
+					'flexible'      => (int) ($row['flexible'] ?? 0),
+				];
 
-        $db->transactionStart();
-        try {
-            $db->setQuery($query)->execute();
-            $db->transactionCommit();
+				// Table::save() = bind + check + store; store() tự điền các trường timestamp.
+				if (!$table->save($record)) {
+					throw new \RuntimeException($table->getError() ?: 'Không lưu được một ca thi.');
+				}
+			}
 
-            $app->enqueueMessage(
-	            Text::sprintf('COM_EQA_MSG_N_ITEMS_INSERTED', count($examsessions)),
-                'success'
-            );
-            return true;
+			$db->transactionCommit();
+			$app->enqueueMessage(sprintf('Đã thêm %d ca thi.', count($rows)), 'success');
 
-        } catch (\Throwable $e) {
-            $db->transactionRollback();
-            $app->enqueueMessage($e->getMessage(), 'error');
-            return false;
-        }
-    }
+			return true;
+		} catch (\Throwable $e) {
+			$db->transactionRollback();
+			$app->enqueueMessage($e->getMessage(), 'error');
+
+			return false;
+		}
+	}
 
     // =========================================================================
     // Validation helper
