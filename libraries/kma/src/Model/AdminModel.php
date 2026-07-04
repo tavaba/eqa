@@ -163,28 +163,6 @@ abstract class AdminModel extends BaseAdminModel
     }
 
 	/**
-	 * Lấy một bản ghi theo primary key, sau đó convert các trường DATETIME
-	 * từ UTC (giá trị lưu trong CSDL) sang Local Time (để hiển thị trên giao diện).
-	 *
-	 * {@inheritDoc}
-	 *
-	 * @param   int|null  $pk  Primary key. Nếu null, lấy từ state 'item.id'.
-	 *
-	 * @return  stdClass|false
-	 * @since   1.0.0
-	 */
-	public function getItem($pk = null)
-	{
-		$item = parent::getItem($pk);
-
-		if ($item === false) {
-			return false;
-		}
-
-		return $item;
-	}
-
-	/**
      * Set or Unset the 'default' status of an item.
      *
      * @param int $id
