@@ -14,6 +14,7 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView {
+	protected ?string $listModelName = 'ExamsessionEmployees';
 	protected ?ExamsessionInfo $examsession;
 	protected function configureItemFieldsForLayoutDefault():void{
 		$option = new ListLayoutItemFields();
@@ -107,8 +108,8 @@ class HtmlView extends ItemsHtmlView {
 		ToolbarHelper::appendGoHome();
 		ToolbarHelper::appendGoBack('examsession.cancel','COM_EQA_EXAMSESSION');
 		ToolbarHelper::appendGoBack('examroom.cancel','COM_EQA_EXAMROOM');
-		ToolbarHelper::apply('examsessionemployees.apply');
-		ToolbarHelper::save('examsessionemployees.save');
+		ToolbarHelper::apply('examsessionEmployees.apply');
+		ToolbarHelper::save('examsessionEmployees.save');
 		ToolbarHelper::cancel('examsession.cancel');
 	}
 }

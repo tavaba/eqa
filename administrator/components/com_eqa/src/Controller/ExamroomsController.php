@@ -60,7 +60,7 @@ class ExamroomsController extends AdminController {
 					"Phòng thi <b>{$examroom->name}</b>: chưa phân công CBCT, CBCT-ChT",
 					'error'
 				);
-				$url = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id='
+				$url = 'index.php?option=com_eqa&view=examsessionEmployees&examsession_id='
 					. $examroom->examsessionId;
 				$this->setRedirect(Route::_($url, false));
 				return;

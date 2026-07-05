@@ -39,12 +39,12 @@ class HtmlView extends ItemsHtmlView {
 	    $option->customFieldset1[] = $f;
 
 	    $f = new ListLayoutItemFieldOption('nmonitor', 'CBCT', true, false, 'text-center');
-	    $f->urlFormatString      = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id=%d';
+	    $f->urlFormatString      = 'index.php?option=com_eqa&view=examsessionEmployees&examsession_id=%d';
 	    $f->urlFormatStringField = 'examsessionId';
 	    $option->customFieldset1[] = $f;
 
 	    $f = new ListLayoutItemFieldOption('nexaminer', 'CBCTChT', true, false, 'text-center');
-	    $f->urlFormatString      = 'index.php?option=com_eqa&view=examsessionemployees&examsession_id=%d';
+	    $f->urlFormatString      = 'index.php?option=com_eqa&view=examsessionEmployees&examsession_id=%d';
 	    $f->urlFormatStringField = 'examsessionId';
 	    $option->customFieldset1[] = $f;
 

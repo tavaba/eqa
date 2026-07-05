@@ -5,7 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
 
-class ExamsessionemployeesController extends AdminController {
+class ExamsessionEmployeesController extends AdminController {
 	public function save(string $task='save')
 	{
 		//Check token
@@ -30,7 +30,7 @@ class ExamsessionemployeesController extends AdminController {
 
 		//Set redirect in the rest cases
 		if($task==='apply')
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examsessionemployees&examsession_id='.$examsessionId,false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examsessionEmployees&examsession_id='.$examsessionId,false));
 		else
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examsessions',false));
 
@@ -42,7 +42,7 @@ class ExamsessionemployeesController extends AdminController {
 		}
 
 		//Gọi model để thực thi
-		$model = $this->createModel('examsessionemployees');
+		$model = $this->createModel('examsessionEmployees');
 		$model->save($examsessionId, $data);
 	}
 	public function apply()
