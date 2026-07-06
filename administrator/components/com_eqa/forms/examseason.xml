@@ -163,7 +163,7 @@
 
         <field
                 name="bank_napas_code"
-                type="banknapascode"
+                type="BankNapasCode"
                 required="false"
                 default=""
                 label="Ngân hàng thu phí phúc khảo"
