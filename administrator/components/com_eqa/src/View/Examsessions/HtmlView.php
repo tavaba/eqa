@@ -96,6 +96,7 @@ class HtmlView extends ItemsHtmlView {
         ToolbarHelper::appendButton('core.create','plus-2','COM_EQA_BUTTON_ADD','examsession.add',false,'btn btn-success');
         ToolbarHelper::appendButton('core.create','plus-circle','COM_EQA_BUTTON_ADD_BATCH','examsession.addbatch',false,'btn btn-success');
         ToolbarHelper::appendDelete('examsessions.delete');
+	    ToolbarHelper::appendButton('core.manage','download','Tải DS phòng thi','examsessions.exportExamrooms',true);
     }
 
 	/**

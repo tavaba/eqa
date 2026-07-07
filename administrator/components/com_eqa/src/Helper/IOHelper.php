@@ -1429,6 +1429,109 @@ abstract class IOHelper extends BaseIOHelper
 		$font->setName('Times New Roman');
 		$font->setSize($FONT_SIZE);
 	}
+	/**
+	 * Ghi thông tin các phòng thi của một ca thi vào một worksheet.
+	 *
+	 * Bố cục: 2 dòng đầu là tên ca thi và ngày giờ thi (local time);
+	 * tiếp theo là bảng gồm các cột STT | Phòng thi | Môn thi | Hình thức thi
+	 * | Số thí sinh; dòng cuối là tổng số thí sinh của ca thi.
+	 *
+	 * @param   Worksheet  $sheet         Worksheet đích.
+	 * @param   object     $examsession   Object có 2 property: name (tên ca thi)
+	 *                                    và start (thời gian bắt đầu, ĐÃ chuyển sang local time).
+	 * @param   object[]   $examroomRows  Mỗi phần tử có các property:
+	 *                                    name (string), exams (string[]),
+	 *                                    testtype (string), examineeCount (int).
+	 *
+	 * @return  void
+	 * @since   2.1.4
+	 */
+	static public function writeExamsessionExamrooms(Worksheet $sheet, object $examsession, array $examroomRows): void
+	{
+		$headers = ['STT', 'Phòng thi', 'Môn thi', 'Hình thức thi', 'Số thí sinh'];
+		$widths  = [6,      15,          60,         18,              12];
+		$COLS = sizeof($headers);
+		$FONT_SIZE = 12;
+
+		//Độ rộng cột
+		for ($i = 1; $i <= $COLS; $i++) {
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i - 1]);
+		}
+
+		//Tên ca thi
+		$row = 1;
+		$sheet->setCellValue([1, $row], 'Ca thi: ' . $examsession->name);
+		$sheet->mergeCells([1, $row, $COLS, $row]);
+		$sheet->getStyle([1, $row, $COLS, $row])->getFont()->setBold(true);
+
+		//Ngày giờ thi (start đã là local time)
+		$row++;
+		$value = 'Thời gian: ' . DatetimeHelper::getDayOfWeek($examsession->start)
+			. ', ' . DatetimeHelper::getDayAndTime($examsession->start, 'd/m/Y H:i');
+		$sheet->setCellValue([1, $row], $value);
+		$sheet->mergeCells([1, $row, $COLS, $row]);
+
+		//Dòng tiêu đề bảng
+		$row += 2;
+		$headingRow = $row;
+		foreach ($headers as $index => $header) {
+			$sheet->setCellValue([$index + 1, $row], $header);
+		}
+		$style = $sheet->getStyle([1, $row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Dữ liệu các phòng thi
+		$seq = 0;
+		$totalExaminee = 0;
+		foreach ($examroomRows as $examroomRow) {
+			$row++;
+			$seq++;
+			$sheet->setCellValue([1, $row], $seq);
+			$sheet->setCellValue([2, $row], $examroomRow->name);
+			$sheet->setCellValue([3, $row], implode("\n", $examroomRow->exams));
+			$sheet->setCellValue([4, $row], $examroomRow->testtype);
+			$sheet->setCellValue([5, $row], $examroomRow->examineeCount);
+			$totalExaminee += (int) $examroomRow->examineeCount;
+		}
+		$lastDataRow = $row;
+
+		//Dòng tổng cộng
+		$row++;
+		$sheet->setCellValue([1, $row], 'Tổng cộng');
+		$sheet->mergeCells([1, $row, 4, $row]);
+		$sheet->setCellValue([5, $row], $totalExaminee);
+		$style = $sheet->getStyle([1, $row, $COLS, $row]);
+		$style->getFont()->setBold(true);
+		$style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+		//Định dạng vùng dữ liệu
+		if ($lastDataRow > $headingRow) {
+			//Cột 'Môn thi': wrap text (mỗi môn thi một dòng trong ô)
+			$rangeStyle = $sheet->getStyle([3, $headingRow + 1, 3, $lastDataRow]);
+			$rangeStyle->getAlignment()->setWrapText(true);
+
+			//Căn giữa các cột STT, Phòng thi, Hình thức thi, Số thí sinh
+			$sheet->getStyle([1, $headingRow + 1, 2, $lastDataRow])
+				->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+			$sheet->getStyle([4, $headingRow + 1, 5, $lastDataRow])
+				->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+			//Căn giữa theo chiều dọc toàn bộ vùng dữ liệu
+			$sheet->getStyle([1, $headingRow + 1, $COLS, $lastDataRow])
+				->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+		}
+
+		//Kẻ khung bảng (bao gồm cả dòng tổng cộng)
+		$rangeStyle = $sheet->getStyle([1, $headingRow, $COLS, $row]);
+		$rangeStyle->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+		//Font toàn sheet
+		$font = $sheet->getStyle($sheet->calculateWorksheetDimension())->getFont();
+		$font->setName('Times New Roman');
+		$font->setSize($FONT_SIZE);
+	}
 	static public function writeExamseasonExaminees(Worksheet $sheet, array $examinees)
 	{
 		if(empty($examinees))

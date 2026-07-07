@@ -114,6 +114,37 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery('SELECT name FROM #__eqa_exams WHERE id IN ' . $examIdSet);
 		return $db->loadColumn();
 	}
+	/**
+	 * Lấy danh sách môn thi dưới dạng chuỗi "Mã - Tên".
+	 *
+	 * @param   array  $examIds  Danh sách ID môn thi.
+	 *
+	 * @return  string[]  Mảng chuỗi "code - name", sắp xếp theo mã môn thi.
+	 * @since   2.1.4
+	 */
+	static public function getExamCodesAndNames(array $examIds): array
+	{
+		$examIds = array_filter(array_map('intval', $examIds));
+		if (empty($examIds)) {
+			return [];
+		}
+
+		$db = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select($db->quoteName(['code', 'name']))
+			->from($db->quoteName('#__eqa_exams'))
+			->where($db->quoteName('id') . ' IN (' . implode(',', $examIds) . ')')
+			->order($db->quoteName('code'));
+		$db->setQuery($query);
+		$exams = $db->loadObjectList();
+
+		$result = [];
+		foreach ($exams as $exam) {
+			$result[] = $exam->code . ' - ' . $exam->name;
+		}
+
+		return $result;
+	}
 	static public function getExamTestTime(int $examId)
 	{
 		$db = self::getDatabaseDriver();
@@ -873,6 +904,27 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Get the list of examrooms belonging to an examsession.
+	 *
+	 * @param   int  $examsessionId  Examsession ID.
+	 *
+	 * @return  object[]  List of objects with properties: id, name (ordered by name).
+	 * @since   2.1.4
+	 */
+	static public function getExamsessionExamrooms(int $examsessionId): array
+	{
+		$db = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select($db->quoteName(['id', 'name']))
+			->from($db->quoteName('#__eqa_examrooms'))
+			->where($db->quoteName('examsession_id') . ' = ' . (int) $examsessionId)
+			->order($db->quoteName('name'));
+		$db->setQuery($query);
+
+		return $db->loadObjectList();
 	}
 
 	/**
