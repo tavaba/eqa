@@ -644,6 +644,134 @@ class ExamModel extends AdminModel{
 		$app->enqueueMessage($msg, 'success');
 		return true;
 	}
+	/**
+	 * Kiểm tra tính tương thích về hình thức thi (testtype) khi ghép môn thi
+	 * vào các phòng thi đã tồn tại.
+	 *
+	 * Nguyên tắc: một phòng thi (examroom) chỉ được chứa các môn thi có CÙNG
+	 * hình thức thi. Với mỗi cặp (examsession_id, room_id) trong cấu hình
+	 * chia phòng, nếu phòng thi đã tồn tại và đang có thí sinh của môn thi
+	 * KHÁC với hình thức thi khác thì ném Exception.
+	 *
+	 * Lưu ý:
+	 *   - Thí sinh của chính môn thi đang chia ($examId) được loại trừ khỏi
+	 *     phép kiểm tra, vì khi chạy lại chức năng chia phòng, kết quả cũ của
+	 *     môn thi này sẽ bị reset và ghi đè.
+	 *   - Phần lõi truy vấn xung đột được thực hiện bởi
+	 *     DatabaseHelper::findTesttypeConflictExam() (dùng chung với
+	 *     ExamroomModel::addExaminees()).
+	 *   - Phương thức này phải được gọi ở giai đoạn kiểm tra hợp lệ (PHẦN A),
+	 *     TRƯỚC khi reset kết quả chia phòng cũ, để khi báo lỗi thì dữ liệu
+	 *     chia phòng hiện có của môn thi không bị mất.
+	 *
+	 * @param   int    $examId        ID của môn thi đang được chia phòng.
+	 * @param   int    $examTesttype  Hình thức thi (giá trị enum TestType) của môn thi đang được chia phòng.
+	 * @param   array  $examsessions  Cấu hình các ca thi từ form ($data['examsessions']).
+	 *
+	 * @return  void
+	 * @throws  Exception  Nếu phát hiện phòng thi đã chứa môn thi có hình thức thi khác.
+	 * @since   2.1.1
+	 */
+	private function assertExamroomTesttypesCompatible(int $examId, int $examTesttype, array $examsessions): void
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		foreach ($examsessions as $examsession) {
+			$examsessionId = (int) ($examsession['examsession_id'] ?? 0);
+
+			if (empty($examsession['rooms']) || !is_array($examsession['rooms'])) {
+				continue;
+			}
+
+			foreach ($examsession['rooms'] as $room) {
+				$roomId = (int) ($room['room_id'] ?? 0);
+
+				//1. Tìm phòng thi đã tồn tại cho cặp (ca thi, phòng vật lý)
+				$query = $db->getQuery(true)
+					->select($db->quoteName('id'))
+					->from($db->quoteName('#__eqa_examrooms'))
+					->where([
+						$db->quoteName('examsession_id') . ' = ' . $examsessionId,
+						$db->quoteName('room_id') . ' = ' . $roomId,
+					]);
+				$db->setQuery($query);
+				$examroomId = (int) $db->loadResult();
+
+				//Phòng thi chưa tồn tại → sẽ được tạo mới, không cần kiểm tra
+				if ($examroomId === 0) {
+					continue;
+				}
+
+				//2. Tìm môn thi KHÁC đang có thí sinh trong phòng thi này
+				//nhưng có hình thức thi khác với môn thi đang chia
+				$conflict = DatabaseHelper::findTesttypeConflictExam($examroomId, $examId, $examTesttype);
+				if (empty($conflict)) {
+					continue;
+				}
+
+				//3. Dựng thông báo lỗi
+				$conflictLabel = TestType::tryFrom((int) $conflict->testtype)?->getLabel() ?? 'Không xác định';
+				$currentLabel  = TestType::tryFrom($examTesttype)?->getLabel() ?? 'Không xác định';
+
+				$msg = sprintf(
+					'Phòng thi <b>%s</b> (ca thi <b>%s</b>) đã có môn thi <b>%s</b> với hình thức thi '
+					. '<b>%s</b>, khác hình thức thi <b>%s</b> của môn thi hiện tại. '
+					. 'Không thể ghép các môn thi khác hình thức thi vào cùng một phòng thi.',
+					DatabaseHelper::getRoomCode($roomId),
+					DatabaseHelper::getExamsessionName($examsessionId),
+					htmlspecialchars($conflict->name, ENT_QUOTES, 'UTF-8'),
+					$conflictLabel,
+					$currentLabel
+				);
+
+				throw new Exception($msg);
+			}
+		}
+	}
+	/**
+	 * Chia phòng thi và đánh số báo danh (SBD) cho thí sinh của một môn thi
+	 * theo phương thức NGẪU NHIÊN.
+	 *
+	 * Thuật toán:
+	 *   1. Kiểm tra điều kiện tiền đề: môn thi chưa có điểm thi và đã có đủ
+	 *      điểm quá trình (PAM).
+	 *   2. Kiểm tra tính hợp lệ của dữ liệu form: không trùng ca thi, không
+	 *      trùng phòng trong cùng một ca thi; tổng số thí sinh nhập vào các
+	 *      phòng (count_distributed) phải khớp với số thí sinh sẽ được chia
+	 *      (phụ thuộc tùy chọn distribute_allowed_only).
+	 *   3. Kiểm tra tương thích hình thức thi: khi ghép vào phòng thi đã tồn
+	 *      tại, các môn thi trong cùng phòng phải có cùng testtype
+	 *      (xem assertExamroomTesttypesCompatible()).
+	 *   4. Reset kết quả chia phòng cũ (code, examroom_id) của toàn bộ thí sinh
+	 *      thuộc môn thi.
+	 *   5. Shuffle danh sách thí sinh → cắt tuần tự theo số lượng (nexaminee)
+	 *      của từng phòng → trong mỗi phòng sắp xếp theo Tên rồi Họ đệm
+	 *      (Collator vi_VN) → đánh SBD liên tục qua tất cả các phòng, bắt đầu
+	 *      từ examinee_code_start. Phòng thi (examroom) được tạo mới nếu chưa
+	 *      tồn tại cho cặp (ca thi, phòng vật lý).
+	 *
+	 * Cấu trúc $data (jform):
+	 *   - distribute_allowed_only (bool):  Chỉ chia thí sinh đủ điều kiện dự thi.
+	 *   - create_new_examrooms    (bool):  true → báo lỗi nếu phòng vật lý đã được
+	 *                                      sử dụng trong ca thi; false → cho phép
+	 *                                      ghép vào phòng thi đã có (các môn thi
+	 *                                      trong phòng phải cùng hình thức thi).
+	 *   - count_distributed       (int):   Tổng số thí sinh sẽ được chia (đối chiếu).
+	 *   - examinee_code_start     (int):   SBD bắt đầu.
+	 *   - examsessions            (array): Mỗi phần tử gồm examsession_id và danh
+	 *                                      sách rooms; mỗi room gồm room_id và
+	 *                                      nexaminee (số thí sinh của phòng).
+	 *
+	 * @param   int    $examId  ID của môn thi.
+	 * @param   array  $data    Dữ liệu jform (xem cấu trúc ở trên).
+	 *
+	 * @return  bool  true nếu chia phòng thành công; false nếu dữ liệu không
+	 *                hợp lệ hoặc có lỗi trong quá trình chia (thông báo lỗi đã
+	 *                được enqueue, transaction đã rollback).
+	 * @throws  Exception  Nếu môn thi đã có điểm thi, chưa đủ điểm quá trình,
+	 *                     hoặc vi phạm ràng buộc cùng hình thức thi khi ghép
+	 *                     vào phòng thi đã có thí sinh.
+	 */
 	public function distribute(int $examId, $data):bool
 	{
 		if ($this->hasSomeoneWithCodeAndMark($examId))
@@ -708,6 +836,10 @@ class ExamModel extends AdminModel{
 			$app->enqueueMessage(Text::_('COM_EQA_MSG_INVALID_DISTRIBUTION'),'error');
 			return false;
 		}
+
+		//Kiểm tra tính tương thích về hình thức thi với các phòng thi đã tồn tại.
+		//Phải thực hiện TRƯỚC khi reset kết quả chia phòng cũ (PHẦN B).
+		$this->assertExamroomTesttypesCompatible($examId, (int) $exam->testtype, $data['examsessions']);
 
 
 		/*
@@ -856,6 +988,52 @@ class ExamModel extends AdminModel{
 		$app->enqueueMessage(Text::_('COM_EQA_MSG_TASK_SUCCESS'),'success');
 		return true;
 	}
+	/**
+	 * Chia phòng thi và đánh số báo danh (SBD) cho thí sinh của một môn thi
+	 * theo LỚP HỌC PHẦN: mỗi phòng thi được gán một hoặc nhiều lớp học phần,
+	 * toàn bộ thí sinh của lớp được đưa vào phòng tương ứng (không ngẫu nhiên).
+	 *
+	 * Thuật toán:
+	 *   1. Kiểm tra điều kiện tiền đề: môn thi chưa có điểm thi và đã có đủ
+	 *      điểm quá trình (PAM).
+	 *   2. Kiểm tra tính hợp lệ của dữ liệu form: không trùng ca thi, không
+	 *      trùng lớp học phần; nếu create_new_examrooms thì phòng vật lý
+	 *      không được đang có thí sinh trong ca thi.
+	 *   3. Kiểm tra tương thích hình thức thi: khi ghép vào phòng thi đã tồn
+	 *      tại, các môn thi trong cùng phòng phải có cùng testtype
+	 *      (xem assertExamroomTesttypesCompatible()).
+	 *   4. Reset kết quả chia phòng cũ (code, examroom_id) của toàn bộ thí sinh
+	 *      thuộc môn thi.
+	 *   5. Gom thí sinh theo từng phòng: một phòng vật lý có thể nhận nhiều lớp
+	 *      học phần trong cùng ca thi → trong mỗi phòng sắp xếp theo Tên rồi
+	 *      Họ đệm (Collator vi_VN) → đánh SBD liên tục qua tất cả các phòng,
+	 *      bắt đầu từ examinee_code_start. Phòng không có thí sinh nào (lớp
+	 *      rỗng sau khi lọc) được bỏ qua. Phòng thi (examroom) được tạo mới
+	 *      nếu chưa tồn tại cho cặp (ca thi, phòng vật lý).
+	 *
+	 * Cấu trúc $data (jform):
+	 *   - distribute_allowed_only (bool):  Chỉ chia thí sinh đủ điều kiện dự thi
+	 *                                      (allowed, không nợ học phí, không có
+	 *                                      khuyến khích ngoài dạng cộng điểm).
+	 *   - create_new_examrooms    (bool):  true → báo lỗi nếu phòng vật lý đã có
+	 *                                      thí sinh trong ca thi; false → cho phép
+	 *                                      ghép vào phòng thi đã có (các môn thi
+	 *                                      trong phòng phải cùng hình thức thi).
+	 *   - examinee_code_start     (int):   SBD bắt đầu.
+	 *   - examsessions            (array): Mỗi phần tử gồm examsession_id và danh
+	 *                                      sách rooms; mỗi room gồm room_id và
+	 *                                      class_id (lớp học phần vào phòng đó).
+	 *
+	 * @param   int    $examId  ID của môn thi.
+	 * @param   array  $data    Dữ liệu jform (xem cấu trúc ở trên).
+	 *
+	 * @return  bool  true nếu chia phòng thành công; false nếu dữ liệu không
+	 *                hợp lệ hoặc có lỗi trong quá trình chia (thông báo lỗi đã
+	 *                được enqueue, transaction đã rollback).
+	 * @throws  Exception  Nếu môn thi đã có điểm thi, chưa đủ điểm quá trình,
+	 *                     hoặc vi phạm ràng buộc cùng hình thức thi khi ghép
+	 *                     vào phòng thi đã có thí sinh.
+	 */
 	public function distribute2(int $examId, $data):bool
 	{
 		if ($this->hasSomeoneWithCodeAndMark($examId))
@@ -924,6 +1102,17 @@ class ExamModel extends AdminModel{
 			$app->enqueueMessage(Text::_('COM_EQA_MSG_DUPLICATED_CLASSES'),'error');
 			return false;
 		}
+
+		//Lấy thông tin môn thi (cần testtype để kiểm tra tương thích hình thức thi)
+		$exam = DatabaseHelper::getExamInfo($examId);
+		if (empty($exam)) {
+			$app->enqueueMessage(Text::_('COM_EQA_MSG_INVALID_DATA'), 'error');
+			return false;
+		}
+
+		//Kiểm tra tính tương thích về hình thức thi với các phòng thi đã tồn tại.
+		//Phải thực hiện TRƯỚC khi reset kết quả chia phòng cũ (PHẦN B).
+		$this->assertExamroomTesttypesCompatible($examId, (int) $exam->testtype, $data['examsessions']);
 
 
 

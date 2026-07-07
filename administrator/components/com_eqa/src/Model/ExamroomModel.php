@@ -6,6 +6,7 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
@@ -181,12 +182,76 @@ class ExamroomModel extends AdminModel {
         $app->enqueueMessage($msg, 'success');
         return true;
     }
+	/**
+	 * Thêm thí sinh của một môn thi vào một phòng thi đã có, theo danh sách mã HVSV.
+	 *
+	 * Trình tự:
+	 *   1. Kiểm tra sự tồn tại của phòng thi và môn thi.
+	 *   2. Kiểm tra tương thích hình thức thi: các môn thi trong cùng một phòng
+	 *      thi phải có cùng testtype
+	 *      (xem DatabaseHelper::findTesttypeConflictExam()).
+	 *   3. Chuyển mã HVSV thành learner ID; đảm bảo tất cả đều là thí sinh của
+	 *      môn thi; bỏ qua thí sinh đã được chia phòng từ trước.
+	 *   4. Gán examroom_id và SBD (tiếp nối SBD lớn nhất hiện có của môn thi)
+	 *      cho các thí sinh còn lại, trong một transaction.
+	 *   5. Cập nhật lại cột exam_ids của phòng thi (updateExamroomExams).
+	 *
+	 * @param   int       $examroomId    ID phòng thi.
+	 * @param   int       $examId        ID môn thi.
+	 * @param   string[]  $learnerCodes  Danh sách mã HVSV cần thêm vào phòng thi.
+	 *
+	 * @return  bool  true nếu thành công; false nếu dữ liệu không hợp lệ hoặc
+	 *                có lỗi trong quá trình xử lý (thông báo lỗi đã được enqueue).
+	 * @since   2.1.1  Bổ sung kiểm tra tồn tại phòng thi/môn thi, kiểm tra
+	 *                 tương thích hình thức thi và cập nhật exam_ids.
+	 */
     public function addExaminees($examroomId, $examId, $learnerCodes)
     {
         $app = Factory::getApplication();
         $db = $this->getDatabase();
 
-        //Try to add the learners to the exam
+        $examroomId = (int) $examroomId;
+        $examId     = (int) $examId;
+
+        //1. Kiểm tra sự tồn tại của phòng thi và môn thi
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['id', 'name', 'room_id', 'examsession_id']))
+            ->from($db->quoteName('#__eqa_examrooms'))
+            ->where($db->quoteName('id') . ' = ' . $examroomId);
+        $db->setQuery($query);
+        $examroom = $db->loadObject();
+        if (empty($examroom)) {
+            $app->enqueueMessage('Phòng thi không tồn tại', 'error');
+            return false;
+        }
+
+        $exam = DatabaseHelper::getExamInfo($examId);
+        if (empty($exam)) {
+            $app->enqueueMessage('Môn thi không tồn tại', 'error');
+            return false;
+        }
+
+        //2. Kiểm tra tương thích hình thức thi: các môn thi trong cùng một
+        //phòng thi phải có cùng testtype
+        $conflict = DatabaseHelper::findTesttypeConflictExam($examroomId, $examId, (int) $exam->testtype);
+        if (!empty($conflict)) {
+            $conflictLabel = TestType::tryFrom((int) $conflict->testtype)?->getLabel() ?? 'Không xác định';
+            $currentLabel  = TestType::tryFrom((int) $exam->testtype)?->getLabel() ?? 'Không xác định';
+            $msg = sprintf(
+                'Phòng thi <b>%s</b> (ca thi <b>%s</b>) đã có môn thi <b>%s</b> với hình thức thi '
+                . '<b>%s</b>, khác hình thức thi <b>%s</b> của môn thi hiện tại. '
+                . 'Không thể ghép các môn thi khác hình thức thi vào cùng một phòng thi.',
+                DatabaseHelper::getRoomCode((int) $examroom->room_id),
+                DatabaseHelper::getExamsessionName((int) $examroom->examsession_id),
+                htmlspecialchars($conflict->name, ENT_QUOTES, 'UTF-8'),
+                $conflictLabel,
+                $currentLabel
+            );
+            $app->enqueueMessage($msg, 'error');
+            return false;
+        }
+
+        //3+4. Thêm thí sinh vào phòng thi
         $db->transactionStart();
         try {
             $learnerIds = DatabaseHelper::getLearnerMap($learnerCodes);
@@ -202,30 +267,34 @@ class ExamroomModel extends AdminModel {
             $examineeCode = DatabaseHelper::getLastExamineeCode($examId);
             foreach ($learnerCodes as $learnerCode)
             {
-                $learnerId = $learnerIds[$learnerCode];
+                $learnerId = (int) $learnerIds[$learnerCode];
 
-                //1. Kiểm tra xem thí sinh của môn thi đã được chia phòng chưa
+                //Kiểm tra xem thí sinh của môn thi đã được chia phòng chưa
                 if(!empty($examroomIds[$learnerId]))
                 {
                     $assignedExaminees[] = $learnerCode;
                     continue;
                 }
 
-                //2. Thêm vào phòng thi
+                //Thêm vào phòng thi
                 $examineeCode++;
                 $query = $db->getQuery(true)
-                    ->update('#__eqa_exam_learner')
+                    ->update($db->quoteName('#__eqa_exam_learner'))
                     ->set([
-                        $db->quoteName('examroom_id') . '=' . $examroomId,
-                        $db->quoteName('code') . '=' . $examineeCode
+                        $db->quoteName('examroom_id') . ' = ' . $examroomId,
+                        $db->quoteName('code') . ' = ' . (int) $examineeCode
                     ])
-                    ->where($db->quoteName('exam_id') . '=' . $examId)
-                    ->where($db->quoteName('learner_id') . '=' . $learnerId);
+                    ->where($db->quoteName('exam_id') . ' = ' . $examId)
+                    ->where($db->quoteName('learner_id') . ' = ' . $learnerId);
                 $db->setQuery($query);
                 if(!$db->execute())
                     throw new Exception(Text::_('COM_EQA_MSG_DATABASE_ERROR'));
                 $addedExaminees[] = $learnerCode;
             }
+
+            //5. Cập nhật lại danh sách môn thi (exam_ids) của phòng thi
+            if(!empty($addedExaminees))
+                DatabaseHelper::updateExamroomExams($examroomId);
         }
         catch (Exception $e){
             $db->transactionRollback();

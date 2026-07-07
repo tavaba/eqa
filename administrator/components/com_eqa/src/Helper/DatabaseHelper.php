@@ -1273,6 +1273,49 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		return $db->execute();
 	}
 
+	/**
+	 * Tìm môn thi xung đột về hình thức thi (testtype) trong một phòng thi.
+	 *
+	 * Trả về môn thi ĐẦU TIÊN đang có thí sinh trong phòng thi $examroomId
+	 * nhưng có hình thức thi khác $examTesttype. Môn thi $examId được loại
+	 * trừ khỏi phép kiểm tra (phục vụ kịch bản chia lại phòng cho chính môn
+	 * thi đó, khi kết quả chia cũ sẽ bị reset và ghi đè).
+	 *
+	 * Việc kiểm tra dựa trên thí sinh thực tế trong phòng (JOIN
+	 * #__eqa_exam_learner với #__eqa_exams) thay vì cột denormalized exam_ids
+	 * của #__eqa_examrooms, để đảm bảo chính xác ngay cả khi exam_ids bị lệch
+	 * dữ liệu.
+	 *
+	 * @param   int  $examroomId    ID phòng thi cần kiểm tra.
+	 * @param   int  $examId        ID môn thi đang được xếp vào phòng (loại trừ khỏi kiểm tra).
+	 * @param   int  $examTesttype  Hình thức thi (giá trị enum TestType) của môn thi đang được xếp.
+	 *
+	 * @return  object|null  Object gồm {name, testtype} của môn thi xung đột
+	 *                       đầu tiên; null nếu không có xung đột.
+	 * @since   2.1.1
+	 */
+	static public function findTesttypeConflictExam(int $examroomId, int $examId, int $examTesttype): ?object
+	{
+		$db = self::getDatabaseDriver();
+
+		$query = $db->getQuery(true)
+			->select('DISTINCT ' . $db->quoteName('e.name') . ', ' . $db->quoteName('e.testtype'))
+			->from($db->quoteName('#__eqa_exam_learner', 'el'))
+			->innerJoin(
+				$db->quoteName('#__eqa_exams', 'e')
+				. ' ON ' . $db->quoteName('el.exam_id') . ' = ' . $db->quoteName('e.id')
+			)
+			->where([
+				$db->quoteName('el.examroom_id') . ' = ' . $examroomId,
+				$db->quoteName('el.exam_id') . ' <> ' . $examId,
+				$db->quoteName('e.testtype') . ' <> ' . $examTesttype,
+			])
+			->setLimit(1);
+		$db->setQuery($query);
+
+		return $db->loadObject();
+	}
+
 	public static function getGroupInfo(int $groupId)
 	{
 		$db = self::getDatabaseDriver();
