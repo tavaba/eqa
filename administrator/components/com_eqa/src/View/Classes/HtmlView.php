@@ -56,6 +56,10 @@ class HtmlView extends ItemsHtmlView
             foreach ($this->layoutData->items as $item){
                 $item->lecturer = EmployeeHelper::getFullName($item->lecturer_id);
 				$item->academicyear = DatetimeHelper::decodeAcademicYear($item->academicyear);
+
+				//If all pams are completed (npam==size), then hightlight the record with a row style
+	            if($item->npam == $item->size)
+					$item->optionRowCssClass = 'table-success';
             }
         }
 
