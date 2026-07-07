@@ -17,6 +17,20 @@
                 onchange="this.form.submit();"
         />
         <field
+                name="not_before"
+                type="calendar"
+                label="Từ ngày"
+                hint="Ca thi từ ngày"
+                onchange="this.form.submit();"
+        />
+        <field
+                name="not_after"
+                type="calendar"
+                label="Đến ngày"
+                hint="Ca thi đến ngày"
+                onchange="this.form.submit();"
+        />
+        <field
                 name="flexible"
                 type="list"
                 label="COM_EQA_FLEXIBLE"

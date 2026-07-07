@@ -670,42 +670,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery('SELECT name FROM #__eqa_examsessions WHERE id='.$examsessionId);
 		return $db->loadResult();
 	}
-	static public function getExamsessionInfo_bak(int $examsessionId)
-	{
-		$db = self::getDatabaseDriver();
 
-		//Tên và thời gian
-		$columns = $db->quoteName(
-			array('name', 'start')
-		);
-		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_examsessions')
-			->where('id='.$examsessionId);
-		$db->setQuery($query);
-		$obj = $db->loadObject();
-
-		//Số lượng phòng thi
-		$db->setQuery('SELECT COUNT(1) FROM #__eqa_examrooms WHERE examsession_id='.$examsessionId);
-		$obj->countExamroom = $db->loadResult();
-
-		//Danh sách các môn thi
-		//Đồng thời xác định tổng số thí sinh đã được phân vào các phòng thi của ca thi
-		$query = $db->getQuery(true)
-			->select('exam_id')
-			->from('#__eqa_exam_learner AS a')
-			->leftJoin('#__eqa_examrooms AS b', 'a.examroom_id=b.id')
-			->where('b.examsession_id='.$examsessionId);
-		$db->setQuery($query);
-		$examIds = $db->loadColumn();
-		$obj->countExaminee = sizeof($examIds);
-		$obj->examIds = array_unique($examIds);
-
-		//Convert start time to local time
-		$obj->start = DatetimeHelper::convertToLocalTime($obj->start);
-
-		return $obj;
-	}
 	/**
 	 * Lấy thông tin tóm tắt của một ca thi theo ID.
 	 *
@@ -834,6 +799,80 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 				$count++;
 		}
 		return $count;
+	}
+
+	/**
+	 * Lấy danh sách môn thi của nhiều ca thi trong một lần truy vấn (tránh N+1).
+	 *
+	 * - Ca thi KTHP/TN: môn thi lấy từ #__eqa_exams thông qua chuỗi liên kết
+	 *   #__eqa_exam_learner -> #__eqa_examrooms -> examsession_id.
+	 * - Ca thi sát hạch: dùng tên kỳ sát hạch (#__eqa_assessments.title) thay cho
+	 *   tên môn thi, vì loại này không gắn với #__eqa_exams.
+	 *
+	 * @param   array  $examsessionIds  Mảng id các ca thi cần lấy dữ liệu.
+	 *
+	 * @return  array  Map [examsessionId => array<object{code:string, name:string}>].
+	 *                 Ca thi không có môn thi ứng với mảng rỗng.
+	 * @since   2.1.3
+	 */
+	static public function getExamsessionExamNames(array $examsessionIds): array
+	{
+		// Khởi tạo map kết quả rỗng cho mọi ca thi
+		$result = [];
+		foreach ($examsessionIds as $id) {
+			$result[(int) $id] = [];
+		}
+
+		// Chuẩn hóa danh sách id; nếu rỗng thì trả về ngay
+		$ids = array_values(array_filter(array_map('intval', $examsessionIds)));
+		if (empty($ids)) {
+			return $result;
+		}
+		$idSet = '(' . implode(',', $ids) . ')';
+
+		$db = self::getDatabaseDriver();
+
+		// 1) Môn thi của ca thi KTHP/TN
+		$query = $db->getQuery(true)
+			->select('DISTINCT ' . $db->quoteName('er.examsession_id', 'sid')
+				. ', ' . $db->quoteName('e.code', 'code')
+				. ', ' . $db->quoteName('e.name', 'name'))
+			->from($db->quoteName('#__eqa_exam_learner', 'el'))
+			->innerJoin($db->quoteName('#__eqa_examrooms', 'er')
+				. ' ON ' . $db->quoteName('er.id') . ' = ' . $db->quoteName('el.examroom_id'))
+			->innerJoin($db->quoteName('#__eqa_exams', 'e')
+				. ' ON ' . $db->quoteName('e.id') . ' = ' . $db->quoteName('el.exam_id'))
+			->where($db->quoteName('er.examsession_id') . ' IN ' . $idSet)
+			->order($db->quoteName('e.name') . ' ASC');
+		$db->setQuery($query);
+		$rows = $db->loadObjectList();
+
+		foreach ($rows as $row) {
+			$result[(int) $row->sid][] = (object) [
+				'code' => (string) $row->code,
+				'name' => (string) $row->name,
+			];
+		}
+
+		// 2) Ca thi sát hạch: dùng tên kỳ sát hạch làm "môn thi"
+		$query = $db->getQuery(true)
+			->select($db->quoteName('es.id', 'sid') . ', ' . $db->quoteName('ass.title', 'name'))
+			->from($db->quoteName('#__eqa_examsessions', 'es'))
+			->innerJoin($db->quoteName('#__eqa_assessments', 'ass')
+				. ' ON ' . $db->quoteName('ass.id') . ' = ' . $db->quoteName('es.assessment_id'))
+			->where($db->quoteName('es.id') . ' IN ' . $idSet)
+			->where($db->quoteName('es.assessment_id') . ' IS NOT NULL');
+		$db->setQuery($query);
+		$assessmentRows = $db->loadObjectList();
+
+		foreach ($assessmentRows as $row) {
+			$result[(int) $row->sid][] = (object) [
+				'code' => '',
+				'name' => (string) $row->name,
+			];
+		}
+
+		return $result;
 	}
 
 	/**

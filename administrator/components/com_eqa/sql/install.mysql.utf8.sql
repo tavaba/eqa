@@ -528,7 +528,6 @@ CREATE TABLE `#__eqa_examsessions`(
     `flexible`      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Ca thi linh hoạt về thời gian (thực hành, báo cáo...)',
     `monitor_ids`   TEXT COMMENT 'CSV danh sách (id của) CBGS, CBCT',
     `examiner_ids`  TEXT COMMENT 'CSV danh sách (id của) CBCTChT',
-    `description`   TEXT,
     `published`     BOOLEAN NOT NULL DEFAULT TRUE,
     `ordering`      INT UNSIGNED NOT NULL DEFAULT 0,
     `created_at`    DATETIME,
