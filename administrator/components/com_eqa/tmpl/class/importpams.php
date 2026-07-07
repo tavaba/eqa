@@ -40,7 +40,9 @@ echo '</div>';
                             <li>Dữ liệu bắt đầu từ dòng 15. Sau HVSV cuối cùng phải có ít nhất một dòng trống.</li>
                         </ul>
                     </li>
-                    <li>Phải hoàn tất việc xác định các thành phần ĐQT trước khi nhập</li>
+                    <li>Nếu bật tùy chọn "<b>Tự hoàn thiện ĐQT</b>": file chỉ cần có TP1 (cột I) và TP2 (cột J),
+                        hệ thống sẽ tự tính ĐQT (cột K) theo công thức mặc định ĐQT = 0.7×TP1 + 0.3×TP2.
+                        Nếu tắt: cột ĐQT (K) bắt buộc phải có sẵn, nếu không sẽ báo lỗi.</li>
                     <li>Chấp nhận các ghi chú đặc biệt như: N25, N100, TKĐ,...</li>
                     <li>Nếu sau khi nhập mà 100% HVSV của lớp có ĐQT thì phần mềm sẽ ghi nhận hôm nay
                         là ngày bàn giao ĐQT.</li>

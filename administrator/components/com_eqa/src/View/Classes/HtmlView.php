@@ -105,7 +105,7 @@ class HtmlView extends ItemsHtmlView
 	protected function addToolbarForLayoutUploadpam(): void
     {
 		ToolbarHelper::title('Tải bảng điểm quá trình');
-        ToolbarHelper::appendButton('core.edit','save','COM_EQA_IMPORT_PAM','classes.importPam',false,null,true);
+        ToolbarHelper::appendButton('core.edit','save','COM_EQA_IMPORT_PAM','classes.importPams',false,null,true);
         ToolbarHelper::cancel('class.cancel');
     }
 }

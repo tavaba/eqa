@@ -332,7 +332,85 @@ class ClassesController extends AdminController
             }
         }
     }
-    public function importPam(): void
+
+	/**
+	 * Nhập điểm quá trình (PAM) từ các file Excel tải lên (nhiều file, nhiều sheet).
+	 *
+	 * Controller chỉ: kiểm tra token/quyền, đọc tùy chọn, nạp spreadsheet và điều phối.
+	 * Mỗi sheet được ủy thác cho ClassModel::importPamForSheet(); exception được catch theo
+	 * từng sheet để không làm hỏng các sheet khác. Cuối cùng gộp báo cáo các lớp trắng bị bỏ qua.
+	 *
+	 * @return  void
+	 * @since   1.0.0
+	 */
+	public function importPams(): void
+	{
+		$this->checkToken();
+
+		$this->setRedirect(Route::_(
+			'index.php?option=' . $this->option . '&view=' . $this->view_list . $this->getRedirectToListAppend(),
+			false
+		));
+
+		$app = Factory::getApplication();
+		if (!$app->getIdentity()->authorise('core.edit', $this->option)) {
+			$this->setMessage('Bạn không có quyền nhập điểm quá trình', 'error');
+			return;
+		}
+
+		$options = [
+			'ignoreBlankClasses'     => (bool) $this->input->getInt('ignore_blank_classes'),
+			'completePamCalculation' => (bool) $this->input->getInt('complete_pam_calculation'),
+			'pamDateToday'           => (bool) $this->input->getInt('pam_date_today'),
+		];
+
+		$files = $this->input->files->get('files');
+		if (empty($files)) {
+			$this->setMessage('Không có file nào được tải lên', 'error');
+			return;
+		}
+
+		/** @var ClassModel $model */
+		$model = $this->getModel('Class');
+
+		$blankClassCodes = [];
+
+		foreach ($files as $file) {
+			try {
+				$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
+			} catch (Exception $e) {
+				$app->enqueueMessage('<b>' . htmlentities($file['name']) . '</b> : ' . $e->getMessage(), 'error');
+				continue;
+			}
+
+			$sheetCount = $spreadsheet->getSheetCount();
+			for ($sh = 0; $sh < $sheetCount; $sh++) {
+				$worksheet = $spreadsheet->getSheet($sh);
+				$sheetData = $worksheet->toArray('');
+
+				try {
+					$result = $model->importPamForSheet($sheetData, $worksheet->getTitle(), $file['name'], $options);
+					if ($result['status'] === ClassModel::PAM_SHEET_BLANK) {
+						$blankClassCodes[] = $result['classCode'];
+					}
+				} catch (Exception $e) {
+					$app->enqueueMessage(sprintf(
+						'<b>%s --> %s</b> : %s',
+						htmlentities($file['name']), htmlentities($worksheet->getTitle()), $e->getMessage()
+					), 'error');
+				}
+			}
+		}
+
+		// Gộp báo cáo các lớp trắng bị bỏ qua (khi KHÔNG chọn "Bỏ qua lớp trắng")
+		if (!empty($blankClassCodes)) {
+			$app->enqueueMessage(sprintf(
+				'Đã bỏ qua %d lớp trắng (chưa có ĐQT): %s',
+				count($blankClassCodes), htmlentities(implode('; ', $blankClassCodes))
+			), 'warning');
+		}
+	}
+    public function importPam_bak(): void
     {
         $fileFormField = 'files';
 

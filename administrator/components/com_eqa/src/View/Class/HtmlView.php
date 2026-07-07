@@ -57,7 +57,7 @@ class HtmlView extends ItemHtmlView {
 		$this->class = $model->getItem($classId);
 
 		//Load form
-		$this->form = FormHelper::getBackendForm('com_eqa.classlearners_import','upload_excelfile.xml', []);
+		$this->form = FormHelper::getBackendForm('com_eqa.classlearners_import','importClassPam.xml', []);
 		FormHelper::addField($this->form,'class_id','hidden', $classId, null, 'upload');
 	}
 	protected function addToolbarForLayoutImportpams(): void

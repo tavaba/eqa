@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form>
+    <fieldset name="upload" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+        <field  name="complete_pam_calculation"
+                type="radio"
+                required="true"
+                default="1"
+                label="Tự hoàn thiện ĐQT"
+                description="Nếu bật: khi cột ĐQT (K) để trống, hệ thống tự tính ĐQT = 0.7*TP1 + 0.3*TP2. Nếu tắt: cột ĐQT bắt buộc phải có sẵn."
+                class="btn-group btn-group-yesno"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field  name="excelfile"
+                type="file"
+                required="true"
+                label="File Excel"
+                accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        />
+    </fieldset>
+</form>

@@ -129,62 +129,26 @@ class ClassController extends  FormController
 			return;
 		}
 
-		//PHASE 2: Process uploaded file
-		//4. Load the spreadsheet and read PAMs from it
-		try
-		{
-			$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
-			$sheet = $spreadsheet->getActiveSheet();
-			$sheetData = $sheet->toArray('');
-			$rowCount = count($sheetData);
-			$data = [];
-			for($r=14; $r<$rowCount; $r++)          //Mã HVSV đầu tiên ở ô B15
-			{
-				$row = $sheetData[$r];
-				$learnerCode = trim($row[1]);       //Cột B
-				if(empty($learnerCode))             //Kết thúc danh sách ĐQT
-					break;
-
-				//Đọc "Ghi chú" ở cột M (12)
-				$description = trim($row[12]);
-
-				//Đọc pam1, pam2, $pam lần lượt ở các cột I, J, K (8, 9, 10)
-				$pam1 = trim($row[8]);
-				$pam1 = ExamHelper::toPam($pam1, $description);
-				$pam2 = trim($row[9]);
-				$pam2 = ExamHelper::toPam($pam2, $description);
-				$pam = trim($row[10]);
-				$pam = ExamHelper::toPam($pam, $description);
-				if($pam1 === false || $pam2 === false || $pam === false)
-				{
-					$msg = sprintf('Dòng %d: ĐQP không hợp lệ', $r+1);
-					throw new Exception($msg);
-				}
-
-				//Save to the array
-				$data[] = [
-					'row_index'=>$r+1,
-					'learner_code'=>$learnerCode,
-					'description'=>$description,
-					'pam1'=>$pam1,
-					'pam2'=>$pam2,
-					'pam'=>$pam,
-					'allowed' => ExamHelper::isAllowedToFinalExam($pam1, $pam2, $pam)
-				];
-			}
-
-			//5. Import to database
+		// PHASE 2: Xử lý file đã tải lên
+		try {
+			/** @var ClassModel $model */
 			$model = $this->getModel();
-			[$classSize, $countUpdated, $npam] = $model->importPams($classId, $data, true);
-			$msg = "Sĩ số lớp học phần: {$classSize}. Số lượng được nhập ĐQT: {$countUpdated}. Tổng số HVSV đã có ĐQT: {$npam}/{$classSize}";
-			$type = $npam==$classSize ? 'success' : 'info';
-			$this->setMessage($msg, $type);
+
+			$sheetData = IOHelper::loadSpreadsheet($file['tmp_name'])->getActiveSheet()->toArray('');
+			$completePamCalculation = (bool) $this->input->getInt('complete_pam_calculation');
+
+			$data = $model->readPamSheet($sheetData, $completePamCalculation);
+			[$classSize, $countUpdated, $countIgnored, $npam] = $model->importPams($classId, $data, true);
+
+			$msg = sprintf(
+				'Sĩ số lớp: %d. Đã nhập ĐQT: %d. Bỏ qua (đã có điểm): %d. Tổng đã có ĐQT: %d/%d',
+				$classSize, $countUpdated, $countIgnored, $npam, $classSize
+			);
+			$this->setMessage($msg, $npam === $classSize ? 'success' : 'info');
+		} catch (Exception $e) {
+			$this->setMessage($e->getMessage(), 'error');
 		}
-		catch(Exception $e)
-		{
-			$this->setMessage(Text::_($e->getMessage()), 'error');
-		}
-		$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id='.$classId,false);
+		$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id=' . $classId, false);
 		$this->setRedirect($url);
 	}
 

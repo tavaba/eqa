@@ -2,18 +2,26 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
+use Kma\Component\Eqa\Administrator\Enum\SpecialMark;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use Kma\Component\Eqa\Administrator\Service\CreditClassNameParser;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 
 class ClassModel extends AdminModel
 {
-    protected function prepareTable($table)
+	/** Trạng thái xử lý một worksheet trong importPamForSheet(). */
+	public const int PAM_SHEET_PROCESSED = 0;   // Đã đọc và gọi importPams()
+	public const int PAM_SHEET_SKIPPED   = 1;   // Bỏ qua (tên lớp không hợp lệ / lớp con / lớp không tồn tại / lớp trắng đã chọn bỏ qua)
+	public const int PAM_SHEET_BLANK     = 2;   // Lớp trắng nhưng KHÔNG chọn "Bỏ qua lớp trắng" -> cần gộp báo cáo
+	protected function prepareTable($table)
     {
 	    if(empty($table->lecturer_id))
 			$table->lecturer_id=null;
@@ -211,146 +219,362 @@ class ClassModel extends AdminModel
 	}
 
 	/**
-	 * Nhập điểm quá trình cho lớp học phần. Có sử dụng transaction.
-	 * @param   int    $classId         ID của lớp
-	 * @param   array  $data            ['row_index', 'learner_code', 'pam1', 'pam2','pam', 'allowed', 'description']
-	 * @param   bool   $setPamDateToday Lấy ngày hôm nay là ngày bàn giao điểm quá trình
+	 * Đọc & chuẩn hóa điểm quá trình từ dữ liệu thô của một worksheet.
 	 *
-	 * @return array
+	 * KHÔNG truy vấn CSDL nên dùng chung cho cả nhập theo lớp (ClassController) lẫn nhập
+	 * hàng loạt (ClassesController). Áp dụng: chuẩn hóa điểm (toPam), tự hoàn thiện PAM theo
+	 * công thức mặc định (nếu bật), và ép TKD khi PAM > 0 nhưng TP1/TP2 dưới ngưỡng thành phần.
 	 *
-	 * @throws Exception
-	 * @since version
+	 * Các dòng có điểm không hợp lệ được GOM lại và ném MỘT exception liệt kê đầy đủ.
+	 *
+	 * @param   array   $sheetData               Dữ liệu thô ($worksheet->toArray('')).
+	 * @param   bool    $completePamCalculation  Tự hoàn thiện PAM nếu ô PAM trống.
+	 * @param   string  $classCode               Mã lớp (chỉ dùng cho thông báo, có thể rỗng).
+	 * @param   int     $firstDataRow            Chỉ số dòng đầu tiên chứa dữ liệu (mặc định 14 ~ dòng 15).
+	 *
+	 * @return  array   Danh sách ['row_index','learner_code','pam1','pam2','pam','allowed','description'].
+	 *
+	 * @throws  Exception  Nếu có dòng điểm không hợp lệ (gộp).
+	 * @since   2.1.1
+	 */
+	public function readPamSheet(array $sheetData, bool $completePamCalculation, string $classCode = '', int $firstDataRow = 14): array
+	{
+		$app    = Factory::getApplication();
+		$filter = InputFilter::getInstance();
+
+		$data        = [];
+		$invalidRows = [];
+
+		for ($i = $firstDataRow; ; $i++) {
+			if (empty($sheetData[$i])) {
+				break;                                          // Hết dữ liệu
+			}
+			$learnerCode = trim($sheetData[$i][1] ?? '');       // Cột B
+			if ($learnerCode === '') {
+				break;                                          // Hết danh sách
+			}
+			$rowNumber = $i + 1;                                // Số hiệu dòng trên Excel
+
+			// Ghi chú (cột M = 12) phục vụ suy luận điểm đặc biệt
+			$descriptionRaw    = $sheetData[$i][12] ?? '';
+			$descriptionForPam = $descriptionRaw !== '' ? mb_strtolower(trim($descriptionRaw)) : '';
+
+			// PAM1 (cột I = 8), PAM2 (cột J = 9)
+			$pam1 = ExamHelper::toPam($sheetData[$i][8] ?? '', $descriptionForPam);
+			$pam2 = ExamHelper::toPam($sheetData[$i][9] ?? '', $descriptionForPam);
+			if ($pam1 === false || $pam2 === false) {
+				$invalidRows[] = $rowNumber . ' (' . $learnerCode . ')';
+				continue;
+			}
+
+			// PAM (cột K = 10) — tự hoàn thiện nếu ô trống và bật tùy chọn
+			$pamCell = $sheetData[$i][10] ?? '';
+			if (is_string($pamCell)) {
+				$pamCell = trim($pamCell);
+			}
+			if ($pamCell === '') {
+				if (!$completePamCalculation) {
+					$invalidRows[] = $rowNumber . ' (' . $learnerCode . ')';
+					continue;
+				}
+				// Ưu tiên giữ điểm đặc biệt của TP1/TP2 (nếu có), ngược lại tính theo công thức mặc định
+				$pam = $pam1 < 0 ? $pam1 : ($pam2 < 0 ? $pam2 : ExamHelper::calculatePamForDefaultFormular($pam1, $pam2));
+			} else {
+				$pam = ExamHelper::toPam($pamCell, $descriptionForPam);
+				if ($pam === false) {
+					$invalidRows[] = $rowNumber . ' (' . $learnerCode . ')';
+					continue;
+				}
+			}
+
+			// [MỚI] Ngưỡng thành phần: ép TKD nếu PAM dương mà TP1/TP2 dưới ngưỡng (C1/C2)
+			if ($pam > 0 && ExamHelper::pamFailsComponentThreshold($pam1, $pam2)) {
+				$label = $classCode !== ''
+					? sprintf('Lớp %s - HVSV %s', $classCode, $learnerCode)
+					: sprintf('HVSV %s', $learnerCode);
+				$app->enqueueMessage(sprintf(
+					'%s: TP1/TP2 dưới ngưỡng nhưng ĐQT = %s (>0); đã tự động chuyển thành TKD (thi không đạt)',
+					$label, ExamHelper::markToText($pam)
+				), 'warning');
+				$pam = SpecialMark::TKD->value;
+			}
+
+			$data[] = [
+				'row_index'    => $rowNumber,
+				'learner_code' => $learnerCode,
+				'pam1'         => $pam1,
+				'pam2'         => $pam2,
+				'pam'          => $pam,
+				'allowed'      => ExamHelper::isAllowedToFinalExam($pam1, $pam2, $pam),
+				'description'  => trim($filter->clean($descriptionRaw)),
+			];
+		}
+
+		// Gom lỗi -> ném MỘT exception liệt kê đầy đủ
+		if (!empty($invalidRows)) {
+			$prefix = $classCode !== '' ? sprintf('Lớp %s: ', $classCode) : '';
+			throw new Exception(sprintf(
+				'%sCó %d dòng ĐQT không hợp lệ (dòng %s)',
+				$prefix, count($invalidRows), implode(', ', $invalidRows)
+			));
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Kiểm tra một lớp học phần có đủ điều kiện để nhập/ghi ĐQT hay không.
+	 * Điều kiện: lớp đang published và CHƯA tổ chức thi (chưa có thí sinh được gán số báo danh).
+	 *
+	 * Tách riêng để kiểm tra SỚM (trước khi đọc dữ liệu & phát cảnh báo), tránh hiển thị
+	 * thông báo cho lớp rốt cuộc bị từ chối.
+	 *
+	 * @param   int  $classId  ID lớp học phần.
+	 *
+	 * @return  void
+	 * @throws  Exception  Nếu lớp không tồn tại/không published hoặc đã tổ chức thi.
+	 * @since   2.x
+	 */
+	public function assertPamImportable(int $classId): void
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		// 1. Lớp phải tồn tại và đang published
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from($db->quoteName('#__eqa_classes'))
+			->where($db->quoteName('id') . ' = ' . (int) $classId)
+			->where($db->quoteName('published') . ' = 1');
+		$db->setQuery($query);
+		if ((int) $db->loadResult() === 0) {
+			throw new Exception('Lớp không tồn tại hoặc đã bị vô hiệu hóa');
+		}
+
+		// 2. Chưa tổ chức thi (chưa ai được gán số báo danh)
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from($db->quoteName('#__eqa_exam_learner'))
+			->where($db->quoteName('class_id') . ' = ' . (int) $classId)
+			->where($db->quoteName('code') . ' IS NOT NULL');
+		$db->setQuery($query);
+		if ((int) $db->loadResult() > 0) {
+			throw new Exception('Đã tổ chức thi, không thể nhập ĐQT');
+		}
+	}
+
+	/**
+	 * Nhập điểm quá trình (PAM) cho một lớp học phần trong một transaction.
+	 *
+	 * - KHÔNG ghi đè điểm của HVSV đã có ĐQT (đếm vào $countIgnored).
+	 * - Nếu $data chứa HVSV không thuộc lớp thì gom lại và ném MỘT exception liệt kê đầy đủ.
+	 * - Yêu cầu lớp đang published và chưa tổ chức thi.
+	 *
+	 * @param   int    $classId          ID lớp học phần.
+	 * @param   array  $data             Mảng bản ghi từ readPamSheet().
+	 * @param   bool   $setPamDateToday  Ghi nhận hôm nay là ngày bàn giao ĐQT nếu toàn lớp đã có điểm.
+	 *
+	 * @return  array  [$classSize, $countUpdated, $countIgnored, $npam]
+	 *
+	 * @throws  Exception
+	 * @since   1.0.0
 	 */
 	public function importPams(int $classId, array $data, bool $setPamDateToday): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		//1. Check if the class exists and is published
-		$db->setQuery("SELECT COUNT(*) FROM `#__eqa_classes` WHERE `id`=$classId AND `published`=1");
-		$count = (int) $db->loadResult();
-		if($count==0)
-			throw new Exception('Lớp không tồn tại hoặc đã bị vô hiệu hóa');
+		// 1-2. Điều kiện được phép nhập ĐQT (published + chưa tổ chức thi)
+		$this->assertPamImportable($classId);
 
-		//2. Ensure that no one from the class has been assigned an examinee code yet
-		//   (no exam hasn't begun)
-		$db->setQuery("SELECT * FROM `#__eqa_exam_learner` WHERE `class_id`=$classId AND `code` IS NOT NULL LIMIT 1");
-		$item = $db->loadObject();
-		if(!empty($item))
-			throw new Exception('Đã tổ chức thi, không thể nhập ĐQT');
-
-		//3. Load the mapping between learner ids and their codes for this class
+		// 3. Bản đồ mã HVSV -> id trong lớp
 		$query = $db->getQuery(true)
-			->select('a.learner_id AS id, b.code AS code')
-			->from('#__eqa_class_learner AS a')
-			->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
-			->where('a.class_id = '.$classId);
+			->select($db->quoteName('b.code', 'code') . ', ' . $db->quoteName('a.learner_id', 'id'))
+			->from($db->quoteName('#__eqa_class_learner', 'a'))
+			->leftJoin($db->quoteName('#__eqa_learners', 'b') . ' ON ' . $db->quoteName('b.id') . ' = ' . $db->quoteName('a.learner_id'))
+			->where($db->quoteName('a.class_id') . ' = ' . (int) $classId);
 		$db->setQuery($query);
-		$classLearnerMap = $db->loadAssocList('code','id');     //key: learner code, value: learner id
-		if(empty($classLearnerMap))
+		$classLearnerMap = $db->loadAssocList('code', 'id');    // [code] => id
+		if (empty($classLearnerMap)) {
 			throw new Exception('Lớp học phần rỗng, không thể nhập ĐQT');
+		}
 
-		//4. Check if any of these learners does not exist in the class
-		//   If there are absentees, throw an exception with a list of whole codes,
-		//   so the user can fix all of the errors at once instead of fixing them one-by-one
+		// 4. HVSV không thuộc lớp -> gom & ném MỘT exception
 		$absentees = [];
-		foreach ($data as $item)
-		{
-			$rowIndex = $item['row_index'];
-			$learnerCode = $item['learner_code'];
-
-			if(!array_key_exists($learnerCode, $classLearnerMap))
-				$absentees[] = $learnerCode . "({$rowIndex})";
+		foreach ($data as $item) {
+			if (!array_key_exists($item['learner_code'], $classLearnerMap)) {
+				$absentees[] = $item['learner_code'] . ' (' . $item['row_index'] . ')';
+			}
 		}
-		if(!empty($absentees))
-		{
-			$msg = sprintf('Có %d HVSV không tồn tại trong lớp học phần: %s',
-				count($absentees),
-				htmlentities(implode('; ', $absentees))
-			);
-			throw new Exception($msg);
+		if (!empty($absentees)) {
+			throw new Exception(sprintf(
+				'Có %d HVSV không tồn tại trong lớp học phần: %s',
+				count($absentees), htmlentities(implode('; ', $absentees))
+			));
 		}
 
-		//4. Try to add learners to the class
+		// 5. Tập id HVSV đã có ĐQT (để KHÔNG ghi đè)
+		$query = $db->getQuery(true)
+			->select($db->quoteName('learner_id'))
+			->from($db->quoteName('#__eqa_class_learner'))
+			->where($db->quoteName('class_id') . ' = ' . (int) $classId)
+			->where('(' . $db->quoteName('pam1') . ' IS NOT NULL OR '
+				. $db->quoteName('pam2') . ' IS NOT NULL OR '
+				. $db->quoteName('pam')  . ' IS NOT NULL)');
+		$db->setQuery($query);
+		$scoredLearnerIds = array_map('intval', $db->loadColumn());
+
+		// 6. Ghi điểm trong transaction
+		$countUpdated = 0;
+		$countIgnored = 0;
 		$db->transactionStart();
-		try
-		{
-			foreach ($data as $item)        //$rowIndex is the index of row in the input Excel file
-			{
-				//1. Prepare data
-				$rowIndex = $item['row_index'];
-				$learnerCode = $item['learner_code'];
-				$pam1 = $item['pam1'];
-				$pam2 = $item['pam2'];
-				$pam = $item['pam'];
-				$allowed = $item['allowed'];
-				$description = $item['description'];
+		try {
+			foreach ($data as $item) {
+				$learnerId = (int) $classLearnerMap[$item['learner_code']];
+
+				// Không ghi đè HVSV đã có ĐQT
+				if (in_array($learnerId, $scoredLearnerIds, true)) {
+					$countIgnored++;
+					continue;
+				}
+
+				$allowed     = !empty($item['allowed']);
+				$description = $item['description'] ?? '';
 
 				$setData = [
-					$db->quoteName('pam1') . '=' . floatval($pam1),
-					$db->quoteName('pam2') . '=' . floatval($pam2),
-					$db->quoteName('pam')  . '=' . floatval($pam),
+					$db->quoteName('pam1')    . ' = ' . (float) $item['pam1'],
+					$db->quoteName('pam2')    . ' = ' . (float) $item['pam2'],
+					$db->quoteName('pam')     . ' = ' . (float) $item['pam'],
+					$db->quoteName('allowed') . ' = ' . (int) $allowed,
 				];
-				if(empty($description))
-					$setData[] = $db->quoteName('description') . '= NULL';
-				else
-					$setData[] = $db->quoteName('description') . '=' . $db->quote($description);
-
-				if($allowed)
-				{
-					$setData[] = $db->quoteName('allowed') . '=1';      //Cho phép thi
-				}
-				else
-				{
-					$setData[] = $db->quoteName('allowed') . '=0';      //Cho phép thi
-					$setData[] = $db->quoteName('expired') . '=1';      //Cho phép thi
+				$setData[] = $description === ''
+					? $db->quoteName('description') . ' = NULL'
+					: $db->quoteName('description') . ' = ' . $db->quote($description);
+				if (!$allowed) {
+					$setData[] = $db->quoteName('expired') . ' = 1';
 				}
 
-				//2. Get the learner id
-				$learnerId = $classLearnerMap[$learnerCode];
-
-				//3. Update PAM
 				$query = $db->getQuery(true)
-					->update('#__eqa_class_learner')
+					->update($db->quoteName('#__eqa_class_learner'))
 					->set($setData)
-					->where('class_id = '.$classId.' AND learner_id = '.$learnerId);
+					->where($db->quoteName('class_id') . ' = ' . (int) $classId)
+					->where($db->quoteName('learner_id') . ' = ' . $learnerId);
 				$db->setQuery($query);
-				if(!$db->execute())
-					throw new Exception("Nhập ĐQT thất bại (dữ liệu tại dòng {$rowIndex})");
+				if (!$db->execute()) {
+					throw new Exception(sprintf('Nhập ĐQT thất bại (dữ liệu tại dòng %s)', $item['row_index']));
+				}
+				$countUpdated++;
 			}
 
-			//4. Update the the number of learners who already have PAM ('npam')
-			//a) Count how many learners have been assigned PAM
-			$db->setQuery("SELECT COUNT(*) FROM `#__eqa_class_learner` WHERE `class_id`=$classId AND `pam` IS NOT NULL");
+			// 7. Cập nhật npam
+			$query = $db->getQuery(true)
+				->select('COUNT(*)')
+				->from($db->quoteName('#__eqa_class_learner'))
+				->where($db->quoteName('class_id') . ' = ' . (int) $classId)
+				->where($db->quoteName('pam') . ' IS NOT NULL');
+			$db->setQuery($query);
 			$npam = (int) $db->loadResult();
-			//b) Set npam
-			$db->setQuery("UPDATE `#__eqa_classes` SET `npam`={$npam} WHERE `id`={$classId}");
-			if(!$db->execute())
-				throw new Exception("Cập nhật số lượng HVSV có ĐQT thất bại");
+
+			$query = $db->getQuery(true)
+				->update($db->quoteName('#__eqa_classes'))
+				->set($db->quoteName('npam') . ' = ' . $npam)
+				->where($db->quoteName('id') . ' = ' . (int) $classId);
+			$db->setQuery($query);
+			if (!$db->execute()) {
+				throw new Exception('Cập nhật số lượng HVSV có ĐQT thất bại');
+			}
 
 			$classSize = count($classLearnerMap);
-			$countUpdated = count($data);
-			//5. Update class PAM date if all learners have been assigned PAM
-			if($setPamDateToday && $npam==$classSize)
-			{
-				$now = DatetimeHelper::getCurrentUtcTime();
+
+			// 8. Ngày bàn giao ĐQT nếu toàn lớp đã có điểm (lưu UTC)
+			if ($setPamDateToday && $npam === $classSize) {
 				$query = $db->getQuery(true)
-					->update('#__eqa_classes')
-					->set($db->quoteName('pamdate') . '=' . $db->quote($now))
-					->where('id = '.$classId);
+					->update($db->quoteName('#__eqa_classes'))
+					->set($db->quoteName('pamdate') . ' = ' . $db->quote(DatetimeHelper::getCurrentUtcTime()))
+					->where($db->quoteName('id') . ' = ' . (int) $classId);
 				$db->setQuery($query);
-				if(!$db->execute())
-					throw new Exception("Cập nhật ngày bàn giao ĐQT thất bại");
+				if (!$db->execute()) {
+					throw new Exception('Cập nhật ngày bàn giao ĐQT thất bại');
+				}
 			}
 
-			//6. Commit changes
 			$db->transactionCommit();
-			return [$classSize, $countUpdated, $npam];
-		}
-		catch(Exception $e){
+		} catch (Exception $e) {
 			$db->transactionRollback();
 			throw $e;
 		}
+
+		return [$classSize, $countUpdated, $countIgnored, $npam];
 	}
+
+	/**
+	 * Nhập ĐQT cho một worksheet (một lớp học phần) trong luồng nhập hàng loạt.
+	 *
+	 * Chỉ điều phối: parse tên lớp (C7) -> classId, kiểm tra lớp trắng, rồi ủy thác đọc dữ liệu
+	 * cho readPamSheet() và ghi CSDL cho importPams(). KHÔNG catch exception về dữ liệu — để lan
+	 * lên controller xử lý theo từng sheet.
+	 *
+	 * @param   array   $sheetData   Dữ liệu thô của worksheet.
+	 * @param   string  $sheetTitle  Tên worksheet (cho thông báo).
+	 * @param   string  $fileName    Tên file Excel (cho thông báo).
+	 * @param   array   $options     ['ignoreBlankClasses','completePamCalculation','pamDateToday'] (bool).
+	 *
+	 * @return  array   ['status' => int (PAM_SHEET_*), 'classCode' => string]
+	 *
+	 * @throws  Exception
+	 * @since   2.x
+	 */
+	public function importPamForSheet(array $sheetData, string $sheetTitle, string $fileName, array $options): array
+	{
+		$app = Factory::getApplication();
+
+		$completePamCalculation = !empty($options['completePamCalculation']);
+		$ignoreBlankClasses     = !empty($options['ignoreBlankClasses']);
+		$pamDateToday           = !empty($options['pamDateToday']);
+
+		// 1. Parse tên lớp (C7) & resolve classId
+		$parser    = new CreditClassNameParser();
+		$className = trim($sheetData[6][2] ?? '');
+		if (!$parser->parse($className)) {
+			$app->enqueueMessage(htmlentities(sprintf('Tên lớp không hợp lệ: %s --> %s : %s', $fileName, $sheetTitle, $className)), 'error');
+			return ['status' => self::PAM_SHEET_SKIPPED, 'classCode' => ''];
+		}
+		if (!$parser->isPrimaryClass()) {                       // Bỏ qua lớp con
+			return ['status' => self::PAM_SHEET_SKIPPED, 'classCode' => ''];
+		}
+
+		$subjectCode = trim($sheetData[5][12] ?? '');
+		$classCode   = $subjectCode . '-' . $parser->getClassCodeTail();
+		$classId     = DatabaseHelper::getClassId($classCode);
+		if (empty($classId)) {
+			$app->enqueueMessage(sprintf('Mã lớp học phần "%s" không tồn tại', $classCode), 'error');
+			return ['status' => self::PAM_SHEET_SKIPPED, 'classCode' => $classCode];
+		}
+
+		// 2. Lớp trắng? (TP1 của HVSV đầu tiên ~ ô I15). Luôn bỏ qua & tiếp tục;
+		//    nếu KHÔNG chọn "Bỏ qua lớp trắng" thì đánh dấu để controller gộp báo cáo.
+		if (trim($sheetData[14][8] ?? '') === '') {
+			$status = $ignoreBlankClasses ? self::PAM_SHEET_SKIPPED : self::PAM_SHEET_BLANK;
+			return ['status' => $status, 'classCode' => $classCode];
+		}
+
+		// 2.5. [MỚI] Kiểm tra điều kiện được phép nhập ĐQT TRƯỚC khi đọc dữ liệu,
+		//      để không phát cảnh báo TKD cho lớp không đủ điều kiện.
+		$this->assertPamImportable($classId);
+
+		// 3. Đọc dữ liệu (có thể ném exception gộp nếu có dòng không hợp lệ)
+		$data = $this->readPamSheet($sheetData, $completePamCalculation, $classCode);
+
+		// 4. Ghi CSDL (tự quản transaction; có thể ném exception nếu có HVSV lạ / đã thi...)
+		[$classSize, $countUpdated, $countIgnored, $npam] = $this->importPams($classId, $data, $pamDateToday);
+
+		// 5. Tổng kết cho lớp
+		$app->enqueueMessage(sprintf(
+			'Lớp %s (sĩ số %d): đã nhập %d, bỏ qua %d (đã có điểm), tổng đã có ĐQT %d/%d',
+			$classCode, $classSize, $countUpdated, $countIgnored, $npam, $classSize
+		), $npam === $classSize ? 'message' : 'warning');
+
+		return ['status' => self::PAM_SHEET_PROCESSED, 'classCode' => $classCode];
+	}
+
 	public function updatePam(int $classId, int $learnerId, float $pam1, float $pam2, float $pam, bool $allowed, bool $expired, string $description)
 	{
 		$userId = Factory::getApplication()->getIdentity()->id;
@@ -374,29 +598,6 @@ class ClassModel extends AdminModel
 		//Execute the query. If the query fails, throw an exception with error message
 		if(!$db->execute())
 			throw new Exception($this->getError());
-	}
-	public function exportPams_bak(int $classId): array
-	{
-		$db = DatabaseHelper::getDatabaseDriver();
-		$columns = [
-			$db->quoteName('b.code'),
-			$db->quoteName('b.lastname'),
-			$db->quoteName('b.firstname'),
-			$db->quoteName('c.code')            . ' AS ' . $db->quoteName('group'),
-			$db->quoteName('a.pam1'),
-			$db->quoteName('a.pam2'),
-			$db->quoteName('a.pam'),
-			$db->quoteName('a.description'),
-		];
-		$query = $db->getQuery(true)
-			->select($columns)
-			->from('#__eqa_class_learner AS a')
-			->leftJoin('#__eqa_learners AS b', 'a.learner_id=b.id')
-			->leftJoin('#__eqa_groups AS c', 'c.id=b.group_id')
-			->where('a.class_id = '.$classId)
-			->order('b.firstname ASC, b.lastname ASC');
-		$db->setQuery($query);
-		return $db->loadObjectList();
 	}
 
 	/**

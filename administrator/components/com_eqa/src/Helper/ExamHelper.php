@@ -39,6 +39,31 @@ abstract class ExamHelper
 			return false;
 		return  true;
 	}
+
+	/**
+	 * Kiểm tra người học có KHÔNG đạt ngưỡng điểm thành phần quá trình hay không.
+	 *
+	 * Chỉ áp dụng đánh giá khi ngưỡng tương ứng được cấu hình > 0:
+	 *   - C1: threshold_pam1 > 0 và pam1 < threshold_pam1
+	 *   - C2: threshold_pam2 > 0 và pam2 < threshold_pam2
+	 *
+	 * @param   float  $pam1  Điểm thành phần 1.
+	 * @param   float  $pam2  Điểm thành phần 2.
+	 *
+	 * @return  bool   true nếu rơi vào C1 hoặc C2 (không đạt ngưỡng thành phần).
+	 *
+	 * @since   2.1.1
+	 */
+	public static function pamFailsComponentThreshold(float $pam1, float $pam2): bool
+	{
+		$thresholdPam1 = ConfigHelper::getThresholdForPam1();
+		$thresholdPam2 = ConfigHelper::getThresholdForPam2();
+
+		$failsC1 = ($thresholdPam1 > 0 && $pam1 < $thresholdPam1);
+		$failsC2 = ($thresholdPam2 > 0 && $pam2 < $thresholdPam2);
+
+		return $failsC1 || $failsC2;
+	}
 	static public function toPam($value, string|null $description=null): float|bool
 	{
 		//Prepare
