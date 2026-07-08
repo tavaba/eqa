@@ -171,6 +171,10 @@ class HtmlView extends ItemsHtmlView {
 	    ToolbarHelper::appendButton('core.create','plus-2','Thêm HVSV chưa đạt','exam.addFailedExaminees',false,'btn btn-success');
         ToolbarHelper::appendDelete('exam.removeExaminees');
 	    ToolbarHelper::appendButton('core.edit', 'loop','Khuyến khích','exam.stimulate',false, 'btn btn-success');
+	    $msgUndoStimulate = 'Thao tác này sẽ xóa khuyến khích và các điểm số liên quan (nếu có) '
+		    . 'của các thí sinh được chọn. Bạn có chắc muốn thực hiện?';
+	    ToolbarHelper::appendConfirmButton('core.edit', $msgUndoStimulate, 'cancel-2',
+		    'Hủy khuyến khích', 'exam.undoStimulate', true, 'btn btn-danger');
 		$msg = 'Điều này có thể làm xáo trộn trạng thái thí sinh môn thi. Bạn có chắc muốn thực hiện?';
 	    ToolbarHelper::appendConfirmButton('core.edit',$msg, 'loop','Nợ học phí','exam.updateDebt',false,'btn btn-success');
 	    ToolbarHelper::appendConfirmButton('core.edit',$msg, 'loop','Nợ phí thi lại','exam.updateSecondAttemptPaymentStatus',false,'btn btn-success');

@@ -36,7 +36,7 @@ class HtmlView extends ItemHtmlView {
          * Prepare model
          * @var ExamroomExamineesModel $model
          */
-        $model = ComponentHelper::createModel('examroomexaminees');
+        $model = ComponentHelper::createModel('examroomExaminees');
         $this->setModel($model,true);
         $model->setState('filter.examroom_id',$examroomId);   //Để dùng trong $model->getsListQuery()
 

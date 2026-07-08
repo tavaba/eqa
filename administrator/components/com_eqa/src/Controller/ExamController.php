@@ -690,6 +690,59 @@ class ExamController extends  FormController
 			return;
 		}
 	}
+
+	/**
+	 * Cancel (undo) the stimulations that have been applied to the selected examinees.
+	 * The corresponding records in #__eqa_stimulations will be reset to 'unused'.
+	 *
+	 * @return void
+	 *
+	 * @since version 2.1.4
+	 */
+	public function undoStimulate(): void
+	{
+		$examId = 0;
+		try
+		{
+			//Check token
+			$this->checkToken();
+
+			//Get exam id
+			$examId = $this->input->getInt('exam_id');
+			if (empty($examId))
+				throw new Exception('Không xác định được môn thi');
+
+			//Check permissions
+			if (!$this->app->getIdentity()->authorise('core.edit', $this->option))
+				throw new Exception(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+
+			//Get the ids of the selected examinees (learner ids)
+			$learnerIds = (array) $this->input->get('cid', [], 'int');
+			$learnerIds = array_filter($learnerIds);
+			if (empty($learnerIds))
+				throw new Exception(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'));
+
+			/**
+			 * Cancel the stimulations
+			 * @var ExamModel $model
+			 */
+			$model = $this->getModel();
+			$msg = $model->cancelStimulations($examId, $learnerIds);
+
+			//Set redirect in case of success
+			$this->setMessage($msg);
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id=' . $examId, false));
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(), 'error');
+			if (empty($examId))
+				$url = Route::_('index.php?option=com_eqa', false);
+			else
+				$url = Route::_('index.php?option=com_eqa&view=examExaminees&exam_id=' . $examId, false);
+			$this->setRedirect($url);
+		}
+	}
 	public function updateDebt(): void
 	{
 		try

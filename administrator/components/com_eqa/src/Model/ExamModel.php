@@ -1486,6 +1486,7 @@ class ExamModel extends AdminModel{
 				'mark_orig=NULL',
 				'mark_final=NULL',
 				'module_mark=NULL',
+				'module_base4_mark=NULL',
 				'module_grade=NULL',
 				'conclusion=NULL'
 			])
@@ -1553,6 +1554,7 @@ class ExamModel extends AdminModel{
 				'stimulation_id=NULL',
 				'mark_final=NULL',
 				'module_mark=NULL',
+				'module_base4_mark=NULL',
 				'module_grade=NULL',
 				'conclusion=NULL'
 			])
@@ -1564,6 +1566,18 @@ class ExamModel extends AdminModel{
 		if(!$db->execute())
 		{
 			throw new Exception('Lỗi truy vấn CSDL khi xóa thông tin khuyến khích trong môn thi');
+		}
+
+		//3. Cập nhật thông tin khuyến khích ('used' => false)
+		$stimulationIds = array_map('intval', array_column($stimulations, 'id'));
+		$query = $db->getQuery(true)
+			->update($db->quoteName('#__eqa_stimulations'))
+			->set($db->quoteName('used') . ' = 0')
+			->where($db->quoteName('id') . ' IN (' . implode(',', $stimulationIds) . ')');
+		$db->setQuery($query);
+		if (!$db->execute())
+		{
+			throw new Exception('Lỗi truy vấn CSDL khi cập nhật thông tin khuyến khích');
 		}
 
 		return sizeof($stimulations);
@@ -1715,6 +1729,115 @@ class ExamModel extends AdminModel{
 			$countAppliedTransfer, sizeof($transfers)
 		);
 		return $msg;
+	}
+
+	/**
+	 * Cancel (undo) the stimulations applied to the given examinees of an exam.
+	 * Only examinees currently having a stimulation (stimulation_id IS NOT NULL) are processed;
+	 * the others are skipped and reported via a warning message.
+	 * This is only allowed while the exam status has not reached ExamStatus::MarkFull.
+	 * The corresponding records in #__eqa_stimulations are reset to 'unused' (used=0).
+	 *
+	 * @param   int    $examId      The id of the exam
+	 * @param   array  $learnerIds  The ids of the selected examinees (learner ids)
+	 *
+	 * @return string A success message for the caller
+	 *
+	 * @throws Exception
+	 * @since version 2.1.5
+	 */
+	public function cancelStimulations(int $examId, array $learnerIds): string
+	{
+		//1. Init
+		$db  = DatabaseHelper::getDatabaseDriver();
+		$app = Factory::getApplication();
+		$learnerIds = array_map('intval', $learnerIds);
+
+		//2. Check the exam status: must not have reached MarkFull
+		$query = $db->getQuery(true)
+			->select($db->quoteName('status'))
+			->from($db->quoteName('#__eqa_exams'))
+			->where($db->quoteName('id') . ' = ' . (int) $examId);
+		$db->setQuery($query);
+		$status = $db->loadResult();
+		if ($status === null)
+			throw new Exception('Không tìm thấy môn thi');
+		if ((int) $status >= ExamStatus::MarkFull->value)
+			throw new Exception('Môn thi đã có đủ điểm. Không thể hủy khuyến khích');
+
+		//3. Get the selected examinees who currently have a stimulation
+		$columns = $db->quoteName(
+			array('b.id', 'b.type', 'a.learner_id', 'a.class_id', 'c.code'),
+			array('id',   'type',   'learner_id',   'class_id',   'code')
+		);
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from($db->quoteName('#__eqa_exam_learner', 'a'))
+			->innerJoin($db->quoteName('#__eqa_stimulations', 'b'),
+				$db->quoteName('b.id') . ' = ' . $db->quoteName('a.stimulation_id'))
+			->leftJoin($db->quoteName('#__eqa_learners', 'c'),
+				$db->quoteName('c.id') . ' = ' . $db->quoteName('a.learner_id'))
+			->where([
+				$db->quoteName('a.exam_id') . ' = ' . (int) $examId,
+				$db->quoteName('a.learner_id') . ' IN (' . implode(',', $learnerIds) . ')'
+			]);
+		$db->setQuery($query);
+		$stimulations = $db->loadAssocList();
+
+		//4. Report the skipped examinees (selected but having no stimulation)
+		$stimulatedLearnerIds = array_map('intval', array_column($stimulations, 'learner_id'));
+		$skippedLearnerIds = array_diff($learnerIds, $stimulatedLearnerIds);
+		if (!empty($skippedLearnerIds))
+		{
+			$query = $db->getQuery(true)
+				->select($db->quoteName('code'))
+				->from($db->quoteName('#__eqa_learners'))
+				->where($db->quoteName('id') . ' IN (' . implode(',', array_map('intval', $skippedLearnerIds)) . ')');
+			$db->setQuery($query);
+			$skippedLearnerCodes = $db->loadColumn();
+			$msg = sprintf('Bỏ qua %d thí sinh vì không được áp dụng khuyến khích: <b>%s</b>',
+				sizeof($skippedLearnerCodes),
+				implode(', ', $skippedLearnerCodes)
+			);
+			$app->enqueueMessage($msg, 'warning');
+		}
+		if (empty($stimulations))
+			throw new Exception('Không có thí sinh nào được chọn đang áp dụng khuyến khích');
+
+		//5. Group the stimulations by type
+		$stimulTransfersOrExemptions = [];
+		$stimulAdditions = [];
+		foreach ($stimulations as $stimulation)
+		{
+			switch ((int) $stimulation['type'])
+			{
+				case StimulationHelper::TYPE_EXEMPT:
+				case StimulationHelper::TYPE_TRANS:
+					$stimulTransfersOrExemptions[] = $stimulation;
+					break;
+				case StimulationHelper::TYPE_ADD:
+					$stimulAdditions[] = $stimulation;
+					break;
+				default:
+					throw new Exception(sprintf('Loại khuyến khích không hợp lệ: %d', $stimulation['type']));
+			}
+		}
+
+		//6. Cancel the stimulations within a transaction
+		$db->transactionStart();
+		try
+		{
+			$this->undoApplyStimulTransfersOrExemptions($db, $examId, $stimulTransfersOrExemptions);
+			$this->undoApplyStimulAdditions($db, $examId, $stimulAdditions);
+			$db->transactionCommit();
+		}
+		catch (Exception $e)
+		{
+			$db->transactionRollback();
+			throw $e;
+		}
+
+		return sprintf('Đã hủy khuyến khích cho %d thí sinh', sizeof($stimulations));
 	}
 
 	/**
