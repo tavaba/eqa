@@ -255,7 +255,7 @@ class RegradingsController extends AdminController
 				throw new Exception('Vẫn chưa hết hạn gửi yêu cầu phúc khảo');
 
 			//Bước 3. Chuyển hướng sang form
-			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseasonId, false));
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingEmployees&examseason_id='.$examseasonId, false));
 			return;
 		}
 		catch (Exception $e) {
@@ -293,7 +293,7 @@ class RegradingsController extends AdminController
 			//Bước 5. Redirect đến trang tiếp theo nếu có
 			$this->setMessage('Dữ liệu đã được lưu thành công','success');
 			if($continueAssigning) {
-				$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingemployees&examseason_id='.$examseasonId.'&layout=default', false));
+				$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingEmployees&examseason_id='.$examseasonId.'&layout=default', false));
 			}
 			else{
 				$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
