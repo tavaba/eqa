@@ -66,6 +66,9 @@ abstract class ItemsHtmlView extends BaseHtmlView{
 	        : EnglishHelper::pluralToSingular($viewName);
         $this->layoutData->taskPrefixItems = $viewName;
 
+	    /**
+	     * @var ListModel $model
+	     */
 		$model = $this->getModel();
         $this->layoutData->items = $model->getItems();
         $pagination = $model->getPagination();

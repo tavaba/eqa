@@ -7,6 +7,7 @@ use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
 use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
+use Kma\Component\Eqa\Administrator\Model\GradecorrectionsModel;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -44,7 +45,10 @@ class HtmlView extends ItemsHtmlView {
 		//Gọi phương thức lớp cha
 		parent::prepareDataForLayoutDefault();
 
-		//Lấy thông tin về kỳ thi
+		/**
+		 * Lấy thông tin về kỳ thi
+		 * @var GradecorrectionsModel $model
+		 */
 		$model = $this->getModel();
 		$examseasonId = $model->getSelectedExamSeasonId();
 		if(!empty($examseasonId))

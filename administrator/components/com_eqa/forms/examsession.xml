@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <form>
-    <fieldset name="examsession" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+    <fieldset name="basic" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
         <field  name="id"
                 type="hidden"
-                />
+        />
 
         <!--
             Trường UI để chọn loại ca thi.
@@ -63,7 +63,7 @@
                 required="true"
                 label="COM_EQA_EXAMSESSION_NAME"
                 description="COM_EQA_EXAMSESSION_NAME_DESC"
-                />
+        />
         <field  name="flexible"
                 type="radio"
                 required="true"
@@ -71,15 +71,17 @@
                 label="COM_EQA_EXAMSESSION_FLEXIBLE"
                 description="COM_EQA_FLEXIBLE_EXAMSESSION_DESC"
                 class="btn-group btn-group-yesno"
-            >
+        >
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
+    </fieldset>
+    <fieldset name="personel" label="Cán bộ" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
         <field  name="monitor_ids"
                 type="employee"
                 multiple="true"
                 class="select2-basic"
-                label="COM_EQA_EXAMSESSION_MONITORS"
+                label="Đăng ký CBCT, CBGS"
         >
             <option value="" disable="true">COM_EQA_EXAMSESSION_MONITORS_REQUEST</option>
         </field>
@@ -87,13 +89,48 @@
                 type="employee"
                 multiple="true"
                 class="select2-basic"
-                label="COM_EQA_EXAMSESSION_EXAMINERS"
+                label="Đăng ký CBCTChT"
         >
             <option value="" disable="true">COM_EQA_EXAMSESSION_EXAMINERS_REQUEST</option>
         </field>
-        <field  name="description"
-                type="textarea"
-                label="COM_EQA_DESCRIPTION"
-                />
+        <field  name="supervisor_ids"
+                type="employee"
+                multiple="true"
+                class="select2-basic"
+                label="Phân công CBGS"
+                description="CBGS được xác định trong sách CBCT, CBGS, thực hiện đồng thời nhiệm vụ giám sát và dự bị cho CBCT"
+        >
+            <option value="" disable="true">-Chọn cán bộ giám sát-</option>
+        </field>
+    </fieldset>
+    <fieldset name="metadata">
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+        <field
+                name="created_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+        />
+        <field
+                name="modified_by"
+                type="user"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+        <field
+                name="modified_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+        />
     </fieldset>
 </form>

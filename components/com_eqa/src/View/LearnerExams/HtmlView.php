@@ -95,11 +95,15 @@ class HtmlView extends ItemsHtmlView{
 	}
 	protected function addToolbarForLayoutDefault():void
 	{
-		if($this->errorMessage)
-			return;
-
 		//Title
 		ToolbarHelper::title('Danh sách môn thi của thí sinh');
+
+		if ($this->errorMessage)
+		{
+			ToolbarHelper::back('');
+			ToolbarHelper::render();
+			return;
+		}
 
 		// Add buttons to the toolbar
 		ToolbarHelper::appendButton(null,'dashboard','Yêu cầu phúc khảo','learnerExam.requestRegrading',true);

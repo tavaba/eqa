@@ -109,8 +109,13 @@ class HtmlView extends ItemsHtmlView
 	{
 		//Title
 		ToolbarHelper::title('Yêu cầu đính chính điểm');
-		if(!empty($this->errorMessage))
+
+		if ($this->errorMessage)
+		{
+			ToolbarHelper::back('');
+			ToolbarHelper::render();
 			return;
+		}
 
 		// Add buttons to the toolbar
 		ToolbarHelper::deleteList('Bạn có chắc muốn xóa không?','learnergradecorrections.delete', 'Xóa yêu cầu');

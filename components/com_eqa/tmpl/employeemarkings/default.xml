@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <layout title="Lịch sử chấm thi">
+        <message>
+            <![CDATA[Giảng viên xem lại các bài thi đã chấm]]>
+        </message>
+    </layout>
+
+    <fields name="params">
+        <fieldset name="basic">
+        </fieldset>
+    </fields>
+</metadata>

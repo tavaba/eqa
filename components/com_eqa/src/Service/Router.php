@@ -32,6 +32,13 @@ class Router extends RouterView
 		//$learnerexam->setKey('id'); // This makes exam_id a required parameter
 		$this->registerView($learnerexam);
 
+		// Các view dành cho cán bộ, giảng viên (2.1.5)
+		$this->registerView(new RouterViewConfiguration('employeemonitorings'));
+		$this->registerView(new RouterViewConfiguration('employeeclasses'));
+		$this->registerView(new RouterViewConfiguration('employeeclasslearners'));
+		$this->registerView(new RouterViewConfiguration('employeemarkings'));
+		$this->registerView(new RouterViewConfiguration('employeemarking'));
+
 		// Attach the routing rules
 		$this->attachRule(new MenuRules($this));
 		$this->attachRule(new StandardRules($this));

@@ -100,12 +100,14 @@ class HtmlView extends ItemsHtmlView{
 		ToolbarHelper::title('Danh sách yêu cầu đính chính');
 
 		if ($this->errorMessage)
+		{
+			ToolbarHelper::back('');
+			ToolbarHelper::render();
 			return;
+		}
 
 		// Add buttons to the toolbar
 		ToolbarHelper::appendButton('eqa.supervise', 'download', 'Tải danh sách','gradecorrections.download');
-
-		// Render the toolbar
 		ToolbarHelper::render();
 	}
 }

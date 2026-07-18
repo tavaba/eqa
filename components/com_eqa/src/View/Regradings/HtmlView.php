@@ -87,8 +87,12 @@ class HtmlView extends ItemsHtmlView{
 	{
 		//Title
 		ToolbarHelper::title('Danh sách yêu cầu phúc khảo');
-		if(!empty($this->errorMessage))
+		if ($this->errorMessage)
+		{
+			ToolbarHelper::back('');
+			ToolbarHelper::render();
 			return;
+		}
 
 		// Add buttons to the toolbar
 		ToolbarHelper::appendButton('eqa.supervise', 'download', 'Danh sách thu phí','regradings.downloadRegradingFee');

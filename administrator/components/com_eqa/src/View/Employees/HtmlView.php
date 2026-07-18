@@ -32,4 +32,17 @@ class HtmlView extends ItemsHtmlView
         //Set the option
         $this->itemFields = $option;
     }
+
+	protected function prepareDataForLayoutDefault(): void
+	{
+		parent::prepareDataForLayoutDefault();
+
+		//Preprocessing
+		if(!empty($this->layoutData->items)) {
+			foreach ($this->layoutData->items as $item) {
+				if (empty($item->code))
+					$item->code = 'N/A';
+			}
+		}
+	}
 }

@@ -34,6 +34,9 @@ class Dispatcher extends ComponentDispatcher
 		'learnerregradings' => 'LearnerRegradings',
 		'learnergradecorrections' => 'LearnerGradecorrections',
 		'learnerretake' => 'LearnerRetake',
+		'employeemonitorings' => 'EmployeeMonitorings',
+		'employeeclasses' => 'EmployeeClasses',
+		'employeemarkings' => 'EmployeeMarkings',
 		// Thêm vào đây nếu sau này có view multi-word khác:
 		// 'myotherview' => 'MyOtherView',
 	];

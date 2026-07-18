@@ -61,6 +61,34 @@ abstract class GeneralHelper{
 		return $db->loadResult();
 	}
 
+	/**
+	 * Xác định employee id của người dùng đang đăng nhập, dựa trên việc
+	 * so khớp (không phân biệt hoa thường) email của tài khoản Joomla với
+	 * cột `email` của bảng #__eqa_employees.
+	 *
+	 * @return int|null Employee id, hoặc null nếu không xác định được
+	 * @throws Exception
+	 * @since 2.1.5
+	 */
+	static public function getSignedInEmployeeId(): int|null
+	{
+		$user = Factory::getApplication()->getIdentity();
+		if ($user->guest || empty($user->email))
+			return null;
+
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('id'))
+			->from($db->quoteName('#__eqa_employees'))
+			->where('LOWER(' . $db->quoteName('email') . ') = '
+				. $db->quote(mb_strtolower(trim($user->email))))
+			->where($db->quoteName('published') . ' = 1')
+			->setLimit(1);
+		$db->setQuery($query);
+		$id = $db->loadResult();
+		return $id ? (int) $id : null;
+	}
+
     /**
      * Lấy danh sách tât cả các actions và thực hiện kiểm tra quyền
      * của người dùng hiện thời đối với từng action.

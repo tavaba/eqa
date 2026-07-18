@@ -200,6 +200,11 @@ class ExamsessionsModel extends ListModel
 				$item->examiner_ids = !empty($item->examiner_ids)
 					? explode(',', $item->examiner_ids)
 					: [];
+
+				// Chuyển supervisor_ids từ chuỗi CSV thành array
+				$item->supervisor_ids = !empty($item->supervisor_ids)
+					? explode(',', $item->supervisor_ids)
+					: [];
 			}
 		}
 

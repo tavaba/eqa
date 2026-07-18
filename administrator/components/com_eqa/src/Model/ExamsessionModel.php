@@ -27,6 +27,10 @@ class ExamsessionModel extends AdminModel
             $item->examiner_ids = array_map('intval', explode(',', $item->examiner_ids));
         }
 
+	    if (!empty($item->supervisor_ids)) {
+		    $item->supervisor_ids = array_map('intval', explode(',', $item->supervisor_ids));
+	    }
+
         // Populate trường UI session_type dựa trên dữ liệu đã lưu,
         // để form hiển thị đúng trạng thái khi edit.
         // Nếu assessment_id có giá trị → loại 2 (Sát hạch); ngược lại → loại 1.
@@ -87,6 +91,10 @@ class ExamsessionModel extends AdminModel
         if (isset($data['examiner_ids']) && is_array($data['examiner_ids'])) {
             $data['examiner_ids'] = implode(',', $data['examiner_ids']);
         }
+
+	    if (isset($data['supervisor_ids']) && is_array($data['supervisor_ids'])) {
+		    $data['supervisor_ids'] = implode(',', $data['supervisor_ids']);
+	    }
 
         // --- Ép cột không được dùng về NULL trước khi lưu ---
         $hasAssessment = !empty($data['assessment_id']);

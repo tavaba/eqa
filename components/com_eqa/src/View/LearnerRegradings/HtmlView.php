@@ -253,9 +253,12 @@ class HtmlView extends ItemsHtmlView
     protected function addToolbarForLayoutDefault(): void
     {
         ToolbarHelper::title('Thông tin phúc khảo');
-        if (!empty($this->errorMessage)) {
-            return;
-        }
+	    if ($this->errorMessage)
+	    {
+		    ToolbarHelper::back('');
+		    ToolbarHelper::render();
+		    return;
+	    }
         ToolbarHelper::deleteList('Bạn có chắc muốn xóa không?', 'learnerregradings.delete', 'Xóa yêu cầu');
         ToolbarHelper::render();
     }
