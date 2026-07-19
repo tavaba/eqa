@@ -1,5 +1,6 @@
 <?php
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 
@@ -57,6 +58,12 @@ JHtml::_('bootstrap.framework');
                 <!-- ===== Thông tin cơ sở ===== -->
                 <div class="tab-pane fade show active" id="tab1" role="tabpanel">
                     <div class="row g-3">
+                        <div class="col-md-4 d-grid">
+                            <a href="<?php echo Route::_('index.php?option=com_eqa&view=campuses'); ?>"
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-map-marked-alt me-1"></i> Cơ sở đào tạo
+                            </a>
+                        </div>
                         <div class="col-md-4 d-grid">
                             <a href="<?php echo Route::_('index.php?option=com_eqa&view=units'); ?>" class="btn btn-outline-primary">
                                 <i class="fas fa-building me-1"></i> <?php echo Text::_('COM_EQA_BUTTON_UNITS'); ?>

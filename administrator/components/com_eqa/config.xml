@@ -7,24 +7,6 @@
 				description="COM_EQA_CONFIG_PARAMS_GENERAL_DESC"
 		>
 			<field
-					name="parent_organization"
-					type="text"
-					default="Ban Cơ yếu Chính phủ"
-					label="Cơ quan cấp trên"
-			/>
-			<field
-					name="organization"
-					type="text"
-					default="Học viện Kỹ thuật mật mã"
-					label="Cơ quan"
-			/>
-			<field
-					name="city"
-					type="text"
-					default="Hà Nội"
-					label="Thành phố"
-			/>
-			<field
 					name="academicyear_upper_offset"
 					type="number"
 					default="0"
@@ -54,12 +36,6 @@
 				label="COM_EQA_CONFIG_PARAMS_EXAM_LABEL"
 				description="COM_EQA_CONFIG_PARAMS_EXAM_DESC"
 		>
-			<field
-					name="examination_unit"
-					type="text"
-					default="Phòng KT&amp;ĐBCLĐT"
-					label="Đơn vị khảo thí"
-			/>
 			<field
 					name="second_attempt_limit"
 					type="secondattemptmarklimitmode"
@@ -234,60 +210,6 @@
 					default="90000"
 					label="Mức phí thi lần 2 (VNĐ)"
 					required="true"
-			/>
-		</fieldset>
-		<fieldset
-				name="conduct_assessment"
-				label="Đánh giá rèn luyện"
-				description="Cấu hình các tham số dùng trong biểu mẫu đánh giá rèn luyện"
-		>
-			<field
-					name="conduct_training_unit"
-					type="text"
-					default="PHÒNG ĐÀO TẠO"
-					label="Đơn vị quản lý đào tạo"
-			/>
-			<field
-					name="conduct_training_unit_leader_title"
-					type="text"
-					default="P. TRƯỞNG PHÒNG"
-					label="Chức danh lãnh đạo đơn vị quản lý đào tạo"
-			/>
-			<field
-					name="conduct_training_unit_leader_name"
-					type="text"
-					default="Trần Cao Thanh"
-					label="Tên lãnh đạo đơn vị quản lý đào tạo"
-			/>
-			<field
-					name="conduct_learner_unit"
-					type="text"
-					default="HỆ QUẢN LÝ HVSV"
-					label="Đơn vị quản lý HVSV"
-			/>
-			<field
-					name="conduct_learner_unit_leader_title"
-					type="text"
-					default="P. HỆ TRƯỞNG"
-					label="Chức danh lãnh đạo đơn vị quản lý HVSV"
-			/>
-			<field
-					name="conduct_learner_unit_leader_name"
-					type="text"
-					default="Chu Mạnh Phấn"
-					label="Tên lãnh đạo đơn vị quản lý HVSV"
-			/>
-			<field
-					name="conduct_preparer_title"
-					type="text"
-					default="TRỢ LÝ QUẢN LÝ HVSV"
-					label="Chức danh người lập biểu"
-			/>
-			<field
-					name="conduct_preparer_name"
-					type="text"
-					default="Trịnh Đình Hợp"
-					label="Tên người lập biểu"
 			/>
 		</fieldset>
 	</fields>

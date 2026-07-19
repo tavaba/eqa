@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form definition cho 'cơ sở đào tạo' (bảng #__eqa_campuses).
+    Tên file phải khớp với tên model (AdminModel::getForm() tự suy ra): campus.xml
+
+    Các fieldset nằm trong thẻ <fields name="params"> được lưu vào cột `params`
+    (JSON/Registry) của bản ghi campus. Đó chính là các tham số cấu hình riêng
+    theo từng cơ sở đào tạo, trước đây nằm trong config.xml của component.
+-->
+<form>
+    <!-- ================================================================== -->
+    <!-- Fieldset 1: Thông tin chung                                        -->
+    <!-- ================================================================== -->
+    <fieldset name="campus" label="Thông tin chung" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field  name="id"
+                type="hidden"
+        />
+
+        <field  name="code"
+                type="text"
+                required="true"
+                pattern="[A-Z0-9]{2,10}"
+                label="Ký hiệu"
+                description="Chấp nhận 2-10 ký tự chữ hoa hoặc chữ số"
+                hint="HN"
+        />
+
+        <field  name="name"
+                type="text"
+                required="true"
+                maxlength="255"
+                label="Tên cơ sở đào tạo"
+                hint="Cơ sở chính Hà Nội"
+        />
+
+        <field  name="description"
+                type="textarea"
+                rows="3"
+                label="Mô tả"
+        />
+
+        <field  name="ordering"
+                type="number"
+                default="0"
+                label="Thứ tự hiển thị"
+        />
+
+        <field  name="published"
+                type="radio"
+                default="1"
+                class="btn-group btn-group-yesno"
+                label="Kích hoạt"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+    </fieldset>
+
+    <!-- ================================================================== -->
+    <!-- Fieldset 2: Gán tài khoản người dùng                               -->
+    <!-- ================================================================== -->
+    <fieldset name="users" label="Tài khoản" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field  name="assigned_users"
+                type="campusUsers"
+                multiple="true"
+                class="select2-basic"
+                label="Tài khoản thuộc cơ sở"
+                description="Chỉ liệt kê các tài khoản có quyền đăng nhập trang quản trị.
+                    Tài khoản được gán vào cơ sở nào thì chỉ thao tác được trên dữ liệu
+                    (lớp học phần, kỳ thi, kỳ sát hạch...) của cơ sở đó."
+        >
+            <option value="" disable="true">- Chọn tài khoản -</option>
+        </field>
+    </fieldset>
+
+    <!-- ================================================================== -->
+    <!-- Các tham số cấu hình riêng của cơ sở, lưu trong cột `params`        -->
+    <!-- ================================================================== -->
+    <fields name="params" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <fieldset
+                name="identity"
+                label="Định danh"
+                description="Các thông tin định danh được in trên biểu mẫu, báo cáo của cơ sở đào tạo"
+        >
+            <field
+                    name="parent_organization"
+                    type="text"
+                    default="Ban Cơ yếu Chính phủ"
+                    label="Cơ quan cấp trên"
+            />
+            <field
+                    name="organization"
+                    type="text"
+                    default="Học viện Kỹ thuật mật mã"
+                    label="Cơ quan"
+            />
+            <field
+                    name="city"
+                    type="text"
+                    default="Hà Nội"
+                    label="Thành phố"
+            />
+            <field
+                    name="examination_unit"
+                    type="text"
+                    default="Phòng KT&amp;ĐBCLĐT"
+                    label="Đơn vị khảo thí"
+            />
+        </fieldset>
+
+        <fieldset
+                name="conduct_assessment"
+                label="Đánh giá rèn luyện"
+                description="Cấu hình các tham số dùng trong biểu mẫu đánh giá rèn luyện của cơ sở đào tạo"
+        >
+            <field
+                    name="conduct_training_unit"
+                    type="text"
+                    default="PHÒNG ĐÀO TẠO"
+                    label="Đơn vị quản lý đào tạo"
+            />
+            <field
+                    name="conduct_training_unit_leader_title"
+                    type="text"
+                    default="P. TRƯỞNG PHÒNG"
+                    label="Chức danh lãnh đạo đơn vị quản lý đào tạo"
+            />
+            <field
+                    name="conduct_training_unit_leader_name"
+                    type="text"
+                    label="Tên lãnh đạo đơn vị quản lý đào tạo"
+            />
+            <field
+                    name="conduct_learner_unit"
+                    type="text"
+                    default="HỆ QUẢN LÝ HVSV"
+                    label="Đơn vị quản lý HVSV"
+            />
+            <field
+                    name="conduct_learner_unit_leader_title"
+                    type="text"
+                    default="P. HỆ TRƯỞNG"
+                    label="Chức danh lãnh đạo đơn vị quản lý HVSV"
+            />
+            <field
+                    name="conduct_learner_unit_leader_name"
+                    type="text"
+                    label="Tên lãnh đạo đơn vị quản lý HVSV"
+            />
+            <field
+                    name="conduct_preparer_title"
+                    type="text"
+                    default="TRỢ LÝ QUẢN LÝ HVSV"
+                    label="Chức danh người lập biểu"
+            />
+            <field
+                    name="conduct_preparer_name"
+                    type="text"
+                    label="Tên người lập biểu"
+            />
+        </fieldset>
+    </fields>
+
+    <!-- ================================================================== -->
+    <!-- Fieldset cuối: Thông tin quản trị                                  -->
+    <!-- ================================================================== -->
+    <fieldset name="metadata" label="Nhật ký">
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+        <field
+                name="created_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+        />
+        <field
+                name="modified_by"
+                type="user"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+        <field
+                name="modified_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+        />
+    </fieldset>
+</form>

@@ -1,59 +1,23 @@
 /**
  * com_eqa — Install SQL Schema
- * Version : 2.0.9
- * A. Loại bỏ 'DEFAULT NULL' khỏi định nghĩa ở tất cả các bảng
- * B. Rà soát lại, đảm bảo cấu trúc các bảng khớp với môi trường Production
- * 1. #__eqa_exams
- *    - This file: MODIFY testtype  : thêm NOT NULL
- *    - This file: MODIFY kmonitor  : FLOAT NULL → DOUBLE NOT NULL DEFAULT 1
- *    - This file: MODIFY kassess   : FLOAT NULL → DOUBLE NOT NULL DEFAULT 1
- *    - This file: MODIFY status    : INT UNSIGNED NOT NULL DEFAULT 0 → TINYINT UNSIGNED NULL
- *    - This file: MODIFY usetestbank: bỏ DEFAULT FALSE (giữ NOT NULL)
- *    - Migration: DROP COLUMN anomaly
- *
- * 2. #__eqa_packages
- *    - This file: ADD COLUMN exam_id AFTER id; make it be a FOREIGN KEY; make UNIQUE (exam_id, number)
- *    - Migration: ADD FOREIGN KEY exam_id
- *
- * 3. #__eqa_exam_learner
- *    - This file: ADD COLUMN created_at
- *    - This file: ADD COLUMN created_by
- *    - Migration: DROP ppaa_status : cột không còn được sử dụng
- *    - Migration: DROP updated_at
- *    - Migration: DROP updated_by
- *
- * 4. #__eqa_groups
- *    - This file: ADD COLUMN size
- *     
- * 5. #__eqa_units
- *    - Migration: DROP COLUMN size
- *     
- * 6. #__eqa_secondattempts
- *    - This file: MODIFY payment_amount: FLOAT NOT NULL → DOUBLE NOT NULL DEFAULT 0
- *    - This file: ADD description  : TEXT NULL (nội dung chuyển khoản)
- *     
- * 7. #__eqa_class_learner
- *    - Migration: ADD SURROGATE KEY: id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
- *     
- * 8. #__eqa_conducts
- *    - This file: MODIFY academic_score  : REAL → DOUBLE
- *    - This file: MODIFY conduct_score   : REAL → DOUBLE
- *
- * C. BỔ SUNG MỘT SỐ THUỘC TÍNH VÀO CÁC BẢNG
- * 1. Bảng #__eqa_subjects
- *    - ADD COLUMN `kquestion`: 'Số giờ chuẩn quy đổi cho mỗi đề thi'
- *
- * 2. Bảng #__eqa_exams
- *    - ADD COLUMN `kquestion`: 'Số giờ chuẩn quy đổi cho mỗi đề thi'
+ * Version : 2.1.6
+ * 1. Bảng mới #__eqa_campuses   : danh mục cơ sở đào tạo + seed 2 bản ghi
+ * 2. Bảng mới #__eqa_campus_user: junction #__eqa_campuses ↔ #__users + seed
+ * 3. ADD COLUMN campus_id (FK → #__eqa_campuses) vào 6 bảng:
+ *    - units, groups                              : DEFAULT 1 (thuộc tính phân loại)
+ *    - classes, examseasons, assessments, buildings: NOT NULL, không DEFAULT
+ * 4. #__eqa_buildings: UNIQUE(code) → UNIQUE(campus_id, code)
 */
 
 -- =============================================================================
--- Tòa nhà
+-- Cơ sở đào tạo (campus)
 -- =============================================================================
-DROP TABLE IF EXISTS `#__eqa_buildings`;
-CREATE TABLE `#__eqa_buildings`(
+DROP TABLE IF EXISTS `#__eqa_campuses`;
+CREATE TABLE `#__eqa_campuses`(
     `id`          INT UNSIGNED AUTO_INCREMENT,
-    `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu tòa nhà. Ví dụ: TA1, TB1...',
+    `code`        VARCHAR(50)  NOT NULL COMMENT 'Ký hiệu cơ sở đào tạo. Ví dụ: HN, HCM',
+    `name`        VARCHAR(255) NOT NULL COMMENT 'Tên cơ sở đào tạo',
+    `params`      TEXT COMMENT 'JSON (Registry): tham số cấu hình riêng của cơ sở',
     `description` TEXT,
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
     `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
@@ -65,6 +29,62 @@ CREATE TABLE `#__eqa_buildings`(
     `checked_out_time` DATETIME,
     PRIMARY KEY (`id`),
     UNIQUE (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Cơ sở đào tạo (campus)';
+
+-- Seed: id = 1 là campus mặc định của dữ liệu hiện có
+INSERT INTO `#__eqa_campuses`
+(`id`, `code`, `name`, `published`, `ordering`, `created_at`)
+VALUES
+    (1, 'HN',  'Cơ sở chính Hà Nội',        TRUE, 1, UTC_TIMESTAMP()),
+    (2, 'HCM', 'Phân hiệu Tp. Hồ Chí Minh', TRUE, 2, UTC_TIMESTAMP());
+
+-- =============================================================================
+-- Junction: cơ sở đào tạo — tài khoản người dùng (#__users)
+-- (KHÔNG liên quan bảng hồ sơ nhân sự #__eqa_employees)
+-- =============================================================================
+DROP TABLE IF EXISTS `#__eqa_campus_user`;
+CREATE TABLE `#__eqa_campus_user`(
+    `id`        INT UNSIGNED AUTO_INCREMENT,
+    `user_id`   INT NOT NULL COMMENT 'FK: tài khoản đăng nhập (#__users); INT signed khớp kiểu cột của Joomla core',
+    `campus_id` INT UNSIGNED NOT NULL COMMENT 'FK: cơ sở đào tạo',
+    PRIMARY KEY (`id`),
+    UNIQUE (`user_id`, `campus_id`),
+    CONSTRAINT fk_eqa_campus_user_user FOREIGN KEY (`user_id`)
+        REFERENCES `#__users`(`id`)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_eqa_campus_user_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Junction: cơ sở đào tạo — tài khoản người dùng';
+
+-- Seed: gán Super User (id = 407) vào cả 2 campus
+INSERT IGNORE INTO `#__eqa_campus_user` (`user_id`, `campus_id`)
+VALUES
+    (407,1),
+    (407,2);
+
+-- =============================================================================
+-- Tòa nhà
+-- =============================================================================
+DROP TABLE IF EXISTS `#__eqa_buildings`;
+CREATE TABLE `#__eqa_buildings`(
+    `id`          INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`   INT UNSIGNED NOT NULL COMMENT 'FK: cơ sở đào tạo sở hữu tòa nhà',
+    `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu tòa nhà. Ví dụ: TA1, TB1...',
+    `description` TEXT,
+    `published`   BOOLEAN NOT NULL DEFAULT TRUE,
+    `ordering`    INT UNSIGNED NOT NULL DEFAULT 0,
+    `created_at`  DATETIME,
+    `created_by`  INT UNSIGNED,
+    `modified_at` DATETIME,
+    `modified_by` INT UNSIGNED,
+    `checked_out`      INT UNSIGNED,
+    `checked_out_time` DATETIME,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_eqa_buildings_campus_code` (`campus_id`, `code`),
+    CONSTRAINT fk_eqa_buildings_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Các tòa nhà trong Học viện';
 
 -- =============================================================================
@@ -99,6 +119,7 @@ CREATE TABLE `#__eqa_rooms`(
 DROP TABLE IF EXISTS `#__eqa_units`;
 CREATE TABLE `#__eqa_units` (
     `id`          INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`   INT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'FK: cơ sở đào tạo (thuộc tính phân loại)',
     `parent_id`   INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Đơn vị cấp trên; 0 nếu trực thuộc Học viện',
     `code`        VARCHAR(255) NOT NULL COMMENT 'Ký hiệu, ví dụ: K.ATTT, BM.ATGDDT',
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên đầy đủ, ví dụ: Khoa An toàn thông tin',
@@ -113,7 +134,10 @@ CREATE TABLE `#__eqa_units` (
     `checked_out`      INT UNSIGNED,
     `checked_out_time` DATETIME,
     PRIMARY KEY (`id`),
-    UNIQUE (`code`)
+    UNIQUE (`code`),
+    CONSTRAINT fk_eqa_units_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Cơ quan, đơn vị trong Học viện (chỉ 2 cấp!!!)';
 
 -- =============================================================================
@@ -223,6 +247,7 @@ CREATE TABLE `#__eqa_courses` (
 DROP TABLE IF EXISTS `#__eqa_groups`;
 CREATE TABLE `#__eqa_groups` (
     `id`          INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`   INT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'FK: cơ sở đào tạo (thuộc tính thông tin, không dùng chặn quyền)',
     `course_id`   INT UNSIGNED COMMENT 'FK: Khóa đào tạo. NULL với lớp ngắn hạn...',
     `code`        VARCHAR(255) NOT NULL COMMENT 'Tên lớp. Ví dụ: AT20A',
 	`size`		  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Sĩ số',
@@ -283,6 +308,7 @@ CREATE TABLE `#__eqa_learners` (
 DROP TABLE IF EXISTS `#__eqa_cohorts`;
 CREATE TABLE `#__eqa_cohorts` (
     `id`          INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`   INT UNSIGNED NOT NULL COMMENT 'FK: cơ sở đào tạo',
     `code`        VARCHAR(20) NOT NULL COMMENT 'Ký hiệu nhóm. Ví dụ: H30L',
     `name`        VARCHAR(255) NOT NULL COMMENT 'Tên nhóm: H30 Lào',
     `published`   BOOLEAN NOT NULL DEFAULT TRUE,
@@ -294,7 +320,10 @@ CREATE TABLE `#__eqa_cohorts` (
     `checked_out`      INT UNSIGNED,
     `checked_out_time` DATETIME,
     PRIMARY KEY (`id`),
-    UNIQUE (`code`)
+    UNIQUE (`code`),
+    CONSTRAINT fk_eqa_cohorts_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Nhóm HVSV';
 
 DROP TABLE IF EXISTS `#__eqa_cohort_learner`;
@@ -357,6 +386,7 @@ CREATE TABLE `#__eqa_subjects` (
 DROP TABLE IF EXISTS `#__eqa_classes`;
 CREATE TABLE `#__eqa_classes` (
     `id`            INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`     INT UNSIGNED NOT NULL COMMENT 'FK: cơ sở đào tạo quản lý lớp học phần',
     `coursegroup`   VARCHAR(255) COMMENT 'Đối tượng người học',
     `code`          CHAR(40) COMMENT 'Mã lớp học phần',
     `name`          VARCHAR(255) NOT NULL COMMENT 'Tên lớp học phần',
@@ -391,6 +421,9 @@ CREATE TABLE `#__eqa_classes` (
         ON DELETE RESTRICT,
     CONSTRAINT fk_eqa_classes_lecturer FOREIGN KEY (`lecturer_id`)
         REFERENCES `#__eqa_employees`(`id`)
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_eqa_classes_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Các lớp học phần';
 
@@ -457,12 +490,13 @@ CREATE TABLE `#__eqa_class_learner` (
 DROP TABLE IF EXISTS `#__eqa_examseasons`;
 CREATE TABLE `#__eqa_examseasons`(
     `id`                  INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`           INT UNSIGNED NOT NULL COMMENT 'FK: cơ sở đào tạo tổ chức kỳ thi',
     `name`                VARCHAR(255) NOT NULL COMMENT 'Tên đợt thi',
     `academicyear`        INT UNSIGNED NOT NULL COMMENT 'Năm học (encoded: năm đầu tiên, ví dụ 2025 cho 2025-2026)',
     `term`                TINYINT UNSIGNED COMMENT 'Học kỳ',
     `type`                TINYINT UNSIGNED NOT NULL COMMENT 'Loại kỳ thi: KTHP, Sát hạch, Tốt nghiệp, Khác (định nghĩa bằng constants)',
     `attempt`             TINYINT UNSIGNED NOT NULL COMMENT 'Lượt thi: (1) Thi lần 1, (2) Thi lần 2',
-    `default`             TINYINT UNSIGNED NOT NULL DEFAULT FALSE COMMENT 'Là kỳ thi hiện tại (mặc định)',
+    `default`             TINYINT UNSIGNED NOT NULL DEFAULT FALSE COMMENT 'Là kỳ thi hiện tại (mặc định); per-campus: mỗi cơ sở có tối đa một kỳ thi mặc định',
     `start`               DATE COMMENT 'Ngày thi môn đầu tiên',
     `finish`              DATE COMMENT 'Ngày thi môn sau cùng',
     `ppaa_req_enabled`    BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Được gửi yêu cầu phúc khảo',
@@ -481,7 +515,10 @@ CREATE TABLE `#__eqa_examseasons`(
     `modified_by`         INT UNSIGNED,
     `checked_out`      INT UNSIGNED,
     `checked_out_time` DATETIME,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    CONSTRAINT fk_eqa_examseasons_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Đợt/kỳ thi';
 
 -- =============================================================================
@@ -490,6 +527,7 @@ CREATE TABLE `#__eqa_examseasons`(
 DROP TABLE IF EXISTS `#__eqa_assessments`;
 CREATE TABLE `#__eqa_assessments` (
     `id`                    INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`             INT UNSIGNED NOT NULL COMMENT 'FK: cơ sở đào tạo tổ chức kỳ sát hạch',
     `title`                 VARCHAR(255) NOT NULL,
     `type`                  TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentType Enum',
     `result_type`           TINYINT UNSIGNED NOT NULL COMMENT 'AssessmentResultType Enum',
@@ -512,7 +550,10 @@ CREATE TABLE `#__eqa_assessments` (
     `modified_by`           INT UNSIGNED,
     `checked_out`           INT UNSIGNED,
     `checked_out_time`      DATETIME,
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    CONSTRAINT fk_eqa_assessments_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
+        ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Kỳ thi sát hạch';
 
 -- =============================================================================

@@ -16,6 +16,7 @@ enum ObjectType : int
 	use EnumHelper;
 
 	//Infrastructor
+	case Campus = 1000;
 	case Building = 1001;
 	case Room = 1002;
 	case Unit = 1050;

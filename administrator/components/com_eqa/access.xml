@@ -10,6 +10,13 @@
 		<action name="core.edit.state" title="JACTION_EDITSTATE" />
 		<action name="core.edit.own" title="JACTION_EDITOWN" />
 
+		<action
+				name="com.manage.all_campuses"
+				title="Làm việc với mọi cơ sở đào tạo"
+				description="Cho phép xem và thao tác trên dữ liệu của tất cả các cơ sở đào tạo,
+            không giới hạn ở cơ sở mà tài khoản được gán."
+		/>
+
 		<action name="eqa.create.class" title="Tạo lớp học phần"/>
 		<action name="eqa.edit.class" title="Sửa thông tin lớp học phần"/>
 		<action name="eqa.supervise" title="Quản lý HVSV"/>

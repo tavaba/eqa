@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `#__eqa_campus_user`;
 DROP TABLE IF EXISTS `#__eqa_assessment_learner`;
 DROP TABLE IF EXISTS `#__eqa_secondattempts`;
 DROP TABLE IF EXISTS `#__eqa_conducts`;
@@ -27,4 +28,5 @@ DROP TABLE IF EXISTS `#__eqa_classes`;
 DROP TABLE IF EXISTS `#__eqa_subjects`;
 DROP TABLE IF EXISTS `#__eqa_employees`;
 DROP TABLE IF EXISTS `#__eqa_units`;
+DROP TABLE IF EXISTS `#__eqa_campuses`;
 DROP TABLE IF EXISTS `#__eqa_logs`;

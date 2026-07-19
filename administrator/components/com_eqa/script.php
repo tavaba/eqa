@@ -16,6 +16,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerScript;
 use Joomla\CMS\Log\Log;
+use Joomla\Registry\Registry;
 
 class Com_EqaInstallerScript extends InstallerScript
 {
@@ -106,18 +107,23 @@ class Com_EqaInstallerScript extends InstallerScript
      * @param  object $parent Installer object
      * @return bool
      */
-    public function postflight(string $type, $parent): bool
-    {
-        // Chỉ chạy khi là update (không chạy khi install lần đầu)
-        if ($type !== 'update') {
-            return true;
-        }
+	public function postflight(string $type, $parent): bool
+	{
+		// Chỉ chạy khi là update (không chạy khi install lần đầu)
+		if ($type !== 'update') {
+			return true;
+		}
 
+		// Migration 2.1.6 (multi-campus Phase 1): di trú các tham số cấu hình
+		// riêng theo cơ sở từ params của component sang campus 1.
+		if (version_compare($this->previousVersion, '2.1.6', '<')) {
+			$this->migrateCampusParams216();
+		}
 
 		return true;
-    }
+	}
 
-    // =========================================================================
+	// =========================================================================
     // Dọn dẹp thư mục cũ
     // =========================================================================
 
@@ -256,4 +262,128 @@ class Com_EqaInstallerScript extends InstallerScript
         Factory::getApplication()->enqueueMessage("com_eqa: {$msg}", 'error');
         Log::add("com_eqa: {$msg}", Log::ERROR, 'com_eqa');
     }
+
+	// ============================================================================
+	// HAI PHƯƠNG THỨC PHỤC VỤ DI TRÚ CHO VERSION 2.1.6
+	// ============================================================================
+	/**
+	 * Migration 2.1.6 — Multi-campus Phase 1.
+	 *
+	 * Di trú 12 tham số cấu hình riêng theo cơ sở từ params của com_eqa
+	 * (bảng #__extensions) sang cột `params` của campus 1 (#__eqa_campuses),
+	 * sau đó gỡ các key này khỏi params của component.
+	 *
+	 * Trong config.xml các field nằm trong <fields name="params"> nên key đầy đủ
+	 * phía component là 'params.<name>'; trong campus params lưu key phẳng '<name>'
+	 * (ConfigService phía campus sẽ đọc theo key phẳng).
+	 *
+	 * Idempotent: bỏ qua nếu campus 1 đã có params.
+	 *
+	 * @return void
+	 * @since  2.1.6
+	 */
+	private function migrateCampusParams216(): void
+	{
+		// Danh sách key cần di trú (đã chốt trong Báo cáo phân tích nghiệp vụ, mục 5.1)
+		$migratedKeys = [
+			'parent_organization',
+			'organization',
+			'city',
+			'examination_unit',
+			'conduct_training_unit',
+			'conduct_training_unit_leader_title',
+			'conduct_training_unit_leader_name',
+			'conduct_learner_unit',
+			'conduct_learner_unit_leader_title',
+			'conduct_learner_unit_leader_name',
+			'conduct_preparer_title',
+			'conduct_preparer_name',
+		];
+
+		try {
+			$db = Factory::getDbo();
+
+			// 0. Idempotency: campus 1 đã có params → không di trú lại
+			$query = $db->getQuery(true)
+				->select($db->quoteName('params'))
+				->from($db->quoteName('#__eqa_campuses'))
+				->where($db->quoteName('id') . ' = 1');
+			$existingParams = $db->setQuery($query)->loadResult();
+
+			if (!empty($existingParams)) {
+				$this->logInfo('Migration 2.1.6: campus 1 đã có params, bỏ qua bước di trú cấu hình.');
+				return;
+			}
+
+			// 1. Đọc params hiện hành của component
+			$componentParams = $this->loadComponentParams($db);
+
+			// 2. Trích các giá trị cần di trú sang campus 1
+			$campusParams = [];
+			foreach ($migratedKeys as $key) {
+				$value = $componentParams->get('params.' . $key);
+				if ($value !== null && $value !== '') {
+					$campusParams[$key] = $value;
+				}
+			}
+
+			// 3. Ghi vào campus 1 (thời gian lưu CSDL: UTC)
+			$json  = json_encode($campusParams, JSON_UNESCAPED_UNICODE);
+			$query = $db->getQuery(true)
+				->update($db->quoteName('#__eqa_campuses'))
+				->set($db->quoteName('params') . ' = ' . $db->quote($json))
+				->set($db->quoteName('modified_at') . ' = ' . $db->quote(Factory::getDate()->toSql()))
+				->where($db->quoteName('id') . ' = 1');
+			$db->setQuery($query)->execute();
+
+			// 4. Gỡ các key đã di trú khỏi params của component
+			//    (config.xml phiên bản mới không còn các field này)
+			foreach ($migratedKeys as $key) {
+				$componentParams->remove('params.' . $key);
+			}
+
+			$query = $db->getQuery(true)
+				->update($db->quoteName('#__extensions'))
+				->set($db->quoteName('params') . ' = ' . $db->quote((string) $componentParams))
+				->where([
+					$db->quoteName('element') . ' = ' . $db->quote('com_eqa'),
+					$db->quoteName('type') . ' = ' . $db->quote('component'),
+				]);
+			$db->setQuery($query)->execute();
+
+			$this->logInfo(sprintf(
+				'Migration 2.1.6: đã di trú %d tham số cấu hình sang campus 1 (Cơ sở chính Hà Nội).',
+				count($campusParams)
+			));
+		} catch (\Throwable $e) {
+			// Không fail quá trình update: schema đã được áp dụng thành công;
+			// quản trị viên xử lý theo log và có thể cài lại package để chạy lại.
+			$this->logError('Migration 2.1.6 (di trú tham số campus) thất bại: ' . $e->getMessage());
+		}
+	}
+
+	/**
+	 * Đọc params hiện hành của com_eqa trực tiếp từ bảng #__extensions.
+	 *
+	 * Không dùng ComponentHelper::getParams() để tránh giá trị cache
+	 * trong tiến trình cài đặt.
+	 *
+	 * @param  \Joomla\Database\DatabaseDriver $db
+	 * @return Registry
+	 * @since  2.1.6
+	 */
+	private function loadComponentParams($db): Registry
+	{
+		$query = $db->getQuery(true)
+			->select($db->quoteName('params'))
+			->from($db->quoteName('#__extensions'))
+			->where([
+				$db->quoteName('element') . ' = ' . $db->quote('com_eqa'),
+				$db->quoteName('type') . ' = ' . $db->quote('component'),
+			]);
+		$raw = $db->setQuery($query)->loadResult();
+
+		return new Registry($raw ?: '{}');
+	}
+
 }
