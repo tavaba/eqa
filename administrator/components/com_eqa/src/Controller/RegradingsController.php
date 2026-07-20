@@ -11,6 +11,7 @@ use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\DataObject\PpaaEntryInfo;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\PpaaType;
+use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -514,7 +515,9 @@ class RegradingsController extends AdminController
 			$employeeIds = array_unique($employeeIds);
 			$employees = DatabaseHelper::getEmployeeInfos($employeeIds);
 
-			//Write to excel files
+			/**
+			 * Write to excel files
+			 */
 			$spreadsheet = new Spreadsheet();
 			$spreadsheet->removeSheetByIndex(0);
 			foreach ($paperExams as $examId => $papers)

@@ -131,7 +131,15 @@ class ExamsController extends AdminController {
 			return;
 		}
 	}
-	public function exportResultForLearners()
+
+	/**
+	 * "Xuất bảng điểm sinh viên" - Xuất bảng điểm các môn thi được chọn
+	 * để cung cấp cho sinh viên (chức năng tại view ExamseasonExams
+	 * và view Exams)
+	 * @return void
+	 * @throws Exception
+	 */
+	public function exportResultForLearners(): void
 	{
 		//Check token
 		$this->checkToken();
@@ -153,7 +161,10 @@ class ExamsController extends AdminController {
 			return;
 		}
 
-		//Process
+		/**
+		 * Process
+		 * @var ExamModel $model
+		 */
 		$spreadsheet = new Spreadsheet();
 		$spreadsheet->removeSheetByIndex(0);
 		$model = $this->getModel();
@@ -172,7 +183,14 @@ class ExamsController extends AdminController {
 		exit();
 	}
 
-	public function exportResultForEms()
+	/**
+	 * Xuất bảng điểm thi để nhập vào Phần mềm Quản lý đào tạo. Áp dụng đối với
+	 * các môn thi lần 1
+	 * (Chức năng "Bảng điểm ĐT (Lần 1)" ở view ExamseasonExams)
+	 * @return void
+	 * @throws Exception
+	 */
+	public function exportResultForEms(): void
 	{
 		/* EMS = Education Management System = Hệ thống quản lý đào tạo của Học viện */
 
@@ -196,7 +214,10 @@ class ExamsController extends AdminController {
 			return;
 		}
 
-		//Process
+		/**
+		 * Process
+		 * @var ExamModel $model
+		 */
 		$spreadsheet = new Spreadsheet();
 		$spreadsheet->removeSheetByIndex(0);
 		$model = $this->getModel();
@@ -218,7 +239,14 @@ class ExamsController extends AdminController {
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();
 	}
-	public function exportResultForEms2()
+	/**
+	 * Xuất bảng điểm thi để nhập vào Phần mềm Quản lý đào tạo. Áp dụng đối với
+	 * các môn thi lần 2
+	 * (Chức năng "Bảng điểm ĐT (Lần 2)" ở view ExamseasonExams)
+	 * @return void
+	 * @throws Exception
+	 */
+	public function exportResultForEms2(): void
 	{
 		/* EMS = Education Management System = Hệ thống quản lý đào tạo của Học viện */
 
@@ -242,7 +270,10 @@ class ExamsController extends AdminController {
 			return;
 		}
 
-		//Process
+		/**
+		 * Process
+		 * @var ExamModel $model
+		 */
 		$spreadsheet = new Spreadsheet();
 		$spreadsheet->removeSheetByIndex(0);
 		$model = $this->getModel();

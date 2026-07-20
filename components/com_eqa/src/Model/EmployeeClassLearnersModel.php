@@ -6,9 +6,11 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
+use Kma\Library\Kma\Helper\ComponentHelper;
 
 /**
  * Model liệt kê HVSV của một lớp học phần kèm kết quả học tập:
@@ -132,8 +134,13 @@ class EmployeeClassLearnersModel extends ListModel
 				. ' OR ' . $db->quoteName('b.lastname') . ' LIKE ' . $like . ')');
 		}
 
-		// Ordering theo cấu hình chung (giống ClassModel::exportPams)
-		if (ConfigHelper::getPersonSortOrder() === 'code')
+		/**
+		 * Ordering theo cấu hình chung (giống ClassModel::exportPams)
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService();
+		if ($configService->getPersonSortOrder() === 'code')
 		{
 			$query->order($db->quoteName('b.code') . ' ASC');
 		}

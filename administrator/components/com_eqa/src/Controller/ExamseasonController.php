@@ -527,7 +527,13 @@ class ExamseasonController extends FormController
 		}
 	}
 
-	public function exportLearnerMarks()
+	/**
+	 * "Xuất bảng điểm tổng hợp" cho một kỳ thi. Nếu người dùng chọn nhiều
+	 * kỳ thi thì chỉ xuất cho một kỳ thi đầu tiên được chọn.
+	 * (chức năng ở view Examseasons)
+	 * @return void
+	 */
+	public function exportLearnerMarks(): void
 	{
 		try
 		{
@@ -554,7 +560,6 @@ class ExamseasonController extends FormController
 			//5. Write to Word document
 			$phpWord = new PhpWord();
 			IOHelper::writeExamseasonLearnerMarks($phpWord, $examseasonId, $learnerMarks);
-			//IOHelper::testPhpWord($phpWord);
 
 			//6. Send file
 			IOHelper::sendHttpDocx($phpWord,'Bảng điểm tổng hợp.docx');

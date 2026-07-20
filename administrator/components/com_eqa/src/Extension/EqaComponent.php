@@ -1,12 +1,4 @@
 <?php
-/**
- * @package     Joomla.Administrator
- * @subpackage  com_eqa
- *
- * @copyright   Copyright (C) 2023 Academy of Crptography Techniques. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE.txt
- */
-
 namespace Kma\Component\Eqa\Administrator\Extension;
 
 defined('JPATH_PLATFORM') or die;
@@ -19,6 +11,7 @@ use Joomla\CMS\Extension\MVCComponent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLRegistryAwareTrait;
 use Kma\Component\Eqa\Administrator\Service\ConfigService;
+use Kma\Component\Eqa\Administrator\Service\CampusService;
 use Kma\Component\Eqa\Administrator\Service\HTML\AdministratorService;
 use Kma\Component\Kmail\Administrator\Extension\KmailComponent;
 use Kma\Library\Kma\Service\EnglishService;
@@ -45,6 +38,14 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	 * @since  2.0.4
 	 */
 	private ConfigService $configService;
+
+	/**
+	 * Service quản lý cơ sở đào tạo, được inject qua DI.
+	 *
+	 * @var    CampusService
+	 * @since  2.1.6
+	 */
+	private CampusService $campusService;
 
 	/**
 	 * Service để tự động xác định dạng số ít, số nhiều trong tiếng Anh
@@ -100,6 +101,30 @@ class EqaComponent extends MVCComponent implements BootableExtensionInterface, C
 	public function getConfigService(): ConfigService
 	{
 		return $this->configService;
+	}
+
+	/**
+	 * Nhận CampusService từ DIC (được gọi trong provider.php).
+	 *
+	 * @param   CampusService  $campusService
+	 *
+	 * @return  void
+	 * @since   2.1.6
+	 */
+	public function setCampusService(CampusService $campusService): void
+	{
+		$this->campusService = $campusService;
+	}
+
+	/**
+	 * Trả về CampusService để các class khác sử dụng.
+	 *
+	 * @return  CampusService
+	 * @since   2.1.6
+	 */
+	public function getCampusService(): CampusService
+	{
+		return $this->campusService;
 	}
 
 	/**

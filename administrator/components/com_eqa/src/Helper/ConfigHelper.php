@@ -6,45 +6,16 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Registry\Registry;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
+use RuntimeException;
 
-abstract class ConfigHelper{
+abstract class ConfigHelper
+{
 	private static bool $uninitialized = true;
 	private static Registry $params;
 	private static function init():void
 	{
 		self::$params = ComponentHelper::getParams('com_eqa');
 		self::$uninitialized = false;
-	}
-
-	public static function getParentOrganization(): string
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.parent_organization', 'Ban Cơ yếu Chính phủ');
-	}
-	public static function getOrganization(): string
-	{
-		if (self::$uninitialized)
-			self::init();
-		return self::$params->get('params.organization', 'Học viện Kỹ thuật mật mã');
-	}
-	public static function getExaminationUnit(): string
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.examination_unit', 'Phòng KT&ĐBCLĐT');
-	}
-	public static function getCity():string
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.city', 'Hà Nội');
-	}
-	public static function getMaxExamAttempts():int
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.max_exam_attempts', 2);
 	}
 	public static function getProgressMarkPrecision(): int
 	{
@@ -71,24 +42,6 @@ abstract class ConfigHelper{
 		$value = self::$params->get('params.second_attempt_limit', SecondAttemptMarkLimitMode::OnExamMark->value);
 		return SecondAttemptMarkLimitMode::from($value);
 	}
-	public static function getExamineeCodeStart(): int
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.examinee_code_start', 100);
-	}
-	public static function getExamineeMaskStart(): int
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.examinee_mask_start', 100);
-	}
-	public static function getExamineeMaskInterval(): int
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.examinee_mask_interval', 5);
-	}
 	public static function getThresholdForPam1(): float
 	{
 		if(self::$uninitialized)
@@ -112,18 +65,6 @@ abstract class ConfigHelper{
 		if(self::$uninitialized)
 			self::init();
 		return self::$params->get('params.threshold_final_exam_mark');
-	}
-	public static function getThresholdForPassFailSubject(): float
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.threshold_pass_fail');
-	}
-	public static function getKWeekendMonitoring(): float
-	{
-		if(self::$uninitialized)
-			self::init();
-		return self::$params->get('params.kweekend_monitoring');
 	}
 	public static function getRegradingFeeMode(): FeeMode
 	{
@@ -154,17 +95,6 @@ abstract class ConfigHelper{
 		return self::$params->get('params.second_attempt_fee_rate', 90000);
 	}
 
-	/**
-	 * Lấy tham số thứ tự sắp xếp khi xuất danh sách người học, cán bộ.
-	 *
-	 * @return string 'name' (sắp theo tên rồi họ đệm) hoặc 'code' (sắp theo mã)
-	 */
-	public static function getPersonSortOrder(): string
-	{
-		if (self::$uninitialized)
-			self::init();
-		return self::$params->get('params.person_sort_order', 'name');
-	}
 }
 
 

@@ -8,6 +8,7 @@ defined('_JEXEC') or die();
 class ExamseasonInfo
 {
 	public int $id;
+	public int $campusId;
 	public string $name;
 	public int $term;
 	public string $academicyear;

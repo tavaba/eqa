@@ -7,10 +7,12 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\SpecialMark;
+use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Service\CreditClassNameParser;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
@@ -640,8 +642,13 @@ class ClassModel extends AdminModel
 			->leftJoin('#__eqa_groups AS c', 'c.id=b.group_id')
 			->where('a.class_id = ' . $classId);
 
-		// Áp dụng thứ tự sắp xếp theo tham số cấu hình
-		if (ConfigHelper::getPersonSortOrder() === 'code')
+		/**
+		 * Áp dụng thứ tự sắp xếp theo tham số cấu hình
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService();
+		if ($configService->getPersonSortOrder() === 'code')
 		{
 			$query->order($db->quoteName('b.code') . ' ASC');
 		}

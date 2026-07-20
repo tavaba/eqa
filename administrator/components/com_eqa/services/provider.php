@@ -18,11 +18,11 @@ use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
 use Kma\Component\Eqa\Administrator\Service\ConfigService;
+use Kma\Component\Eqa\Administrator\Service\CampusService;
 use Kma\Component\Eqa\Site\Service\Router;
 use Joomla\CMS\Component\Router\RouterInterface;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
-
 return new class implements ServiceProviderInterface
 {
 	public function register(Container $container): void
@@ -54,8 +54,10 @@ return new class implements ServiceProviderInterface
 				$component->setMVCFactory($container->get(MVCFactoryInterface::class));
 				$component->setRouterFactory($container->get(RouterFactoryInterface::class));
 
-				//Inject the ConfigService into the component
-				$component->setConfigService(new ConfigService());
+				//Inject the CampusService and ConfigService into the component
+				$campusService = new CampusService($container->get(DatabaseInterface::class));
+				$component->setCampusService($campusService);
+				$component->setConfigService(new ConfigService($campusService));
 
 				//Inject the EnglishService into the component
 				$map = [

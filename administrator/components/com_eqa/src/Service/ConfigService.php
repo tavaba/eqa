@@ -1,22 +1,14 @@
 <?php
-
-/**
- * @package     Kma.Component.Eqa
- * @subpackage  Administrator.Service
- *
- * @copyright   (C) 2025 KMA. All rights reserved.
- * @license     GNU General Public License version 2 or later
- */
-
 namespace Kma\Component\Eqa\Administrator\Service;
-
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Registry\Registry;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
-use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
+use InvalidArgumentException;
+use Kma\Library\Kma\Helper\ComponentHelper as KmaComponentHelper;
+use RuntimeException;
 
 /**
  * Service đọc các tham số cấu hình của component com_eqa.
@@ -30,6 +22,17 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 class ConfigService
 {
 	/**
+	 * Service quản lý cơ sở đào tạo.
+	 *
+	 * Có thể được inject qua constructor (từ provider.php) hoặc resolve lười
+	 * từ component khi ConfigService được khởi tạo trực tiếp bằng `new`.
+	 *
+	 * @var    CampusService|null
+	 * @since  2.1.6
+	 */
+	private ?CampusService $campusService;
+
+	/**
 	 * Tham số cấu hình của component com_eqa.
 	 *
 	 * @var    Registry
@@ -38,59 +41,169 @@ class ConfigService
 	private Registry $params;
 
 	/**
-	 * Constructor — tự động nạp tham số cấu hình của com_eqa.
+	 * Id cơ sở đào tạo mà instance này gắn với.
+	 *
+	 * Giá trị 0 nghĩa là instance chưa gắn với cơ sở nào — đây là trạng thái
+	 * của instance dùng chung trong DI container. Mọi getter đọc tham số riêng
+	 * theo cơ sở sẽ ném lỗi khi gặp giá trị này.
+	 *
+	 * Chỉ được gán qua forCampus(); không có setter, để instance dùng chung
+	 * không bao giờ bị thay đổi trạng thái.
+	 *
+	 * @var    int
+	 * @since  2.1.6
+	 */
+	private int $campusId = 0;
+
+	/**
+	 * Constructor — nạp tham số cấu hình dùng chung của com_eqa.
+	 *
+	 * @param   CampusService|null  $campusService  Tùy chọn; nếu null sẽ được
+	 *                                              resolve từ component khi cần.
 	 *
 	 * @since  2.0.5
 	 */
-	public function __construct()
+	public function __construct(?CampusService $campusService = null)
 	{
-		$this->params = ComponentHelper::getParams('com_eqa');
+		$this->params        = ComponentHelper::getParams('com_eqa');
+		$this->campusService = $campusService;
 	}
 
 	/**
-	 * Trả về tên tổ chức cấp trên (cơ quan chủ quản).
+	 * Trả về một bản sao của service đã gắn với một cơ sở đào tạo cụ thể.
+	 *
+	 * Instance gốc không bị thay đổi. Bản sao dùng chung tham chiếu tới
+	 * CampusService nên không phát sinh truy vấn CSDL mới.
+	 *
+	 * Cách dùng:
+	 *     $config = $configService->forCampus((int) $examseason->campus_id);
+	 *     $section->addText($config->getOrganization());
+	 *
+	 * QUAN TRỌNG: campusId phải lấy từ chính đối tượng dữ liệu đang xử lý
+	 * (examseason, assessment, class, group...), KHÔNG lấy từ cơ sở đang làm
+	 * việc của người dùng — nếu không, cán bộ cấp Học viện sẽ xuất ra biểu mẫu
+	 * mang thông tin sai cơ sở.
+	 *
+	 * @param   int  $campusId  Id cơ sở đào tạo (> 0)
+	 *
+	 * @return  self  Bản sao đã gắn cơ sở đào tạo
+	 * @since   2.1.6
+	 */
+	public function forCampus(int $campusId): self
+	{
+		$clone = clone $this;
+		$clone->campusId = $campusId;
+
+		return $clone;
+	}
+
+	/**
+	 * Id cơ sở đào tạo mà instance này đang gắn với (0 nếu chưa gắn).
+	 *
+	 * @return  int
+	 * @since   2.1.6
+	 */
+	public function getCampusId(): int
+	{
+		return $this->campusId;
+	}
+
+	/**
+	 * Trả về CampusService, resolve lười từ component nếu chưa được inject.
+	 *
+	 * @return  CampusService
+	 * @since   2.1.6
+	 */
+	private function getCampusService(): CampusService
+	{
+		if ($this->campusService === null) {
+			$this->campusService = KmaComponentHelper::getComponent()->getCampusService();
+		}
+
+		return $this->campusService;
+	}
+
+	/**
+	 * Đọc một tham số cấu hình riêng của cơ sở đào tạo mà instance đang gắn với.
+	 *
+	 * Trong cột `params` của #__eqa_campuses, các key được lưu ở dạng phẳng
+	 * (không có tiền tố 'params.' như trong cấu hình của component).
+	 *
+	 * @param   string  $key      Tên tham số
+	 * @param   string  $default  Giá trị mặc định khi cơ sở chưa cấu hình
 	 *
 	 * @return  string
-	 * @since   2.0.5
+	 * @throws  RuntimeException  Nếu instance chưa được gắn cơ sở đào tạo
+	 * @since   2.1.6
+	 */
+	private function getCampusParam(string $key, string $default): string
+	{
+		if ($this->campusId <= 0) {
+			throw new RuntimeException(sprintf(
+				'ConfigService: tham số "%s" là tham số riêng theo cơ sở đào tạo.'
+				. ' Hãy gọi $configService->forCampus($campusId) trước khi đọc,'
+				. ' với campusId lấy từ chính đối tượng dữ liệu đang xử lý'
+				. ' (examseason, assessment, class, group...),'
+				. ' không lấy từ cơ sở đang làm việc của người dùng.',
+				$key
+			));
+		}
+
+		$value = (string) $this->getCampusService()
+			->getCampusParams($this->campusId)
+			->get($key, '');
+
+		return $value !== '' ? $value : $default;
+	}
+
+
+	/**
+	 * Trả về tên tổ chức cấp trên (cơ quan chủ quản) của cơ sở đào tạo.
+	 *
+	 * @return  string
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getParentOrganization(): string
 	{
-		return $this->params->get('params.parent_organization', 'Ban Cơ yếu Chính phủ');
+		return $this->getCampusParam('parent_organization', 'Ban Cơ yếu Chính phủ');
 	}
 
 	/**
-	 * Trả về tên tổ chức (nhà trường).
+	 * Trả về tên tổ chức (nhà trường) của cơ sở đào tạo.
 	 *
 	 * @return  string
-	 * @since   2.0.5
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getOrganization(): string
 	{
-		return $this->params->get('params.organization', 'Học viện Kỹ thuật mật mã');
+		return $this->getCampusParam('organization', 'Học viện Kỹ thuật mật mã');
 	}
 
 	/**
-	 * Trả về tên đơn vị phụ trách tổ chức thi.
+	 * Trả về tên đơn vị phụ trách tổ chức thi của cơ sở đào tạo.
 	 *
 	 * @return  string
-	 * @since   2.0.5
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getExaminationUnit(): string
 	{
-		return $this->params->get('params.examination_unit', 'Phòng KT&ĐBCLĐT');
+		return $this->getCampusParam('examination_unit', 'Phòng KT&ĐBCLĐT');
 	}
 
 	/**
-	 * Trả về tên thành phố/địa điểm.
+	 * Trả về địa danh ghi trên văn bản của cơ sở đào tạo.
 	 *
 	 * @return  string
-	 * @since   2.0.5
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getCity(): string
 	{
-		return $this->params->get('params.city', 'Hà Nội');
+		return $this->getCampusParam('city', 'Hà Nội');
 	}
-
 	/**
 	 * Trả về số năm cộng thêm vào năm hiện tại để xác định năm học cao nhất
 	 * trong danh sách chọn của AcademicyearField.
@@ -389,6 +502,17 @@ class ConfigService
 		return (float) $this->params->get('params.second_attempt_fee_rate', 90000);
 	}
 
+	/**
+	 * Lấy tham số thứ tự sắp xếp khi xuất danh sách người học, cán bộ.
+	 *
+	 * @return string 'name' (sắp theo tên rồi họ đệm) hoặc 'code' (sắp theo mã)
+	 */
+	public function getPersonSortOrder(): string
+	{
+		return (float) $this->params->get('params.person_sort_order', 'name');
+	}
+
+
 	public function getMailBatchSize():int
 	{
 		return (int) $this->params->get('params.mail_batch_size', 50);
@@ -404,94 +528,87 @@ class ConfigService
 	}
 
 	// =====================================================================
-	// Nhóm tham số: Đánh giá rèn luyện
+	// Nhóm tham số: Đánh giá rèn luyện (riêng theo từng cơ sở đào tạo)
+	// Yêu cầu gọi forCampus() trước khi sử dụng.
 	// =====================================================================
 
 	/**
-	 * Trả về tên đơn vị quản lý đào tạo (dùng trong biểu mẫu đánh giá rèn luyện).
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductTrainingUnit(): string
 	{
-		return $this->params->get('params.conduct_training_unit', 'PHÒNG ĐÀO TẠO');
+		return $this->getCampusParam('conduct_training_unit', 'PHÒNG ĐÀO TẠO');
 	}
 
 	/**
-	 * Trả về chức danh lãnh đạo đơn vị quản lý đào tạo.
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductTrainingUnitLeaderTitle(): string
 	{
-		return $this->params->get('params.conduct_training_unit_leader_title', 'P. TRƯỞNG PHÒNG');
+		return $this->getCampusParam('conduct_training_unit_leader_title', 'P. TRƯỞNG PHÒNG');
 	}
 
 	/**
-	 * Trả về tên lãnh đạo đơn vị quản lý đào tạo.
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductTrainingUnitLeaderName(): string
 	{
-		return $this->params->get('params.conduct_training_unit_leader_name', 'Trần Cao Thanh');
+		return $this->getCampusParam('conduct_training_unit_leader_name', '');
 	}
 
 	/**
-	 * Trả về tên đơn vị quản lý học viên, sinh viên (HVSV).
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductLearnerUnit(): string
 	{
-		return $this->params->get('params.conduct_learner_unit', 'HỆ QUẢN LÝ HVSV');
+		return $this->getCampusParam('conduct_learner_unit', 'HỆ QUẢN LÝ HVSV');
 	}
 
 	/**
-	 * Trả về chức danh lãnh đạo đơn vị quản lý HVSV.
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductLearnerUnitLeaderTitle(): string
 	{
-		return $this->params->get('params.conduct_learner_unit_leader_title', 'P. HỆ TRƯỞNG');
+		return $this->getCampusParam('conduct_learner_unit_leader_title', 'P. HỆ TRƯỞNG');
 	}
 
 	/**
-	 * Trả về tên lãnh đạo đơn vị quản lý HVSV.
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductLearnerUnitLeaderName(): string
 	{
-		return $this->params->get('params.conduct_learner_unit_leader_name', 'Chu Mạnh Phấn');
+		return $this->getCampusParam('conduct_learner_unit_leader_name', '');
 	}
 
 	/**
-	 * Trả về chức danh của người lập biểu (trong biểu mẫu đánh giá rèn luyện).
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductPreparerTitle(): string
 	{
-		return $this->params->get('params.conduct_preparer_title', 'TRỢ LÝ QUẢN LÝ HVSV');
+		return $this->getCampusParam('conduct_preparer_title', 'TRỢ LÝ QUẢN LÝ HVSV');
 	}
 
 	/**
-	 * Trả về tên người lập biểu.
-	 *
 	 * @return  string
-	 * @since   2.0.9
+	 * @throws  RuntimeException  Nếu chưa gọi forCampus()
+	 * @since   2.1.6  Chuyển sang tham số riêng theo cơ sở đào tạo
 	 */
 	public function getConductPreparerName(): string
 	{
-		return $this->params->get('params.conduct_preparer_name', 'Trịnh Đình Hợp');
+		return $this->getCampusParam('conduct_preparer_name', '');
 	}
 }

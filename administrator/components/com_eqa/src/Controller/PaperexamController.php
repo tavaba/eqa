@@ -4,6 +4,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
+use Kma\Component\Eqa\Administrator\Model\PaperexamModel;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -44,7 +45,14 @@ class PaperexamController extends  FormController {
 		$model = $this->getModel();
 		$model->mask($examId, $maskStart, $maskInterval, $packageDefaultSize, $packageMinSize);
 	}
-	public function exportMaskMap()
+
+	/**
+	 * Xuất sơ đồ phách để thực hiện đánh phách.
+	 * Tức là chức năng "Tải sơ đồ phách" ở view "Paperexams".
+	 * @return void
+	 * @throws \Exception
+	 */
+	public function exportMaskMap(): void
 	{
 		//Checktoken
 		$this->checkToken();
@@ -67,7 +75,10 @@ class PaperexamController extends  FormController {
 		}
 		$examId = $cid[0];
 
-		//Load the map
+		/**
+		 * Load the map
+		 * @var PaperexamModel $model
+		 */
 		$model = $this->getModel();
 		$map = $model->getMaskMap($examId, false);
 		if(empty($map))
@@ -90,7 +101,14 @@ class PaperexamController extends  FormController {
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		$this->app->close();
 	}
-	public function editExaminers()
+
+	/**
+	 * Phân công chấm thi viết theo túi bài thi.
+	 * Tức là chức năng "Phân công chấm thi" ở view "Paperexams"
+	 * @return void
+	 * @throws \Exception
+	 */
+	public function editExaminers(): void
 	{
 		//Check token
 		$this->checkToken();

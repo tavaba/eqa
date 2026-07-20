@@ -17,7 +17,9 @@ use Kma\Component\Eqa\Administrator\DataObject\ExamInfo;
 use Kma\Component\Eqa\Administrator\DataObject\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\DataObject\PackageInfo;
+use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
 use Kma\Component\Eqa\Administrator\Service\ConfigService;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Chart\Chart;
@@ -655,11 +657,16 @@ abstract class IOHelper extends BaseIOHelper
 		$sheet->getStyle('A' . $row . ':I' . $row)->getFont()->setBold(true);
 		$sheet->getStyle('A' . $row . ':I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 	}
-	static public function writeExamExaminees(Worksheet $sheet, $exam, $examinees) : void
+	static public function writeExamExaminees(Worksheet $sheet, ExamInfo $exam, $examinees) : void
 	{
-		//Lấy tham số cấu hình của component
-		$organizationName = ConfigHelper::getOrganization();
-		$examinationUnitName = ConfigHelper::getExaminationUnit();
+		/**
+		 * Lấy tham số cấu hình của component
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService()->forCampus($exam->campusId);
+		$organizationName = mb_strtoupper($configService->getOrganization());
+		$examinationUnitName = mb_strtoupper($configService->getExaminationUnit());
 
 		// Set page margins (values are in inches)
 		$sheet->getPageMargins()->setTop(0.5);
@@ -686,10 +693,10 @@ abstract class IOHelper extends BaseIOHelper
 
 		//Create information rows - Part 1
 		$sheet->mergeCells('A1:D1');
-		$sheet->setCellValue('A1', mb_strtoupper($organizationName));
+		$sheet->setCellValue('A1', $organizationName);
 
 		$sheet->mergeCells('A2:D2');
-		$sheet->setCellValue('A2', mb_strtoupper($examinationUnitName));
+		$sheet->setCellValue('A2', htmlspecialchars($examinationUnitName));
 		$sheet->getStyle('A2')->getFont()->setBold(true);
 
 		$sheet->mergeCells('H1:M1');
@@ -797,7 +804,7 @@ abstract class IOHelper extends BaseIOHelper
 
 		$row++;
 		$sheet->mergeCells('J'.$row.':M'.$row);
-		$sheet->setCellValue('J'.$row, mb_strtoupper($examinationUnitName));
+		$sheet->setCellValue('J'.$row, htmlspecialchars($examinationUnitName));
 		$sheet->getStyle('J'.$row)->getFont()->setBold(true);
 		$sheet->getStyle('J'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -806,7 +813,7 @@ abstract class IOHelper extends BaseIOHelper
 		$sheet->getStyle($sheet->calculateWorksheetDimension())->getFont()->setName('Times New Roman');
 	}
 
-	static public function writeExamResultForLearners(Worksheet $sheet, ExamInfo $examInfo, array $examResult)
+	static public function writeExamResultForLearners(Worksheet $sheet, ExamInfo $examInfo, array $examResult): void
 	{
 		// Set page margins (values are in inches)
 		$sheet->getPageMargins()->setTop(0.5);
@@ -829,10 +836,15 @@ abstract class IOHelper extends BaseIOHelper
 		//Init
 		$row=0;
 
-		//Thông tin cơ quan
+		/**
+		 * Thông tin cơ quan
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService()->forCampus($examInfo->campusId);
 		$row++;
 		$midCol = 4;
-		$organizationName = mb_strtoupper(ConfigHelper::getOrganization());
+		$organizationName = mb_strtoupper($configService->getOrganization());
 		$sheet->setCellValue([1,$row], $organizationName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
 		$sheet->setCellValue([$midCol+2, $row], 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM');
@@ -842,7 +854,7 @@ abstract class IOHelper extends BaseIOHelper
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 		$row++;
-		$unitName = mb_strtoupper(ConfigHelper::getExaminationUnit());
+		$unitName = mb_strtoupper($configService->getExaminationUnit());
 		$sheet->setCellValue([1, $row], $unitName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
 		$sheet->setCellValue([$midCol+2, $row], 'Độc lập - Tự do - Hạnh phúc');
@@ -920,7 +932,7 @@ abstract class IOHelper extends BaseIOHelper
 		$style->getFont()->setBold(true);
 
 	}
-	static public function writeExamResultForEms(Worksheet $sheet, ExamInfo $examInfo, array $examResult)
+	static public function writeExamResultForEms(Worksheet $sheet, ExamInfo $examInfo, array $examResult): void
 	{
 		// Set page margins (values are in inches)
 		$sheet->getPageMargins()->setTop(0.5);
@@ -943,10 +955,15 @@ abstract class IOHelper extends BaseIOHelper
 		//Init
 		$row=0;
 
-		//Thông tin cơ quan
+		/**
+		 * Thông tin cơ quan
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService()->forCampus($examInfo->campusId);
 		$row++;
 		$midCol = 3;
-		$organizationName = mb_strtoupper(ConfigHelper::getOrganization());
+		$organizationName = mb_strtoupper($configService->getOrganization());
 		$sheet->setCellValue([1,$row], $organizationName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
 		$sheet->setCellValue([$midCol+1, $row], 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM');
@@ -956,7 +973,7 @@ abstract class IOHelper extends BaseIOHelper
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 		$row++;
-		$unitName = mb_strtoupper(ConfigHelper::getExaminationUnit());
+		$unitName = mb_strtoupper($configService->getExaminationUnit());
 		$sheet->setCellValue([1, $row], $unitName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
 		$sheet->setCellValue([$midCol+1, $row], 'Độc lập - Tự do - Hạnh phúc');
@@ -1037,7 +1054,7 @@ abstract class IOHelper extends BaseIOHelper
 		$style->getFont()->setBold(true);
 
 	}
-	static public function writeExamResultForEms2(Worksheet $sheet, ExamInfo $examInfo, array $examResult)
+	static public function writeExamResultForEms2(Worksheet $sheet, ExamInfo $examInfo, array $examResult): void
 	{
 		//Hide the columns 'A'-'E'
 		$sheet->getColumnDimension('A')->setVisible(false);
@@ -1117,7 +1134,7 @@ abstract class IOHelper extends BaseIOHelper
 
 	}
 
-	static public function writeMaskMap(Worksheet $sheet, array $map, $examInfo):void
+	static public function writeMaskMap(Worksheet $sheet, array $map, ExamInfo $examInfo):void
 	{
 		/**
 		 * Sơ đồ phách được xuất ra phục vụ cho việc đánh phách trực tiếp lên bài thi
@@ -1145,19 +1162,22 @@ abstract class IOHelper extends BaseIOHelper
 		//Init
 		$row=0;
 
-		//Thông tin cơ quan
+		/**
+		 * Thông tin cơ quan
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService()->forCampus($examInfo->campusId);
 		$row++;
 		$midCol = intdiv($COLS,2) + $COLS % 2;
-		$organizationName = ConfigHelper::getOrganization();
-		$organizationName = mb_strtoupper($organizationName);
+		$organizationName = mb_strtoupper($configService->getOrganization());
 		$sheet->getCell('A'.$row)->setValue($organizationName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
 		$cellStyle = $sheet->getStyle([1,$row, $midCol, $row]);
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 		$row++;
-		$unitName = ConfigHelper::getExaminationUnit();
-		$unitName = mb_strtoupper($unitName);
+		$unitName = mb_strtoupper($configService->getExaminationUnit());
 		$sheet->getCell('A'.$row)->setValue($unitName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
 		$cellStyle = $sheet->getStyle([1,$row, $midCol, $row]);
@@ -2146,7 +2166,6 @@ abstract class IOHelper extends BaseIOHelper
 	}
 	static public function writeRegradingFee(Spreadsheet $spreadsheet, array $regradingRequets): void
 	{
-
 		/**
 		 * Note: $regradingRequests is an array. Each item is of type Regradingrequest (/src/Interface/Regradingrequest.php)
 		 * STEPS to do:
@@ -2167,6 +2186,13 @@ abstract class IOHelper extends BaseIOHelper
 		 * 		- Lớp (group)
 		 * 		- Môn phúc khảo (each cell in this column contains one or more exam names separated by a semicolon and linebreak)
 		 */
+
+		/**
+		 * Retreive an instance of the ConfigService
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService();
 
 		//Step 1: Build the array $learners.
 		$learners = [];
@@ -2210,11 +2236,11 @@ abstract class IOHelper extends BaseIOHelper
 		$headers = ['TT', 'Mã HVSV', 'Họ đệm', 'Tên', 'Lớp',  'Môn phúc khảo', 'Phí PK'];
 		$widths = [5,      12,          20,       10,  8,     40,                10];
 		$COLS = sizeof($headers);
+		$personSortOrder = $configService->getPersonSortOrder();
 		foreach ($learnersByCourse as $course => $learnersInACourse)
 		{
-
 			// Sắp xếp theo tham số cấu hình
-			if (ConfigHelper::getPersonSortOrder() === 'code')
+			if ($personSortOrder === 'code')
 			{
 				//Tùy chọn: sắp xếp theo mã
 				usort($learnersInACourse, function ($a, $b) {
@@ -2482,9 +2508,14 @@ abstract class IOHelper extends BaseIOHelper
 		$examiner1Fullname = implode(' ', [$examiner1['lastname'], $examiner1['firstname']]);
 		$examiner2Fullname = implode(' ', [$examiner2['lastname'], $examiner2['firstname']]);
 
-		//Thông tin cơ quan
+		/**
+		 * Thông tin cơ quan
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService()->forCampus($examseasonInfo->campusId);
 		$row++;
-		$parentOrganization = ConfigHelper::getParentOrganization();
+		$parentOrganization = $configService->getParentOrganization();
 		$parentOrganization = mb_strtoupper($parentOrganization);
 		$sheet->getCell('A'.$row)->setValue($parentOrganization);
 		$sheet->mergeCells([1,$row, 4, $row]);
@@ -2492,7 +2523,7 @@ abstract class IOHelper extends BaseIOHelper
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 		$row++;
-		$organization = ConfigHelper::getOrganization();
+		$organization = $configService->getOrganization();
 		$organization = mb_strtoupper($organization);
 		$sheet->getCell('A'.$row)->setValue($organization);
 		$sheet->mergeCells([1,$row, 4, $row]);
@@ -2595,7 +2626,8 @@ abstract class IOHelper extends BaseIOHelper
 
 		//Ngày tháng
 		$row = $lastRow + 2;
-		$value = 'Ngày .... tháng ..... năm 20.....';
+		$city = $configService->getCity();
+		$value = $city . ', ngày .... tháng .... năm 20.....';
 		$cell = $sheet->getCell('A'.$row);
 		$cell->setValue($value);
 		$cell->getStyle()->getFont()->setItalic(true);
@@ -3239,7 +3271,7 @@ abstract class IOHelper extends BaseIOHelper
 		$table->addCell(3500)->addText('NGƯỜI LẬP PHIẾU', 'Bold','Center');
 	}
 
-	static public function writeExamseasonLearnerMarks(PhpWord $phpWord, int $examseasonId, array $learnerMarks)
+	static public function writeExamseasonLearnerMarks(PhpWord $phpWord, int $examseasonId, array $learnerMarks): void
 	{
 		//1. Get information about exams of the given examseason
 		$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
@@ -3257,7 +3289,14 @@ abstract class IOHelper extends BaseIOHelper
 		$db->setQuery($query);
 		$exams = $db->loadAssocList('id');
 
-		//2. Init the document styles
+		/**
+		 * 2a. Retrieve the ConfigService
+		 * @var EqaComponent $component
+		 */
+		$component = ComponentHelper::getComponent();
+		$configService = $component->getConfigService()->forCampus($examseason->campusId);
+
+		//2b. Init the document styles
 		self::phpWordDefineCommonStyles($phpWord);
 		$phpWord->setDefaultFontSize(10);
 		$logoPath = JPATH_ROOT . '/media/com_eqa/images/logo.jpg';
@@ -3280,13 +3319,13 @@ abstract class IOHelper extends BaseIOHelper
 				'borderStyle' => Border::BORDER_DOUBLE,
 			]
 		);
-		$section->addText('BAN CƠ YẾU CHÍNH PHỦ', [
+		$parentOrganization = mb_strtoupper($configService->getParentOrganization());
+		$section->addText($parentOrganization, [
 			'size'=>14
 			], 'Center');
 		$textrun = $section->addTextRun(['alignment'=>'center', 'spaceAfter'=>Converter::cmToTwip(1)]);
-		$textrun->addText('HỌC VIỆN', ['bold'=>true,'size'=>14]);
-		$textrun->addText(' KỸ THUẬT ', ['bold'=>true,'size'=>14,'underline'=>'single']);
-		$textrun->addText('MẬT MÃ', ['bold'=>true,'size'=>14]);
+		$organization = $configService->getOrganization();
+		$textrun->addText($organization, ['bold'=>true,'size'=>14,'underline'=>'single']);
 
 		$section->addImage($logoPath, [
 			'alignment' => 'center',
@@ -3315,6 +3354,7 @@ abstract class IOHelper extends BaseIOHelper
 			],'Center');
 
 
+		//TODO: Đưa các chức danh dưới đây vào cấu hình Campus
 		$textrun = $section->addTextRun(['spaceBefore'=>Converter::cmToTwip(3)]);
 		$textrun->addText('Cán bộ tổng hợp điểm: ',['size'=>14]);
 		$textrun->addText('Nguyễn Thị Mai Chinh', ['bold'=>true, 'size'=>14]);
@@ -3324,8 +3364,8 @@ abstract class IOHelper extends BaseIOHelper
 		$textrun->addText('Nguyễn Tuấn Anh', ['bold'=>true, 'size'=>14]);
 
 		$year = date('Y');
-		$city = ConfigHelper::getCity();
-		$text = sprintf('%s, %d', htmlspecialchars($city), $year);
+		$city = $configService->getCity();
+		$text = sprintf('%s, %d', $city, $year);
 		$section->addText($text,
 			[
 				'bold'=>true,

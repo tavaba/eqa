@@ -3,6 +3,7 @@
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Helper\CampusHelper;
 
 defined('_JEXEC') or die;
 
@@ -14,6 +15,7 @@ JHtml::_('bootstrap.framework');
         text-align: left !important;
     }
 </style>
+<?php echo CampusHelper::renderSwitcher(); ?>
 <div class="container my-5">
     <div class="card shadow-sm rounded-4 border-0">
 

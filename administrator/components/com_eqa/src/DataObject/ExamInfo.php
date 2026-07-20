@@ -7,6 +7,7 @@ defined('_JEXEC') or die();
 class ExamInfo extends ObjectInfo
 {
 	public int $id;
+	public int $campusId;
 	public string $name;
 	public string|null $code;
 	public int|null $credits;

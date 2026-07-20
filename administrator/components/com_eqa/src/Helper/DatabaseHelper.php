@@ -179,10 +179,21 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		}
 
 		$db      = self::getDatabaseDriver();
-		$columns = $db->quoteName(
-			['a.id', 'd.code', 'd.credits', 'a.name', 'a.testtype', 'a.usetestbank', 'a.duration', 'a.examseason_id', 'b.name',     'b.term', 'b.academicyear', 'a.status'],
-			['id',   'code',   'credits',   'name',   'testtype',   'usetestbank',   'duration',   'examseasonId',   'examseason', 'term',   'academicyear',   'status']
-		);
+		$columns = [
+			$db->quoteName('a.id',              'id'),
+			$db->quoteName('b.campus_id',       'campusId'),
+			$db->quoteName('d.code',            'code'),
+			$db->quoteName('d.credits',         'credits'),
+			$db->quoteName('a.name',            'name'),
+			$db->quoteName('a.testtype',        'testtype'),
+			$db->quoteName('a.usetestbank',     'usetestbank'),
+			$db->quoteName('a.duration',        'duration'),
+			$db->quoteName('a.examseason_id',   'examseasonId'),
+			$db->quoteName('b.name',            'examseason'),
+			$db->quoteName('b.academicyear',    'academicyear'),
+			$db->quoteName('b.term',            'term'),
+			$db->quoteName('a.status',          'status'),
+		];
 
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -637,8 +648,8 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 	{
 		$db      = self::getDatabaseDriver();
 		$columns = $db->quoteName(
-			['a.id', 'a.name', 'a.academicyear', 'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'],
-			['id',   'name',   'academicyear',   'term',   'completed',   'ppaa_req_enabled',   'ppaa_req_deadline']
+			['a.id', 'a.campus_id', 'a.name', 'a.academicyear', 'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'],
+			['id',   'campus_id',   'name',   'academicyear',   'term',   'completed',   'ppaa_req_enabled',   'ppaa_req_deadline']
 		);
 
 		$query = $db->getQuery(true)
@@ -660,6 +671,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 
 		$examseason                   = new ExamseasonInfo();
 		$examseason->id               = $obj->id;
+		$examseason->campusId         = $obj->campus_id;
 		$examseason->name             = $obj->name;
 		// Decode INT → chuỗi "YYYY-YYYY" để giữ nguyên kiểu dữ liệu string của field
 		$examseason->academicyear     = DatetimeHelper::decodeAcademicYear((int) $obj->academicyear);
