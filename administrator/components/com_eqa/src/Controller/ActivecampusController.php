@@ -28,7 +28,7 @@ class ActivecampusController extends BaseController
      *
      * Request params:
      *   - campus_id (int)    : id cơ sở đào tạo cần chuyển sang
-     *   - return    (string) : URL quay lại, đã mã hóa base64
+     *   - return    (string) : URL quay lại, đã mã hóa base64 (tùy chọn)
      *
      * @return  void
      * @throws  Exception
@@ -67,7 +67,13 @@ class ActivecampusController extends BaseController
     /**
      * Xác định URL quay lại sau khi chuyển cơ sở đào tạo.
      *
-     * Chỉ chấp nhận URL nội bộ để tránh open redirect.
+     * Thứ tự ưu tiên:
+     *   1. Tham số 'return' (form dự phòng ở các trang không có adminForm);
+     *   2. Chính URL của request hiện tại — khi dropdown submit qua adminForm,
+     *      action của adminForm đã chứa &view=... nên người dùng ở lại đúng view;
+     *   3. Dashboard của component.
+     *
+     * Chỉ chấp nhận URL nội bộ của com_eqa để tránh open redirect.
      *
      * @return  string
      * @since   2.1.6
@@ -75,18 +81,26 @@ class ActivecampusController extends BaseController
     private function resolveReturnUrl(): string
     {
         $default = Route::_('index.php?option=com_eqa&view=dashboard', false);
+
+        // 1. Tham số 'return'
         $encoded = $this->input->getBase64('return', '');
 
-        if (empty($encoded)) {
-            return $default;
+        if (!empty($encoded)) {
+            $url = base64_decode($encoded);
+
+            if (!empty($url) && Uri::isInternal($url)) {
+                return Route::_($url, false);
+            }
         }
 
-        $url = base64_decode($encoded);
+        // 2. URL của chính request hiện tại (submit qua adminForm)
+        $uri = Uri::getInstance();
 
-        if (empty($url) || !Uri::isInternal($url)) {
-            return $default;
+        if ($uri->getVar('option') === 'com_eqa' && !empty($uri->getVar('view'))) {
+            return Route::_($uri->toString(['path', 'query']), false);
         }
 
-        return Route::_($url, false);
+        // 3. Mặc định
+        return $default;
     }
 }

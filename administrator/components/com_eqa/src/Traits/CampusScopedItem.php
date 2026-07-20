@@ -1,13 +1,4 @@
 <?php
-
-/**
- * @package     Kma.Component.Eqa
- * @subpackage  Administrator.Traits
- *
- * @copyright   (C) 2026 KMA. All rights reserved.
- * @license     GNU General Public License version 2 or later
- */
-
 namespace Kma\Component\Eqa\Administrator\Traits;
 
 defined('_JEXEC') or die;
@@ -25,11 +16,13 @@ use RuntimeException;
  * List Model chỉ phục vụ hiển thị và có thể bị vượt qua bằng cách gọi thẳng
  * URL với id của bản ghi thuộc cơ sở khác.
  *
- * Quy ước sử dụng:
- *  - Thực thể có cột campus_id: gọi assertCanManageCampus() trong save()/delete(),
- *    và gọi enforceCampusOnNewRecord() trong prepareTable().
- *  - Thực thể suy diễn campus qua FK: dùng resolveCampusIdByQuery() để lấy
- *    campus của bản ghi cha rồi assert.
+ * Trait định nghĩa HỢP ĐỒNG: lớp sử dụng phải cho biết cách suy ra cơ sở đào
+ * tạo của một bản ghi, qua phương thức trừu tượng getCampusIdOfRecord().
+ * Phần lặp lại (kiểm tra khi lưu/xóa) đã được đóng gói thành template method.
+ *
+ * Thông thường nên kế thừa Base\CampusAdminModel (đã cài sẵn save/delete/
+ * prepareTable) thay vì dùng trực tiếp trait này; chỉ dùng trực tiếp khi model
+ * lệch khuôn mẫu chung.
  *
  * @since 2.1.6
  */
@@ -40,6 +33,42 @@ trait CampusScopedItem
      * @since 2.1.6
      */
     private ?CampusService $campusServiceInstance = null;
+
+    /**
+     * Suy ra id cơ sở đào tạo của một bản ghi đang lưu trong CSDL.
+     *
+     * Bắt buộc đọc từ CSDL, KHÔNG lấy từ dữ liệu form (có thể bị giả mạo).
+     *
+     * Ví dụ với thực thể có cột campus_id:
+     *     return $this->getStoredCampusId('#__eqa_buildings', $recordId);
+     *
+     * Ví dụ với thực thể suy diễn qua khóa ngoại:
+     *     $buildingId = $this->getStoredCampusId('#__eqa_rooms', $recordId, 'building_id');
+     *     return $this->resolveCampusIdByForeignKey('#__eqa_buildings', $buildingId);
+     *
+     * @param   int  $recordId
+     *
+     * @return  int  0 nếu không xác định được
+     * @since   2.1.6
+     */
+    abstract protected function getCampusIdOfRecord(int $recordId): int;
+
+    /**
+     * Suy ra id cơ sở đào tạo tương ứng với dữ liệu người dùng gửi lên.
+     *
+     * Dùng để chặn việc CHUYỂN một bản ghi sang cơ sở khác. Mặc định lấy từ
+     * cột campus_id trên form; model suy diễn qua khóa ngoại cần override
+     * (ví dụ RoomModel suy từ building_id).
+     *
+     * @param   array  $data  Dữ liệu form
+     *
+     * @return  int  0 nghĩa là không cần kiểm tra
+     * @since   2.1.6
+     */
+    protected function getCampusIdOfIncomingData(array $data): int
+    {
+        return (int) ($data['campus_id'] ?? 0);
+    }
 
     /**
      * @return  CampusService
@@ -53,6 +82,58 @@ trait CampusScopedItem
 
         return $this->campusServiceInstance;
     }
+
+    // =========================================================================
+    // Template method — phần lặp lại của mọi Item Model campus-scoped
+    // =========================================================================
+
+    /**
+     * Kiểm tra quyền trước khi lưu.
+     *
+     * Kiểm tra hai chiều:
+     *   1. Cơ sở của bản ghi hiện có trong CSDL (nếu là cập nhật);
+     *   2. Cơ sở tương ứng với dữ liệu gửi lên (nếu người dùng đổi cơ sở).
+     *
+     * @param   array  $data
+     *
+     * @return  void
+     * @throws  RuntimeException
+     * @since   2.1.6
+     */
+    protected function guardCampusOnSave(array $data): void
+    {
+        $recordId = (int) ($data['id'] ?? 0);
+
+        if ($recordId > 0) {
+            $this->assertCanManageCampus($this->getCampusIdOfRecord($recordId));
+        }
+
+        $incomingCampusId = $this->getCampusIdOfIncomingData($data);
+
+        if ($incomingCampusId > 0) {
+            $this->assertCanManageCampus($incomingCampusId);
+        }
+    }
+
+    /**
+     * Kiểm tra quyền trước khi xóa.
+     *
+     * @param   array|int  $pks
+     *
+     * @return  void
+     * @throws  RuntimeException
+     * @since   2.1.6
+     */
+    protected function guardCampusOnDelete($pks): void
+    {
+        foreach ((array) $pks as $pk) {
+            $this->assertCanManageCampus($this->getCampusIdOfRecord((int) $pk));
+        }
+    }
+
+    // =========================================================================
+    // Các phương thức hạ tầng
+    // =========================================================================
 
     /**
      * Khẳng định người dùng hiện tại được phép thao tác trên dữ liệu của cơ sở này.
@@ -80,14 +161,14 @@ trait CampusScopedItem
     }
 
     /**
-     * Gán cơ sở đào tạo cho bản ghi trước khi ghi xuống CSDL.
+     * Gán/ép cơ sở đào tạo cho bản ghi trước khi ghi xuống CSDL.
+     *
+     * Chỉ dùng cho thực thể CÓ cột campus_id.
      *
      * Bản ghi mới: gán cơ sở đang làm việc.
      * Người dùng thường: luôn ép về cơ sở đang làm việc, bỏ qua giá trị gửi lên
      * từ form (chống giả mạo campus_id trong request).
      * Người dùng có quyền mọi cơ sở: tôn trọng lựa chọn trên form.
-     *
-     * Gọi trong prepareTable() của Item Model.
      *
      * @param   object  $table
      *
@@ -118,8 +199,7 @@ trait CampusScopedItem
             );
         }
 
-        // Bản ghi đã tồn tại: quyền trên bản ghi đã được kiểm tra ở save()/delete();
-        // giữ nguyên campus của bản ghi, không cho chuyển sang cơ sở khác.
+        // Bản ghi đã tồn tại: giữ nguyên cơ sở, không cho chuyển sang cơ sở khác
         if (!empty($table->id) && !empty($table->campus_id)) {
             $this->assertCanManageCampus((int) $table->campus_id);
 
@@ -130,14 +210,11 @@ trait CampusScopedItem
     }
 
     /**
-     * Đọc campus_id hiện đang lưu trong CSDL của một bản ghi.
-     *
-     * Dùng để kiểm tra quyền TRƯỚC khi ghi đè bản ghi bằng dữ liệu từ form
-     * (dữ liệu form có thể bị giả mạo).
+     * Đọc một giá trị cột của bản ghi trực tiếp từ CSDL.
      *
      * @param   string  $tableName  Ví dụ '#__eqa_buildings'
      * @param   int     $recordId
-     * @param   string  $column     Tên cột chứa campus_id
+     * @param   string  $column     Tên cột cần đọc
      *
      * @return  int  0 nếu không tìm thấy bản ghi
      * @since   2.1.6
@@ -159,12 +236,7 @@ trait CampusScopedItem
     }
 
     /**
-     * Suy diễn campus_id của một bản ghi qua khóa ngoại.
-     *
-     * Ví dụ với phòng học (rooms), campus được suy qua building_id:
-     *   $campusId = $this->resolveCampusIdByForeignKey(
-     *       '#__eqa_buildings', (int) $data['building_id']
-     *   );
+     * Suy diễn campus_id qua khóa ngoại trỏ tới một bảng có cột campus_id.
      *
      * @param   string  $parentTable  Bảng cha có cột campus_id
      * @param   int     $parentId     Giá trị khóa ngoại
@@ -178,12 +250,7 @@ trait CampusScopedItem
     }
 
     /**
-     * Điều chỉnh field campus_id trên form theo quyền của người dùng.
-     *
-     * Người dùng thường không được chọn cơ sở (giá trị bị ép trong prepareTable),
-     * nên field được chuyển thành readonly để tránh hiểu nhầm.
-     *
-     * Gọi trong getForm() của Item Model.
+     * Chuyển field campus_id sang readonly với người dùng không có quyền mọi cơ sở.
      *
      * @param   Form|bool  $form
      *

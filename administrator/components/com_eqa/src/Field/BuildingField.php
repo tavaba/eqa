@@ -4,6 +4,8 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
+use Kma\Library\Kma\Helper\ComponentHelper;
 
 /**
  * Supports an HTML select list of education degrees
@@ -24,17 +26,38 @@ class BuildingField extends ListField
     protected function getOptions()
     {
         $db = $this->getDatabase();
+		$columns = [
+			$db->qn('b.id',     'id'),
+			$db->qn('b.code',   'code'),
+			$db->qn('c.code',   'campusCode'),
+		];
         $query = $db->getQuery(true)
-            ->select('id, code')
-            ->from('#__eqa_buildings')
-            ->where('published = 1')
-            ->order('code');
-        $db->setQuery($query);
-        $res = $db->loadAssocList('id','code');
+            ->select($columns)
+            ->from('#__eqa_buildings AS b')
+	        ->leftJoin('#__eqa_campuses AS c ON c.id = b.campus_id')
+            ->where('b.published = 1')
+            ->order('b.code');
+
+	    /**
+	     * Chỉ liệt kê tòa nhà thuộc các cơ sở người dùng được phép (2.1.6)
+	     * @var EqaComponent $component
+	     */
+		$component = ComponentHelper::getComponent();
+	    $campusService = $component->getCampusService();
+	    $activeId   = $campusService->getActiveCampusId();
+	    $allowedIds = $activeId > 0 ? [$activeId] : [];
+	    $query->where(
+		    $db->quoteName('b.campus_id') . ' IN (' . implode(',', array_map('intval', $allowedIds)) . ')'
+	    );
+
+		//Do the query
+	    $db->setQuery($query);
+        $buildings = $db->loadObjectList();
         $options = parent::getOptions();
-        foreach ($res as $id=>$code)
+        foreach ($buildings as $building)
         {
-            $options[] = HTMLHelper::_('select.option', $id, $code);
+			$text = sprintf('%s (%s)', $building->code, $building->campusCode);
+            $options[] = HTMLHelper::_('select.option', $building->id, $text);
         }
         return $options;
     }

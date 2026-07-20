@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Buildings; //The namespace must e
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 
 class HtmlView extends ItemsHtmlView {
@@ -14,10 +15,15 @@ class HtmlView extends ItemsHtmlView {
         $option->customFieldset1 = array();
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldCode();
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldDescription();
-
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('campus_name', 'Cơ sở đào tạo');
         $option->published = ListLayoutItemFields::defaultFieldPublished();
 
         //Set the option
         $this->itemFields = $option;
     }
+
+	protected function prepareDataForLayoutDefault(): void
+	{
+		parent::prepareDataForLayoutDefault();
+	}
 }

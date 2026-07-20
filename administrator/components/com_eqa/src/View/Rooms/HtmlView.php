@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\View\Rooms; //must end with View Name
 defined('_JEXEC') or die();
 
 use Kma\Component\Eqa\Administrator\Base\ItemsHtmlView;
+use Kma\Component\Eqa\Administrator\Helper\RoomHelper;
 use Kma\Library\Kma\View\ListLayoutItemFieldOption;
 use Kma\Library\Kma\View\ListLayoutItemFields;
 
@@ -30,4 +31,17 @@ class HtmlView extends ItemsHtmlView {
         //Set the option
         $this->itemFields = $option;
     }
+
+	protected function prepareDataForLayoutDefault():void
+	{
+		parent::prepareDataForLayoutDefault();
+
+		//Preprocessing
+		if(!empty($this->layoutData->items)) {
+			foreach ($this->layoutData->items as $item) {
+				$item->type = RoomHelper::roomType($item->type);
+			}
+		}
+
+	}
 }

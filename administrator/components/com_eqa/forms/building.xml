@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <form>
-    <fieldset name="building">
+    <fieldset name="building" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
         <field
                 name="id"
                 type="hidden"
             />
-
+        <field
+                name="campus_id"
+                type="campus"
+                required="true"
+                label="Cơ sở đào tạo"
+                description="Tòa nhà thuộc cơ sở đào tạo nào. Người dùng thường không đổi được giá trị này."
+        >
+            <option value="">- Chọn cơ sở đào tạo -</option>
+        </field>
         <field
                 name="code"
                 type="text"

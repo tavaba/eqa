@@ -24,6 +24,12 @@ abstract class CampusHelper
      * Người dùng thuộc nhiều cơ sở: hiển thị dropdown, chọn xong tự submit.
      * Người dùng không thuộc cơ sở nào: hiển thị cảnh báo.
      *
+     * Cơ chế submit:
+     *  - Nếu trang có 'adminForm' (các view danh sách): gắn campus_id vào chính
+     *    adminForm rồi submit form đó. Nhờ vậy request giữ nguyên view hiện tại
+     *    (action của adminForm đã chứa &view=...) và không bị đưa về view mặc định.
+     *  - Nếu trang không có adminForm (ví dụ dashboard): dùng form dự phòng ẩn.
+     *
      * Dùng Bootstrap sẵn có của Joomla, không phát sinh CSS riêng.
      *
      * @return  string  HTML; chuỗi rỗng nếu hệ thống chỉ có một cơ sở đào tạo.
@@ -65,9 +71,6 @@ abstract class CampusHelper
         }
 
         // Thuộc nhiều cơ sở → dropdown tự submit
-        $action = Route::_('index.php?option=com_eqa', false);
-        $return = base64_encode(Uri::getInstance()->toString(['path', 'query']));
-
         $options = [];
         foreach ($allowedIds as $campusId) {
             $campus = $campusService->getCampus($campusId);
@@ -80,25 +83,74 @@ abstract class CampusHelper
             'select.genericlist',
             $options,
             'campus_id',
-            'class="form-select form-select-sm" onchange="this.form.submit();"',
+            'class="form-select form-select-sm" onchange="eqaSetActiveCampus(this.value);"',
             'value',
             'text',
             $activeId,
             'eqa-campus-switcher'
         );
 
+        $fallbackAction = Route::_('index.php?option=com_eqa', false);
+        $fallbackReturn = base64_encode(Uri::getInstance()->toString(['path', 'query']));
+
         $html = [];
-        $html[] = '<form action="' . $action . '" method="post" class="d-inline-block mb-3">';
+
+        // Dropdown (KHÔNG bọc trong <form> để không nuốt mất context của view)
+        $html[] = '<div class="d-inline-block mb-3">';
         $html[] = '<div class="input-group input-group-sm">';
         $html[] = '<label class="input-group-text" for="eqa-campus-switcher">'
             . '<span class="icon-map-marker me-1" aria-hidden="true"></span>Cơ sở đào tạo'
             . '</label>';
         $html[] = $select;
         $html[] = '</div>';
+        $html[] = '</div>';
+
+        // Form dự phòng, chỉ dùng cho trang không có adminForm (dashboard...)
+        $html[] = '<form action="' . $fallbackAction . '" method="post" id="eqa-campus-form" class="d-none">';
         $html[] = '<input type="hidden" name="task" value="activecampus.set"/>';
-        $html[] = '<input type="hidden" name="return" value="' . $return . '"/>';
+        $html[] = '<input type="hidden" name="campus_id" value=""/>';
+        $html[] = '<input type="hidden" name="return" value="' . $fallbackReturn . '"/>';
         $html[] = HTMLHelper::_('form.token');
         $html[] = '</form>';
+
+        $html[] = <<<'JS'
+<script>
+function eqaSetActiveCampus(campusId) {
+    var adminForm = document.getElementById('adminForm');
+
+    if (adminForm) {
+        // Gắn campus_id vào adminForm để request giữ nguyên view hiện tại
+        var input = adminForm.querySelector('input[name="campus_id"]');
+
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'campus_id';
+            adminForm.appendChild(input);
+        }
+
+        input.value = campusId;
+
+        if (window.Joomla && typeof Joomla.submitform === 'function') {
+            Joomla.submitform('activecampus.set', adminForm);
+        } else {
+            adminForm.task.value = 'activecampus.set';
+            adminForm.submit();
+        }
+
+        return;
+    }
+
+    // Trang không có adminForm (dashboard...) → dùng form dự phòng
+    var fallbackForm = document.getElementById('eqa-campus-form');
+
+    if (fallbackForm) {
+        fallbackForm.querySelector('input[name="campus_id"]').value = campusId;
+        fallbackForm.submit();
+    }
+}
+</script>
+JS;
 
         return implode('', $html);
     }

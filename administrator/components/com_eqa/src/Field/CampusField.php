@@ -41,7 +41,9 @@ class CampusField extends ListField
 
         $rows = $db->setQuery($query)->loadAssocList('id', 'name');
 
-        $options = parent::getOptions();
+        $options = [];
+	    $options[] = HTMLHelper::_('select.option', null, '- Cơ sở đang làm việc -');
+	    $options[] = HTMLHelper::_('select.option', 0, '(Tất cả cơ sở)');
         foreach ($rows as $id => $name) {
             $options[] = HTMLHelper::_('select.option', $id, $name);
         }

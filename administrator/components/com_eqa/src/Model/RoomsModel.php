@@ -3,19 +3,37 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Base\CampusListModel;
 
-class RoomsModel extends ListModel
+/**
+ * List model của 'phòng' (room).
+ *
+ * Phòng kế thừa cơ sở đào tạo từ tòa nhà (building_id → campus_id), nên điều
+ * kiện lọc được áp trên bảng #__eqa_buildings đã JOIN sẵn.
+ *
+ * @since 1.0.0
+ */
+class RoomsModel extends CampusListModel
 {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('code','type','capacity','published','ordering','building');
+        $config['filter_fields'] = array('code', 'type', 'capacity', 'published', 'ordering', 'building', 'campus_id');
         parent::__construct($config, $factory);
     }
+
     protected function populateState($ordering = 'building', $direction = 'asc'): void
     {
         parent::populateState($ordering, $direction);
     }
+
+    /**
+     * @since 2.1.6
+     */
+    protected function getCampusColumn(): string
+    {
+        return 'b.campus_id';
+    }
+
     public function getListQuery()
     {
         $db = $this->getDatabase();
@@ -25,46 +43,53 @@ class RoomsModel extends ListModel
             array('id',    'building_id',   'code',   'type',   'capacity',   'published',   'ordering', 'building')
         );
         $query->from('#__eqa_rooms AS a')
-            ->leftJoin('#__eqa_buildings AS b','a.building_id = b.id')
+            ->leftJoin('#__eqa_buildings AS b', 'a.building_id = b.id')
             ->select($columns);
+
+        // Lọc theo cơ sở đào tạo, suy diễn qua tòa nhà (2.1.6)
+        $this->applyCampusScope($query);
 
         //Filtering
         $search = $this->getState('filter.search');
-        if(!empty($search)){
-            $like = $db->quote('%'.trim($search).'%');
-            $query->where('a.code LIKE '.$like);
+        if (!empty($search)) {
+            $like = $db->quote('%' . trim($search) . '%');
+            $query->where('a.code LIKE ' . $like);
         }
 
         $building_id = $this->getState('filter.building_id');
-        if(!empty($building_id)){
-            $query->where('a.building_id = '.(int)$building_id);
+        if (!empty($building_id)) {
+            $query->where('a.building_id = ' . (int) $building_id);
         }
 
         $type = $this->getState('filter.type');
-        if(is_numeric($type)){
-            $query->where('a.type = '.(int)$type);
+        if (is_numeric($type)) {
+            $query->where('a.type = ' . (int) $type);
         }
 
         $published = $this->getState('filter.published');
-        if(is_numeric($published)){
-            $query->where('a.published = '.(int)$published);
+        if (is_numeric($published)) {
+            $query->where('a.published = ' . (int) $published);
         }
 
         //Ordering
-        $orderingCol = $query->db->escape($this->getState('list.ordering','code'));
-        $orderingDir = $query->db->escape($this->getState('list.direction','asc'));
-        $query->order($db->quoteName($orderingCol).' '.$orderingDir);
+        $orderingCol = $query->db->escape($this->getState('list.ordering', 'code'));
+        $orderingDir = $query->db->escape($this->getState('list.direction', 'asc'));
+        $query->order($db->quoteName($orderingCol) . ' ' . $orderingDir);
         $query->order('code asc');
 
         return $query;
     }
 
+    /**
+     * Bắt buộc gọi parent::getStoreId() để khóa cache vẫn chứa cơ sở đào tạo.
+     */
     public function getStoreId($id = '')
     {
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.building_id');
         $id .= ':' . $this->getState('filter.type');
         $id .= ':' . $this->getState('filter.published');
+
         return parent::getStoreId($id);
     }
 }
