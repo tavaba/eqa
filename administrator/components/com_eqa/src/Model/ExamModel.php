@@ -2398,7 +2398,7 @@ class ExamModel extends AdminModel{
 				// ----------------------------------------------------------------
 				if (in_array($anomaly, [Anomaly::Deferred->value, Anomaly::Retake->value], true)) {
 					// conclude() với mark = 0 sẽ trả về Conclusion::Deferred
-					$conclusion  = ExamHelper::calculateConclusion(0, 0, $anomaly, $attempt);
+					$conclusion  = ExamHelper::calculateConclusion(0, 0, $anomaly, $attempt, $examType);
 					$moduleGrade = ExamHelper::calculateModuleGrade(0, $conclusion);
 
 					$this->updateExamLearnerConclusion($db, $examId, $learnerId, [

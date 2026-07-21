@@ -3,6 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Exception;
 use Joomla\CMS\Factory;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\ExamType;
 use Kma\Component\Eqa\Administrator\Enum\MarkConstituent;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\PpaaType;
@@ -296,10 +297,23 @@ class GradecorrectionModel extends AdminModel {
 			return;
 
 		//6. Retrieve information about the correction request
-		$columns = $db->quoteName(
-			array('a.exam_id', 'a.learner_id', 'b.class_id', 'd.subject_id', 'e.pam1', 'e.pam2', 'e.allowed', 'e.ntaken', 'e.expired', 'b.attempt','c.type',     'c.value',     'b.anomaly', 'b.conclusion'),
-			array('examId',    'learnerId',    'classId',    'subjectId',    'pam1',   'pam2',   'allowed',   'ntaken',   'expired',   'attempt',  'stimulType', 'stimulValue', 'anomaly',   'conclusion')
-		);
+		$columns = [
+			$db->qn('a.exam_id',        'examId'),
+			$db->qn('g.type',           'examType'),
+			$db->qn('a.learner_id',     'learnerId'),
+			$db->qn('b.class_id',       'classId'),
+			$db->qn('d.subject_id',     'subjectId'),
+			$db->qn('e.pam1',           'pam1'),
+			$db->qn('e.pam2',           'pam2'),
+			$db->qn('e.allowed',        'allowed'),
+			$db->qn('e.ntaken',         'ntaken'),
+			$db->qn('e.expired',        'expired'),
+			$db->qn('b.attempt',        'attempt'),
+			$db->qn('c.type',           'stimulType'),
+			$db->qn('c.value',          'stimulValue'),
+			$db->qn('b.anomaly',        'anomaly'),
+			$db->qn('b.conclusion',     'conclusion')
+		];
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_gradecorrections AS a')
@@ -307,6 +321,8 @@ class GradecorrectionModel extends AdminModel {
 			->leftJoin('#__eqa_stimulations AS c', 'c.id=b.stimulation_id')
 			->leftJoin('#__eqa_classes AS d', 'd.id=b.class_id')
 			->leftJoin('#__eqa_class_learner AS e', 'e.class_id=d.id AND e.learner_id=a.learner_id')
+			->leftJoin('#__eqa_exams AS f', 'f.id=a.exam_id')
+			->leftJoin('#__eqa_examseasons AS g', 'g.id=f.examseason_id')
 			->where('a.id=' . (int)$itemId);
 		$db->setQuery($query);
 		$examinee = $db->loadObject();
@@ -351,11 +367,12 @@ class GradecorrectionModel extends AdminModel {
 		//7.3. Always update the table #__eqa_exam_learner because some marks have been changed
 		//7.3.1. Tính toán lại điểm thi, điểm học phần và kết luận
 		$admissionYear = $examinee->attempt>1 ? DatabaseHelper::getLearnerAdmissionYear($examinee->learnerId) : 0;
+		$examType = ExamType::from($examinee->examType);
 		$addValue = $examinee->stimulType==StimulationHelper::TYPE_ADD ? $examinee->stimulValue : 0;
 		$finalMark = ExamHelper::calculateFinalMark($newFinalExam, $examinee->anomaly, $examinee->attempt, $addValue, $admissionYear);
 		$moduleMark = ExamHelper::calculateModuleMark($examinee->learnerId, $newPam, $finalMark, $examinee->attempt, $admissionYear);
 		$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-		$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $examinee->anomaly, $examinee->attempt);
+		$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $examinee->anomaly, $examinee->attempt, $examType);
 		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
 		//7.3.2. Cập nhật điểm phúc khảo vào bảng #__eqa_exam_learner

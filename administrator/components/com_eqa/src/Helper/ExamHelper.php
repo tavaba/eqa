@@ -227,8 +227,7 @@ abstract class ExamHelper
 		if(!empty($learner->pam) && $learner->pam<0)
 			$learner->pam = SpecialMark::from($learner->pam)->getLabel();
 	}
-	static public function calculateConclusion($moduleMark, $finalExamMark, $anomaly, $attempt,
-		ExamType $examType=ExamType::SubjectFinalTest): Conclusion
+	static public function calculateConclusion($moduleMark, $finalExamMark, $anomaly, $attempt, ExamType $examType): Conclusion
 	{
 		if($anomaly == Anomaly::Suspended->value)
 			return Conclusion::RetakeCourse;

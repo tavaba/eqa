@@ -4,6 +4,7 @@ use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\ExamType;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\PpaaType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
@@ -524,6 +525,7 @@ class RegradingsModel extends ListModel
 	}
 
 	/**
+	 * @param   ExamType     $examType
 	 * @param   int          $examId
 	 * @param   int          $learnerId
 	 * @param   int          $classId
@@ -540,7 +542,7 @@ class RegradingsModel extends ListModel
 	 * @throws Exception
 	 * @since 1.1.10
 	 */
-	protected function applyRegradingResult(int $examId, int $learnerId, int $classId, float $pam, int $attempt, float $addValue, int $anomaly, float $oldMark, int $oldConclusion, float $newMark, ?string $changeDescription)
+	protected function applyRegradingResult(ExamType $examType, int $examId, int $learnerId, int $classId, float $pam, int $attempt, float $addValue, int $anomaly, float $oldMark, int $oldConclusion, float $newMark, ?string $changeDescription): void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -576,7 +578,7 @@ class RegradingsModel extends ListModel
 		$finalMark = ExamHelper::calculateFinalMark($newMark, $anomaly, $attempt, $addValue, $admissionYear);
 		$moduleMark = ExamHelper::calculateModuleMark($learnerId, $pam, $finalMark, $attempt, $admissionYear);
 		$moduleBase4Mark = ExamHelper::calculateBase4Mark($moduleMark);
-		$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $anomaly, $attempt);
+		$conclusion = ExamHelper::calculateConclusion($moduleMark, $finalMark, $anomaly, $attempt, $examType);
 		$moduleGrade = ExamHelper::calculateModuleGrade($moduleMark, $conclusion);
 
 		//4.2. Cập nhật điểm phúc khảo vào bảng #__eqa_exam_learner
@@ -623,11 +625,12 @@ class RegradingsModel extends ListModel
 	 * @throws Exception
 	 * @since 1.1.10
 	 */
-	public function savePaperRegradingResult(int $examId, array $regradingData)
+	public function savePaperRegradingResult(int $examId, array $regradingData): void
 	{
 		/**
 		 * Cách thực hiện:
-		 * 1. Lấy thông tin cần thiết về từng thí sinh
+		 * 1a. Lấy thông tin về loại kỳ thi
+		 * 1b. Lấy thông tin cần thiết về từng thí sinh
 		 * 2. Cập nhật điểm phúc khảo, lý do thay đổi điểm (nếu có) vào bảng #__eqa_regradings
 		 * 3. Nếu điểm không thay đổi thì chỉ cập nhật điểm phúc khảo vào bảng #__eqa_exam_learner
 		 * 4. Nếu điểm thay đổi thì cần tính toán lại các điểm có liên quan như điểm thi, điểm học phần và kết luận
@@ -635,7 +638,16 @@ class RegradingsModel extends ListModel
 		 */
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		//1. Xác định learner_id dựa trên mask
+		//1a. Lấy thông tin loại kỳ thi
+		$query = $db->getQuery(true)
+			->select('b.type')
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_examseasons AS b', 'b.id = a.examseason_id')
+			->where('a.id=' . $examId);
+		$db->setQuery($query);
+		$examType = ExamType::from($db->loadResult());
+
+		//1b. Xác định learner_id dựa trên mask
 		$masks = [];
 		foreach ($regradingData as $entry)
 		{
@@ -663,7 +675,7 @@ class RegradingsModel extends ListModel
 		{
 			$examinee = $examinees[$entry->mask]; //Lấy thông tin của thí sinh dựa trên mask
 			$addValue = $examinee->stimulType==StimulationHelper::TYPE_ADD ? $examinee->stimulValue : 0;
-			$this->applyRegradingResult($examId, $examinee->id, $examinee->classId, $examinee->pam, $examinee->attempt, $addValue, $examinee->anomaly, $entry->oldMark, $examinee->conclusion, $entry->newMark, $entry->changeDescription);
+			$this->applyRegradingResult($examType, $examId, $examinee->id, $examinee->classId, $examinee->pam, $examinee->attempt, $addValue, $examinee->anomaly, $entry->oldMark, $examinee->conclusion, $entry->newMark, $entry->changeDescription);
 		}
 	}
 
@@ -679,14 +691,24 @@ class RegradingsModel extends ListModel
 	{
 		/**
 		 * Cách thực hiện:
-		 * 1. Lấy thông tin cần thiết về từng thí sinh có yêu cầu phúc khảo môn thi $examId. Điều kiện
+		 * 1a. Lấy thông tin về loại kỳ thi
+		 * 1b. Lấy thông tin cần thiết về từng thí sinh có yêu cầu phúc khảo môn thi $examId. Điều kiện
 		 *    là yêu cầu phải được chấp thuận trước đó, hoặc đã được xử lý thành công trước đó. Nếu
 		 *    đã xử lý thành công thì xử lý lại như bình thường.
 		 * 2. Cập nhật kết quả phúc khảo vào CSDL cho từng thí sinh.
 		 */
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		//1. Lấy thông tin cần thiết về từng thí sinh có yêu cầu phúc khảo môn thi $examId
+		//1a. Lấy thông tin loại kỳ thi
+		$query = $db->getQuery(true)
+			->select('b.type')
+			->from('#__eqa_exams AS a')
+			->leftJoin('#__eqa_examseasons AS b', 'b.id = a.examseason_id')
+			->where('a.id=' . $examId);
+		$db->setQuery($query);
+		$examType = ExamType::from($db->loadResult());
+
+		//1b. Lấy thông tin cần thiết về từng thí sinh có yêu cầu phúc khảo môn thi $examId
 		$columns = $db->quoteName(
 			array('a.learner_id', 'f.code',      'b.class_id', 'd.subject_id', 'e.pam', 'b.attempt','c.type',     'c.value',     'b.mark_orig',  'b.anomaly', 'b.conclusion'),
 			array('learnerId',    'learnerCode', 'classId',    'subjectId',    'pam',   'attempt',  'stimulType', 'stimulValue', 'origMark',     'anomaly',   'conclusion')
@@ -721,7 +743,7 @@ class RegradingsModel extends ListModel
 			$oldConclusion = $examinee->conclusion;
 			$newMark = $examResults[$examinee->learnerCode];
 			$changeDescription = null;
-			$this->applyRegradingResult($examId, $learnerId, $classId, $pam, $attempt, $addValue, $anomaly, $oldMark, $oldConclusion, $newMark, $changeDescription);
+			$this->applyRegradingResult($examType, $examId, $learnerId, $classId, $pam, $attempt, $addValue, $anomaly, $oldMark, $oldConclusion, $newMark, $changeDescription);
 		}
 
 		//3. Trả về số lượng yêu cầu phúc khảo đã được xử lý
