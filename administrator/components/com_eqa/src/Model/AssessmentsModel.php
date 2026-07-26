@@ -102,21 +102,6 @@ class AssessmentsModel extends ListModel
         return $query;
     }
 
-    /**
-     * @inheritDoc
-     * @since 2.0.5
-     */
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.type');
-        $id .= ':' . $this->getState('filter.result_type');
-        $id .= ':' . $this->getState('filter.completed');
-        $id .= ':' . $this->getState('filter.published');
-        $id .= ':' . $this->getState('filter.year');
-        return parent::getStoreId($id);
-    }
-
     // =========================================================================
     // Helpers dùng cho View
     // =========================================================================

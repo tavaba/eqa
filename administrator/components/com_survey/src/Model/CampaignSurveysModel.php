@@ -74,42 +74,12 @@ class CampaignSurveysModel extends ListModel
             $query->where('a.title LIKE ' . $db->quote('%' . $db->escape($search, true) . '%'));
         }
 
-        $createdBy = $this->getState('filter.created_by');
-        if(!empty($createdBy))
-            $query->where('a.created_by='.$createdBy);
-
-        $isOver = $this->getState('filter.is_over');
-        if(is_numeric($isOver))
-        {
-            if($isOver)
-                $query->where('a.end_time < NOW()');
-            else
-                $query->where('a.end_time > NOW()');
-        }
-
-        $state = $this->getState('filter.state','');
-        if($state=='')
-            $query->whereIn($db->quoteName('a.state'),
-                [
-                    StateHelper::STATE_PUBLISHED,
-                    StateHelper::STATE_UNPUBLISHED
-                ]);
-        elseif (is_numeric($state))
-            $query->where($db->quoteName('a.state') . ' = ' . (int)$state);
-
-
         // Add sorting
         $orderCol  = $this->state->get('list.ordering', 'a.id');
         $orderDirn = $this->state->get('list.direction', 'asc');
         $query->order($db->escape($orderCol . ' ' . $orderDirn));
 
         return $query;
-    }
-
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        return parent::getStoreId($id);
     }
 
     /**

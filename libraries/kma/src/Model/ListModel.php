@@ -64,9 +64,27 @@ abstract class ListModel extends BaseListModel
      */
     protected ?string $ownerIdField=null;
 
-    /*
-     * Some properties for caching purposes
-     */
+	/**
+	 * Danh sách các state nằm NGOÀI namespace 'filter.' cần được đưa vào store id.
+	 * Lớp con có thể bổ sung khi có state đặc biệt ảnh hưởng tới getListQuery().
+	 *
+	 * @var    string[]
+	 * @since  1.0.4
+	 */
+	protected array $storeIdExtraStates = ['list.ordering', 'list.direction'];
+
+	/**
+	 * Danh sách các state cần LOẠI TRỪ khỏi store id, ghi bằng tên đầy đủ
+	 * (ví dụ 'filter.foo'). Dùng cho các state không ảnh hưởng tới kết quả truy vấn.
+	 *
+	 * @var    string[]
+	 * @since  1.0.4
+	 */
+	protected array $storeIdIgnoredStates = [];
+
+	/*
+	 * Some properties for caching purposes
+	 */
     private bool $__canCreate;
     private bool $__canEditAny;
     private bool $__canEditStateAny;
@@ -136,18 +154,98 @@ abstract class ListModel extends BaseListModel
         parent::populateState($ordering, $direction);
     }
 
-    /**
-     * Method to get a store id based on model configuration state.
-     * @since 1.0.0
-     */
-    protected function getStoreId($id = '')
-    {
-        // Compile the store id.
-        $id .= ':' . $this->getState('list.ordering');
-        $id .= ':' . $this->getState('list.direction');
+	/**
+	 * Sinh store id phản ánh ĐẦY ĐỦ mọi tham số truy vấn.
+	 *
+	 * Store id là khóa của các bộ nhớ đệm nội bộ trong một request:
+	 * $this->cache (items), getTotal() và getStart(). Nếu hai lần gọi có state
+	 * khác nhau nhưng store id giống nhau, lần gọi sau sẽ nhận kết quả của lần
+	 * gọi trước — sai dữ liệu và sai phân trang.
+	 *
+	 * Phương thức này tự động thu thập:
+	 *   1. Toàn bộ state thuộc namespace 'filter.';
+	 *   2. Các state khai báo trong $storeIdExtraStates;
+	 *   3. Trừ đi các state khai báo trong $storeIdIgnoredStates.
+	 *
+	 * Nhờ vậy, lớp con KHÔNG cần override getStoreId() nữa; thêm filter mới vào
+	 * getListQuery() là store id tự động cập nhật theo.
+	 *
+	 * Lưu ý kỹ thuật: KHÔNG khai báo return type cho phương thức này. Joomla core
+	 * cũng không khai báo, và nhiều lớp con hiện hữu đang override mà không có
+	 * return type — thêm ': string' ở đây sẽ gây lỗi covariance (Fatal error).
+	 *
+	 * @param   string  $id  Store id gốc do lớp con truyền vào.
+	 *
+	 * @return  string
+	 * @since   1.0.4
+	 */
+	protected function getStoreId($id = '')
+	{
+		$parts = [];
 
-        return parent::getStoreId($id);
-    }
+		// 1. Toàn bộ state thuộc namespace 'filter.'
+		$stateArray = $this->getState()->toArray();
+
+		if (!empty($stateArray['filter']) && is_array($stateArray['filter'])) {
+			foreach ($stateArray['filter'] as $name => $value) {
+				$parts['filter.' . $name] = $value;
+			}
+		}
+
+		// 2. Các state bổ sung nằm ngoài namespace 'filter.'
+		foreach ($this->storeIdExtraStates as $name) {
+			$parts[$name] = $this->getState($name);
+		}
+
+		// 3. Loại trừ các state không ảnh hưởng tới truy vấn
+		foreach ($this->storeIdIgnoredStates as $name) {
+			unset($parts[$name]);
+		}
+
+		// 4. Sắp xếp theo tên để chữ ký ổn định, không phụ thuộc thứ tự set state
+		ksort($parts);
+
+		// 5. Chuẩn hóa giá trị và ghép thành chữ ký
+		$signature = [];
+
+		foreach ($parts as $name => $value) {
+			$signature[] = $name . '=' . $this->normalizeStoreIdValue($value);
+		}
+
+		$id .= ':' . hash('sha256', implode('|', $signature));
+
+		return parent::getStoreId($id);
+	}
+
+	/**
+	 * Chuyển một giá trị state bất kỳ thành chuỗi dùng được trong store id.
+	 *
+	 * Phân biệt rõ null (chưa chọn) với chuỗi rỗng (chọn giá trị rỗng), vì hai
+	 * trạng thái này cho ra hai câu truy vấn khác nhau. Giá trị array/object được
+	 * quy về dấu vân tay nội dung thay vì nối chuỗi trực tiếp — nối trực tiếp sẽ
+	 * gây cảnh báo 'Array to string conversion' trên PHP 8.
+	 *
+	 * @param   mixed  $value  Giá trị state cần chuẩn hóa.
+	 *
+	 * @return  string
+	 * @since   1.0.4
+	 */
+	protected function normalizeStoreIdValue(mixed $value): string
+	{
+		if ($value === null) {
+			return '~null~';
+		}
+
+		if (is_bool($value)) {
+			return $value ? '1' : '0';
+		}
+
+		if (is_scalar($value)) {
+			return (string) $value;
+		}
+
+		return hash('sha256', serialize($value));
+	}
 
     /**
      * 'ImportForm' có nghĩa là form để import dữ liệu.

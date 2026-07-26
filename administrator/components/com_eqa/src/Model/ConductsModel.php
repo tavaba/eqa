@@ -87,16 +87,6 @@ class ConductsModel extends ListModel {
 
 		return $query;
 	}
-    public function getStoreId($id = '')
-    {
-	    $id .= ':' . $this->getState('filter.search');
-	    $id .= ':' . $this->getState('filter.academicyear_id');
-	    $id .= ':' . $this->getState('filter.term');
-	    $id .= ':' . $this->getState('filter.course_id');
-	    $id .= ':' . $this->getState('filter.group_id');
-        return parent::getStoreId($id);
-    }
-
 	public function getListByTerm(int $academicyear, int $term): array
 	{
 		$db    = $this->getDatabase();

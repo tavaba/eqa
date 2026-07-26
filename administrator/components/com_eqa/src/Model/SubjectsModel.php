@@ -80,15 +80,6 @@ class SubjectsModel extends ListModel{
 
         return $query;
     }
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.department_id');
-        $id .= ':' . $this->getState('filter.degree');
-        $id .= ':' . $this->getState('filter.testtype_code');
-        $id .= ':' . $this->getState('filter.published');
-        return parent::getStoreId($id);
-    }
 
 	/**
 	 * Thêm môn học vào CSDL. Các tham số phải được chuẩn hóa, được kiểm tra tính hợp lệ trước khi gọi hàm này

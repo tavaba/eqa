@@ -87,13 +87,4 @@ class ExamroomsModel extends ListModel{
 
         return $query;
     }
-	public function getStoreId($id = '')
-	{
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.exam_id');
-		$id .= ':' . $this->getState('filter.examseason_id');
-		$id .= ':' . $this->getState('filter.examsession_id');
-		$id .= ':' . $this->getState('filter.examdate');
-		return parent::getStoreId($id);
-	}
 }

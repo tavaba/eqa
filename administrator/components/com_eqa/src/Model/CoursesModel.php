@@ -69,14 +69,4 @@ class CoursesModel extends ListModel{
 
         return $query;
     }
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.spec_id');
-        $id .= ':' . $this->getState('filter.prog_id');
-        $id .= ':' . $this->getState('filter.degree');
-        $id .= ':' . $this->getState('filter.admissionyear');
-        $id .= ':' . $this->getState('filter.published');
-        return parent::getStoreId($id);
-    }
 }

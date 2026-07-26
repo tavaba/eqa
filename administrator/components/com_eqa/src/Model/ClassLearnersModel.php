@@ -47,11 +47,4 @@ class ClassLearnersModel extends ListModel {
 			$query->where('`allowed`='.(int)$allowed);
 		return $query;
 	}
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.class_id');
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.allowed');
-        return parent::getStoreId($id);
-    }
 }

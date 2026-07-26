@@ -111,7 +111,7 @@ class HtmlView extends ItemsHtmlView
 
         //Set the hidden form fields
         $this->layoutData->formActionParams = [
-            'view'=>'campaignsurveys',
+            'view'=>'campaignSurveys',
             'campaign_id'=>$campaignId
         ];
     }

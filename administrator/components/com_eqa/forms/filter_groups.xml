@@ -9,6 +9,13 @@
                 class="js-stools-search-string"
         />
         <field
+                name="campus_id"
+                type="campus"
+                label="Cơ sở đào tạo"
+                default=""
+                onchange="this.form.submit();"
+        />
+        <field
                 name="course"
                 type="course"
                 default=""

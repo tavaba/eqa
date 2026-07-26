@@ -18,6 +18,7 @@ use Kma\Component\Eqa\Administrator\Helper\ToolbarHelper;
 
 class HtmlView extends ItemsHtmlView {
     protected $learner;
+	protected ?string $listModelName = 'learnerExams';
     protected function configureItemFieldsForLayoutDefault():void{
 		//'attempt',   'allowed',   'isDebtor', 'anomaly',  'origMark',    'ppaa',   'ppaaMark',    'finalMark',    'moduleMark',    'moduleGrade',    'conclusion',   'description'
         $fields = $this->itemFields;      //Just shorten the name
@@ -48,15 +49,11 @@ class HtmlView extends ItemsHtmlView {
 	{
 		//Prepare the model before calling parent method
 		$learnerId = Factory::getApplication()->input->getInt('learner_id');
+		$this->learner = DatabaseHelper::getLearnerInfo($learnerId);
 		$model = $this->getModel();
 		$model->setState('filter.learner_id', $learnerId);
+
 		parent::prepareDataForLayoutDefault();
-
-		$this->learner = DatabaseHelper::getLearnerInfo($learnerId);
-		$this->layoutData->formHiddenFields['learner_id'] = $learnerId;
-
-		//Clear the learner id filter
-		$model->setState('filter.learner_id', null);
 
 		//preprocessing
 		if(!empty($this->layoutData->items))
@@ -73,6 +70,7 @@ class HtmlView extends ItemsHtmlView {
 		}
 
 		//Set up form params
+		$this->layoutData->formHiddenFields['learner_id'] = $learnerId;
 		$this->layoutData->formActionParams = [
 			'view'=>'learnerexams',
 			'learner_id'=>$learnerId

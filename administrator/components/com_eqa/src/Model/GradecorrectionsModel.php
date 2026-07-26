@@ -122,14 +122,6 @@ class GradecorrectionsModel extends ListModel
 
 		return $query;
 	}
-
-	public function getStoreId($id = '') {
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.examseason_id');
-		$id .= ':' . $this->getState('filter.status');
-		return parent::getStoreId($id);
-	}
-
 	public function getFilteredExamseasonId(): ?int
 	{
 		$filter = $this->getState('filter.examseason_id');

@@ -107,14 +107,4 @@ class EmployeeClassesModel extends ListModel
 
 		return $query;
 	}
-
-	public function getStoreId($id = '')
-	{
-		$id .= ':' . $this->getState('filter.employee_id');
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.academicyear');
-		$id .= ':' . $this->getState('filter.term');
-		$id .= ':' . $this->getState('filter.subject_id');
-		return parent::getStoreId($id);
-	}
 }

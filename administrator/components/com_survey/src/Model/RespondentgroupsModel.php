@@ -56,13 +56,6 @@ class RespondentgroupsModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.type');
-        return parent::getStoreId($id);
-    }
-
     public function canCreate(?string $specificAction = 'com.create.rgroup'): bool
     {
         return parent::canCreate($specificAction);

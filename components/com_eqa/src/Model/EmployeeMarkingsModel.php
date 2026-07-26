@@ -248,11 +248,4 @@ class EmployeeMarkingsModel extends ListModel
 			'canViewDetail' => (int) $row->status >= ExamStatus::MarkFull->value,
 		];
 	}
-
-	public function getStoreId($id = '')
-	{
-		$id .= ':' . $this->getState('filter.employee_id');
-		$id .= ':' . $this->getState('filter.examseason_id');
-		return parent::getStoreId($id);
-	}
 }

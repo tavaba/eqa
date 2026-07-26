@@ -67,15 +67,4 @@ class ProgramsModel extends ListModel
 
         return $query;
     }
-
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.spec_id');
-        $id .= ':' . $this->getState('filter.degree');
-        $id .= ':' . $this->getState('filter.format');
-        $id .= ':' . $this->getState('filter.approach');
-        $id .= ':' . $this->getState('filter.published');
-        return parent::getStoreId($id);
-    }
 }

@@ -11,6 +11,14 @@
                 type="hidden"
         />
         <field
+                name="campus_id"
+                type="campus"
+                required="true"
+                label="Cơ sở đào tạo"
+        >
+            <option value="">- Chọn cơ sở đào tạo -</option>
+        </field>
+        <field
                 name="code"
                 type="text"
                 label="Ký hiệu"

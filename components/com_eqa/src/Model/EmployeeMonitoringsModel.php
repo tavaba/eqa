@@ -331,9 +331,4 @@ class EmployeeMonitoringsModel extends ListModel
 		return $latest > 0 ? $latest : null;
 	}
 
-	public function getStoreId($id = '')
-	{
-		$id .= ':' . $this->getState('filter.employee_id');
-		return parent::getStoreId($id);
-	}
 }

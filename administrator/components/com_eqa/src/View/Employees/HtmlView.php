@@ -26,7 +26,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldEmail();
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldMobile();
-
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('campus_name', 'Cơ sở đào tạo');
         $option->published = ListLayoutItemFields::defaultFieldPublished();
 
         //Set the option

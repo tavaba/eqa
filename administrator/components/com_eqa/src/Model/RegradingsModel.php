@@ -194,15 +194,6 @@ class RegradingsModel extends ListModel
 			return $filter;
 		return null;
 	}
-	public function getStoreId($id = '')
-	{
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.examseason_id');
-		$id .= ':' . $this->getState('filter.learner_id');
-		$id .= ':' . $this->getState('filter.status');
-		return parent::getStoreId($id);
-	}
-
 
 	/**
 	 * Lấy thông tin về tất cả các yêu cầu phúc khảo trong kỳ thi $examseasonId

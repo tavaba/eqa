@@ -135,13 +135,4 @@ class SecondAttemptLearnersModel extends ListModel
         return $query;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('list.ordering');
-        $id .= ':' . $this->getState('list.direction');
-        return parent::getStoreId($id);
-    }
 }

@@ -37,11 +37,15 @@ class HtmlView extends ItemsHtmlView {
     }
 	protected function prepareDataForLayoutDefault(): void
 	{
-		parent::prepareDataForLayoutDefault();
-
+		//Determine the learner's ID
 		$learnerId = Factory::getApplication()->input->getInt('learner_id');
 		$this->learner = DatabaseHelper::getLearnerInfo($learnerId);
-		$this->layoutData->formHiddenFields['learner_id'] = $learnerId;
+
+		//Setup the model
+		$model = $this->getModel();
+		$model->setState('filter.learner_id', $learnerId);
+
+		parent::prepareDataForLayoutDefault();
 
 		//preprocessing
 		if(!empty($this->layoutData->items))
@@ -74,6 +78,7 @@ class HtmlView extends ItemsHtmlView {
 		}
 
 		//Set form params for layout
+		$this->layoutData->formHiddenFields['learner_id'] = $learnerId;
 		$this->layoutData->formActionParams = [
 			'view'=>'learnerclasses',
 			'learner_id'=>$learnerId

@@ -90,7 +90,7 @@ class HtmlView extends ItemsHtmlView
 
         //Set the form params for the layout
         $this->layoutData->formActionParams = [
-            'view'=>'campaignunits',
+            'view'=>'campaignUnits',
             'campaign_id'=>$campaignId
         ];
 

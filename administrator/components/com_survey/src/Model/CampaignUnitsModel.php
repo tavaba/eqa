@@ -107,10 +107,4 @@ class CampaignUnitsModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        return parent::getStoreId($id);
-    }
-
 }

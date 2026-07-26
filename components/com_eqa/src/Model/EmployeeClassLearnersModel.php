@@ -153,10 +153,4 @@ class EmployeeClassLearnersModel extends ListModel
 		return $query;
 	}
 
-	public function getStoreId($id = '')
-	{
-		$id .= ':' . $this->getState('filter.class_id');
-		$id .= ':' . $this->getState('filter.search');
-		return parent::getStoreId($id);
-	}
 }

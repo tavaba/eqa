@@ -84,13 +84,4 @@ class ExamseasonsModel extends ListModel{
 
 		return $query;
 	}
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.schoolyear');
-        $id .= ':' . $this->getState('filter.type_code');
-        $id .= ':' . $this->getState('filter.completed');
-        $id .= ':' . $this->getState('filter.published');
-        return parent::getStoreId($id);
-    }
 }

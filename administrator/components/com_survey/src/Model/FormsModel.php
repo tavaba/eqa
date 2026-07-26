@@ -117,13 +117,6 @@ class FormsModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.survey_type');
-        return parent::getStoreId($id);
-    }
-
     public function canCreate(?string $specificAction = 'com.create.form'): bool
     {
         return parent::canCreate($specificAction);

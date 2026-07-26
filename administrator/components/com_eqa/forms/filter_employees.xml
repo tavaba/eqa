@@ -9,6 +9,13 @@
                 class="js-stools-search-string"
         />
         <field
+                name="campus_id"
+                type="campus"
+                label="Cơ sở đào tạo"
+                default=""
+                onchange="this.form.submit();"
+        />
+        <field
                 name="unit_id"
                 type="unit"
                 label="COM_EQA_FORM_EMPOYEES_FILTER_UNIT_LABEL"

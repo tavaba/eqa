@@ -98,12 +98,6 @@ class SurveysModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        return parent::getStoreId($id);
-    }
-
     public function canCreate(?string $specificAction = 'com.create.survey'): bool
     {
         return parent::canCreate($specificAction);

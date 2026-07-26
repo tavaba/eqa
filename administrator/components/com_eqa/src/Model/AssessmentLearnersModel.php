@@ -173,26 +173,6 @@ class AssessmentLearnersModel extends ListModel
 	}
 
 
-	/**
-	 * @inheritDoc
-	 * @since 2.0.5
-	 */
-	public function getStoreId($id = '')
-	{
-		$id .= ':' . $this->getState('filter.assessment_id');
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.payment_completed');
-		$id .= ':' . $this->getState('filter.anomaly');
-		$id .= ':' . $this->getState('filter.passed');
-		$id .= ':' . $this->getState('filter.cancelled');
-		$id .= ':' . $this->getState('filter.examsession_id');
-		$id .= ':' . $this->getState('filter.examroom_id');
-		return parent::getStoreId($id);
-	}
-
-
-
-
 	// =========================================================================
     // Thống kê tổng hợp cho header
     // =========================================================================

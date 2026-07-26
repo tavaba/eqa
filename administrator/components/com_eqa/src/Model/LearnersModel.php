@@ -73,13 +73,4 @@ class LearnersModel extends ListModel {
         return $query;
     }
 
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.course_id');
-        $id .= ':' . $this->getState('filter.group_id');
-        $id .= ':' . $this->getState('filter.published');
-        return parent::getStoreId($id);
-    }
-
 }

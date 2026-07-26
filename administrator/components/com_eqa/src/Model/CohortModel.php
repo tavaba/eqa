@@ -1,11 +1,21 @@
 <?php
 namespace Kma\Component\Eqa\Administrator\Model;
-use Kma\Component\Eqa\Administrator\Base\AdminModel;
+use Kma\Component\Eqa\Administrator\Base\CampusAdminModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 defined('_JEXEC') or die();
 
-class CohortModel extends AdminModel {
+class CohortModel extends CampusAdminModel
+{
+	/**
+	 * @param  int $recordId
+	 * @return int
+	 * @since  2.1.6
+	 */
+	protected function getCampusIdOfRecord(int $recordId): int
+	{
+		return $this->getStoredCampusId('#__eqa_cohorts', $recordId);
+	}
 	public function addLearners(int $cohortId, array $learnerIds): void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();

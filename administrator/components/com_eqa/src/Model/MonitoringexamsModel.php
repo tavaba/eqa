@@ -70,15 +70,4 @@ class MonitoringexamsModel extends ListModel{
 
         return $query;
     }
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.examseason_id');
-        $id .= ':' . $this->getState('filter.academicyear_id');
-        $id .= ':' . $this->getState('filter.term');
-        $id .= ':' . $this->getState('filter.testtype');
-        $id .= ':' . $this->getState('filter.usetestbank');
-        $id .= ':' . $this->getState('filter.status');
-        return parent::getStoreId($id);
-    }
 }

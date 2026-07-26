@@ -59,13 +59,6 @@ class UnitsModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.type');
-        return parent::getStoreId($id);
-    }
-
     public function updateUnits(int $type, array $units): int
     {
         $db = DatabaseHelper::getDatabaseDriver();

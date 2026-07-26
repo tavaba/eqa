@@ -54,7 +54,7 @@ class PaperexamsModel extends ListModel{
         if(is_numeric($examseasonId))
             $query->where('a.examseason_id = '.(int)$examseasonId);
 
-        $academicyear_id = $this->getState('filter.academicyear_id');
+        $academicyear_id = $this->getState('$filter.academicyear');
         if(is_numeric($academicyear_id)){
             $query->where('b.academicyear_id = '.(int)$academicyear_id);
         }
@@ -74,16 +74,5 @@ class PaperexamsModel extends ListModel{
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 
         return $query;
-    }
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.examseason_id');
-        $id .= ':' . $this->getState('filter.academicyear_id');
-        $id .= ':' . $this->getState('filter.term');
-        $id .= ':' . $this->getState('filter.testtype');
-        $id .= ':' . $this->getState('filter.usetestbank');
-        $id .= ':' . $this->getState('filter.status');
-        return parent::getStoreId($id);
     }
 }

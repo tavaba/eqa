@@ -80,16 +80,4 @@ class RoomsModel extends CampusListModel
         return $query;
     }
 
-    /**
-     * Bắt buộc gọi parent::getStoreId() để khóa cache vẫn chứa cơ sở đào tạo.
-     */
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.building_id');
-        $id .= ':' . $this->getState('filter.type');
-        $id .= ':' . $this->getState('filter.published');
-
-        return parent::getStoreId($id);
-    }
 }

@@ -212,26 +212,6 @@ class ExamsessionsModel extends ListModel
 	}
 
 	/**
-	 * Đưa trạng thái các bộ lọc vào store id để cache list được truy vấn lại
-	 * đúng khi người dùng thay đổi filter.
-	 *
-	 * @param   string  $id  Store id gốc.
-	 *
-	 * @return  string
-	 * @since   2.1.3
-	 */
-	protected function getStoreId($id = ''): string
-	{
-		$id .= ':' . $this->getState('filter.search');
-		$id .= ':' . $this->getState('filter.examseason_id');
-		$id .= ':' . $this->getState('filter.flexible');
-		$id .= ':' . $this->getState('filter.not_before');
-		$id .= ':' . $this->getState('filter.not_after');
-
-		return parent::getStoreId($id);
-	}
-
-	/**
 	 * Kiểm tra một chuỗi có đúng định dạng ngày 'Y-m-d' hợp lệ hay không.
 	 *
 	 * @param   string  $date  Chuỗi ngày cần kiểm tra.

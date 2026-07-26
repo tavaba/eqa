@@ -193,19 +193,6 @@ class SecondAttemptsModel extends ListModel
         return $query;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.academicyear_id');
-        $id .= ':' . $this->getState('filter.term');
-        $id .= ':' . $this->getState('filter.has_fee');
-        $id .= ':' . $this->getState('filter.payment_completed');
-        return parent::getStoreId($id);
-    }
-
     // =========================================================================
     // Thống kê
     // =========================================================================

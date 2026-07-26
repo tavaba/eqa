@@ -67,7 +67,7 @@ abstract class CampusListModel extends ListModel
      * @return  string
      * @since   2.1.6
      */
-    public function getStoreId($id = '')
+    protected function getStoreId($id = '')
     {
         $id .= $this->getCampusStoreId();
 

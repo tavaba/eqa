@@ -122,6 +122,34 @@ trait CampusScopedList
     }
 
     /**
+     * Áp bộ lọc cơ sở đào tạo ở dạng TÙY CHỌN (campus-labeled).
+     *
+     * Dùng cho các thực thể DÙNG CHUNG toàn Học viện nhưng có gắn nhãn cơ sở
+     * đào tạo để phân loại: đơn vị (units), lớp hành chính (groups), người lao
+     * động (employees).
+     *
+     * Khác biệt cốt lõi so với applyCampusFilter():
+     *  - KHÔNG lọc mặc định theo cơ sở đang làm việc: mọi người dùng đều thấy
+     *    toàn bộ dữ liệu, vì đây là dữ liệu dùng chung;
+     *  - chỉ lọc khi người dùng chủ động chọn một cơ sở trong bộ lọc;
+     *  - KHÔNG mang ngữ nghĩa phân quyền: bộ lọc này thuần túy phục vụ tra cứu.
+     *
+     * @param   QueryInterface  $query
+     * @param   string          $columnName  Ví dụ 'a.campus_id' hoặc 'b.campus_id'
+     *
+     * @return  void
+     * @since   2.1.6
+     */
+    protected function applyOptionalCampusFilter(QueryInterface $query, string $columnName): void
+    {
+        $filterCampusId = (int) $this->getState('filter.campus_id');
+
+        if ($filterCampusId > 0) {
+            $query->where($this->getDatabase()->quoteName($columnName) . ' = ' . $filterCampusId);
+        }
+    }
+
+    /**
      * Hậu tố cần thêm vào getStoreId() để cache danh sách không bị lẫn giữa
      * các cơ sở đào tạo.
      *

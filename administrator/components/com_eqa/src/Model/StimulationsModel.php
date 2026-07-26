@@ -51,9 +51,4 @@ class StimulationsModel extends ListModel {
 
         return $query;
     }
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        return parent::getStoreId($id);
-    }
 }

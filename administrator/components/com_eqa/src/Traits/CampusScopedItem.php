@@ -1,4 +1,13 @@
 <?php
+
+/**
+ * @package     Kma.Component.Eqa
+ * @subpackage  Administrator.Traits
+ *
+ * @copyright   (C) 2026 KMA. All rights reserved.
+ * @license     GNU General Public License version 2 or later
+ */
+
 namespace Kma\Component\Eqa\Administrator\Traits;
 
 defined('_JEXEC') or die;
@@ -250,7 +259,19 @@ trait CampusScopedItem
     }
 
     /**
-     * Chuyển field campus_id sang readonly với người dùng không có quyền mọi cơ sở.
+     * Chuẩn bị field campus_id trên form theo quyền của người dùng.
+     *
+     * Hai việc, cả hai đều cần thiết:
+     *
+     * 1. GÁN SẴN GIÁ TRỊ cho bản ghi mới. Joomla validate form TRƯỚC khi gọi
+     *    prepareTable(), nên nếu để trống, field 'required' sẽ báo lỗi
+     *    "Field required" và không bao giờ chạy tới chỗ gán cơ sở đào tạo.
+     *
+     * 2. CHUYỂN SANG READONLY với người dùng không có quyền mọi cơ sở, đồng
+     *    thời bỏ ràng buộc 'required' ở tầng form: giá trị đằng nào cũng bị
+     *    prepareTable() ép lại theo cơ sở đang làm việc, và khi tài khoản chưa
+     *    được gán cơ sở nào thì nên để server sinh thông báo nghiệp vụ rõ ràng
+     *    thay vì lỗi validate khó hiểu.
      *
      * @param   Form|bool  $form
      *
@@ -259,8 +280,25 @@ trait CampusScopedItem
      */
     protected function applyCampusFieldVisibility($form)
     {
-        if ($form instanceof Form && !$this->getCampusService()->canAccessAllCampuses()) {
+        if (!($form instanceof Form) || $form->getField('campus_id') === false) {
+            return $form;
+        }
+
+        $campusService = $this->getCampusService();
+
+        // 1. Bản ghi mới: gán sẵn cơ sở đang làm việc để vượt qua form validation
+        if (empty($form->getValue('campus_id'))) {
+            $activeCampusId = $campusService->getActiveCampusId();
+
+            if ($activeCampusId > 0) {
+                $form->setValue('campus_id', null, $activeCampusId);
+            }
+        }
+
+        // 2. Người dùng thường: không được đổi cơ sở
+        if (!$campusService->canAccessAllCampuses()) {
             $form->setFieldAttribute('campus_id', 'readonly', 'true');
+            $form->setFieldAttribute('campus_id', 'required', 'false');
         }
 
         return $form;

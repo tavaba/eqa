@@ -103,17 +103,9 @@ class LearnerExamsModel extends ListModel {
 
 	public function getSelectedExamseasonId()
 	{
-		$id = $this->getState('filter.examsession_id');
+		$id = $this->getState('filter.examseason_id');
 		if(empty($id))
 			return null;
 		return (int)$id;
 	}
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.class_id');
-        $id .= ':' . $this->getState('filter.search');
-	    $id .= ':' . $this->getState('filter.allowed');
-	    $id .= ':' . $this->getState('filter.learner_id');
-        return parent::getStoreId($id);
-    }
 }

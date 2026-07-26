@@ -74,13 +74,6 @@ class RespondentgroupmembersModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.type');
-        return parent::getStoreId($id);
-    }
-
     /**
      * Check whether the current user has permission to add/remove respondent in a group
      *

@@ -3,7 +3,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\CMS\MVC\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 
 class CohortLearnersModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -42,10 +42,4 @@ class CohortLearnersModel extends ListModel {
 		}
 		return $query;
 	}
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.cohort_id');
-        $id .= ':' . $this->getState('filter.search');
-        return parent::getStoreId($id);
-    }
 }

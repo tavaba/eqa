@@ -84,16 +84,4 @@ class ClassesModel extends ListModel{
 
 		return $query;
 	}
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.subject_id');
-        $id .= ':' . $this->getState('filter.testtype');
-        $id .= ':' . $this->getState('filter.academicyear_id');
-        $id .= ':' . $this->getState('filter.term');
-	    $id .= ':' . $this->getState('filter.lecturer_id');
-	    $id .= ':' . $this->getState('list.ordering');
-	    $id .= ':' . $this->getState('list.direction');
-        return parent::getStoreId($id);
-    }
 }

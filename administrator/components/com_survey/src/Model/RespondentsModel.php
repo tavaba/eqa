@@ -62,17 +62,6 @@ class RespondentsModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.type');
-        $id .= ':' . $this->getState('filter.is_person');
-        $id .= ':' . $this->getState('filter.unit_id');
-        $id .= ':' . $this->getState('filter.respondentgroup_id');
-        $id .= ':' . $this->getState('filter.gender');
-        return parent::getStoreId($id);
-    }
-
     public function getCurrentSize(): int
     {
         $db = $this->getDatabase();

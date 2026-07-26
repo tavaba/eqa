@@ -59,11 +59,4 @@ class ExamroomExamineesModel extends ListModel {
 
         return $query;
     }
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.allowed');
-        $id .= ':' . $this->getState('filter.attempt');
-        return parent::getStoreId($id);
-    }
 }

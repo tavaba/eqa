@@ -48,12 +48,6 @@ class TopicsModel extends ListModel
         return $query;
     }
 
-    public function getStoreId($id = ''): string
-    {
-        $id .= ':' . $this->getState('filter.search');
-        return parent::getStoreId($id);
-    }
-
     public function canCreate(?string $specificAction = 'com.create.topic'): bool
     {
         return parent::canCreate($specificAction);

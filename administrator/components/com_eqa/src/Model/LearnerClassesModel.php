@@ -2,9 +2,8 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Joomla\CMS\MVC\Model\ListModel;
+use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 
@@ -16,9 +15,9 @@ class LearnerClassesModel extends ListModel {
     }
 	public function getListQuery()
 	{
-		$app       = Factory::getApplication();
-		$learnerId = $app->input->getInt('learner_id');
-
+		//Get the learner's ID
+		//This param must be set by the View before calling this method
+		$learnerId = $this->getState('filter.learner_id');
 		if (empty($learnerId)) {
 			return null;
 		}
@@ -70,11 +69,4 @@ class LearnerClassesModel extends ListModel {
 
 		return $query;
 	}
-    public function getStoreId($id = '')
-    {
-        $id .= ':' . $this->getState('filter.class_id');
-        $id .= ':' . $this->getState('filter.search');
-        $id .= ':' . $this->getState('filter.allowed');
-        return parent::getStoreId($id);
-    }
 }

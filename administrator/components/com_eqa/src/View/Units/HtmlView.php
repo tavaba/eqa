@@ -19,7 +19,7 @@ class HtmlView extends ItemsHtmlView {
         $option->customFieldset1[] = $field;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('name','COM_EQA_GENERAL_UNIT');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('type','COM_EQA_GENERAL_UNIT_TYPE');
-
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('campus_name', 'Cơ sở đào tạo');
 		$option->published = ListLayoutItemFields::defaultFieldPublished();
 
         //Set the option
