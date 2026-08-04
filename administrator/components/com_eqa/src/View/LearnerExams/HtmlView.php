@@ -72,7 +72,7 @@ class HtmlView extends ItemsHtmlView {
 		//Set up form params
 		$this->layoutData->formHiddenFields['learner_id'] = $learnerId;
 		$this->layoutData->formActionParams = [
-			'view'=>'learnerexams',
+			'view'=>'learnerExams',
 			'learner_id'=>$learnerId
 		];
 	}
