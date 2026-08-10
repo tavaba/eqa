@@ -19,9 +19,30 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\RoomHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+use RuntimeException;
 
 
 class ExamModel extends AdminModel{
+	use CampusScopedByExamseason;
+
+	/**
+	 * Đọc examseason_id của một môn thi.
+	 *
+	 * @param   int  $examId
+	 * @return  int
+	 * @since   2.1.6
+	 */
+	private function getExamseasonIdOfExam(int $examId): int
+	{
+		if ($examId <= 0) return 0;
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('examseason_id'))
+			->from($db->quoteName('#__eqa_exams'))
+			->where($db->quoteName('id') . ' = ' . (int) $examId);
+		return (int) $db->setQuery($query)->loadResult();
+	}
 	public function prepareTable($table)
 	{
 		if(empty($table->questiondeadline))
@@ -49,6 +70,13 @@ class ExamModel extends AdminModel{
 	 */
 	public function save($data): bool
 	{
+		// Chốt chặn quyền theo cơ sở đào tạo của kỳ thi (2.1.6)
+		$examseasonId = (int) ($data['examseason_id'] ?? 0);
+		if ($examseasonId <= 0 && !empty($data['id'])) {
+			$examseasonId = $this->getExamseasonIdOfExam((int) $data['id']);
+		}
+		$this->assertExamseasonInCampusScope($examseasonId);
+
 		// Encode allowed_rooms: array → JSON string; rỗng → null (xử lý trong prepareTable)
 		if (isset($data['allowed_rooms'])) {
 			if (is_array($data['allowed_rooms'])) {
@@ -100,6 +128,11 @@ class ExamModel extends AdminModel{
 		else
 			$examIds = [$pks];
 		$examIds = array_map('intval', $examIds);
+
+		//Step 1b. Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		foreach ($examIds as $examId) {
+			$this->assertExamseasonInCampusScope($this->getExamseasonIdOfExam($examId));
+		}
 
 		//Step 2. Confirm that all the exams can be deleted
 		foreach ($examIds as $examId) {

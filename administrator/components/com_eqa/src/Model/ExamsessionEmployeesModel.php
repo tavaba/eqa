@@ -6,9 +6,12 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 class ExamsessionEmployeesModel extends ListModel{
+    use CampusScopedByExamseason;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('examroom');
@@ -25,6 +28,11 @@ class ExamsessionEmployeesModel extends ListModel{
 	    $examsessionId = $this->getState('filter.examsession_id');
 		if(!is_numeric($examsessionId))
 			return null;
+
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): chỉ kiểm tra quyền truy cập
+		// ca thi. Danh sách CÁN BỘ coi/chấm vẫn là toàn Học viện (cán bộ có thể
+		// tham gia công việc ở cơ sở khác) nên KHÔNG lọc theo cơ sở.
+		$this->assertExamsessionInCampusScope((int) $examsessionId);
 
         $db = $this->getDatabase();
         $columns = $db->quoteName(

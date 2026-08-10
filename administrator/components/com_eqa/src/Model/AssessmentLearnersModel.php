@@ -9,6 +9,8 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
 use Kma\Library\Kma\BankStatement\BankStatementImportResult;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\IOHelper;
@@ -26,6 +28,9 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
  */
 class AssessmentLearnersModel extends ListModel
 {
+	use CampusScopedByExamseason;
+	use CampusScopedList;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields'] = [
@@ -105,8 +110,20 @@ class AssessmentLearnersModel extends ListModel
 				$db->quoteName('es.name',                'examsession_name'),
 				$db->quoteName('er.examsession_id',      'examsession_id'),
 			]);
-		if($assessmentId>0)
+		// Chốt chặn/lọc theo cơ sở đào tạo (2.1.6)
+		if ($assessmentId > 0) {
+			// Một kỳ sát hạch cụ thể: chốt chặn quyền theo cơ sở của kỳ đó
+			$this->assertAssessmentInCampusScope($assessmentId);
 			$query->where($db->quoteName('al.assessment_id') . ' = ' . $assessmentId);
+		} else {
+			// Xem thí sinh của MỌI kỳ sát hạch: lọc cứng theo cơ sở đào tạo,
+			// suy diễn qua assessment (nếu không, sẽ lộ dữ liệu chéo cơ sở).
+			$query->leftJoin(
+				$db->quoteName('#__eqa_assessments', 'ass') .
+				' ON ' . $db->quoteName('ass.id') . ' = ' . $db->quoteName('al.assessment_id')
+			);
+			$this->applyCampusFilter($query, 'ass.campus_id');
+		}
 
 		// ----- Filtering -----
 

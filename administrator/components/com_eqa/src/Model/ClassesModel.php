@@ -3,31 +3,51 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Base\CampusListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
-class ClassesModel extends ListModel{
+/**
+ * List model của 'lớp học phần' (class).
+ *
+ * Từ 2.1.6, lớp học phần được quản lý riêng theo từng cơ sở đào tạo.
+ *
+ * @since 1.0.0
+ */
+class ClassesModel extends CampusListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('id','coursegroup','code','name','size','npam', 'academicyear','term');
+        $config['filter_fields']=array('id','coursegroup','code','name','size','npam', 'academicyear','term','campus_id','campus_name');
         parent::__construct($config, $factory);
     }
 	protected function populateState($ordering = 'id', $direction = 'desc'): void
 	{
 		parent::populateState($ordering, $direction);
 	}
+
+	/**
+	 * @since 2.1.6
+	 */
+	protected function getCampusColumn(): string
+	{
+		return 'a.campus_id';
+	}
+
 	public function getListQuery()
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('a.id', 'a.coursegroup', 'a.code', 'a.name', 'a.lecturer_id', 'a.academicyear', 'a.term', 'a.size', 'a.npam', 'a.description'),
-			array('id',   'coursegroup',   'code',   'name',   'lecturer_id',   'academicyear',   'term',   'size',   'npam',   'description')
+			array('a.id', 'a.coursegroup', 'a.code', 'a.name', 'a.lecturer_id', 'a.academicyear', 'a.term', 'a.size', 'a.npam', 'a.description', 'cam.name'),
+			array('id',   'coursegroup',   'code',   'name',   'lecturer_id',   'academicyear',   'term',   'size',   'npam',   'description',   'campus_name')
 		);
 
 		$query = $db->getQuery(true);
 		$query->from('#__eqa_classes AS a')
 			->leftJoin('#__eqa_subjects AS c', 'c.id = a.subject_id')
+			->leftJoin('#__eqa_campuses AS cam', 'cam.id = a.campus_id')
 			->select($columns);
+
+		// Lọc theo cơ sở đào tạo (2.1.6)
+		$this->applyCampusScope($query);
 
 		// Filtering
 		$search = $this->getState('filter.search');

@@ -12,6 +12,8 @@ use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 defined('_JEXEC') or die();
 
 class RegradingModel extends AdminModel {
+	use \Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+
 	public function canDelete($record=null): bool
 	{
 		/*
@@ -66,6 +68,11 @@ class RegradingModel extends AdminModel {
 		if(empty($examinees))
 			return false; //Nothing more to do here
 
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		foreach ($pks as $pk){
+			$this->assertRegradingInCampusScope((int) $pk);
+		}
+
 		foreach ($examinees as $examinee){
 			$query = $db->getQuery(true)
 				->update('#__eqa_exam_learner')
@@ -92,6 +99,9 @@ class RegradingModel extends AdminModel {
 	 */
 	public function accept(int $itemId, User $currentUser, string $currentTime): void
 	{
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		$this->assertRegradingInCampusScope($itemId);
+
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		//1. Get information about the grade correction request
@@ -149,6 +159,9 @@ class RegradingModel extends AdminModel {
 	}
 	public function reject(int $itemId, User $currentUser, string $currentTime): void
 	{
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		$this->assertRegradingInCampusScope($itemId);
+
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		//1. Get information about the grade correction request

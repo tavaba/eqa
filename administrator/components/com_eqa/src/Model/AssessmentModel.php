@@ -2,9 +2,19 @@
 namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
-use Kma\Component\Eqa\Administrator\Base\AdminModel;
-class AssessmentModel extends AdminModel
+use Kma\Component\Eqa\Administrator\Base\CampusAdminModel;
+class AssessmentModel extends CampusAdminModel
 {
+	/**
+	 * @param  int $recordId
+	 * @return int
+	 * @since  2.1.6
+	 */
+	protected function getCampusIdOfRecord(int $recordId): int
+	{
+		return $this->getStoredCampusId('#__eqa_assessments', $recordId);
+	}
+
 	public function getAssmentTitleForExamroom(int $examroomId):?string
 	{
 		$db = $this->getDatabase();

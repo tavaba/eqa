@@ -3,17 +3,25 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Base\CampusListModel;
 
-class MonitoringexamsModel extends ListModel{
+class MonitoringexamsModel extends CampusListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('name', 'nexaminee', 'nexamroom', 'npaper', 'nnopaper', 'npackage');
+        $config['filter_fields']=array('name', 'nexaminee', 'nexamroom', 'npaper', 'nnopaper', 'npackage', 'examseason_id', 'campus_id');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'id', $direction = 'desc'): void
     {
         parent::populateState($ordering, $direction);
+    }
+
+    /**
+     * @since 2.1.6
+     */
+    protected function getCampusColumn(): string
+    {
+        return 'b.campus_id';
     }
 
     public function getListQuery()
@@ -33,6 +41,9 @@ class MonitoringexamsModel extends ListModel{
             ->select($columns)
 	        ->select('('. $subQueryNExaminee . ') AS nexaminee')
 	        ->select('('. $subQueryNExamroom . ') AS nexamroom');
+
+        // Lọc cứng theo cơ sở đào tạo, suy diễn qua kỳ thi (2.1.6)
+        $this->applyCampusScope($query);
 
         //Filtering
         $search = $this->getState('filter.search');
@@ -69,5 +80,18 @@ class MonitoringexamsModel extends ListModel{
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 
         return $query;
+    }
+
+    /**
+     * @since 2.1.6
+     */
+    public function getStoreId($id = '')
+    {
+        $id .= ':' . $this->getState('filter.search');
+        $id .= ':' . $this->getState('filter.examseason_id');
+        $id .= ':' . $this->getState('filter.exam_status');
+        $id .= ':' . $this->getState('filter.exam_id');
+
+        return parent::getStoreId($id);
     }
 }

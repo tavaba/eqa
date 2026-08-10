@@ -9,9 +9,9 @@
                 name="campus_id"
                 type="campus"
                 required="true"
-                default="1"
+                readonly="true"
                 label="Cơ sở đào tạo"
-                description="Đơn vị/lớp này thuộc cơ sở đào tạo nào."
+                description="Bản ghi này thuộc cơ sở đào tạo đang làm việc. Muốn đổi, hãy chuyển cơ sở đang làm việc."
         />
         <field
                 name="code"

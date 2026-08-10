@@ -5,6 +5,8 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Helper\LearnerAccessHelper;
+use RuntimeException;
 use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 
 class LearnerClassesModel extends ListModel {
@@ -13,6 +15,26 @@ class LearnerClassesModel extends ListModel {
         $config['filter_fields']=array('academicyear', 'term', 'name');
         parent::__construct($config, $factory);
     }
+	/**
+	 * Kiểm soát quyền xem danh sách lớp học phần của một người học.
+	 *
+	 * @return bool
+	 * @since  2.1.6
+	 */
+	public function canViewList(): bool
+	{
+		$learnerId = (int) $this->getState('filter.learner_id');
+		if ($learnerId <= 0)
+			return false;
+
+		try {
+			LearnerAccessHelper::assertCanViewLearner($learnerId);
+			return true;
+		} catch (RuntimeException $e) {
+			return false;
+		}
+	}
+
 	public function getListQuery()
 	{
 		//Get the learner's ID
@@ -21,6 +43,9 @@ class LearnerClassesModel extends ListModel {
 		if (empty($learnerId)) {
 			return null;
 		}
+
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): phủ mọi lối vào model.
+		LearnerAccessHelper::assertCanViewLearner((int) $learnerId);
 
 		$db      = DatabaseHelper::getDatabaseDriver();
 		$columns = [

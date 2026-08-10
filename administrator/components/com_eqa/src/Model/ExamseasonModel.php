@@ -7,7 +7,7 @@ use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
-use Kma\Component\Eqa\Administrator\Base\AdminModel;
+use Kma\Component\Eqa\Administrator\Base\CampusAdminModel;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
@@ -17,7 +17,7 @@ use stdClass;
 
 defined('_JEXEC') or die();
 
-class ExamseasonModel extends AdminModel{
+class ExamseasonModel extends CampusAdminModel{
 	/**
 	 * Giá trị nhỏ nhất và lớn nhất của bút danh (mã định danh ẩn danh) người học.
 	 * Dải này bảo đảm bút danh luôn có đúng 6 chữ số.
@@ -76,6 +76,66 @@ class ExamseasonModel extends AdminModel{
 		}
 
 		return $validData;
+	}
+
+	/**
+	 * Cơ sở đào tạo của một kỳ thi, đọc trực tiếp từ CSDL.
+	 *
+	 * @param   int  $recordId
+	 *
+	 * @return  int
+	 * @since   2.1.6
+	 */
+	protected function getCampusIdOfRecord(int $recordId): int
+	{
+		return $this->getStoredCampusId('#__eqa_examseasons', $recordId);
+	}
+
+	/**
+	 * Đặt kỳ thi mặc định — GIỚI HẠN trong phạm vi cơ sở đào tạo của kỳ thi.
+	 *
+	 * Ghi đè AdminModel::setDefault() (vốn unset cờ default trên TOÀN HỆ THỐNG)
+	 * để từ 2.1.6 mỗi cơ sở đào tạo có một kỳ thi mặc định riêng.
+	 *
+	 * @param   int     $id
+	 * @param   string  $fieldName
+	 *
+	 * @return  bool
+	 * @throws  Exception
+	 * @since   2.1.6
+	 */
+	public function setDefault(int $id, string $fieldName = 'default'): bool
+	{
+		if (!$this->canEdit($id)) {
+			throw new Exception(Text::_(strtoupper($this->option) . '_MSG_UNAUTHORISED'));
+		}
+
+		$db    = $this->getDatabase();
+		$table = $this->getTable();
+		$table->load($id);
+
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		$this->assertCanManageCampus((int) $table->campus_id);
+
+		if (!$table->{$fieldName}) {
+			// Chỉ gỡ cờ mặc định của các kỳ thi CÙNG CƠ SỞ ĐÀO TẠO
+			$query = $db->getQuery(true)
+				->update($db->quoteName($table->getTableName()))
+				->set($db->quoteName($fieldName) . ' = 0')
+				->where($db->quoteName($fieldName) . ' > 0')
+				->where($db->quoteName('campus_id') . ' = ' . (int) $table->campus_id);
+			$db->setQuery($query);
+			if (!$db->execute()) {
+				return false;
+			}
+
+			$table->{$fieldName} = 1;
+			if (!$table->store()) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**

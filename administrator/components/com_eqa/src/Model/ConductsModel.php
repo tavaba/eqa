@@ -48,6 +48,7 @@ class ConductsModel extends ListModel {
 			$db->quoteName('a.conduct_rating',              'conductRating'),
 			$db->quoteName('a.note',                        'note'),
 			$db->quoteName('a.description',                 'description'),
+			$db->quoteName('c.campus_id',                   'campus_id'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)

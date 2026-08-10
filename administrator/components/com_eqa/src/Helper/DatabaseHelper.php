@@ -10,6 +10,8 @@ use Kma\Component\Eqa\Administrator\DataObject\ExamroomInfo;
 use Kma\Component\Eqa\Administrator\DataObject\ExamseasonInfo;
 use Kma\Component\Eqa\Administrator\DataObject\GradeCorrectionInfo;
 use Kma\Component\Eqa\Administrator\DataObject\LearnerInfo;
+use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
+use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatabaseHelper as DatabaseHelperBase;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
@@ -295,6 +297,34 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 
 		return $examInfo;
 	}
+
+	/**
+	 * Suy campus_id của một môn thi qua kỳ thi.
+	 *
+	 * exam → examseason → campus.
+	 *
+	 * @param   int  $examId
+	 *
+	 * @return  int  0 nếu không xác định được
+	 * @since   2.1.6
+	 */
+	static public function getCampusIdOfExam(int $examId): int
+	{
+		if ($examId <= 0) {
+			return 0;
+		}
+
+		$db = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('es.campus_id'))
+			->from($db->quoteName('#__eqa_exams', 'e'))
+			->leftJoin($db->quoteName('#__eqa_examseasons', 'es')
+				. ' ON ' . $db->quoteName('es.id') . ' = ' . $db->quoteName('e.examseason_id'))
+			->where($db->quoteName('e.id') . ' = ' . (int) $examId);
+
+		return (int) $db->setQuery($query)->loadResult();
+	}
+
     static public function getExamExaminees(int $examId, bool $allowedOnly = false)
     {
         $db = self::getDatabaseDriver();
@@ -644,7 +674,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 	 * @return  ExamseasonInfo|null
 	 * @since   1.0
 	 */
-	static public function getExamseasonInfo(?int $id = null): ExamseasonInfo|null
+	static public function getExamseasonInfo_bak(?int $id = null): ExamseasonInfo|null
 	{
 		$db      = self::getDatabaseDriver();
 		$columns = $db->quoteName(
@@ -679,6 +709,69 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$examseason->completed        = $obj->completed;
 		$examseason->ppaaRequestEnabled  = $obj->ppaa_req_enabled;
 		$examseason->ppaaRequestDeadline = $obj->ppaa_req_deadline?DatetimeHelper::convertToLocalTime($obj->ppaa_req_deadline):null;
+
+		return $examseason;
+	}
+
+	/**
+	 * Lấy thông tin kỳ thi theo ID, hoặc kỳ thi mặc định của một cơ sở đào tạo
+	 * nếu không truyền ID.
+	 *
+	 * Từ 2.1.6, cờ 'default' của kỳ thi là RIÊNG theo từng cơ sở đào tạo, nên khi
+	 * lấy kỳ thi mặc định phải chỉ rõ cơ sở. Nếu $campusId để null, hàm dùng cơ
+	 * sở đào tạo đang làm việc.
+	 *
+	 * @param   int|null  $id        ID kỳ thi. Nếu null, lấy kỳ thi mặc định.
+	 * @param   int|null  $campusId  Cơ sở đào tạo (chỉ dùng khi $id null).
+	 *                               Null → cơ sở đang làm việc.
+	 *
+	 * @return  ExamseasonInfo|null
+	 * @since   1.0
+	 */
+	static public function getExamseasonInfo(?int $id = null, ?int $campusId = null): ExamseasonInfo|null
+	{
+		$db      = self::getDatabaseDriver();
+		$columns = $db->quoteName(
+			['a.id', 'a.name', 'a.academicyear', 'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'],
+			['id',   'name',   'academicyear',   'term',   'completed',   'ppaa_req_enabled',   'ppaa_req_deadline']
+		);
+
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from('#__eqa_examseasons AS a');
+
+		if (empty($id)) {
+			// Kỳ thi mặc định CỦA MỘT CƠ SỞ (2.1.6)
+			if ($campusId === null) {
+				/**
+				 * @var EqaComponent $component
+				 */
+				$component = ComponentHelper::getComponent();
+				$campusService = $component->getCampusService();
+				$campusId = $campusService->getActiveCampusId();
+			}
+
+			$query->where($db->quoteName('a.default') . ' = 1')
+				->where($db->quoteName('a.campus_id') . ' = ' . (int) $campusId);
+		} else {
+			$query->where('a.id = ' . (int) $id);
+		}
+
+		$db->setQuery($query);
+		$obj = $db->loadObject();
+
+		if (!$obj) {
+			return null;
+		}
+
+		$examseason                   = new ExamseasonInfo();
+		$examseason->id               = $obj->id;
+		$examseason->name             = $obj->name;
+		$examseason->academicyear     = DatetimeHelper::decodeAcademicYear((int) $obj->academicyear);
+		$examseason->term             = $obj->term;
+		$examseason->completed        = $obj->completed;
+		$examseason->ppaaRequestEnabled  = $obj->ppaa_req_enabled;
+		$examseason->ppaaRequestDeadline = $obj->ppaa_req_deadline;
 
 		return $examseason;
 	}
@@ -1116,9 +1209,18 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db->setQuery('SELECT code FROM #__eqa_rooms WHERE id='.$roomId);
 		return $db->loadResult();
 	}
-	static public function getDefaultExamseason(): ExamseasonInfo|null
+
+	/**
+	 * Kỳ thi mặc định của một cơ sở đào tạo.
+	 *
+	 * @param   int|null  $campusId  Null → cơ sở đào tạo đang làm việc.
+	 *
+	 * @return  ExamseasonInfo|null
+	 * @since   1.0
+	 */
+	static public function getDefaultExamseason(?int $campusId = null): ExamseasonInfo|null
 	{
-		return self::getExamseasonInfo();
+		return self::getExamseasonInfo(null, $campusId);
 	}
 	static public function isCompletedExamsession_bak(int $examsessionId) : bool
 	{

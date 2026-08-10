@@ -5,14 +5,14 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Base\CampusListModel;
 
 /**
  * Model danh sách kỳ sát hạch.
  *
  * @since 2.0.5
  */
-class AssessmentsModel extends ListModel
+class AssessmentsModel extends CampusListModel
 {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
@@ -20,6 +20,7 @@ class AssessmentsModel extends ListModel
             'id', 'title', 'type', 'result_type',
             'start_date', 'end_date',
             'allow_registration', 'completed', 'published', 'ordering',
+            'campus_id', 'campus_name',
         ];
         parent::__construct($config, $factory);
     }
@@ -27,6 +28,14 @@ class AssessmentsModel extends ListModel
     protected function populateState($ordering = 'start_date', $direction = 'DESC'): void
     {
         parent::populateState($ordering, $direction);
+    }
+
+    /**
+     * @since 2.1.6
+     */
+    protected function getCampusColumn(): string
+    {
+        return 'a.campus_id';
     }
 
     // =========================================================================
@@ -58,7 +67,15 @@ class AssessmentsModel extends ListModel
                 'a.max_candidates', 'a.allow_registration',
                 'a.completed', 'a.published', 'a.ordering',
             ]))
-            ->select('(' . $subCandidates . ') AS ' . $db->quoteName('ncandidate'));
+            ->select('(' . $subCandidates . ') AS ' . $db->quoteName('ncandidate'))
+            ->select($db->quoteName('cam.name', 'campus_name'))
+            ->leftJoin(
+                $db->quoteName('#__eqa_campuses', 'cam') .
+                ' ON ' . $db->quoteName('cam.id') . ' = ' . $db->quoteName('a.campus_id')
+            );
+
+        // Lọc cứng theo cơ sở đào tạo (2.1.6)
+        $this->applyCampusScope($query);
 
         // ----- Filtering -----
 
@@ -100,6 +117,21 @@ class AssessmentsModel extends ListModel
         $query->order($db->quoteName('a.' . $orderingCol) . ' ' . $orderingDir);
 
         return $query;
+    }
+
+    /**
+     * Bắt buộc gọi parent::getStoreId() để khóa cache chứa cơ sở đào tạo.
+     *
+     * @since 2.1.6
+     */
+    public function getStoreId($id = '')
+    {
+        $id .= ':' . $this->getState('filter.search');
+        $id .= ':' . $this->getState('filter.type');
+        $id .= ':' . $this->getState('filter.completed');
+        $id .= ':' . $this->getState('filter.year');
+
+        return parent::getStoreId($id);
     }
 
     // =========================================================================

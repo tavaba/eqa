@@ -16,13 +16,15 @@ use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 defined('_JEXEC') or die();
 
 class GradecorrectionModel extends AdminModel {
+	use \Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+
 
 	public function getRequest(int $itemId)
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = $db->quoteName(
-			array('a.id', 'b.code',      'b.lastname',      'b.firstname',      'd.name',         'c.name',   'a.constituent', 'a.reason', 'a.status'),
-			array('id',   'learnerCode', 'learnerLastname', 'learnerFirstname', 'examseasonName', 'examName', 'constituent',   'reason',   'status')
+			array('a.id', 'b.code',      'b.lastname',      'b.firstname',      'd.name',         'c.name',   'a.constituent', 'a.reason', 'a.status', 'd.campus_id'),
+			array('id',   'learnerCode', 'learnerLastname', 'learnerFirstname', 'examseasonName', 'examName', 'constituent',   'reason',   'status', 'campusId')
 		);
 		$query = $db->getQuery(true)
 			->select($columns)
@@ -47,6 +49,9 @@ class GradecorrectionModel extends AdminModel {
 	 */
 	public function accept(int $itemId, int $currentUserId, string $currentTime)
 	{
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		$this->assertGradecorrectionInCampusScope($itemId);
+
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		//1. Get information about the grade correction request
@@ -124,6 +129,9 @@ class GradecorrectionModel extends AdminModel {
 	}
 	public function reject(int $itemId, string $description, int $currentUserId, string $currentTime)
 	{
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		$this->assertGradecorrectionInCampusScope($itemId);
+
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		//1. Get information about the grade correction request
@@ -246,6 +254,9 @@ class GradecorrectionModel extends AdminModel {
 
 		//1. Parse form data
 		$itemId = $formData['id'] ?? null;
+
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		$this->assertGradecorrectionInCampusScope((int) $itemId);
 		$constituent = MarkConstituent::tryFrom((int)$formData['constituent']);
 		$newPam1 = $formData['pam1'] ?? null;
 		$newPam2 = $formData['pam2'] ?? null;

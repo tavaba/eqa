@@ -1,4 +1,13 @@
 <?php
+
+/**
+ * @package     Kma.Component.Eqa
+ * @subpackage  Administrator.Base
+ *
+ * @copyright   (C) 2026 KMA. All rights reserved.
+ * @license     GNU General Public License version 2 or later
+ */
+
 namespace Kma\Component\Eqa\Administrator\Base;
 
 defined('_JEXEC') or die;
@@ -46,12 +55,15 @@ abstract class CampusAdminModel extends AdminModel
     /**
      * Gán/ép cơ sở đào tạo trước khi ghi xuống CSDL.
      *
+     * Chữ ký giữ nguyên dạng của lớp cha (protected, không khai báo kiểu trả về)
+     * để các model hiện có override được mà không vi phạm quy tắc kế thừa của PHP.
+     *
      * @param   object  $table
      *
      * @return  void
      * @since   2.1.6
      */
-    public function prepareTable($table): void
+    protected function prepareTable($table)
     {
         parent::prepareTable($table);
 

@@ -6,6 +6,8 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
+use Kma\Component\Eqa\Administrator\Helper\LearnerAccessHelper;
+use RuntimeException;
 
 class LearnerExamsModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
@@ -15,29 +17,18 @@ class LearnerExamsModel extends ListModel {
     }
 	public function canViewList(): bool
 	{
-		//1. Check if the user has manage permission on this component
-		$acceptedPermissions = ['core.manage', 'eqa.supervise'];
-		if(GeneralHelper::checkPermissions($acceptedPermissions))
+		//Từ 2.1.6, toàn bộ logic phân quyền (quản trị viên theo cơ sở đào tạo, hoặc
+		//người học tự xem) được gom vào LearnerAccessHelper để dùng chung và nhất quán.
+		$selectedLearnerId = (int) $this->getState('filter.learner_id');
+		if($selectedLearnerId <= 0)
+			return false;
+
+		try {
+			LearnerAccessHelper::assertCanViewLearner($selectedLearnerId);
 			return true;
-
-		//2. Or if he/she is the selected learner that views his/her own information
-		//a. There must be a learner ID
-		$selectedLearnerId = $this->getState('filter.learner_id');
-		if(empty($selectedLearnerId))
+		} catch (RuntimeException $e) {
 			return false;
-
-		//b. And the corresponding learner code must exist...
-		$db = DatabaseHelper::getDatabaseDriver();
-		$db->setQuery('SELECT `code` FROM #__eqa_learners WHERE id='.$selectedLearnerId);
-		$learnerCode = $db->loadResult();
-		if(empty($learnerCode))
-			return false;
-
-		//c. ... and match with signed-in user's learner code
-		$signedInLearnerCode = GeneralHelper::getSignedInLearnerCode();
-		if (empty($signedInLearnerCode) || ($learnerCode != $signedInLearnerCode))
-			return false;
-		return true;
+		}
 	}
 	public function getListQuery()
     {
@@ -46,6 +37,9 @@ class LearnerExamsModel extends ListModel {
 	    $learnerId = $this->getState('filter.learner_id');
 		if(empty($learnerId))
 			return null;
+
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): phủ mọi lối vào model.
+		LearnerAccessHelper::assertCanViewLearner((int) $learnerId);
 
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(

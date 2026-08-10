@@ -6,11 +6,14 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Object\CMSObject;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+use RuntimeException;
 
 defined('_JEXEC') or die();
 
 class ExamsessionModel extends AdminModel
 {
+    use CampusScopedByExamseason;
     // =========================================================================
     // getItem
     // =========================================================================
@@ -78,6 +81,14 @@ class ExamsessionModel extends AdminModel
      */
     public function save($data): bool
     {
+        // Chốt chặn quyền theo cơ sở đào tạo (2.1.6): ca thi thuộc kỳ thi hoặc kỳ sát hạch
+	    $examseasonId = (int) ($data['examseason_id'] ?? 0);
+	    if ($examseasonId > 0) {
+		    $this->assertExamseasonInCampusScope($examseasonId);
+	    } elseif (!empty($data['id'])) {
+		    $this->assertExamsessionInCampusScope((int) $data['id']);
+	    }
+
         // --- Validate: đúng 1 trong 2 trường phải có giá trị ---
         if (!$this->validateSessionContext($data)) {
             return false;

@@ -435,7 +435,9 @@ class ConductsController extends AdminController {
 				$title = 'Kết quả phân loại HVSV - Lớp ' . $groupCode;
 				$studyYear = DatabaseHelper::getCourseStudyYear($groupConducts[0]->course, $academicyear);
 				$this->sortByName($groupConducts);
-				IOHelper::writeConductReport($sheet, $academicyear, $termCode, $title, $studyYear, $groupConducts);
+				//Cơ sở đào tạo của báo cáo (2.1.6): các HVSV trong một lớp cùng một cơ sở
+				$campusId = (int) ($groupConducts[0]->campus_id ?? 0);
+				IOHelper::writeConductReport($sheet, $academicyear, $termCode, $title, $studyYear, $groupConducts, $campusId);
 			}
 
 			//Let user download the spreadsheet
@@ -504,7 +506,9 @@ class ConductsController extends AdminController {
 				$title = 'Kết quả phân loại HVSV - Khóa ' . $courseCode;
 				$studyYear = DatabaseHelper::getCourseStudyYear($courseCode, $academicyear);
 				$this->sortByName($courseConducts);
-				IOHelper::writeConductReport($sheet, $academicyear, $termCode, $title, $studyYear, $courseConducts);
+				//Cơ sở đào tạo của báo cáo (2.1.6): các HVSV trong một khóa cùng một cơ sở
+				$campusId = (int) ($courseConducts[0]->campus_id ?? 0);
+				IOHelper::writeConductReport($sheet, $academicyear, $termCode, $title, $studyYear, $courseConducts, $campusId);
 			}
 
 			//Let user download the spreadsheet

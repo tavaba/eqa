@@ -15,9 +15,8 @@
                 type="campus"
                 required="true"
                 label="Cơ sở đào tạo"
-        >
-            <option value="">- Chọn cơ sở đào tạo -</option>
-        </field>
+                readonly="true"
+        />
         <field
                 name="code"
                 type="text"

@@ -16,6 +16,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\Database\QueryInterface;
 use Kma\Component\Eqa\Administrator\Service\CampusService;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use RuntimeException;
 
 /**
  * Trait áp điều kiện lọc theo 'cơ sở đào tạo' cho các List Model.
@@ -166,6 +167,33 @@ trait CampusScopedList
     {
         return ':campus' . $this->getCampusService()->getActiveCampusId()
             . ':filter' . (string) $this->getState('filter.campus_id');
+    }
+
+    /**
+     * Trả về id cơ sở đào tạo đang làm việc, BẮT BUỘC phải hợp lệ.
+     *
+     * Dùng cho các thao tác ghi hàng loạt (làm mới danh sách thi lần hai...) —
+     * những chỗ mà giá trị 0 tuyệt đối không được phép đi tiếp: một truy vấn
+     * lọc theo campus_id = 0 sẽ trả về tập rỗng, và thuật toán đồng bộ có thể
+     * hiểu nhầm thành "không còn bản ghi nào hợp lệ" rồi xóa sạch dữ liệu.
+     *
+     * @return  int
+     * @throws  RuntimeException  Nếu người dùng chưa gắn với cơ sở đào tạo nào
+     * @since   2.1.6
+     */
+    protected function getRequiredCampusId(): int
+    {
+        $campusId = $this->getCampusService()->getActiveCampusId();
+
+        if ($campusId <= 0) {
+            throw new \RuntimeException(
+                'Không xác định được cơ sở đào tạo đang làm việc.'
+                . ' Tài khoản của bạn có thể chưa được gán vào cơ sở đào tạo nào.'
+                . ' Thao tác bị từ chối để tránh làm hỏng dữ liệu.'
+            );
+        }
+
+        return $campusId;
     }
 
     /**

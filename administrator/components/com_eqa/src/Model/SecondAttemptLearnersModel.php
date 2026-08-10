@@ -7,6 +7,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
 
 /**
  * Model danh sách người học có trong bảng #__eqa_secondattempts,
@@ -20,6 +21,8 @@ use Kma\Component\Eqa\Administrator\Base\ListModel;
  */
 class SecondAttemptLearnersModel extends ListModel
 {
+    use CampusScopedList;
+
     /**
      * @param array                    $config
      * @param MVCFactoryInterface|null $factory
@@ -112,7 +115,18 @@ class SecondAttemptLearnersModel extends ListModel
                 . ' ON ' . $db->quoteName('lr.id')
                 . ' = '  . $db->quoteName('sa.learner_id')
             )
-            ->group([
+            // Suy diễn cơ sở đào tạo qua lớp học phần để lọc (2.1.6)
+            ->leftJoin(
+                $db->quoteName('#__eqa_classes', 'cl')
+                . ' ON ' . $db->quoteName('cl.id')
+                . ' = ' . $db->quoteName('sa.class_id')
+            )
+            ;
+
+        // Lọc cứng theo cơ sở đào tạo (2.1.6)
+        $this->applyCampusFilter($query, 'cl.campus_id');
+
+        $query->group([
                 $db->quoteName('sa.learner_id'),
                 $db->quoteName('lr.code'),
                 $db->quoteName('lr.lastname'),
@@ -133,6 +147,18 @@ class SecondAttemptLearnersModel extends ListModel
         }
 
         return $query;
+    }
+
+
+    /**
+     * @since 2.1.6
+     */
+    public function getStoreId($id = '')
+    {
+        $id .= ':' . $this->getState('filter.search');
+        $id .= $this->getCampusStoreId();
+
+        return parent::getStoreId($id);
     }
 
 }

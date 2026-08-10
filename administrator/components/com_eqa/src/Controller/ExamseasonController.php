@@ -252,12 +252,20 @@ class ExamseasonController extends FormController
 			//Access check
 			$this->checkCanAddExams($examseasonId,true,true);
 
+			//Xác định cơ sở đào tạo của kỳ thi (2.1.6): danh sách thí sinh thi lại
+			//phải lấy theo cơ sở của CHÍNH kỳ thi này, không theo cơ sở đang làm
+			//việc của người dùng — nếu không, cán bộ cấp Học viện có thể sinh môn
+			//thi lại chứa thí sinh của cơ sở khác.
+			$examseason = $this->getModel()->getItem($examseasonId);
+			if(empty($examseason) || empty($examseason->campus_id))
+				throw new Exception('Không xác định được cơ sở đào tạo của kỳ thi.');
+
 			/**
 			 * Load the list of examinees/exams that will be used to generate retake exams
 			 * @var SecondAttemptsModel $secondAttemptsModel
 			 */
 			$secondAttemptsModel = $this->getModel('SecondAttempts');
-			$retakingExaminees = $secondAttemptsModel->loadListForExport(false);
+			$retakingExaminees = $secondAttemptsModel->loadListForExport(false, (int) $examseason->campus_id);
 			if(empty($retakingExaminees))
 				throw new Exception('Không có thí sinh nào cần thi lại.');
 

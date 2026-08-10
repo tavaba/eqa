@@ -16,6 +16,8 @@ use Kma\Component\Eqa\Administrator\DataObject\PackageInfo;
 defined('_JEXEC') or die();
 
 class PaperexamModel extends AdminModel{
+	use \Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+
 	public function mask(int $examId, $maskStart, $maskInterval, $packageDefaultSize, $packageMinSize): bool
 	{
 		$app = Factory::getApplication();
@@ -26,6 +28,14 @@ class PaperexamModel extends AdminModel{
 		if(empty($exam))
 		{
 			$app->enqueueMessage('Môn thi không hợp lệ','error');
+			return false;
+		}
+
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		try {
+			$this->assertExamInCampusScope($examId);
+		} catch (\RuntimeException $e) {
+			$app->enqueueMessage($e->getMessage(), 'error');
 			return false;
 		}
 		if($exam->testtype != TestType::Paper->value)
@@ -285,6 +295,14 @@ class PaperexamModel extends AdminModel{
 		$app = Factory::getApplication();
 		$db = DatabaseHelper::getDatabaseDriver();
 
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		try {
+			$this->assertExamInCampusScope($examId);
+		} catch (\RuntimeException $e) {
+			$app->enqueueMessage($e->getMessage(), 'error');
+			return false;
+		}
+
 		//Lấy số lượng túi bài thi của môn thi
 		$npackage = DatabaseHelper::getExamPackageCount($examId);
 
@@ -427,6 +445,10 @@ class PaperexamModel extends AdminModel{
 	}
 	public function importMarkByMask(int $examId, array $marks): void
 	{
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6). Phương thức trả về void nên
+		//ném thẳng ngoại lệ; controller gọi nó phải bắt và hiển thị thông báo.
+		$this->assertExamInCampusScope($examId);
+
 		/**
 		 * Controller phải kiểm tra tính hợp lệ của KIỂU DỮ LIỆU trong mảng $marks trước
 		 * khi gọi phương thức này.

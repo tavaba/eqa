@@ -17,6 +17,7 @@ use Kma\Component\Eqa\Administrator\Enum\FeeMode;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
 
 /**
  * Model quản lý danh sách thí sinh thi lần hai.
@@ -25,11 +26,13 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
  */
 class SecondAttemptsModel extends ListModel
 {
+    use CampusScopedList;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields'] = [
             'id', 'learner_code', 'academicyear', 'term',
-            'has_fee', 'payment_completed',
+            'has_fee', 'payment_completed', 'campus_id',
         ];
         parent::__construct($config, $factory);
     }
@@ -129,6 +132,9 @@ class SecondAttemptsModel extends ListModel
 	        ->leftJoin($db->quoteName('#__eqa_exam_learner','el'),
 		        'el.exam_id = sa.last_exam_id AND el.learner_id = sa.learner_id');
 
+        // Lọc theo cơ sở đào tạo, suy diễn qua lớp học phần (2.1.6)
+        $this->applyCampusFilter($query, 'cl.campus_id');
+
         // --- Filtering ---
 
         $search = $this->getState('filter.search');
@@ -193,6 +199,20 @@ class SecondAttemptsModel extends ListModel
         return $query;
     }
 
+    /**
+     * Ẩn bộ lọc cơ sở đào tạo với người dùng không có quyền làm việc mọi cơ sở.
+     *
+     * @param   array  $data
+     * @param   bool   $loadData
+     *
+     * @return  mixed
+     * @since   2.1.6
+     */
+    public function getFilterForm($data = [], $loadData = true)
+    {
+        return $this->applyCampusFilterVisibility(parent::getFilterForm($data, $loadData));
+    }
+
     // =========================================================================
     // Thống kê
     // =========================================================================
@@ -200,8 +220,9 @@ class SecondAttemptsModel extends ListModel
     /**
      * Trả về số liệu thống kê tổng hợp của bảng #__eqa_secondattempts.
      *
-     * Luôn tính trên toàn bộ bảng (không bị ảnh hưởng bởi bộ lọc hiện tại)
-     * để phản ánh đúng tổng quan tình hình.
+     * Không phụ thuộc các bộ lọc khác trên giao diện, nhưng TỪ 2.1.6 chỉ tính
+     * trong phạm vi cơ sở đào tạo đang xem — nếu không, số liệu sẽ gộp cả hai
+     * cơ sở và không khớp với danh sách hiển thị bên dưới.
      *
      * @return object{
      *     totalExams: int,
@@ -222,30 +243,37 @@ class SecondAttemptsModel extends ListModel
 
         $query = $db->getQuery(true)
             ->select([
-	            'COUNT(DISTINCT ' . $db->quoteName('last_exam_id') . ')' .
+	            'COUNT(DISTINCT ' . $db->quoteName('sa.last_exam_id') . ')' .
 	            ' AS ' . $db->quoteName('totalExams'),
-	            'COUNT(DISTINCT ' . $db->quoteName('learner_id') . ')' .
+	            'COUNT(DISTINCT ' . $db->quoteName('sa.learner_id') . ')' .
 	            ' AS ' . $db->quoteName('totalLearners'),
                 'COUNT(1)' .
                 ' AS ' . $db->quoteName('totalAttempts'),
-                'SUM(CASE WHEN ' . $db->quoteName('payment_amount') . ' = 0 THEN 1 ELSE 0 END)' .
+                'SUM(CASE WHEN ' . $db->quoteName('sa.payment_amount') . ' = 0 THEN 1 ELSE 0 END)' .
                 ' AS ' . $db->quoteName('totalFree'),
-                'SUM(CASE WHEN ' . $db->quoteName('payment_amount') . ' > 0 THEN 1 ELSE 0 END)' .
+                'SUM(CASE WHEN ' . $db->quoteName('sa.payment_amount') . ' > 0 THEN 1 ELSE 0 END)' .
                 ' AS ' . $db->quoteName('totalRequired'),
-                'SUM(CASE WHEN ' . $db->quoteName('payment_amount') . ' > 0' .
-                ' AND ' . $db->quoteName('payment_completed') . ' = 1 THEN 1 ELSE 0 END)' .
+                'SUM(CASE WHEN ' . $db->quoteName('sa.payment_amount') . ' > 0' .
+                ' AND ' . $db->quoteName('sa.payment_completed') . ' = 1 THEN 1 ELSE 0 END)' .
                 ' AS ' . $db->quoteName('totalPaid'),
                 // Tổng phí cần thu: cộng toàn bộ payment_amount > 0
-                'SUM(CASE WHEN ' . $db->quoteName('payment_amount') . ' > 0' .
-                ' THEN ' . $db->quoteName('payment_amount') . ' ELSE 0 END)' .
+                'SUM(CASE WHEN ' . $db->quoteName('sa.payment_amount') . ' > 0' .
+                ' THEN ' . $db->quoteName('sa.payment_amount') . ' ELSE 0 END)' .
                 ' AS ' . $db->quoteName('totalFeeAmount'),
                 // Tổng đã thu: cộng payment_amount của các trường hợp đã thanh toán
-                'SUM(CASE WHEN ' . $db->quoteName('payment_amount') . ' > 0' .
-                ' AND ' . $db->quoteName('payment_completed') . ' = 1' .
-                ' THEN ' . $db->quoteName('payment_amount') . ' ELSE 0 END)' .
+                'SUM(CASE WHEN ' . $db->quoteName('sa.payment_amount') . ' > 0' .
+                ' AND ' . $db->quoteName('sa.payment_completed') . ' = 1' .
+                ' THEN ' . $db->quoteName('sa.payment_amount') . ' ELSE 0 END)' .
                 ' AS ' . $db->quoteName('totalCollectedAmount'),
             ])
-            ->from($db->quoteName('#__eqa_secondattempts'));
+            ->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+            ->innerJoin(
+                $db->quoteName('#__eqa_classes', 'cl') .
+                ' ON ' . $db->quoteName('cl.id') . ' = ' . $db->quoteName('sa.class_id')
+            );
+
+        // Giới hạn phạm vi theo cơ sở đào tạo (2.1.6)
+        $this->applyCampusFilter($query, 'cl.campus_id');
 
         $db->setQuery($query);
         $result = $db->loadObject();
@@ -282,21 +310,29 @@ class SecondAttemptsModel extends ListModel
 	 */
 	public function addNew(): array
 	{
+		// Toàn bộ thao tác chỉ diễn ra trong phạm vi MỘT cơ sở đào tạo (2.1.6)
+		$campusId = $this->getRequiredCampusId();
+
 		$db = DatabaseHelper::getDatabaseDriver();
 		$db->transactionStart();
 
 		try {
-			$newList = $this->buildNewList($db);
+			$newList = $this->buildNewList($db, $campusId);
 
-			// Load các triple key đang tồn tại trong bảng
+			// Load các triple key đang tồn tại trong bảng, GIỚI HẠN theo cơ sở đào tạo
 			$db->setQuery(
 				$db->getQuery(true)
 					->select([
-						$db->quoteName('class_id'),
-						$db->quoteName('learner_id'),
-						$db->quoteName('last_exam_id'),
+						$db->quoteName('sa.class_id'),
+						$db->quoteName('sa.learner_id'),
+						$db->quoteName('sa.last_exam_id'),
 					])
-					->from($db->quoteName('#__eqa_secondattempts'))
+					->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+					->innerJoin(
+						$db->quoteName('#__eqa_classes', 'c') .
+						' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('sa.class_id')
+					)
+					->where($db->quoteName('c.campus_id') . ' = ' . (int) $campusId)
 			);
 			foreach ($db->loadObjectList() as $existing) {
 				$tripleKey = $existing->class_id . ':' . $existing->learner_id . ':' . $existing->last_exam_id;
@@ -329,13 +365,18 @@ class SecondAttemptsModel extends ListModel
      */
     public function refresh(): array
     {
+        // Toàn bộ thao tác chỉ diễn ra trong phạm vi MỘT cơ sở đào tạo (2.1.6).
+        // Giá trị này được truyền xuống CẢ buildNewList() lẫn removeStaleRecords():
+        // hai bên bắt buộc phải cùng phạm vi, xem ghi chú ở removeStaleRecords().
+        $campusId = $this->getRequiredCampusId();
+
         $db = DatabaseHelper::getDatabaseDriver();
 
         // Bước 1: Xây dựng danh sách mới
-        $newList = $this->buildNewList($db);
+        $newList = $this->buildNewList($db, $campusId);
 
         // Bước 2: Xóa bản ghi lỗi thời, thu về tập key còn tồn tại
-        [$removed, $survivingKeys] = $this->removeStaleRecords($db, $newList);
+        [$removed, $survivingKeys] = $this->removeStaleRecords($db, $newList, $campusId);
 
         // Bước 3: Thêm bản ghi mới (những key trong $newList nhưng không có trong $survivingKeys)
         $toInsert = array_diff_key($newList, $survivingKeys);
@@ -352,14 +393,17 @@ class SecondAttemptsModel extends ListModel
      *   - Thí sinh chưa hết quyền dự thi (cl.expired = 0).
      *   - Kết luận của lần thi gần nhất là Failed (20) hoặc Deferred (30).
      *
+     * Từ 2.1.6, chỉ xét các lớp học phần thuộc cơ sở đào tạo $campusId.
+     *
      * @param DatabaseDriver $db
+     * @param int            $campusId  Cơ sở đào tạo cần xử lý
      * @return array<string, object> Map theo key "class_id:learner_id:last_exam_id".
      *                               Mỗi giá trị là object có các thuộc tính:
      *                               class_id, learner_id, last_exam_id, last_attempt, last_conclusion.
      * @throws Exception
      * @since 2.0.2
      */
-    private function buildNewList(DatabaseDriver $db): array
+    private function buildNewList(DatabaseDriver $db, int $campusId): array
     {
         // Subquery: lấy exam_id lớn nhất của mỗi cặp (class_id, learner_id)
         $subQuery = $db->getQuery(true)
@@ -389,7 +433,13 @@ class SecondAttemptsModel extends ListModel
                 ' ON ' . $db->quoteName('cl.class_id') . ' = ' . $db->quoteName('el.class_id') .
                 ' AND ' . $db->quoteName('cl.learner_id') . ' = ' . $db->quoteName('el.learner_id')
             )
+            // Giới hạn phạm vi theo cơ sở đào tạo (2.1.6)
+            ->innerJoin(
+                $db->quoteName('#__eqa_classes', 'c') .
+                ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('el.class_id')
+            )
             ->where([
+                $db->quoteName('c.campus_id') . ' = ' . (int) $campusId,
                 $db->quoteName('cl.allowed') . ' = 1',
                 $db->quoteName('cl.expired') . ' = 0',
                 $db->quoteName('el.conclusion') . ' IN (' . $validConclusions . ')',
@@ -426,9 +476,19 @@ class SecondAttemptsModel extends ListModel
 	 *
 	 * Toàn bộ dữ liệu cần thiết được load bằng 2 query (không có N+1 query).
 	 *
+	 * BẤT BIẾN QUAN TRỌNG (2.1.6): $newList và tập bản ghi nạp ở Bước 2 phải
+	 * được giới hạn theo CÙNG MỘT cơ sở đào tạo. Nếu chỉ giới hạn $newList mà
+	 * không giới hạn Bước 2, toàn bộ bản ghi của cơ sở kia sẽ bị coi là lỗi thời
+	 * và BỊ XÓA SẠCH, mất cả thông tin đã đóng phí. Ngược lại thì sinh ra bản ghi
+	 * trùng lặp.
+	 *
+	 * @param object $db
+	 * @param array  $newList
+	 * @param int    $campusId  Cơ sở đào tạo cần xử lý
+	 *
 	 * @since 2.0.2
 	 */
-	private function removeStaleRecords(object $db, array $newList): array
+	private function removeStaleRecords(object $db, array $newList, int $campusId): array
 	{
 		// --- Bước 1: Xây dựng lookup map từ $newList ---
 		// "class_id:learner_id" → last_exam_id, tra cứu O(1)
@@ -438,16 +498,22 @@ class SecondAttemptsModel extends ListModel
 			$newPairMap[$pairKey] = (int) $entry->last_exam_id;
 		}
 
-		// --- Bước 2: Load toàn bộ secondattempts ---
+		// --- Bước 2: Load các bản ghi secondattempts CỦA CƠ SỞ ĐANG XỬ LÝ ---
+		// Phạm vi phải trùng khớp với phạm vi của $newList (xem docblock).
 		$db->setQuery(
 			$db->getQuery(true)
 				->select([
-					$db->quoteName('id'),
-					$db->quoteName('class_id'),
-					$db->quoteName('learner_id'),
-					$db->quoteName('last_exam_id'),
+					$db->quoteName('sa.id'),
+					$db->quoteName('sa.class_id'),
+					$db->quoteName('sa.learner_id'),
+					$db->quoteName('sa.last_exam_id'),
 				])
-				->from($db->quoteName('#__eqa_secondattempts'))
+				->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+				->innerJoin(
+					$db->quoteName('#__eqa_classes', 'c') .
+					' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('sa.class_id')
+				)
+				->where($db->quoteName('c.campus_id') . ' = ' . (int) $campusId)
 		);
 		$saRecords = $db->loadObjectList();
 
@@ -464,6 +530,14 @@ class SecondAttemptsModel extends ListModel
 				'MAX(' . $db->quoteName('el.exam_id') . ') AS ' . $db->quoteName('max_exam_id'),
 			])
 			->from($db->quoteName('#__eqa_exam_learner', 'el'))
+			// Giới hạn theo cơ sở đào tạo: không bắt buộc về tính đúng đắn (quyết
+			// định cuối cùng chỉ áp lên $saRecords đã giới hạn) nhưng giảm đáng kể
+			// lượng dữ liệu nạp vào bộ nhớ khi hệ thống có nhiều cơ sở.
+			->innerJoin(
+				$db->quoteName('#__eqa_classes', 'c') .
+				' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('el.class_id')
+			)
+			->where($db->quoteName('c.campus_id') . ' = ' . (int) $campusId)
 			->group([$db->quoteName('el.class_id'), $db->quoteName('el.learner_id')]);
 
 		$latestExamQuery = $db->getQuery(true)
@@ -781,6 +855,25 @@ class SecondAttemptsModel extends ListModel
 		// Đọc bản ghi để validate và lấy learner_code cho thông báo
 		$record = $this->getItemById($id);
 
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): bản ghi có thể được truy cập
+		// bằng URL trực tiếp nên không thể dựa vào bộ lọc của danh sách.
+		$recordCampusId = (int) $db->setQuery(
+			$db->getQuery(true)
+				->select($db->quoteName('c.campus_id'))
+				->from($db->quoteName('#__eqa_secondattempts', 'sa'))
+				->innerJoin(
+					$db->quoteName('#__eqa_classes', 'c') .
+					' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('sa.class_id')
+				)
+				->where($db->quoteName('sa.id') . ' = ' . (int) $id)
+		)->loadResult();
+
+		if (!$this->getCampusService()->canManageCampus($recordCampusId)) {
+			throw new Exception(
+				'Bản ghi này thuộc cơ sở đào tạo khác. Bạn không có quyền cập nhật.'
+			);
+		}
+
 		if ((float) $record->payment_amount <= 0) {
 			throw new Exception(
 				sprintf(
@@ -864,6 +957,14 @@ class SecondAttemptsModel extends ListModel
 				$db->quoteName('#__eqa_learners', 'lr') .
 				' ON ' . $db->quoteName('lr.id') . ' = ' . $db->quoteName('sa.learner_id')
 			)
+			->innerJoin(
+				$db->quoteName('#__eqa_classes', 'cl') .
+				' ON ' . $db->quoteName('cl.id') . ' = ' . $db->quoteName('sa.class_id')
+			)
+			// Chỉ đối soát trong phạm vi cơ sở đào tạo đang làm việc (2.1.6):
+			// tránh việc cán bộ một cơ sở vô tình cập nhật trạng thái thanh toán
+			// của cơ sở kia. Giao dịch của cơ sở khác sẽ được báo là 'không tìm thấy'.
+			->where($db->quoteName('cl.campus_id') . ' = ' . (int) $this->getRequiredCampusId())
 			->where($db->quoteName('sa.payment_amount') . ' > 0')
 			->where($db->quoteName('sa.payment_code')   . ' IS NOT NULL');
 		$db->setQuery($query);
@@ -897,8 +998,24 @@ class SecondAttemptsModel extends ListModel
 		return $result;
 	}
 
-	public function loadListForExport(bool $onlyFreeOrPaymentCompleted): array
+	/**
+	 * Nạp danh sách thí sinh thi lần hai để xuất dữ liệu / sinh môn thi lại.
+	 *
+	 * @param bool     $onlyFreeOrPaymentCompleted  Chỉ lấy trường hợp miễn phí hoặc đã đóng phí
+	 * @param int|null $campusId                    Cơ sở đào tạo cần lấy. BẮT BUỘC truyền tường
+	 *                                              minh khi phục vụ một đối tượng dữ liệu cụ thể
+	 *                                              (ví dụ sinh môn thi lại cho một kỳ thi: truyền
+	 *                                              $examseason->campus_id). Để null thì lấy theo
+	 *                                              cơ sở đang làm việc.
+	 *
+	 * @return array
+	 * @throws Exception
+	 * @since 2.0.5
+	 */
+	public function loadListForExport(bool $onlyFreeOrPaymentCompleted, ?int $campusId = null): array
 	{
+		$campusId = $campusId ?? $this->getRequiredCampusId();
+
 		$db = DatabaseHelper::getDatabaseDriver();
 		$columns = [
 			$db->quoteName('a.learner_id')          . ' AS ' . $db->quoteName('learnerId'),
@@ -911,11 +1028,11 @@ class SecondAttemptsModel extends ListModel
 			$db->quoteName('e.finaltesttype')       . ' AS ' . $db->quoteName('testType'),
 			$db->quoteName('e.finaltestduration')   . ' AS ' . $db->quoteName('testDuration'),
 			$db->quoteName('d.term')                . ' AS ' . $db->quoteName('term'),
-			$db->quoteName('d.academicyear')                . ' AS ' . $db->quoteName('academicyear'),
-			$db->quoteName('a.last_exam_id')             . ' AS ' . $db->quoteName('examId'),
+			$db->quoteName('d.academicyear')        . ' AS ' . $db->quoteName('academicyear'),
+			$db->quoteName('a.last_exam_id')        . ' AS ' . $db->quoteName('examId'),
 			$db->quoteName('a.class_id')            . ' AS ' . $db->quoteName('classId'),
 			$db->quoteName('b.ntaken')              . ' AS ' . $db->quoteName('ntaken'),
-			$db->quoteName('a.last_conclusion')          . ' AS ' . $db->quoteName('conclusion'),
+			$db->quoteName('a.last_conclusion')     . ' AS ' . $db->quoteName('conclusion'),
 		];
 
 		$query = $db->getQuery(true)
@@ -924,7 +1041,9 @@ class SecondAttemptsModel extends ListModel
 			->leftJoin('#__eqa_class_learner AS b', 'b.class_id=a.class_id AND b.learner_id=a.learner_id')
 			->leftJoin('#__eqa_learners AS c', 'c.id=a.learner_id')
 			->leftJoin('#__eqa_classes AS d', 'd.id=a.class_id')
-			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id');
+			->leftJoin('#__eqa_subjects AS e', 'e.id=d.subject_id')
+			// Giới hạn phạm vi theo cơ sở đào tạo (2.1.6)
+			->where($db->quoteName('d.campus_id') . ' = ' . (int) $campusId);
 		if($onlyFreeOrPaymentCompleted) {
 			$query->where('(a.payment_amount = 0 OR a.payment_completed = 1)');
 		}

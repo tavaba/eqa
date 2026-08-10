@@ -5,6 +5,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
@@ -13,6 +14,8 @@ defined('_JEXEC') or die();
 
 class GradecorrectionsModel extends ListModel
 {
+	use CampusScopedByExamseason;
+
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		$config['filter_fields']=array('a.id', 'examseason', 'examName');
@@ -101,7 +104,13 @@ class GradecorrectionsModel extends ListModel
 
 
 		//Filtering
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): examseason_id có thể đến
+		// từ URL, không chỉ từ ExamseasonField.
 		$examseasonId = $this->getState('filter.examseason_id');
+		if (is_numeric($examseasonId) && (int) $examseasonId > 0) {
+			$this->assertExamseasonInCampusScope((int) $examseasonId);
+		}
+
 		if(is_numeric($examseasonId))
 		{
 			if($examseasonId==0)

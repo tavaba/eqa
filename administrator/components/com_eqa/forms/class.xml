@@ -4,6 +4,13 @@
         <field  name="id"
                 type="hidden"
         />
+        <field  name="campus_id"
+                type="campus"
+                required="true"
+                readonly="true"
+                label="Cơ sở đào tạo"
+                description="Lớp học phần này thuộc cơ sở đào tạo đang làm việc. Muốn đổi, hãy chuyển cơ sở đang làm việc."
+        />
         <field  name="coursegroup"
                 type="text"
                 label="COM_EQA_COURSEGROUP"

@@ -4,18 +4,26 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
-use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Base\CampusListModel;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 
-class PaperexamsModel extends ListModel{
+class PaperexamsModel extends CampusListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('name', 'nexaminee', 'nexamroom', 'npaper', 'nnopaper', 'npackage');
+        $config['filter_fields']=array('name', 'nexaminee', 'nexamroom', 'npaper', 'nnopaper', 'npackage', 'examseason_id', 'campus_id');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'id', $direction = 'desc'): void
     {
         parent::populateState($ordering, $direction);
+    }
+
+    /**
+     * @since 2.1.6
+     */
+    protected function getCampusColumn(): string
+    {
+        return 'b.campus_id';
     }
 
     public function getListQuery()
@@ -42,6 +50,9 @@ class PaperexamsModel extends ListModel{
 	        ->select('('. $subQueryNPaper . ') AS npaper')
 	        ->select('('. $subQueryNNoPaper . ') AS nnopaper')
 	        ->where('testtype='.TestType::Paper->value);
+
+        // Lọc cứng theo cơ sở đào tạo, suy diễn qua kỳ thi (2.1.6)
+        $this->applyCampusScope($query);
 
         //Filtering
         $search = $this->getState('filter.search');
@@ -74,5 +85,17 @@ class PaperexamsModel extends ListModel{
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 
         return $query;
+    }
+
+    /**
+     * @since 2.1.6
+     */
+    public function getStoreId($id = '')
+    {
+        $id .= ':' . $this->getState('filter.search');
+        $id .= ':' . $this->getState('filter.examseason_id');
+        $id .= ':' . $this->getState('filter.exam_id');
+
+        return parent::getStoreId($id);
     }
 }

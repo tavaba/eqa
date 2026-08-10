@@ -4,12 +4,15 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
 use Kma\Library\Kma\Helper\DatabaseHelper;
 
 class ExamroomsModel extends ListModel{
+    use CampusScopedList;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('code','start','nexaminee','nanomaly', 'exam_id');
+        $config['filter_fields']=array('code','start','nexaminee','nanomaly', 'exam_id', 'examseason_id', 'examsession_id', 'campus_id');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'start', $direction = 'desc'): void
@@ -56,7 +59,15 @@ class ExamroomsModel extends ListModel{
 	        ->select($columns)
             ->from('#__eqa_examrooms AS a')
             ->leftJoin('#__eqa_rooms AS b', 'b.id = a.room_id')
-            ->leftJoin('#__eqa_examsessions AS c', 'c.id = a.examsession_id');
+            ->leftJoin('#__eqa_examsessions AS c', 'c.id = a.examsession_id')
+            ->leftJoin('#__eqa_examseasons AS es', 'es.id = c.examseason_id')
+            ->leftJoin('#__eqa_assessments AS ass', 'ass.id = c.assessment_id');
+
+        // Lọc cứng theo cơ sở đào tạo (2.1.6). Phòng thi thuộc ca thi, ca thi
+        // thuộc kỳ thi HOẶC kỳ sát hạch, nên campus = COALESCE của hai nguồn.
+        // applyCampusFilter() quote tên cột nên không dùng được cho biểu thức;
+        // ở đây tự dựng điều kiện với cùng ngữ nghĩa ba trạng thái.
+        $this->applyExamroomCampusFilter($query);
 
         //Filtering
 	    $exam_id = $this->getState('filter.exam_id');
@@ -86,5 +97,62 @@ class ExamroomsModel extends ListModel{
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 
         return $query;
+    }
+
+    /**
+     * Lọc phòng thi theo cơ sở đào tạo, với campus suy theo COALESCE của
+     * examseason và assessment. Cùng ngữ nghĩa ba trạng thái như
+     * CampusScopedList::applyCampusFilter() nhưng áp cho một biểu thức.
+     *
+     * @param   \Joomla\Database\QueryInterface  $query
+     *
+     * @return  void
+     * @since   2.1.6
+     */
+    private function applyExamroomCampusFilter($query): void
+    {
+        $campusService = $this->getCampusService();
+        $expr = 'COALESCE(es.campus_id, ass.campus_id)';
+
+        if (empty($campusService->getUserCampusIds())) {
+            $query->where('1 = 0');
+            return;
+        }
+
+        if ($campusService->canAccessAllCampuses()) {
+            $filterState = $this->getState('filter.campus_id');
+            if ($filterState !== null && $filterState !== '') {
+                if ((int) $filterState > 0) {
+                    $query->where($expr . ' = ' . (int) $filterState);
+                }
+                return;
+            }
+            $activeCampusId = $campusService->getActiveCampusId();
+            if ($activeCampusId > 0) {
+                $query->where($expr . ' = ' . (int) $activeCampusId);
+            }
+            return;
+        }
+
+        $activeCampusId = $campusService->getActiveCampusId();
+        if ($activeCampusId <= 0) {
+            $query->where('1 = 0');
+            return;
+        }
+        $query->where($expr . ' = ' . (int) $activeCampusId);
+    }
+
+    /**
+     * @since 2.1.6
+     */
+    public function getStoreId($id = '')
+    {
+        $id .= ':' . $this->getState('filter.exam_id');
+        $id .= ':' . $this->getState('filter.examseason_id');
+        $id .= ':' . $this->getState('filter.examsession_id');
+        $id .= ':' . $this->getState('filter.examdate');
+        $id .= $this->getCampusStoreId();
+
+        return parent::getStoreId($id);
     }
 }

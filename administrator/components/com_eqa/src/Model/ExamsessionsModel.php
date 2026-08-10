@@ -4,20 +4,29 @@ namespace Kma\Component\Eqa\Administrator\Model;
 defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Base\CampusListModel;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
-class ExamsessionsModel extends ListModel
+class ExamsessionsModel extends CampusListModel
 {
+
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
-		$config['filter_fields'] = ['nexaminee', 'nexamroom'];
+		$config['filter_fields'] = ['nexaminee', 'nexamroom', 'examseason_id', 'campus_id', 'campus_name'];
 		parent::__construct($config, $factory);
 	}
 
 	protected function populateState($ordering = 'start', $direction = 'desc'): void
 	{
 		parent::populateState($ordering, $direction);
+	}
+
+	/**
+	 * @since 2.1.6
+	 */
+	protected function getCampusColumn(): string
+	{
+		return 'b.campus_id';
 	}
 
 	public function getListQuery()
@@ -67,6 +76,10 @@ class ExamsessionsModel extends ListModel
 			)
 			->select($columns);
 
+		// Lọc cứng theo cơ sở đào tạo, suy diễn qua kỳ thi (2.1.6).
+		// Áp cho MỌI trường hợp, kể cả khi người dùng chưa chọn kỳ thi.
+		$this->applyCampusScope($query);
+
 		// Filtering: tìm kiếm theo tên
 		$search = $this->getState('filter.search');
 		if (!empty($search)) {
@@ -109,6 +122,21 @@ class ExamsessionsModel extends ListModel
 		$query->order($db->quoteName($orderingCol) . ' ' . $orderingDir);
 
 		return $query;
+	}
+
+	/**
+	 * Bắt buộc gọi parent::getStoreId() để khóa cache chứa cơ sở đào tạo.
+	 *
+	 * @since 2.1.6
+	 */
+	public function getStoreId($id = '')
+	{
+		$id .= ':' . $this->getState('filter.examseason_id');
+		$id .= ':' . $this->getState('filter.flexible');
+		$id .= ':' . $this->getState('filter.not_before');
+		$id .= ':' . $this->getState('filter.not_after');
+
+		return parent::getStoreId($id);
 	}
 
 	public function getListQuery_bak()

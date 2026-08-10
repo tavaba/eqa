@@ -6,8 +6,11 @@ use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 
-class ExamseasonExamsModel extends ListModel{
+class ExamseasonExamsModel extends ListModel
+{
+	use CampusScopedByExamseason;
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('nexaminee','nexamroom','testtype','duration','kmonitor','kassess','status');
@@ -22,8 +25,11 @@ class ExamseasonExamsModel extends ListModel{
     {
 		//Determin the examseason id from state. This must be set in the view.
 	    $examseasonId = $this->getState('filter.examseason_id');
-		if (empty($examseasonId))
+		if (!is_numeric($examseasonId))
 			throw new Exception('Không xác định được kỳ thi');
+
+		//Chốt chặn quyền truy cập theo campus
+	    $this->assertExamseasonInCampusScope((int) $examseasonId);
 
         $db = $this->getDatabase();
 	    $subExamineeCount = 'SELECT COUNT(learner_id) FROM #__eqa_exam_learner WHERE exam_id=a.id';

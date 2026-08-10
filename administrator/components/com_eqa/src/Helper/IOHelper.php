@@ -5,7 +5,6 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 
 use Collator;
 use Exception;
-use JComponentHelper;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
@@ -1273,7 +1272,9 @@ abstract class IOHelper extends BaseIOHelper
 	}
 	static public function writeMarkingSheet(Worksheet $sheet, PackageInfo $packageInfo):void
 	{
-		$params = JComponentHelper::getParams('com_eqa');
+		// Tham số 'city' theo cơ sở đào tạo của môn thi (2.1.6)
+		$config = ComponentHelper::getComponent()->getConfigService()
+			->forCampus(DatabaseHelper::getCampusIdOfExam((int) $packageInfo->examId));
 		$PARTS = 2;
 		$PART_WIDTH = 3;  //Mỗi part gồm 3 cột: Số phách, Điểm bằng số, Điểm bằng chữ
 		$FONT_SIZE = 14;
@@ -1301,7 +1302,7 @@ abstract class IOHelper extends BaseIOHelper
 		//Thông tin cơ quan
 		$row++;
 		$midCol = intdiv($COLS,2) + $COLS % 2;
-		$organizationName = $params->get('params.organization','Học viện Kỹ thuật mật mã');
+		$organizationName = $config->getOrganization();
 		$organizationName = mb_strtoupper($organizationName);
 		$sheet->getCell('A'.$row)->setValue($organizationName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
@@ -1309,7 +1310,7 @@ abstract class IOHelper extends BaseIOHelper
 		$cellStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 		$row++;
-		$unitName = $params->get('params.examination_unit','Phòng KT&ĐBCLĐT');
+		$unitName = $config->getExaminationUnit();
 		$unitName = mb_strtoupper($unitName);
 		$sheet->getCell('A'.$row)->setValue($unitName);
 		$sheet->mergeCells([1,$row, $midCol, $row]);
@@ -1416,7 +1417,7 @@ abstract class IOHelper extends BaseIOHelper
 
 		//Ngày tháng
 		$row = $lastRow+2;
-		$city = $params->get('params.city','Hà Nội');
+		$city = $config->getCity();
 		$value = $city . ', ngày .... tháng ..... năm 20.....';
 		$cell = $sheet->getCell('A'.$row);
 		$cell->setValue($value);
@@ -2984,7 +2985,7 @@ abstract class IOHelper extends BaseIOHelper
 		}
 	}
 
-	static public function writeConductReport(Worksheet $sheet, string $academicyear, int $termCode, string $title, int $studyYear, array $conducts): void
+	static public function writeConductReport(Worksheet $sheet, string $academicyear, int $termCode, string $title, int $studyYear, array $conducts, int $campusId): void
 	{
 		$headers = ['TT', 'Mã HVSV', 'Họ và tên', 'LD', 'KLD', 'Tổng', 'HL', 'TL', 'KT', 'KL', 'TC', 'Điểm', 'PL', 'Điểm', 'PL', 'Ghi chú'];
 		$widths  = [5,     12,         25,          4,    5,     6,      4,    4,    4,    4,     4,    6,     4,      6,    4,      11];
@@ -3288,9 +3289,9 @@ abstract class IOHelper extends BaseIOHelper
 		$sheet->mergeCells([8, $row, 11, $row]);
 
 		/**
-		 * Print the signing areas
+		 * Print the signing areas — tham số riêng theo cơ sở đào tạo (2.1.6)
 		 */
-		$config = new ConfigService();
+		$config = ComponentHelper::getComponent()->getConfigService()->forCampus($campusId);
 		$trainingUnit               = $config->getConductTrainingUnit();
 		$trainingUnitLeaderTitle    = $config->getConductTrainingUnitLeaderTitle();
 		$trainingUnitLeaderName     = $config->getConductTrainingUnitLeaderName();
@@ -3341,6 +3342,9 @@ abstract class IOHelper extends BaseIOHelper
 
 	static public function writeGradeCorrectionForm(PhpWord $phpWord, $request)
 	{
+		//Tham số tổ chức/địa danh theo cơ sở đào tạo của yêu cầu (2.1.6)
+		$config = ComponentHelper::getComponent()->getConfigService()
+			->forCampus((int) $request->campusId);
 
 		//Create a section and define common styles
 		self::phpWordDefineCommonStyles($phpWord);
@@ -3350,8 +3354,8 @@ abstract class IOHelper extends BaseIOHelper
 		$table = $section->addTable();
 		$table->addRow();
 		$cell = $table->addCell(3500);
-		$cell->addText('BAN CƠ YẾU CHÍNH PHỦ', null, 'Center');
-		$cell->addText('Học viện Kỹ thuật mật mã', 'BoldUnderlined', 'Center');
+		$cell->addText($config->getParentOrganization(), null, 'Center');
+		$cell->addText($config->getOrganization(), 'BoldUnderlined', 'Center');
 
 		// --- TIÊU ĐỀ ---
 		$section->addText('PHIẾU XỬ LÝ YÊU CẦU ĐÍNH CHÍNH ĐIỂM','Bold', 'TitleWithoutSpaceAfter');
@@ -3382,7 +3386,7 @@ abstract class IOHelper extends BaseIOHelper
 		}
 
 		// --- NGÀY VÀ CHỮ KÝ ---
-		$section->addText('Hà Nội, ngày .... tháng .... năm 20....', 'Italic', 'Right');
+		$section->addText($config->getCity() . ', ngày .... tháng .... năm 20....', 'Italic', 'Right');
 
 		$table = $section->addTable();
 		$table->addRow();

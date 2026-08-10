@@ -5,8 +5,11 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 
-class ExamExamineesModel extends ListModel {
+class ExamExamineesModel extends ListModel
+{
+	use CampusScopedByExamseason;
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('code','learner_code','firstname','lastname', 'stimulation','attempt','allowed', 'debtor', 'conclusion');
@@ -23,6 +26,10 @@ class ExamExamineesModel extends ListModel {
         $examId = $this->getState('filter.exam_id');
         if(!is_numeric($examId))
             return null;
+
+	    //Chốt chặn quyền theo cơ sở đào tạo (2.1.6): kiểm tra ngay tại đây, trước
+	    //khi dựng truy vấn, nên phủ MỌI lối vào model chứ không riêng một view.
+	    $this->assertExamInCampusScope((int) $examId);
 
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(

@@ -18,6 +18,8 @@ use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
 defined('_JEXEC') or die();
 
 class ExamroomModel extends AdminModel {
+	use \Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+
 
 	/**
 	 * Xác định phòng thi có thuộc về kỳ sát hạch hay không.
@@ -587,6 +589,10 @@ class ExamroomModel extends AdminModel {
 	 */
 	public function saveAnomaly(int $examroomId, array $data): bool
 	{
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): ghi bất thường trực tiếp,
+		// không qua form nên phải tự kiểm tra.
+		$this->assertExamroomInCampusScope($examroomId);
+
 		$db = DatabaseHelper::getDatabaseDriver();
 		foreach ($data as $learnerId => $learner)
 		{
@@ -655,6 +661,9 @@ class ExamroomModel extends AdminModel {
 	 */
 	public function saveAssessmentAnomaly(int $examroomId, array $data): bool
 	{
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		$this->assertExamroomInCampusScope($examroomId);
+
 		$db = DatabaseHelper::getDatabaseDriver();
 
 		foreach ($data as $alId => $record) {

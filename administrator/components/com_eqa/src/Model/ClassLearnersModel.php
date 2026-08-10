@@ -4,8 +4,11 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 
 class ClassLearnersModel extends ListModel {
+	use CampusScopedByExamseason;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('code','firstname','lastname', 'pam', 'allowed', 'ntaken', 'expired');
@@ -16,6 +19,11 @@ class ClassLearnersModel extends ListModel {
 		//Get class id
 		//This param must be set by the View before calling this method
 		$classId = $this->getState('filter.class_id');
+		if(!is_numeric($classId))
+			return null;
+
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): class_id đến từ View/URL.
+		$this->assertClassInCampusScope((int) $classId);
 
 		$db = $this->getDatabase();
 		$columns = $db->quoteName(

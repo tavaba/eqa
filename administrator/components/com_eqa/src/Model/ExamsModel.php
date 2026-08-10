@@ -4,17 +4,26 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
-use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Base\CampusListModel;
 
-class ExamsModel extends ListModel{
+class ExamsModel extends CampusListModel{
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('nexaminee','nexamroom','testtype','duration','kmonitor','kassess','status');
+        $config['filter_fields']=array('nexaminee','nexamroom','testtype','duration','kmonitor','kassess','status','examseason_id','campus_id','campus_name');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'id', $direction = 'desc'): void
     {
         parent::populateState($ordering, $direction);
+    }
+
+    /**
+     * @since 2.1.6
+     */
+    protected function getCampusColumn(): string
+    {
+        return 'b.campus_id';
     }
 
     public function getListQuery()
@@ -51,6 +60,10 @@ class ExamsModel extends ListModel{
 	        ->select('('.$subExamineeCount.') AS nexaminee')
 	        ->select('('.$subEligibleCount.') AS neligible')
 	        ->select('('.$subExamroomCount.') AS nexamroom');
+
+        // Lọc cứng theo cơ sở đào tạo, suy diễn qua kỳ thi (2.1.6).
+        // Áp cho MỌI trường hợp, kể cả khi người dùng chưa chọn kỳ thi.
+        $this->applyCampusScope($query);
 
         //Filtering
         $search = $this->getState('filter.search');
@@ -98,5 +111,20 @@ class ExamsModel extends ListModel{
         $query->order($db->quoteName($orderingCol).' '.$orderingDir);
 
         return $query;
+    }
+
+    /**
+     * Bắt buộc gọi parent::getStoreId() để khóa cache chứa cơ sở đào tạo.
+     *
+     * @since 2.1.6
+     */
+    public function getStoreId($id = '')
+    {
+        $id .= ':' . $this->getState('filter.examseason_id');
+        $id .= ':' . $this->getState('filter.subject_id');
+        $id .= ':' . $this->getState('filter.testtype');
+        $id .= ':' . $this->getState('filter.status');
+
+        return parent::getStoreId($id);
     }
 }

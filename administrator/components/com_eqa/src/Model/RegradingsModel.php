@@ -9,6 +9,7 @@ use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\PpaaType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
@@ -24,6 +25,8 @@ defined('_JEXEC') or die();
 
 class RegradingsModel extends ListModel
 {
+	use CampusScopedByExamseason;
+
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null)
 	{
 		$config['filter_fields']=array('id');
@@ -134,6 +137,11 @@ class RegradingsModel extends ListModel
 
 		//Filtering
 		$examseasonId = $this->getState('filter.examseason_id');
+		// Chốt chặn quyền theo cơ sở đào tạo (2.1.6): examseason_id có thể đến
+		// từ URL, không chỉ từ ExamseasonField.
+		if (is_numeric($examseasonId) && (int) $examseasonId > 0) {
+			$this->assertExamseasonInCampusScope((int) $examseasonId);
+		}
 		if(is_numeric($examseasonId))
 		{
 			if($examseasonId==0)

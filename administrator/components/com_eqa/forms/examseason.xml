@@ -17,6 +17,14 @@
         />
 
         <field
+                name="campus_id"
+                type="campus"
+                required="true"
+                readonly="true"
+                label="Cơ sở đào tạo"
+        />
+
+        <field
                 name="academicyear"
                 type="academicyear"
                 label="COM_EQA_ACADEMICYEAR"

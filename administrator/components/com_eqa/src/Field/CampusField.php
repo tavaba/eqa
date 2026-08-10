@@ -42,8 +42,15 @@ class CampusField extends ListField
         $rows = $db->setQuery($query)->loadAssocList('id', 'name');
 
         $options = [];
-	    $options[] = HTMLHelper::_('select.option', null, '- Cơ sở đang làm việc -');
-	    $options[] = HTMLHelper::_('select.option', 0, '(Tất cả cơ sở)');
+
+        // Ở edit form, field thường để readonly và mang một cơ sở cụ thể — khi đó
+        // KHÔNG thêm hai lựa chọn phục vụ filter ('cơ sở đang làm việc', 'tất cả
+        // cơ sở'), vì chúng chỉ có nghĩa trong bộ lọc danh sách (2.1.6).
+        if (!$this->readonly) {
+            $options[] = HTMLHelper::_('select.option', null, '- Cơ sở đang làm việc -');
+            $options[] = HTMLHelper::_('select.option', 0, '(Tất cả cơ sở)');
+        }
+
         foreach ($rows as $id => $name) {
             $options[] = HTMLHelper::_('select.option', $id, $name);
         }

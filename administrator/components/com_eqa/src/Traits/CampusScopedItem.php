@@ -259,19 +259,20 @@ trait CampusScopedItem
     }
 
     /**
-     * Chuẩn bị field campus_id trên form theo quyền của người dùng.
+     * Chuẩn bị field campus_id trên form: LUÔN readonly và LUÔN mang giá trị cơ
+     * sở đào tạo đang làm việc, cho MỌI người dùng (kể cả người có quyền nhiều
+     * cơ sở), ở CẢ tạo mới lẫn chỉnh sửa.
      *
-     * Hai việc, cả hai đều cần thiết:
+     * Triết lý (2.1.6): người dùng không chọn cơ sở trên form. Muốn làm việc với
+     * cơ sở nào thì chuyển "cơ sở đang làm việc" (active campus) rồi thao tác.
+     * Nhờ vậy:
+     *  - không thể tạo/sửa nhầm bản ghi sang cơ sở khác;
+     *  - không thể chuyển một bản ghi đã tồn tại sang cơ sở khác (tránh làm con
+     *    của nó thành "mồ côi cơ sở").
      *
-     * 1. GÁN SẴN GIÁ TRỊ cho bản ghi mới. Joomla validate form TRƯỚC khi gọi
-     *    prepareTable(), nên nếu để trống, field 'required' sẽ báo lỗi
-     *    "Field required" và không bao giờ chạy tới chỗ gán cơ sở đào tạo.
-     *
-     * 2. CHUYỂN SANG READONLY với người dùng không có quyền mọi cơ sở, đồng
-     *    thời bỏ ràng buộc 'required' ở tầng form: giá trị đằng nào cũng bị
-     *    prepareTable() ép lại theo cơ sở đang làm việc, và khi tài khoản chưa
-     *    được gán cơ sở nào thì nên để server sinh thông báo nghiệp vụ rõ ràng
-     *    thay vì lỗi validate khó hiểu.
+     * Joomla validate form TRƯỚC prepareTable(), nên phải gán sẵn giá trị ở đây
+     * để field 'required' không báo lỗi rỗng. prepareTable() vẫn ép lại lần nữa
+     * ở tầng ghi (chống giả mạo request).
      *
      * @param   Form|bool  $form
      *
@@ -284,22 +285,20 @@ trait CampusScopedItem
             return $form;
         }
 
-        $campusService = $this->getCampusService();
+        $activeCampusId = $this->getCampusService()->getActiveCampusId();
 
-        // 1. Bản ghi mới: gán sẵn cơ sở đang làm việc để vượt qua form validation
-        if (empty($form->getValue('campus_id'))) {
-            $activeCampusId = $campusService->getActiveCampusId();
-
-            if ($activeCampusId > 0) {
-                $form->setValue('campus_id', null, $activeCampusId);
-            }
+        // Với bản ghi ĐÃ tồn tại: giữ nguyên cơ sở của bản ghi (không lấy active),
+        // vì campus của bản ghi là bất biến. Chỉ gán active cho bản ghi mới.
+        $currentValue = $form->getValue('campus_id');
+        if (empty($currentValue) && $activeCampusId > 0) {
+            $form->setValue('campus_id', null, $activeCampusId);
         }
 
-        // 2. Người dùng thường: không được đổi cơ sở
-        if (!$campusService->canAccessAllCampuses()) {
-            $form->setFieldAttribute('campus_id', 'readonly', 'true');
-            $form->setFieldAttribute('campus_id', 'required', 'false');
-        }
+        // Luôn readonly cho mọi người dùng; bỏ 'required' vì giá trị do hệ thống
+        // gán, không do người dùng nhập (tránh lỗi validate khi tài khoản chưa
+        // gắn cơ sở — khi đó prepareTable sẽ sinh thông báo nghiệp vụ rõ ràng).
+        $form->setFieldAttribute('campus_id', 'readonly', 'true');
+        $form->setFieldAttribute('campus_id', 'required', 'false');
 
         return $form;
     }

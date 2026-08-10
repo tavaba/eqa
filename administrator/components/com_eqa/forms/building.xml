@@ -11,9 +11,8 @@
                 required="true"
                 label="Cơ sở đào tạo"
                 description="Tòa nhà thuộc cơ sở đào tạo nào. Người dùng thường không đổi được giá trị này."
-        >
-            <option value="">- Chọn cơ sở đào tạo -</option>
-        </field>
+                readonly="true"
+        />
         <field
                 name="code"
                 type="text"

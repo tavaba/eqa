@@ -4,7 +4,7 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Language\Text;
-use Kma\Component\Eqa\Administrator\Base\AdminModel;
+use Kma\Component\Eqa\Administrator\Base\CampusAdminModel;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\SpecialMark;
 use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
@@ -12,17 +12,34 @@ use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Service\CreditClassNameParser;
+use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 
 defined('_JEXEC') or die();
 
-class ClassModel extends AdminModel
+class ClassModel extends CampusAdminModel
 {
+	use CampusScopedByExamseason;
+
 	/** Trạng thái xử lý một worksheet trong importPamForSheet(). */
 	public const int PAM_SHEET_PROCESSED = 0;   // Đã đọc và gọi importPams()
 	public const int PAM_SHEET_SKIPPED   = 1;   // Bỏ qua (tên lớp không hợp lệ / lớp con / lớp không tồn tại / lớp trắng đã chọn bỏ qua)
 	public const int PAM_SHEET_BLANK     = 2;   // Lớp trắng nhưng KHÔNG chọn "Bỏ qua lớp trắng" -> cần gộp báo cáo
+
+	/**
+	 * Cơ sở đào tạo của một lớp học phần, đọc trực tiếp từ CSDL.
+	 *
+	 * @param   int  $recordId
+	 *
+	 * @return  int
+	 * @since   2.1.6
+	 */
+	protected function getCampusIdOfRecord(int $recordId): int
+	{
+		return $this->getStoredCampusId('#__eqa_classes', $recordId);
+	}
+
 	protected function prepareTable($table)
     {
 	    if(empty($table->lecturer_id))
@@ -149,9 +166,13 @@ class ClassModel extends AdminModel
 		if($count==0)
 			throw new Exception('Lớp không tồn tại hoặc đã bị vô hiệu hóa');
 
+		//1b. Chốt chặn quyền theo cơ sở đào tạo (2.1.6): luồng nhập HVSV không đi
+		//    qua form nên không được prepareTable() bảo vệ.
+		$this->assertCanManageCampus($this->getCampusIdOfRecord($classId));
+
 		//2. Check if any of these learners does not exist in the database
 		//   If there are absentees, throw an exception with a list of whole codes,
-		//   so the user can fix all of the errors at once instead of fixing them one-by-one
+		//   so the user can fix all the errors at once instead of fixing them one-by-one
 		if(empty($learnerMap))
 			$learnerMap = DatabaseHelper::getLearnerMap([],8000);   //Lấy tối đa 8000 bản ghi
 		if(empty($learnerMap))
@@ -947,6 +968,17 @@ class ClassModel extends AdminModel
 	): void {
 		$db = DatabaseHelper::getDatabaseDriver();
 
+		// 0. Cơ sở đào tạo của lớp học phần sắp tạo (2.1.6).
+		//    Lấy theo cơ sở đang làm việc: lớp học phần thuộc về cơ sở tổ chức
+		//    giảng dạy, không phải theo lớp hành chính/nhóm (vốn là dữ liệu dùng chung).
+		$campusId = $this->getCampusService()->getActiveCampusId();
+		if ($campusId <= 0) {
+			throw new Exception(
+				'Không xác định được cơ sở đào tạo đang làm việc.'
+				. ' Tài khoản của bạn có thể chưa được gán vào cơ sở đào tạo nào.'
+			);
+		}
+
 		// 1. Lấy mã và danh sách người học của target
 		if ($targetType === 'group') {
 			$query = $db->getQuery(true)
@@ -1003,8 +1035,9 @@ class ClassModel extends AdminModel
 			// 5. Tạo lớp học phần mới
 			$query = $db->getQuery(true)
 				->insert($db->quoteName('#__eqa_classes'))
-				->columns($db->quoteName(['coursegroup', 'code', 'name', 'subject_id', 'term', 'academicyear', 'size']))
+				->columns($db->quoteName(['campus_id', 'coursegroup', 'code', 'name', 'subject_id', 'term', 'academicyear', 'size']))
 				->values(implode(',', [
+					(int) $campusId,
 					$db->quote($targetCode),
 					$db->quote($classCode),
 					$db->quote($className),

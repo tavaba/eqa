@@ -9,10 +9,20 @@ use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 defined('_JEXEC') or die();
 
 class MmproductionModel extends AdminModel {
+	use \Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
+
 	public function importMmp(int $examId, array $examinerProductions, int $role): bool
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 		$app = Factory::getApplication();
+
+		//Chốt chặn quyền theo cơ sở đào tạo (2.1.6)
+		try {
+			$this->assertExamInCampusScope($examId);
+		} catch (\RuntimeException $e) {
+			$app->enqueueMessage($e->getMessage(), 'error');
+			return false;
+		}
 		$columns = $db->quoteName(array('exam_id', 'examiner_id','role','quantity'));
 		$valueSets = [];
 		$count=0;
