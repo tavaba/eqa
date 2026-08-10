@@ -103,6 +103,7 @@ class HtmlView extends ItemsHtmlView
 	    ToolbarHelper::appendButton('core.manage', 'download','DS cấm thi','examseason.exportIneligibleEntries',true);
 	    ToolbarHelper::appendButton('core.manage', 'download','DS kỷ luật','examseason.exportSanctions',true);
 	    ToolbarHelper::appendButton('core.manage','download','Bảng điểm tổng hợp', 'examseason.exportLearnerMarks',true);
+	    ToolbarHelper::appendButton('core.manage','download','Bảng điểm ẩn danh', 'examseason.exportAnonymousLearnerMarks',true);
 	    ToolbarHelper::appendButton('core.manage','download','Phổ điểm','examseasons.exportMarkStatistic',true);
 	    ToolbarHelper::appendButton('core.manage','download','Báo cáo','examseasons.exportStatistic',true);
     }

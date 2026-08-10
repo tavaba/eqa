@@ -572,6 +572,84 @@ class ExamseasonController extends FormController
 		}
 	}
 
+	/**
+	 * Xuất bộ dữ liệu phân tích ẩn danh của một kỳ thi ra tập tin Excel gồm
+	 * hai sheet: "Môn thi" và "Điểm", nối với nhau qua cột 'exam_id'.
+	 *
+	 * Mọi thông tin định danh người học được thay bằng bút danh ngẫu nhiên 6
+	 * chữ số, sinh mới ở mỗi lần xuất và không được lưu lại, nên kết quả phân
+	 * tích không thể gán ngược về người học cụ thể. Bút danh là duy nhất trong
+	 * phạm vi kỳ thi, do đó vẫn phân tích được kết quả của cùng một người học
+	 * qua nhiều môn thi.
+	 *
+	 * Dữ liệu được đọc và ghi theo từng môn thi nhằm hạn chế lượng dữ liệu nằm
+	 * trong bộ nhớ tại mỗi thời điểm.
+	 *
+	 * @return  void
+	 *
+	 * @since   2.1.6
+	 */
+	public function exportAnonymousLearnerMarks(): void
+	{
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+
+			//3. Get form data
+			$cid = array_values(array_filter($this->input->post->get('cid', [], 'int')));
+			if(empty($cid))
+				throw new Exception('Không có kỳ thi nào được chọn');
+			$examseasonId = (int) $cid[0];
+
+			//4. Kỳ thi lớn sinh ra hàng trăm nghìn ô dữ liệu
+			ini_set('memory_limit', '1024M');
+
+			/**
+			 * 5. Lấy danh sách môn thi và bảng bút danh
+			 * @var ExamseasonModel $model
+			 */
+			$model = $this->getModel();
+			$exams = $model->getExamsForAnalysis($examseasonId);
+			if(empty($exams))
+				throw new Exception('Không có dữ liệu để xuất');
+			$pseudonyms = $model->buildPseudonymMapForExamseason($examseasonId);
+
+			//6. Sheet "Môn thi"
+			$spreadsheet = new Spreadsheet();
+			$spreadsheet->removeSheetByIndex(0);
+			$examSheet = $spreadsheet->createSheet();
+			$examSheet->setTitle('Môn thi');
+			IOHelper::writeExamseasonAnalysisExams($examSheet, $exams);
+
+			//7. Sheet "Điểm": ghi nối theo từng môn thi
+			$markSheet = $spreadsheet->createSheet();
+			$markSheet->setTitle('Điểm');
+			$lastRow = IOHelper::writeExamseasonAnalysisMarkHeader($markSheet);
+			foreach ($exams as $exam)
+			{
+				$examId = (int) $exam['exam_id'];
+				$marks  = $model->getLearnerMarksForExam($examId, $pseudonyms);
+				$lastRow = IOHelper::writeExamseasonAnalysisMarks($markSheet, $examId, $marks, $lastRow);
+				unset($marks);
+			}
+
+			//8. Send file
+			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
+			$fileName = 'Bảng điểm tổng hợp để phân tích (ẩn danh). ' . $examseason->name . '.xlsx';
+			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+			jexit();
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
+		}
+	}
 	public function getJsonListOfExams()
 	{
 		//1. Get examseason id

@@ -2128,6 +2128,128 @@ abstract class IOHelper extends BaseIOHelper
 	 *                              - code        : số báo danh (al.code / a.code)
 	 * @since 2.0.5
 	 */
+
+	/**
+	 * Ghi sheet "Môn thi" của bộ dữ liệu phân tích.
+	 *
+	 * @param   Worksheet  $sheet  Sheet đích.
+	 * @param   array      $exams  Kết quả của ExamseasonModel::getExamsForAnalysis().
+	 *
+	 * @return  void
+	 *
+	 * @since   2.1.6
+	 */
+	static public function writeExamseasonAnalysisExams(Worksheet $sheet, array $exams): void
+	{
+		$headers = ['exam_id', 'subject_code', 'exam_name', 'credits', 'test_type', 'use_testbank', 'examinee_count'];
+		$widths  = [10,         16,             50,          10,        24,          14,             16];
+
+		for ($i = 1; $i <= count($headers); $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i - 1]);
+			$sheet->setCellValue([$i, 1], $headers[$i - 1]);
+		}
+		$sheet->getStyle([1, 1, count($headers), 1])->getFont()->setBold(true);
+		$sheet->freezePane('A2');
+
+		$row = 1;
+		foreach ($exams as $exam)
+		{
+			$row++;
+			$testType = TestType::tryFrom((int) $exam['testtype']);
+			$data = [
+				(int) $exam['exam_id'],
+				(string) $exam['subject_code'],
+				(string) $exam['exam_name'],
+				(int) $exam['credits'],
+				$testType ? $testType->getLabel() : '',
+				(int) $exam['usetestbank'],
+				(int) $exam['examinee_count'],
+			];
+			foreach ($data as $index => $value)
+				$sheet->setCellValue([$index + 1, $row], $value);
+		}
+	}
+
+	/**
+	 * Ghi dòng tiêu đề của sheet "Điểm" và trả về số hiệu dòng đã ghi.
+	 *
+	 * Tách riêng khỏi việc ghi dữ liệu để có thể ghi nối dữ liệu theo từng môn
+	 * thi, giữ cho lượng dữ liệu trong bộ nhớ tại mỗi thời điểm ở mức thấp.
+	 *
+	 * @param   Worksheet  $sheet  Sheet đích.
+	 *
+	 * @return  int  Số hiệu dòng cuối cùng đã ghi (dòng tiêu đề).
+	 *
+	 * @since   2.1.6
+	 */
+	static public function writeExamseasonAnalysisMarkHeader(Worksheet $sheet): int
+	{
+		$headers = [
+			'exam_id', 'pseudonym', 'pam1', 'pam2', 'pam',
+			'mark_final', 'module_mark', 'module_grade', 'stimulation', 'debtor', 'anomaly'
+		];
+		$widths  = [10, 12, 8, 8, 8, 12, 14, 14, 24, 8, 24];
+
+		for ($i = 1; $i <= count($headers); $i++)
+		{
+			$columnLetter = Coordinate::stringFromColumnIndex($i);
+			$sheet->getColumnDimension($columnLetter)->setWidth($widths[$i - 1]);
+			$sheet->setCellValue([$i, 1], $headers[$i - 1]);
+		}
+		$sheet->getStyle([1, 1, count($headers), 1])->getFont()->setBold(true);
+		$sheet->freezePane('A2');
+
+		return 1;
+	}
+
+	/**
+	 * Ghi nối điểm của một môn thi vào sheet "Điểm".
+	 *
+	 * @param   Worksheet  $sheet    Sheet đích.
+	 * @param   int        $examId   Mã môn thi.
+	 * @param   array      $marks    Kết quả của ExamseasonModel::getLearnerMarksForExam().
+	 * @param   int        $lastRow  Số hiệu dòng cuối cùng đã ghi trước đó.
+	 *
+	 * @return  int  Số hiệu dòng cuối cùng sau khi ghi.
+	 *
+	 * @since   2.1.0
+	 */
+	static public function writeExamseasonAnalysisMarks(
+		Worksheet $sheet,
+		int       $examId,
+		array     $marks,
+		int       $lastRow
+	): int {
+		$row = $lastRow;
+		foreach ($marks as $mark)
+		{
+			$row++;
+			$anomaly     = Anomaly::tryFrom((int) $mark['anomaly']);
+			$anomalyText = ($anomaly && $anomaly !== Anomaly::None) ? $anomaly->getLabel() : '';
+			$stimulation = $mark['stimul_type']
+				? StimulationHelper::getStimulationType((int) $mark['stimul_type'])
+				: '';
+			$data = [
+				$examId,
+				(string) $mark['pseudonym'],
+				ExamHelper::markToText($mark['pam1']),
+				ExamHelper::markToText($mark['pam2']),
+				ExamHelper::markToText($mark['pam']),
+				$mark['mark_final'],
+				$mark['module_mark'],
+				is_null($mark['module_grade']) ? '' : (string) $mark['module_grade'],
+				$stimulation,
+				(int) $mark['debtor'],
+				$anomalyText,
+			];
+			foreach ($data as $index => $value)
+				$sheet->setCellValue([$index + 1, $row], $value);
+		}
+
+		return $row;
+	}
 	public static function writeITestSheet(Worksheet $sheet, array $items): void
 	{
 		// Header row

@@ -11,6 +11,10 @@ use Kma\Library\Kma\Helper\ViewHelper;
 			cấu hình hệ thống), hệ số coi thi, hệ số chấm thi ở các môn thi.</li>
 		<li>Việc phúc khảo chỉ có hiệu lực khi thỏa mãn đồng thời 2 điều kiện: 1) Quyền gửi yêu cầu
 			phúc khảo được mở và 2) Chưa quá thời hạn phúc khảo hoặc thời hạn phúc khảo không xác định</li>
+        <li>"<b>Bảng điểm ẩn danh</b>" cho phép cung cấp số liệu cho AI để phân tích
+            mà không tiết lộ danh tính thi sinh. Trường "pseudonym" là giá trị được
+            sinh ngẫu nhiên cho từng thí sinh; vừa đảm bảo ẩn danh, vừa giữ được kết nối
+            giữa các bài thi của cùng một thí sinh.</li>
 	</ol>
 </div>
 <?php

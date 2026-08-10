@@ -18,6 +18,15 @@ use stdClass;
 defined('_JEXEC') or die();
 
 class ExamseasonModel extends AdminModel{
+	/**
+	 * Giá trị nhỏ nhất và lớn nhất của bút danh (mã định danh ẩn danh) người học.
+	 * Dải này bảo đảm bút danh luôn có đúng 6 chữ số.
+	 * Được sử dụng trong hàm buildPseudonymMap()
+	 *
+	 * @since 2.1.0
+	 */
+	private const int PSEUDONYM_MIN = 100000;
+	private const int PSEUDONYM_MAX = 999999;
 
 	/**
 	 * Kiểm tra tính hợp lệ của dữ liệu form trước khi lưu.
@@ -733,6 +742,207 @@ class ExamseasonModel extends AdminModel{
 			$marks[$examId][] = $examinee;
 		}
 		return $marks;
+	}
+
+	/**
+	 * Lấy thông tin các môn thi của một kỳ thi, phục vụ sheet "Môn thi" của
+	 * bộ dữ liệu phân tích.
+	 *
+	 * Mỗi phần tử gồm: exam_id, subject_code, exam_name, credits, testtype
+	 * (mã số, chưa chuyển nhãn), usetestbank, examinee_count.
+	 *
+	 * @param   int  $examseasonId  Mã kỳ thi.
+	 *
+	 * @return  array  Mảng associative, sắp xếp theo tên môn thi.
+	 *
+	 * @since   2.1.6
+	 */
+	public function getExamsForAnalysis(int $examseasonId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		//1. Thông tin môn thi
+		$columns = [
+			$db->quoteName('a.id')          . ' AS ' . $db->quoteName('exam_id'),
+			$db->quoteName('b.code')        . ' AS ' . $db->quoteName('subject_code'),
+			$db->quoteName('a.name')        . ' AS ' . $db->quoteName('exam_name'),
+			$db->quoteName('b.credits')     . ' AS ' . $db->quoteName('credits'),
+			$db->quoteName('a.testtype')    . ' AS ' . $db->quoteName('testtype'),
+			$db->quoteName('a.usetestbank') . ' AS ' . $db->quoteName('usetestbank'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from($db->quoteName('#__eqa_exams', 'a'))
+			->leftJoin($db->quoteName('#__eqa_subjects', 'b') . ' ON b.id = a.subject_id')
+			->where($db->quoteName('a.examseason_id') . ' = ' . (int) $examseasonId)
+			->order($db->quoteName('a.name') . ' ASC');
+		$db->setQuery($query);
+		$exams = $db->loadAssocList();
+		if (empty($exams))
+			return [];
+
+		//2. Đếm số thí sinh của từng môn thi (truy vấn riêng để tránh JOIN nặng)
+		$examIds = array_map(static fn(array $exam): int => (int) $exam['exam_id'], $exams);
+		$query = $db->getQuery(true)
+			->select($db->quoteName('exam_id') . ', COUNT(*) AS ' . $db->quoteName('examinee_count'))
+			->from($db->quoteName('#__eqa_exam_learner'))
+			->where($db->quoteName('exam_id') . ' IN (' . implode(',', $examIds) . ')')
+			->group($db->quoteName('exam_id'));
+		$db->setQuery($query);
+		$counts = $db->loadAssocList('exam_id', 'examinee_count');
+
+		foreach ($exams as &$exam)
+			$exam['examinee_count'] = (int) ($counts[$exam['exam_id']] ?? 0);
+		unset($exam);
+
+		return $exams;
+	}
+
+	/**
+	 * Sinh bảng bút danh cho toàn bộ người học tham dự một kỳ thi.
+	 *
+	 * Bảng được sinh một lần cho cả kỳ thi để bảo đảm cùng một người học có
+	 * cùng bút danh ở mọi môn thi, nhờ đó vẫn phân tích được kết quả theo từng
+	 * người học mà không cần biết người đó là ai.
+	 *
+	 * @param   int  $examseasonId  Mã kỳ thi.
+	 *
+	 * @return  array  Mảng liên kết [learnerId => pseudonym].
+	 *
+	 * @throws  Exception
+	 *
+	 * @since   2.1.6
+	 */
+	public function buildPseudonymMapForExamseason(int $examseasonId): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		$subQuery = $db->getQuery(true)
+			->select($db->quoteName('id'))
+			->from($db->quoteName('#__eqa_exams'))
+			->where($db->quoteName('examseason_id') . ' = ' . (int) $examseasonId);
+
+		$query = $db->getQuery(true)
+			->select('DISTINCT ' . $db->quoteName('learner_id'))
+			->from($db->quoteName('#__eqa_exam_learner'))
+			->where($db->quoteName('exam_id') . ' IN (' . (string) $subQuery . ')');
+		$db->setQuery($query);
+		$learnerIds = $db->loadColumn();
+
+		return $this->buildPseudonymMap(array_map('intval', $learnerIds));
+	}
+
+	/**
+	 * Lấy điểm của các thí sinh trong MỘT môn thi, đã ẩn danh hóa.
+	 *
+	 * Method được thiết kế để gọi lặp theo từng môn thi, nhằm giới hạn lượng
+	 * dữ liệu nằm trong bộ nhớ tại mỗi thời điểm chỉ bằng một môn thi.
+	 * Không có bất kỳ thông tin định danh nào (learner_id, mã HVSV, họ tên)
+	 * xuất hiện trong kết quả trả về.
+	 *
+	 * @param   int    $examId      Mã môn thi.
+	 * @param   array  $pseudonyms  Bảng bút danh [learnerId => pseudonym].
+	 *
+	 * @return  array  Mảng associative, sắp xếp theo bút danh.
+	 *
+	 * @since   2.1.6
+	 */
+	public function getLearnerMarksForExam(int $examId, array $pseudonyms): array
+	{
+		$db = DatabaseHelper::getDatabaseDriver();
+
+		$columns = [
+			$db->quoteName('a.learner_id')   . ' AS ' . $db->quoteName('learner_id'),
+			$db->quoteName('b.pam1')         . ' AS ' . $db->quoteName('pam1'),
+			$db->quoteName('b.pam2')         . ' AS ' . $db->quoteName('pam2'),
+			$db->quoteName('b.pam')          . ' AS ' . $db->quoteName('pam'),
+			$db->quoteName('a.mark_final')   . ' AS ' . $db->quoteName('mark_final'),
+			$db->quoteName('a.module_mark')  . ' AS ' . $db->quoteName('module_mark'),
+			$db->quoteName('a.module_grade') . ' AS ' . $db->quoteName('module_grade'),
+			$db->quoteName('c.type')         . ' AS ' . $db->quoteName('stimul_type'),
+			$db->quoteName('a.debtor')       . ' AS ' . $db->quoteName('debtor'),
+			$db->quoteName('a.anomaly')      . ' AS ' . $db->quoteName('anomaly'),
+		];
+		$query = $db->getQuery(true)
+			->select($columns)
+			->from($db->quoteName('#__eqa_exam_learner', 'a'))
+			->leftJoin($db->quoteName('#__eqa_class_learner', 'b')
+				. ' ON b.class_id = a.class_id AND b.learner_id = a.learner_id')
+			->leftJoin($db->quoteName('#__eqa_stimulations', 'c') . ' ON c.id = a.stimulation_id')
+			->where($db->quoteName('a.exam_id') . ' = ' . (int) $examId);
+		$db->setQuery($query);
+		$rows = $db->loadAssocList();
+
+		//Thay learner_id bằng bút danh
+		foreach ($rows as &$row)
+		{
+			$learnerId = (int) $row['learner_id'];
+			unset($row['learner_id']);
+			$row['pseudonym'] = $pseudonyms[$learnerId] ?? '';
+		}
+		unset($row);
+
+		//Sắp xếp theo bút danh (độ rộng cố định 6 chữ số nên so sánh chuỗi là đủ)
+		usort($rows, static function (array $a, array $b): int {
+			return strcmp($a['pseudonym'], $b['pseudonym']);
+		});
+
+		return $rows;
+	}
+	/**
+	 * Sinh ánh xạ 'learner_id' => 'bút danh' bằng cách lấy ngẫu nhiên N giá trị
+	 * rời rạc trong dải 100000..999999 và gán cho N người học.
+	 *
+	 * Mỗi bút danh được sinh bởi random_int() (CSPRNG) theo phương pháp lấy mẫu
+	 * có loại bỏ trùng lặp (rejection sampling), do đó tập bút danh vừa ngẫu
+	 * nhiên vừa không trùng nhau. Bút danh độc lập hoàn toàn với ID thật: không
+	 * bảo toàn thứ tự, không bảo toàn hiệu số, và việc biết một cặp ánh xạ không
+	 * giúp suy ra bất kỳ cặp nào khác. Vì các giá trị nằm rải rác trong toàn dải
+	 * nên bản báo cáo cũng không để lộ tổng số người học của kỳ thi.
+	 *
+	 * Bút danh luôn có đúng 6 chữ số, nên số người học tối đa trong một lần xuất
+	 * là 900000. Trên thực tế N nhỏ hơn dải giá trị rất nhiều nên số lần bốc lại
+	 * do trùng là không đáng kể.
+	 *
+	 * @param   int[]  $learnerIds  Danh sách ID người học, không trùng lặp.
+	 *
+	 * @return  array  Mảng liên kết [learnerId => pseudonym].
+	 *
+	 * @throws  Exception  Khi số người học vượt quá dải bút danh 6 chữ số.
+	 *
+	 * @since   2.1.6
+	 */
+	private function buildPseudonymMap(array $learnerIds): array
+	{
+		$learnerIds = array_values($learnerIds);
+		$count      = count($learnerIds);
+
+		if ($count > self::PSEUDONYM_MAX - self::PSEUDONYM_MIN + 1)
+			throw new Exception('Số lượng người học vượt quá dải mã định danh 6 chữ số');
+
+		/**
+		 * Lấy $count giá trị rời rạc. Sử dụng chính giá trị làm khóa của mảng
+		 * $used để kiểm tra trùng lặp với chi phí O(1).
+		 * LƯU Ý: tuyệt đối không sắp xếp $pseudonyms, vì thứ tự ngẫu nhiên của
+		 * dãy này chính là yếu tố phá bỏ mối liên hệ giữa bút danh và ID thật.
+		 */
+		$used        = [];
+		$pseudonyms  = [];
+		while (count($pseudonyms) < $count)
+		{
+			$value = random_int(self::PSEUDONYM_MIN, self::PSEUDONYM_MAX);
+			if (isset($used[$value]))
+				continue;
+			$used[$value] = true;
+			$pseudonyms[] = $value;
+		}
+
+		//Gán bút danh cho từng người học
+		$map = [];
+		foreach ($learnerIds as $index => $learnerId)
+			$map[$learnerId] = (string) $pseudonyms[$index];
+
+		return $map;
 	}
 
 	/**
