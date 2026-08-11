@@ -33,6 +33,8 @@ class ItemHtmlView extends BaseHtmlView{
 	        ? $this->englishService->singularToPlural($this->getName())
 	        : EnglishHelper::singularToPlural($this->getName());
         $data->items = $listModel->getItems();
+		if($data->items === false)
+			throw new Exception($listModel->getError());
         $data->pagination = $listModel->getPagination();
         $data->showPaginationLimitBox = true;
         $data->listOrderingField = $this->escape($listModel->getState('list.ordering'));

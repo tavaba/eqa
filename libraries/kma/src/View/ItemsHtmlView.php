@@ -2,6 +2,7 @@
 namespace Kma\Library\Kma\View;
 defined('_JEXEC') or die();
 
+use Exception;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\WebAsset\WebAssetManager;
@@ -71,7 +72,9 @@ abstract class ItemsHtmlView extends BaseHtmlView{
 	     */
 		$model = $this->getModel();
         $this->layoutData->items = $model->getItems();
-        $pagination = $model->getPagination();
+	    if($this->layoutData->items === false)
+		    throw new Exception($model->getError());
+	    $pagination = $model->getPagination();
         if(!empty($pagination)) {
             $this->layoutData->pagination = $pagination;
             $this->layoutData->showPaginationLimitBox = true;
