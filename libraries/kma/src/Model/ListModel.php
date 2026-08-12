@@ -8,6 +8,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel as BaseListModel;
 use Joomla\CMS\User\User;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Service\EnglishService;
@@ -137,6 +138,22 @@ abstract class ListModel extends BaseListModel
 
 	public function enableLogging(): static  { $this->loggingEnabled = true;  return $this; }
 	public function disableLogging(): static { $this->loggingEnabled = false; return $this; }
+
+	/**
+	 * Ghi log tùy chọn cho các action đặc biệt (không phải CRUD chuẩn).
+	 * Đồng bộ với method cùng tên trong {@see \Kma\Library\Kma\Model\AdminModel}.
+	 *
+	 * @param   LogEntry  $entry
+	 *
+	 * @return  void
+	 * @since   1.0.4
+	 */
+	protected function writeLog(LogEntry $entry): void
+	{
+		if ($this->loggingEnabled && $this->logService) {
+			$this->logService->write($entry);
+		}
+	}
 
 
 	/**

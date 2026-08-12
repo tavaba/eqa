@@ -10,7 +10,9 @@ use Joomla\CMS\MVC\Controller\FormController as BaseFormController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
 
 /**
@@ -22,9 +24,14 @@ class FormController extends BaseFormController
 {
 	/**
 	 * An instance of LogService that is retrived from DIC by default
-	 * Có thể được sử dụng để xử lý log cho các action đặc biệt như export, import
 	 */
 	protected ?LogService $logService=null;
+
+	/**
+	 * An instance of EnglishService that is retrived from DIC by default
+	 */
+	protected ?EnglishService $englishService=null;
+
 	public function __construct(        $config = [],
 	                                    ?MVCFactoryInterface $factory = null,
 	                                    ?CMSWebApplicationInterface $app = null,
@@ -34,6 +41,10 @@ class FormController extends BaseFormController
 	{
 		//Call parent constructor
 		parent::__construct($config, $factory, $app, $input, $formFactory);
+
+		//Resolve the LogService and EnglishService instances
+		$this->logService = ComponentHelper::getLogService();
+		$this->englishService = ComponentHelper::getEnglishService();
 	}
 
 	/**
@@ -45,6 +56,25 @@ class FormController extends BaseFormController
 	public function setLogService(LogService $logService)
 	{
 		$this->logService = $logService;
+	}
+
+	/**
+	 * Ghi log cho các trường hợp thất bại/thành công xảy ra ngay tại Controller
+	 * (ví dụ: thiếu quyền, token không hợp lệ, dữ liệu đầu vào không hợp lệ) —
+	 * tức là TRƯỚC KHI chạm tới Model. Việc ghi log của bản thân thao tác dữ
+	 * liệu (thành công/thất bại ở tầng Model) vẫn nên đặt trong Model, dùng
+	 * writeLog() tương ứng ở đó.
+	 *
+	 * @param   LogEntry  $entry
+	 *
+	 * @return  void
+	 * @since   1.0.4
+	 */
+	protected function writeLog(LogEntry $entry): void
+	{
+		if ($this->logService) {
+			$this->logService->write($entry);
+		}
 	}
 
 	protected function allowAdd($data = [], $specificPermission=null): bool

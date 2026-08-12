@@ -11,6 +11,7 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\User\CurrentUserInterface;
 use Joomla\Input\Input;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Service\EnglishService;
@@ -25,13 +26,15 @@ class AdminController extends BaseAdminController
 {
 	/** An instance of LogService that is retrived from DIC by default */
 	protected ?LogService $logService=null;
+
+	/** An instance of EnglishService that is retrived from DIC by default */
 	protected ?EnglishService $englishService=null;
 	public function __construct($config = [], ?MVCFactoryInterface $factory = null, ?CMSWebApplicationInterface $app = null, ?Input $input = null)
 	{
 		//Call parent constructor
 		parent::__construct($config, $factory, $app, $input);
 
-		//Resolve the LogService instance
+		//Resolve the LogService and EnglishService instances
 		$this->logService = ComponentHelper::getLogService();
 		$this->englishService = ComponentHelper::getEnglishService();
 	}
@@ -43,6 +46,24 @@ class AdminController extends BaseAdminController
 	public function setLogService(LogService $logService)
 	{
 		$this->logService = $logService;
+	}
+
+	/**
+	 * Ghi log cho các trường hợp thất bại/thành công xảy ra ngay tại Controller
+	 * (thiếu quyền, token không hợp lệ, dữ liệu đầu vào không hợp lệ...) —
+	 * tức là TRƯỚC KHI chạm tới Model. Đồng bộ với method cùng tên trong
+	 * {@see \Kma\Library\Kma\Controller\FormController}.
+	 *
+	 * @param   LogEntry  $entry
+	 *
+	 * @return  void
+	 * @since   1.0.4
+	 */
+	protected function writeLog(LogEntry $entry): void
+	{
+		if ($this->logService) {
+			$this->logService->write($entry);
+		}
 	}
 
     /**
