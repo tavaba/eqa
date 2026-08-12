@@ -68,6 +68,20 @@ class Table extends BaseTable{
     protected bool $timestampFieldsDetected = false;
 
     /**
+     * Danh sách tên cột (giá trị thực tế của $detectedTimestampFields cho type 'created'
+     * và 'created_by') mà tại thời điểm load() gần nhất đang mang giá trị NULL trong CSDL.
+     *
+     * Dùng để đảm bảo: nếu một bản ghi cũ đang có 'created'/'created_by' = NULL (dữ liệu
+     * lịch sử, tạo ra trước khi cơ chế tự động điền timestamp tồn tại) thì khi admin edit
+     * và store() lại, các cột này vẫn được giữ nguyên NULL, không bị ghi đè bởi giá trị
+     * rỗng '' do form/handleNullDatetimeFields() sinh ra (gây lỗi 'Incorrect datetime value').
+     *
+     * @var array
+     * @since 1.0.4
+     */
+    protected array $originalNullFields = [];
+
+    /**
      * Cache for table columns
      *
      * @var array
@@ -190,6 +204,9 @@ class Table extends BaseTable{
         $result = parent::load($keys, $reset);
 
         if ($result) {
+            // Phải ghi nhận cột nào đang thực sự NULL trong CSDL TRƯỚC KHI
+            // handleNullDatetimeFields() chuyển NULL thành chuỗi rỗng để hiển thị form.
+            $this->detectOriginalNullFields();
             $this->handleNullDatetimeFields();
         }
 
@@ -238,6 +255,27 @@ class Table extends BaseTable{
     }
 
     /**
+     * Ghi nhận những cột 'created'/'created_by' hiện đang mang giá trị NULL
+     * trong CSDL (vừa được load() vào object, còn nguyên giá trị null của PHP).
+     * Phải được gọi TRƯỚC handleNullDatetimeFields(), vì hàm đó sẽ chuyển
+     * NULL của cột kiểu ngày ('created') thành chuỗi rỗng để phục vụ hiển thị form.
+     *
+     * @return  void
+     * @since 1.0.4
+     */
+    protected function detectOriginalNullFields(): void
+    {
+        $this->originalNullFields = [];
+
+        foreach (['created', 'created_by'] as $type) {
+            $fieldName = $this->detectedTimestampFields[$type] ?? null;
+            if ($fieldName && !isset($this->$fieldName)) {
+                $this->originalNullFields[] = $fieldName;
+            }
+        }
+    }
+
+    /**
      * Populate timestamp fields automatically
      *
      * @return  void
@@ -268,6 +306,18 @@ class Table extends BaseTable{
             if ($createdByField) {
                 if (empty($this->$createdByField)) {
                     $this->$createdByField = $userId;
+                }
+            }
+        } else {
+            // Bản ghi đã tồn tại: 'created'/'created_by' không được phép thay đổi qua edit.
+            // Nếu tại thời điểm load() cột này đang NULL (dữ liệu cũ, tạo trước khi cơ chế
+            // tự động điền timestamp tồn tại), ép lại về NULL bất kể form/handleNullDatetimeFields()
+            // đã gán giá trị gì (thường là '' hoặc 0), để tránh lỗi khi ghi xuống CSDL và
+            // tránh làm sai lệch dữ liệu (vd: biến NULL thành 0 cho created_by).
+            foreach (['created', 'created_by'] as $type) {
+                $fieldName = $this->detectedTimestampFields[$type] ?? null;
+                if ($fieldName && in_array($fieldName, $this->originalNullFields, true)) {
+                    $this->$fieldName = null;
                 }
             }
         }
@@ -319,10 +369,15 @@ class Table extends BaseTable{
     {
         parent::reset();
 
-        // Reset timestamp fields to defaults if they exist
-        foreach ($this->detectedTimestampFields as $fieldName) {
+        // Reset timestamp fields to defaults if they exist.
+        // Duyệt theo type => fieldName (thay vì chỉ theo giá trị) để so sánh đúng LOẠI field
+        // ('created'/'modified'/'updated') bất kể tên cột thực tế trong CSDL là gì
+        // (vd: 'created_at', 'updated_on'...). Trước đây so sánh nhầm $fieldName (tên cột)
+        // với danh sách type, khiến các cột có tên khác 'created'/'modified'/'updated'
+        // bị set về 0 thay vì null khi khởi tạo form trắng.
+        foreach ($this->detectedTimestampFields as $type => $fieldName) {
             if (property_exists($this, $fieldName)) {
-                if (in_array($fieldName, ['created', 'modified', 'updated'])) {
+                if (in_array($type, ['created', 'modified'])) {
                     $this->$fieldName = null;
                 } else {
                     $this->$fieldName = 0;
