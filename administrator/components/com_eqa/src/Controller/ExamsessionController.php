@@ -2,7 +2,10 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Library\Kma\Controller\FormController;
+use Kma\Library\Kma\DataObject\LogEntry;
 
 defined('_JEXEC') or die();
 
@@ -48,6 +51,12 @@ class ExamsessionController extends  FormController {
         if (!$this->allowAdd()) {
             // Set the internal error and also the redirect error.
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_CREATE_RECORD_NOT_PERMITTED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::SAVE_EXAMSESSION_BATCH,
+                objectType: ObjectType::Examsession->value,
+                isSuccess: false,
+                errorMessage: Text::_('JLIB_APPLICATION_ERROR_CREATE_RECORD_NOT_PERMITTED'),
+            ));
 
             $this->setRedirect(
                 Route::_(
@@ -74,6 +83,12 @@ class ExamsessionController extends  FormController {
 	    if ($validData === false) {
 		    // Lưu dữ liệu THÔ (local, như người dùng đã gõ) vào session để repopulate form
 		    $app->setUserState($context . '.data', $data);
+		    $this->writeLog(new LogEntry(
+			    action: Action::SAVE_EXAMSESSION_BATCH,
+			    objectType: ObjectType::Examsession->value,
+			    isSuccess: false,
+			    errorMessage: 'Dữ liệu không hợp lệ (validate() thất bại)',
+		    ));
 		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch', false));
 		    return;
 	    }
@@ -81,9 +96,22 @@ class ExamsessionController extends  FormController {
 	    // Lưu dữ liệu ĐÃ FILTER (start đã là UTC), KHÔNG dùng $data thô.
 	    if (!$model->saveBatch($validData)) {
 		    $app->setUserState($context . '.data', $data);
+		    $this->writeLog(new LogEntry(
+			    action: Action::SAVE_EXAMSESSION_BATCH,
+			    objectType: ObjectType::Examsession->value,
+			    isSuccess: false,
+			    errorMessage: 'Model saveBatch() thất bại',
+			    newValue: $validData,
+		    ));
 		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsession&layout=addbatch', false));
 	    } else {
 		    $app->setUserState($context . '.data', null);
+		    $this->writeLog(new LogEntry(
+			    action: Action::SAVE_EXAMSESSION_BATCH,
+			    objectType: ObjectType::Examsession->value,
+			    isSuccess: true,
+			    newValue: $validData,
+		    ));
 		    $this->setRedirect(Route::_('index.php?option=com_eqa&view=examsessions', false));
 	    }
 	}

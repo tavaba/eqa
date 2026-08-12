@@ -2,7 +2,10 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Exception;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Library\Kma\Controller\FormController;
+use Kma\Library\Kma\DataObject\LogEntry;
 
 defined('_JEXEC') or die();
 
@@ -43,6 +46,14 @@ class CohortController extends  FormController {
 			$model = $this->getModel();
 			$model->addLearners($cohortId,$learnerIds);
 
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_LEARNER,
+				objectType: ObjectType::Cohort->value,
+				isSuccess: true,
+				objectId: $cohortId,
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
+
 			//5. Redirect back to the view 'Cohortlearners'
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohortLearners&cohort_id='.$cohortId, false));
 			$this->setMessage('HVSV được thêm thành công', 'success');
@@ -50,6 +61,13 @@ class CohortController extends  FormController {
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_LEARNER,
+				objectType: ObjectType::Cohort->value,
+				isSuccess: false,
+				objectId: $cohortId ?? null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohorts', false));
 			$this->setMessage($e->getMessage(), 'error');
 			return;
@@ -81,12 +99,27 @@ class CohortController extends  FormController {
 			$model = $this->getModel();
 			$model->removeLearners($cohortId,$learnerIds);
 
+			$this->writeLog(new LogEntry(
+				action: Action::REMOVE_LEARNER,
+				objectType: ObjectType::Cohort->value,
+				isSuccess: true,
+				objectId: $cohortId,
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
+
 			//6. Redirect back to the view 'Cohortlearners'
 			$this->setMessage('HVSV đã được xóa thành công khỏi nhóm', 'success');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohortLearners&cohort_id='.$cohortId, false));
 		}
 		catch(Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::REMOVE_LEARNER,
+				objectType: ObjectType::Cohort->value,
+				isSuccess: false,
+				objectId: $cohortId ?? null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=cohorts', false));
 			$this->setMessage($e->getMessage(), 'error');
 			return;

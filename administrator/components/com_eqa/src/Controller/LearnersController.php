@@ -7,8 +7,11 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Library\Kma\DataObject\LogEntry;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 
@@ -35,6 +38,12 @@ class LearnersController extends AdminController{
 
         if(empty($file['tmp_name'])){
             $this->setMessage(Text::_('COM_EQA_MSG_ERROR_NO_FILE_UPLOADED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::IMPORT_LEARNERS,
+                objectType: ObjectType::Learner->value,
+                isSuccess: false,
+                errorMessage: Text::_('COM_EQA_MSG_ERROR_NO_FILE_UPLOADED'),
+            ));
             return;
         }
 
@@ -42,8 +51,18 @@ class LearnersController extends AdminController{
         if(!$app->getIdentity()->authorise('core.create', $this->option))
         {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::IMPORT_LEARNERS,
+                objectType: ObjectType::Learner->value,
+                isSuccess: false,
+                errorMessage: Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'),
+            ));
             return;
         }
+
+        $eqaLogImportedGroups = [];
+        $eqaLogTotalSuccess = 0;
+        $eqaLogTotalFailure = 0;
 
         //3. Attempt to import data (courses)
 
@@ -152,13 +171,33 @@ class LearnersController extends AdminController{
                     $type='warning';
                 $app->enqueueMessage($msg,$type);
                 $db->transactionCommit(); //Commit transaction for every sheet (group)
+
+                $eqaLogImportedGroups[] = $groupCode;
+                $eqaLogTotalSuccess += $countSuccess;
+                $eqaLogTotalFailure += $countFailure;
             }
             catch (Exception $e)
             {
                 $db->transactionRollback();
+                $this->writeLog(new LogEntry(
+                    action: Action::IMPORT_LEARNERS,
+                    objectType: ObjectType::Learner->value,
+                    isSuccess: false,
+                    objectTitle: $groupCode,
+                    errorMessage: $e->getMessage(),
+                    extraData: ['imported_groups_before_failure' => $eqaLogImportedGroups],
+                ));
                 throw $e;
             }
         }
+
+        //Ghi log (thành công — 1 bản ghi tổng hợp cho cả lần import)
+        $this->writeLog(new LogEntry(
+            action: Action::IMPORT_LEARNERS,
+            objectType: ObjectType::Learner->value,
+            isSuccess: true,
+            extraData: ['groups' => $eqaLogImportedGroups, 'total_success' => $eqaLogTotalSuccess, 'total_failure' => $eqaLogTotalFailure],
+        ));
     }
 	public function addDebtors()
 	{
@@ -203,10 +242,23 @@ class LearnersController extends AdminController{
 		if($model->markDebt($learnerIds, 1))
 		{
 			$this->setMessage(Text::sprintf('COM_EQA_MSG_DEBT_SET_FOR_N_LEARNERS',sizeof($learnerIds)),'success');
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_DEBTOR,
+				objectType: ObjectType::Learner->value,
+				isSuccess: true,
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
 		}
 		else
 		{
 			$this->setMessage(Text::_('COM_EQA_DATABASE_ERROR'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_DEBTOR,
+				objectType: ObjectType::Learner->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_DATABASE_ERROR'),
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
 		}
 	}
 	public function resetDebt()
@@ -245,10 +297,23 @@ class LearnersController extends AdminController{
 		if($model->markDebt($learnerIds, 0))
 		{
 			$this->setMessage(Text::sprintf('COM_EQA_MSG_DEBT_RESET_FOR_N_LEARNERS',sizeof($learnerIds)),'success');
+			$this->writeLog(new LogEntry(
+				action: Action::RESET_DEBT,
+				objectType: ObjectType::Learner->value,
+				isSuccess: true,
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
 		}
 		else
 		{
 			$this->setMessage(Text::_('COM_EQA_DATABASE_ERROR'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::RESET_DEBT,
+				objectType: ObjectType::Learner->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_DATABASE_ERROR'),
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
 		}
 	}
 	public function setDebt()
@@ -287,10 +352,23 @@ class LearnersController extends AdminController{
 		if($model->markDebt($learnerIds, 1))
 		{
 			$this->setMessage(sprintf('COM_EQA_MSG_DEBT_SET_FOR_N_LEARNERS',sizeof($learnerIds)),'success');
+			$this->writeLog(new LogEntry(
+				action: Action::SET_DEBT,
+				objectType: ObjectType::Learner->value,
+				isSuccess: true,
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
 		}
 		else
 		{
 			$this->setMessage(Text::_('COM_EQA_DATABASE_ERROR'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::SET_DEBT,
+				objectType: ObjectType::Learner->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_DATABASE_ERROR'),
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
 		}
 	}
 }

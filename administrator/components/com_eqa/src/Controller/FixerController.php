@@ -7,9 +7,12 @@ use Joomla\CMS\Installer\InstallerScript;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\ParameterType;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ExamType;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
 use Kma\Library\Kma\Controller\FormController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
@@ -71,8 +74,26 @@ class FixerController extends FormController
 			foreach ($result['errors'] as $errorMessage) {
 				$this->app->enqueueMessage($errorMessage, 'error');
 			}
+
+			$this->writeLog(new LogEntry(
+				action: Action::INIT_EMPLOYEE_ACCOUNTS,
+				objectType: ObjectType::Employee->value,
+				isSuccess: empty($result['errors']),
+				errorMessage: empty($result['errors']) ? null : implode('; ', $result['errors']),
+				extraData: [
+					'filled_code_email_rows' => $filledRows,
+					'created'                => $result['created'],
+					'skipped'                => $result['skipped'],
+				],
+			));
 		} catch (\Throwable $e) {
 			$this->app->enqueueMessage('Lỗi khi khởi tạo tài khoản employee: ' . $e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::INIT_EMPLOYEE_ACCOUNTS,
+				objectType: ObjectType::Employee->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+			));
 		}
 
 		$this->setRedirect('index.php?option=com_eqa');

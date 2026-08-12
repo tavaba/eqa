@@ -18,6 +18,18 @@ defined('_JEXEC') or die();
 class PaperexamModel extends AdminModel{
 	use \Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 
+	/**
+	 * Override vì tên model 'Paperexam' không khớp trực tiếp với case nào
+	 * trong enum ObjectType. Về bản chất nghiệp vụ, PaperexamModel quản lý
+	 * đối tượng 'Paper' (túi bài thi giấy), nên map thẳng vào case đó.
+	 *
+	 * @since 1.0.4
+	 */
+	protected function getLogObjectType(): int
+	{
+		return \Kma\Component\Eqa\Administrator\Enum\ObjectType::Paper->value;
+	}
+
 	public function mask(int $examId, $maskStart, $maskInterval, $packageDefaultSize, $packageMinSize): bool
 	{
 		$app = Factory::getApplication();

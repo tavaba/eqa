@@ -5,7 +5,10 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Library\Kma\DataObject\LogEntry;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class MmproductionsController extends AdminController
@@ -21,6 +24,12 @@ class MmproductionsController extends AdminController
 		if(!$this->app->getIdentity()->authorise('core.create', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_MM_PRODUCTIONS,
+				objectType: ObjectType::Mmproduction->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 			return;
 		}
 
@@ -30,6 +39,12 @@ class MmproductionsController extends AdminController
 		if(empty($examId))
 		{
 			$this->setMessage('Không xác định được môn thi', 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_MM_PRODUCTIONS,
+				objectType: ObjectType::Mmproduction->value,
+				isSuccess: false,
+				errorMessage: 'Không xác định được môn thi',
+			));
 			return;
 		}
 
@@ -38,6 +53,13 @@ class MmproductionsController extends AdminController
 		$file = $this->input->files->get($fileFormField);
 		if(empty($file['tmp_name'])){
 			$this->setMessage('Không xác định được tập tin', 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_MM_PRODUCTIONS,
+				objectType: ObjectType::Mmproduction->value,
+				isSuccess: false,
+				objectId: $examId,
+				errorMessage: 'Không xác định được tập tin',
+			));
 			return;
 		}
 
@@ -47,6 +69,13 @@ class MmproductionsController extends AdminController
 		if(empty($spreadsheet))
 		{
 			$this->setMessage('Lỗi đọc file. Hãy kiểm tra lại định dạng file','error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_MM_PRODUCTIONS,
+				objectType: ObjectType::Mmproduction->value,
+				isSuccess: false,
+				objectId: $examId,
+				errorMessage: 'Loi doc file. Hay kiem tra lai dinh dang file',
+			));
 			return;
 		}
 
@@ -61,6 +90,13 @@ class MmproductionsController extends AdminController
 		if($row == $highestRow)
 		{
 			$this->setMessage('File rỗng','error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_MM_PRODUCTIONS,
+				objectType: ObjectType::Mmproduction->value,
+				isSuccess: false,
+				objectId: $examId,
+				errorMessage: 'File rong',
+			));
 			return;
 		}
 
@@ -71,6 +107,13 @@ class MmproductionsController extends AdminController
 		if($col == $highestColumn)
 		{
 			$this->setMessage('Không tìm thấy thông tin người chấm','error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_MM_PRODUCTIONS,
+				objectType: ObjectType::Mmproduction->value,
+				isSuccess: false,
+				objectId: $examId,
+				errorMessage: 'Khong tim thay thong tin nguoi cham',
+			));
 			return;
 		}
 
@@ -110,5 +153,15 @@ class MmproductionsController extends AdminController
 		$model->importMmp($examId, $primaryExaminers, 1);
 		$model->importMmp($examId, $secondaryExaminers, 2);
 
+		$this->writeLog(new LogEntry(
+			action: Action::IMPORT_MM_PRODUCTIONS,
+			objectType: ObjectType::Mmproduction->value,
+			isSuccess: true,
+			objectId: $examId,
+			extraData: [
+				'primary_examiner_count'   => count($primaryExaminers),
+				'secondary_examiner_count' => count($secondaryExaminers),
+			],
+		));
 	}
 }

@@ -13,8 +13,11 @@ use Kma\Component\Eqa\Administrator\DataObject\CreditClassObject;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\EmployeeHelper;
 use Kma\Component\Eqa\Administrator\Model\ClassModel;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Service\CreditClassNameParser;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\GeneralHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -94,9 +97,22 @@ class ClassesController extends AdminController
 			{
 				$model->addForGroupOrCohort($targetType, $targetId, $subjectId, $term, $academicyear);
 			}
+
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_LEARNER,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: true,
+				extraData: ['target_type' => $targetType, 'target_id' => $targetId, 'subject_ids' => array_values($subjectIds), 'term' => $term, 'academicyear' => $academicyear],
+			));
 		}
 		catch(Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_LEARNER,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -123,6 +139,12 @@ class ClassesController extends AdminController
 	    if(!$canDo)
         {
             $this->setMessage(Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::IMPORT_CLASSES,
+                objectType: ObjectType::CreditClass->value,
+                isSuccess: false,
+                errorMessage: Text::_('JLIB_APPLICATION_ERROR_SAVE_NOT_PERMITTED'),
+            ));
             return;
         }
 
@@ -130,8 +152,17 @@ class ClassesController extends AdminController
         $files = $this->input->files->get($fileFormField);
         if(empty($files[0]['tmp_name'])){
             $this->setMessage(Text::_('COM_EQA_MSG_ERROR_NO_FILE_UPLOADED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::IMPORT_CLASSES,
+                objectType: ObjectType::CreditClass->value,
+                isSuccess: false,
+                errorMessage: Text::_('COM_EQA_MSG_ERROR_NO_FILE_UPLOADED'),
+            ));
             return;
         }
+
+        $eqaLogClassesCreated = 0;
+        $eqaLogLearnersImported = 0;
 
         //Preparing some utilities for import operation
         $db = DatabaseHelper::getDatabaseDriver();
@@ -321,16 +352,34 @@ class ClassesController extends AdminController
                             }
                             $app->enqueueMessage($msg,'error');
                         }
+                        $eqaLogClassesCreated++;
+                        $eqaLogLearnersImported += $countSuccess;
                     }
                     //4. Commit
                     $db->transactionCommit();
                 }
                 catch (Exception $e){
                     $db->transactionRollback();
+                    $this->writeLog(new LogEntry(
+                        action: Action::IMPORT_CLASSES,
+                        objectType: ObjectType::CreditClass->value,
+                        isSuccess: false,
+                        objectTitle: $class->name ?? null,
+                        errorMessage: $e->getMessage(),
+                        extraData: ['classes_created_before_failure' => $eqaLogClassesCreated],
+                    ));
                     throw $e;
                 }
             }
         }
+
+        //Ghi log (thành công — 1 bản ghi tổng hợp cho cả lần import)
+        $this->writeLog(new LogEntry(
+            action: Action::IMPORT_CLASSES,
+            objectType: ObjectType::CreditClass->value,
+            isSuccess: true,
+            extraData: ['classes_created' => $eqaLogClassesCreated, 'learners_imported' => $eqaLogLearnersImported],
+        ));
     }
 
 	/**
@@ -355,6 +404,12 @@ class ClassesController extends AdminController
 		$app = Factory::getApplication();
 		if (!$app->getIdentity()->authorise('core.edit', $this->option)) {
 			$this->setMessage('Bạn không có quyền nhập điểm quá trình', 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_PAM,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: false,
+				errorMessage: 'Bạn không có quyền nhập điểm quá trình',
+			));
 			return;
 		}
 
@@ -367,6 +422,12 @@ class ClassesController extends AdminController
 		$files = $this->input->files->get('files');
 		if (empty($files)) {
 			$this->setMessage('Không có file nào được tải lên', 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_PAM,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: false,
+				errorMessage: 'Không có file nào được tải lên',
+			));
 			return;
 		}
 
@@ -374,6 +435,8 @@ class ClassesController extends AdminController
 		$model = $this->getModel('Class');
 
 		$blankClassCodes = [];
+		$eqaLogSheetSuccess = 0;
+		$eqaLogSheetFailed = 0;
 
 		foreach ($files as $file) {
 			try {
@@ -393,11 +456,13 @@ class ClassesController extends AdminController
 					if ($result['status'] === ClassModel::PAM_SHEET_BLANK) {
 						$blankClassCodes[] = $result['classCode'];
 					}
+					$eqaLogSheetSuccess++;
 				} catch (Exception $e) {
 					$app->enqueueMessage(sprintf(
 						'<b>%s --> %s</b> : %s',
 						htmlentities($file['name']), htmlentities($worksheet->getTitle()), $e->getMessage()
 					), 'error');
+					$eqaLogSheetFailed++;
 				}
 			}
 		}
@@ -409,6 +474,14 @@ class ClassesController extends AdminController
 				count($blankClassCodes), htmlentities(implode('; ', $blankClassCodes))
 			), 'warning');
 		}
+
+		$this->writeLog(new LogEntry(
+			action: Action::IMPORT_PAM,
+			objectType: ObjectType::CreditClass->value,
+			isSuccess: $eqaLogSheetFailed === 0,
+			errorMessage: $eqaLogSheetFailed > 0 ? sprintf('%d sheet lỗi (xem chi tiết ở thông báo giao diện)', $eqaLogSheetFailed) : null,
+			extraData: ['sheet_success' => $eqaLogSheetSuccess, 'sheet_failed' => $eqaLogSheetFailed, 'blank_classes' => $blankClassCodes],
+		));
 	}
     public function importPam_bak(): void
     {

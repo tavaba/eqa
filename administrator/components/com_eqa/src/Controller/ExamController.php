@@ -8,10 +8,13 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
 use Joomla\Input\Input;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Controller\FormController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
@@ -157,11 +160,27 @@ class ExamController extends  FormController
 			$model = $this->getModel();
 			$model->removeExaminees($examId, $learnerIds);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::REMOVE_EXAMINEE,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
+
 			//Set redirect to the examinees list page
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
+		$this->writeLog(new LogEntry(
+			action: Action::REMOVE_EXAMINEE,
+			objectType: ObjectType::Exam->value,
+			isSuccess: false,
+			objectId: $examId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(),'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
@@ -224,6 +243,15 @@ class ExamController extends  FormController
 		    $model = $this->getModel();
 		    $countAdded = $model->addExamineesFromClass($examId, $classCode, $examineeCodes, $attempt, $ignoreError, $addExpired);
 
+		    //Ghi log (thành công)
+		    $this->writeLog(new LogEntry(
+		    	action: Action::ADD_EXAMINEE,
+		    	objectType: ObjectType::Exam->value,
+		    	isSuccess: true,
+		    	objectId: $examId,
+		    	extraData: ['class_code' => $classCode, 'examinee_codes' => $examineeCodes, 'count_added' => $countAdded],
+		    ));
+
 		    //Redirect to examinees list page
 		    $msg = sprintf('Có %d/%d thí sinh được thêm vào môn thi', $countAdded, count($examineeCodes));
 		    $this->setMessage($msg, 'info');
@@ -231,6 +259,13 @@ class ExamController extends  FormController
 	    }
 		catch (Exception $e)
 		{
+		$this->writeLog(new LogEntry(
+			action: Action::ADD_EXAMINEE,
+			objectType: ObjectType::Exam->value,
+			isSuccess: false,
+			objectId: $examId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(),'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
@@ -261,11 +296,26 @@ class ExamController extends  FormController
 			$model = $this->getModel();
 			$model->addFailedExaminees($examId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_EXAMINEE,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+			));
+
 			//Set redirect to the examinees list page
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch(Exception $e)
 		{
+		$this->writeLog(new LogEntry(
+			action: Action::ADD_EXAMINEE,
+			objectType: ObjectType::Exam->value,
+			isSuccess: false,
+			objectId: $examId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(),'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
@@ -292,6 +342,13 @@ class ExamController extends  FormController
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: is_numeric($examId) ? $examId : null,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 			return;
 		}
 
@@ -300,6 +357,13 @@ class ExamController extends  FormController
 		if(empty($cid) || empty($examId))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: is_numeric($examId) ? $examId : null,
+				errorMessage: Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'),
+			));
 			return;
 		}
 
@@ -323,6 +387,13 @@ class ExamController extends  FormController
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: is_numeric($examId) ? $examId : null,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 			return;
 		}
 
@@ -331,6 +402,13 @@ class ExamController extends  FormController
 		if(empty($cid) || empty($examId))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: is_numeric($examId) ? $examId : null,
+				errorMessage: Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'),
+			));
 			return;
 		}
 
@@ -441,6 +519,14 @@ class ExamController extends  FormController
 			$data = $this->input->get('jform',null,'array');
 			$model->distribute($examId, $data);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::DISTRIBUTE_ROOMS,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+			));
+
 			//Add xong thì redirect về trang xem danh sách lớp học phần
 			$this->setRedirect(
 				Route::_(
@@ -451,6 +537,13 @@ class ExamController extends  FormController
 		}
 		catch (Exception $e)
 		{
+		$this->writeLog(new LogEntry(
+			action: Action::DISTRIBUTE_ROOMS,
+			objectType: ObjectType::Exam->value,
+			isSuccess: false,
+			objectId: $examId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa&view=exams', false);
@@ -493,6 +586,14 @@ class ExamController extends  FormController
 			$model = $this->getModel();
 			$model->distribute2($examId, $data);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::DISTRIBUTE_ROOMS,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+			));
+
 			//Add xong thì redirect về trang xem danh sách phòng thi
 			$this->setRedirect(
 				Route::_(
@@ -503,6 +604,13 @@ class ExamController extends  FormController
 		}
 		catch (Exception $e)
 		{
+		$this->writeLog(new LogEntry(
+			action: Action::DISTRIBUTE_ROOMS,
+			objectType: ObjectType::Exam->value,
+			isSuccess: false,
+			objectId: $examId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa&view=exams', false);
@@ -675,12 +783,27 @@ class ExamController extends  FormController
 			$model = $this->getModel();
 			$msg = $model->updateStimulations($examId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::STIMULATE,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+			));
+
 			//Set redirect in case of success
 			$this->setMessage($msg);
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::STIMULATE,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId ?: null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(),'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
@@ -729,12 +852,29 @@ class ExamController extends  FormController
 			$model = $this->getModel();
 			$msg = $model->cancelStimulations($examId, $learnerIds);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_STIMULATE,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+				extraData: ['learner_ids' => array_values($learnerIds)],
+			));
+
 			//Set redirect in case of success
 			$this->setMessage($msg);
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id=' . $examId, false));
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_STIMULATE,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId ?: null,
+				errorMessage: $e->getMessage(),
+				extraData: isset($learnerIds) ? ['learner_ids' => array_values($learnerIds)] : null,
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			if (empty($examId))
 				$url = Route::_('index.php?option=com_eqa', false);
@@ -766,12 +906,28 @@ class ExamController extends  FormController
 			$model = $this->getModel();
 			$messages = $model->updateDebt($examId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::UPDATE_DEBT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+				extraData: ['messages' => $messages],
+			));
+
 			//Set redirect in any case
 			$this->setMessage(implode('. ', $messages));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
+		$this->writeLog(new LogEntry(
+			action: Action::UPDATE_DEBT,
+			objectType: ObjectType::Exam->value,
+			isSuccess: false,
+			objectId: $examId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(),'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
@@ -803,12 +959,28 @@ class ExamController extends  FormController
 			$model = $this->getModel();
 			$messages = $model->updateSecondAttemptPaymentStatus($examId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::SET_PAYMENT_STATUS,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+				extraData: ['messages' => $messages],
+			));
+
 			//Set redirect in any case
 			$this->setMessage(implode('. ', $messages));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
+		$this->writeLog(new LogEntry(
+			action: Action::SET_PAYMENT_STATUS,
+			objectType: ObjectType::Exam->value,
+			isSuccess: false,
+			objectId: $examId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(),'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
@@ -819,6 +991,7 @@ class ExamController extends  FormController
 	}
 	public function setDebt():void
 	{
+		$examId = null;
 		try
 		{
 			//Check token
@@ -872,10 +1045,28 @@ class ExamController extends  FormController
 					throw new Exception($msg);
 				}
 			}
+
+			//Ghi log (thành công — 1 bản ghi cho cả batch)
+			$this->writeLog(new LogEntry(
+				action: Action::SET_DEBT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+				extraData: ['learner_ids' => array_values($paidIds), 'value' => $value],
+			));
+
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examExaminees&exam_id='.$examId,false));
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::SET_DEBT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId ?: null,
+				errorMessage: $e->getMessage(),
+				extraData: isset($paidIds) ? ['learner_ids' => array_values($paidIds)] : null,
+			));
 			$this->setMessage($e->getMessage(),'error');
 			if(empty($examId))
 				$url = Route::_('index.php?option=com_eqa',false);
@@ -895,6 +1086,12 @@ class ExamController extends  FormController
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_ITEST_RESULT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				errorMessage: $msg,
+			));
 			$this->setMessage($msg, 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa',false));
 			return;
@@ -909,6 +1106,13 @@ class ExamController extends  FormController
 		$file = $this->input->files->get('file');
 		if(empty($examId) || empty($file['tmp_name']))
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_ITEST_RESULT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId ?: null,
+				errorMessage: 'Dữ liệu form không hợp lệ',
+			));
 			$this->setMessage("Dữ liệu form không hợp lệ", 'error');
 			return;
 		}
@@ -925,6 +1129,13 @@ class ExamController extends  FormController
 		if(empty($sheet))
 		{
 			$msg = sprintf("File không hợp lệ. Không tìm thấy sheet <b>%s</b>", $sheetName);
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_ITEST_RESULT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId,
+				errorMessage: $msg,
+			));
 			$this->setMessage($msg, 'error');
 			return;
 		}
@@ -948,6 +1159,13 @@ class ExamController extends  FormController
 			if(empty($data[$row][$colCode]) || empty($data[$row][$colLearnerCode]))
 			{
 				$msg = sprintf("Dữ liệu không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $row+1);
+				$this->writeLog(new LogEntry(
+					action: Action::IMPORT_ITEST_RESULT,
+					objectType: ObjectType::Exam->value,
+					isSuccess: false,
+					objectId: $examId,
+					errorMessage: $msg,
+				));
 				$this->setMessage($msg, 'error');
 				return;
 			}
@@ -959,6 +1177,13 @@ class ExamController extends  FormController
 			elseif($mark<0 || $mark>10)
 			{
 				$msg = sprintf("Điểm không hợp lệ: sheet <b>%s</b>, dòng <b>%d</b>", $sheetName, $row+1);
+				$this->writeLog(new LogEntry(
+					action: Action::IMPORT_ITEST_RESULT,
+					objectType: ObjectType::Exam->value,
+					isSuccess: false,
+					objectId: $examId,
+					errorMessage: $msg,
+				));
 				$this->setMessage($msg, 'error');
 				return;
 			}
@@ -975,6 +1200,14 @@ class ExamController extends  FormController
 		$model = $this->getModel();
 		if(!$model->importitest($examId, $examinees))
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_ITEST_RESULT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId,
+				errorMessage: $model->getError() ?: 'Nhập điểm iTest thất bại (xem thông báo chi tiết ở giao diện)',
+				extraData: ['record_count' => count($examinees)],
+			));
 			return;     //Model should enqueue all the error messages (if there are)
 		}
 
@@ -987,6 +1220,15 @@ class ExamController extends  FormController
 			else
 				$model->setExamStatus($examId,ExamStatus::MarkPartial);
 		}
+
+		//Ghi log (thành công)
+		$this->writeLog(new LogEntry(
+			action: Action::IMPORT_ITEST_RESULT,
+			objectType: ObjectType::Exam->value,
+			isSuccess: true,
+			objectId: $examId,
+			extraData: ['record_count' => count($examinees), 'sheet' => $sheetName],
+		));
 
 		//Thông báo kết quả
 		$msg = sprintf("Môn thi <b>%s</b>: %d/%d đã có kết quả",

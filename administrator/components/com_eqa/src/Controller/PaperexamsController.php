@@ -6,10 +6,13 @@ require JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\PaperexamModel;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Helper\ConfigHelper;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\IOHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -28,6 +31,12 @@ class PaperexamsController extends AdminController {
 		{
 			$msg = Text::_('COM_EQA_MSG_UNAUTHORISED');
 			$this->setMessage($msg,'error');
+			$this->writeLog(new LogEntry(
+				action: Action::UPLOAD_MARK,
+				objectType: ObjectType::Paper->value,
+				isSuccess: false,
+				errorMessage: $msg,
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa',false));
 			return;
 		}
@@ -40,8 +49,18 @@ class PaperexamsController extends AdminController {
 		$file = $files->get($fileFormField);
 		if(empty($file['tmp_name'])){
 			$this->setMessage(Text::_('COM_EQA_MSG_ERROR_NO_FILE_UPLOADED'), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::UPLOAD_MARK,
+				objectType: ObjectType::Paper->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_ERROR_NO_FILE_UPLOADED'),
+			));
 			return;
 		}
+
+		//Tich luy ket qua xu ly tung sheet de ghi 1 ban log tong hop o cuoi
+		$eqaLogSuccessSheets = [];
+		$eqaLogFailedSheets  = [];
 
 		//Try to open file
 		$spreadsheet = IOHelper::loadSpreadsheet($file['tmp_name']);
@@ -77,6 +96,7 @@ class PaperexamsController extends AdminController {
 			{
 				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy môn thi', $sheet->getTitle());
 				$this->app->enqueueMessage($msg,'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'reason' => 'Khong tim thay mon thi'];
 				continue; //Bỏ qua sheet hiện thời
 			}
 			if(!in_array($examId, $examIds))
@@ -96,6 +116,7 @@ class PaperexamsController extends AdminController {
 			{
 				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy phách', $sheet->getTitle());
 				$this->app->enqueueMessage($msg,'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'exam_id' => $examId, 'reason' => 'Khong tim thay phach'];
 				continue; //Bỏ qua sheet hiện thời
 			}
 
@@ -135,6 +156,7 @@ class PaperexamsController extends AdminController {
 			{
 				$msg = sprintf('Sheet <b>%s</b>, dòng %d: dữ liệu không hợp lệ', $sheet->getTitle(), $row);
 				$this->app->enqueueMessage($msg,'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'exam_id' => $examId, 'reason' => 'Du lieu khong hop le tai dong ' . $row];
 				continue; //Bỏ qua sheet hiện thời
 			}
 
@@ -145,11 +167,24 @@ class PaperexamsController extends AdminController {
 				$examModel->conclude($examId, false);
 				$msg = sprintf('<b>%s</b>: Nhập điểm thành công cho %d thí sinh', $sheet->getTitle(), sizeof($marks));
 				$this->app->enqueueMessage($msg, 'success');
+				$eqaLogSuccessSheets[] = ['sheet' => $sheet->getTitle(), 'exam_id' => $examId, 'mark_count' => sizeof($marks)];
 			}
 			catch(Exception $e)
 			{
 				$this->app->enqueueMessage($e->getMessage(), 'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'exam_id' => $examId, 'reason' => $e->getMessage()];
 			}
 		}
+
+		$this->writeLog(new LogEntry(
+			action: Action::UPLOAD_MARK,
+			objectType: ObjectType::Paper->value,
+			isSuccess: empty($eqaLogFailedSheets),
+			errorMessage: empty($eqaLogFailedSheets) ? null : sprintf('%d/%d sheet xu ly that bai', count($eqaLogFailedSheets), count($eqaLogFailedSheets) + count($eqaLogSuccessSheets)),
+			extraData: [
+				'success_sheets' => $eqaLogSuccessSheets,
+				'failed_sheets'  => $eqaLogFailedSheets,
+			],
+		));
 	}
 }

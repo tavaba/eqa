@@ -7,8 +7,11 @@ use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Model\ClassModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 
 defined('_JEXEC') or die();
@@ -87,10 +90,24 @@ class ClassController extends  FormController
 			[$countTotal, $countAdded, $countExisting] = $model->importLearners($classId, $learnerCodes);
 			$msg = "Tổng số HVSV trong file: {$countTotal}. Đã có trong lớp: {$countExisting}. Đã thêm vào: {$countAdded}";
 			$this->setMessage($msg, 'success');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_LEARNERS,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: true,
+				objectId: $classId,
+				extraData: ['total' => $countTotal, 'added' => $countAdded, 'existing' => $countExisting],
+			));
 		}
 		catch(Exception $e)
 		{
 			$this->setMessage(Text::_($e->getMessage()), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_LEARNERS,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: false,
+				objectId: $classId,
+				errorMessage: $e->getMessage(),
+			));
 		}
 		$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id='.$classId,false);
 		$this->setRedirect($url);
@@ -145,8 +162,22 @@ class ClassController extends  FormController
 				$classSize, $countUpdated, $countIgnored, $npam, $classSize
 			);
 			$this->setMessage($msg, $npam === $classSize ? 'success' : 'info');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_PAM,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: true,
+				objectId: $classId,
+				extraData: ['class_size' => $classSize, 'updated' => $countUpdated, 'ignored' => $countIgnored, 'total_with_pam' => $npam],
+			));
 		} catch (Exception $e) {
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_PAM,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: false,
+				objectId: $classId,
+				errorMessage: $e->getMessage(),
+			));
 		}
 		$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id=' . $classId, false);
 		$this->setRedirect($url);
@@ -208,6 +239,13 @@ class ClassController extends  FormController
             $model->addLearners($classId, $learnerCodes);
 			DatabaseHelper::updateClassNPam($classId);
 
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_LEARNER,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: true,
+				objectId: $classId,
+				extraData: ['learner_codes' => $learnerCodes],
+			));
 
             //Add xong thì redirect về trang xem danh sách lớp học phần
             $this->setRedirect(
@@ -241,6 +279,13 @@ class ClassController extends  FormController
         // Access check
         if (!$this->allowEdit()) {
             $this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::ALLOW_LEARNER,
+                objectType: ObjectType::CreditClass->value,
+                isSuccess: false,
+                objectId: $classId,
+                errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+            ));
             return;
         }
 
@@ -258,6 +303,14 @@ class ClassController extends  FormController
         // Get the model and do the job
         $model = $this->getModel();
         $model->setAllowed($classId, $learnerIds,true);
+
+        $this->writeLog(new LogEntry(
+            action: Action::ALLOW_LEARNER,
+            objectType: ObjectType::CreditClass->value,
+            isSuccess: true,
+            objectId: $classId,
+            extraData: ['learner_ids' => array_values($learnerIds)],
+        ));
     }
     public function deny():void
     {
@@ -279,6 +332,13 @@ class ClassController extends  FormController
         // Access check
         if (!$this->allowEdit()) {
             $this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::DENY_LEARNER,
+                objectType: ObjectType::CreditClass->value,
+                isSuccess: false,
+                objectId: $classId,
+                errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+            ));
             return;
         }
 
@@ -296,6 +356,14 @@ class ClassController extends  FormController
         // Get the model and do the job
         $model = $this->getModel();
         $model->setAllowed($classId, $learnerIds,false);
+
+        $this->writeLog(new LogEntry(
+            action: Action::DENY_LEARNER,
+            objectType: ObjectType::CreditClass->value,
+            isSuccess: true,
+            objectId: $classId,
+            extraData: ['learner_ids' => array_values($learnerIds)],
+        ));
     }
     public function remove():void
     {
@@ -317,6 +385,13 @@ class ClassController extends  FormController
         // Access check
         if (!$this->allowEdit()) {
             $this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::REMOVE_LEARNER,
+                objectType: ObjectType::CreditClass->value,
+                isSuccess: false,
+                objectId: $classId,
+                errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+            ));
             return;
         }
 
@@ -337,6 +412,14 @@ class ClassController extends  FormController
             $model->removeLearner($classId, $learnerId);
         }
 		DatabaseHelper::updateClassNPam($classId);
+
+        $this->writeLog(new LogEntry(
+            action: Action::REMOVE_LEARNER,
+            objectType: ObjectType::CreditClass->value,
+            isSuccess: true,
+            objectId: $classId,
+            extraData: ['learner_ids' => array_values($learnerIds)],
+        ));
     }
 
 	protected function checkAllowEditPam(int $classId, int $learnerId, bool $throw): bool
@@ -427,11 +510,28 @@ class ClassController extends  FormController
 			$name = htmlspecialchars($name);
 			$msg          = "Đã cập nhận ĐQT cho <b>{$name} ({$learner->code})</b>";
 			$this->setMessage($msg, 'success');
+
+			$this->writeLog(new LogEntry(
+				action: Action::EDIT_PAM,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: true,
+				objectId: $classId,
+				objectTitle: $name . ' (' . $learner->code . ')',
+				newValue: ['pam1' => $pam1, 'pam2' => $pam2, 'pam' => $pam, 'allowed' => $allowed, 'expired' => $expired, 'description' => $description],
+			));
+
 			$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id=' . $classId, false);
 			$this->setRedirect($url);
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::EDIT_PAM,
+				objectType: ObjectType::CreditClass->value,
+				isSuccess: false,
+				objectId: $classId ?: null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			if (!empty($classId))
 				$url = Route::_('index.php?option=com_eqa&view=classLearners&class_id=' . $classId, false);

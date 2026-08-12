@@ -17,6 +17,9 @@ use Kma\Component\Eqa\Administrator\Model\AssessmentLearnersModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use PhpOffice\PhpWord\PhpWord;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
+use Kma\Library\Kma\DataObject\LogEntry;
 
 /**
  * Items Controller cho danh sách thí sinh sát hạch.
@@ -72,6 +75,14 @@ class AssessmentLearnersController extends AdminController
 
             $result = $model->addLearners($assessmentId, $rawCodes, $operatorId);
 
+            //Ghi log (thành công)
+            $this->writeLog(new LogEntry(
+            	action: Action::ADD_EXAMINEE,
+            	objectType: ObjectType::Assessment->value,
+            	isSuccess: true,
+            	objectId: $assessmentId,
+            ));
+
             // Thông báo tổng hợp
             if (!empty($result['added'])) {
                 $this->setMessage(
@@ -101,6 +112,13 @@ class AssessmentLearnersController extends AdminController
             }
 
         } catch (Exception $e) {
+        $this->writeLog(new LogEntry(
+        	action: Action::ADD_EXAMINEE,
+        	objectType: ObjectType::Assessment->value,
+        	isSuccess: false,
+        	objectId: $assessmentId ?: null,
+        	errorMessage: $e->getMessage(),
+        ));
             $this->setMessage($e->getMessage(), 'error');
         }
     }
@@ -155,12 +173,27 @@ class AssessmentLearnersController extends AdminController
 			$operatorId = (int) $this->app->getIdentity()->id;
 			$deleted    = $model->removeLearners($assessmentId, $ids, $operatorId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::REMOVE_EXAMINEE,
+				objectType: ObjectType::Assessment->value,
+				isSuccess: true,
+				objectId: $assessmentId,
+			));
+
 			$this->setMessage(
 				sprintf('Đã xóa <b>%d</b> thí sinh khỏi kỳ sát hạch.', $deleted),
 				'success'
 			);
 
 		} catch (Exception $e) {
+		$this->writeLog(new LogEntry(
+			action: Action::REMOVE_EXAMINEE,
+			objectType: ObjectType::Assessment->value,
+			isSuccess: false,
+			objectId: $assessmentId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -204,12 +237,27 @@ class AssessmentLearnersController extends AdminController
 			$operatorId = (int) $this->app->getIdentity()->id;
 			$deleted    = $model->removeLearners($assessmentId, $ids, $operatorId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::REMOVE_EXAMINEE,
+				objectType: ObjectType::Assessment->value,
+				isSuccess: true,
+				objectId: $assessmentId,
+			));
+
 			$this->setMessage(
 				sprintf('Đã xóa <b>%d</b> thí sinh khỏi kỳ sát hạch.', $deleted),
 				'success'
 			);
 
 		} catch (Exception $e) {
+		$this->writeLog(new LogEntry(
+			action: Action::REMOVE_EXAMINEE,
+			objectType: ObjectType::Assessment->value,
+			isSuccess: false,
+			objectId: $assessmentId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 			if($assessmentId<=0)
 			{
@@ -366,6 +414,15 @@ class AssessmentLearnersController extends AdminController
 			$model->setState('filter.assessment_id', $assessmentId);
 			$model->distributeAssessmentLearners($assessmentId, $data, $selectedIds, $operatorId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::DISTRIBUTE_ROOMS,
+				objectType: ObjectType::Assessment->value,
+				isSuccess: true,
+				objectId: $assessmentId,
+				extraData: ['learner_ids' => $selectedIds],
+			));
+
 			$scopeLabel = empty($selectedIds)
 				? 'toàn bộ thí sinh'
 				: count($selectedIds) . ' thí sinh được chọn';
@@ -376,6 +433,13 @@ class AssessmentLearnersController extends AdminController
 			);
 
 		} catch (Exception $e) {
+		$this->writeLog(new LogEntry(
+			action: Action::DISTRIBUTE_ROOMS,
+			objectType: ObjectType::Assessment->value,
+			isSuccess: false,
+			objectId: $assessmentId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -472,6 +536,15 @@ class AssessmentLearnersController extends AdminController
 			$model->setState('filter.assessment_id', $assessmentId);
 			$model->distributeAssessmentLearners($assessmentId, $data, $selectedIds, $operatorId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::DISTRIBUTE_ROOMS,
+				objectType: ObjectType::Assessment->value,
+				isSuccess: true,
+				objectId: $assessmentId,
+				extraData: ['learner_ids' => $selectedIds, 'scope' => 'unassigned'],
+			));
+
 			$this->setMessage(
 				sprintf(
 					'Đã chia phòng thi và đánh số báo danh thành công cho %d thí sinh chưa được chia phòng.',
@@ -481,6 +554,13 @@ class AssessmentLearnersController extends AdminController
 			);
 
 		} catch (Exception $e) {
+		$this->writeLog(new LogEntry(
+			action: Action::DISTRIBUTE_ROOMS,
+			objectType: ObjectType::Assessment->value,
+			isSuccess: false,
+			objectId: $assessmentId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -534,6 +614,15 @@ class AssessmentLearnersController extends AdminController
 			$operatorId = (int) $this->app->getIdentity()->id;
 			$result     = $model->clearRoomAssignments($assessmentId, $scopeIds, $operatorId);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::CLEAR_ROOM_ASSIGNMENTS,
+				objectType: ObjectType::Assessment->value,
+				isSuccess: true,
+				objectId: $assessmentId,
+				extraData: $result,
+			));
+
 			$scopeLabel = empty($scopeIds)
 				? 'toàn bộ thí sinh'
 				: count($scopeIds) . ' thí sinh được chọn';
@@ -554,6 +643,13 @@ class AssessmentLearnersController extends AdminController
 			$this->setMessage($msg, 'success');
 
 		} catch (Exception $e) {
+		$this->writeLog(new LogEntry(
+			action: Action::CLEAR_ROOM_ASSIGNMENTS,
+			objectType: ObjectType::Assessment->value,
+			isSuccess: false,
+			objectId: $assessmentId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -606,6 +702,15 @@ class AssessmentLearnersController extends AdminController
 
             $learnerCode = $model->savePaymentInfo($id, $paymentAmount, $paymentCompleted, $note, $operatorId);
 
+            //Ghi log (thành công)
+            $this->writeLog(new LogEntry(
+            	action: Action::SET_PAYMENT_INFO,
+            	objectType: ObjectType::Assessment->value,
+            	isSuccess: true,
+            	objectId: $assessmentId,
+            	extraData: ['id' => $id, 'payment_amount' => $paymentAmount, 'payment_completed' => $paymentCompleted, 'note' => $note],
+            ));
+
             $statusLabel = $paymentCompleted ? '<b>Đã nộp phí</b>' : '<b>Chưa nộp phí</b>';
             $this->setMessage(
                 sprintf('Đã cập nhật thông tin thanh toán của <b>%s</b> thành %s.', htmlspecialchars($learnerCode), $statusLabel),
@@ -613,6 +718,13 @@ class AssessmentLearnersController extends AdminController
             );
 
         } catch (Exception $e) {
+        $this->writeLog(new LogEntry(
+        	action: Action::SET_PAYMENT_INFO,
+        	objectType: ObjectType::Assessment->value,
+        	isSuccess: false,
+        	objectId: $assessmentId ?: null,
+        	errorMessage: $e->getMessage(),
+        ));
             $this->setMessage($e->getMessage(), 'error');
         }
     }
@@ -683,6 +795,15 @@ class AssessmentLearnersController extends AdminController
 			try {
 				$operatorId = (int) $this->app->getIdentity()->id;
 				$result     = $model->importBankStatement($tmpFile, $napasCode, $assessmentId, $operatorId);
+
+				//Ghi log (thành công)
+				$this->writeLog(new LogEntry(
+					action: Action::IMPORT_STATEMENT,
+					objectType: ObjectType::Assessment->value,
+					isSuccess: true,
+					objectId: $assessmentId,
+					extraData: ['bank' => $napasCode, 'result' => (array) $result],
+				));
 			} finally {
 				if (file_exists($tmpFile)) {
 					@unlink($tmpFile);
@@ -695,6 +816,13 @@ class AssessmentLearnersController extends AdminController
 			);
 
 		} catch (Exception $e) {
+		$this->writeLog(new LogEntry(
+			action: Action::IMPORT_STATEMENT,
+			objectType: ObjectType::Assessment->value,
+			isSuccess: false,
+			objectId: $assessmentId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -769,6 +897,13 @@ class AssessmentLearnersController extends AdminController
 			$this->app->close();
 
 		} catch (Exception $e) {
+		$this->writeLog(new LogEntry(
+			action: Action::IMPORT_ITEST_RESULT,
+			objectType: ObjectType::Assessment->value,
+			isSuccess: false,
+			objectId: $assessmentId ?: null,
+			errorMessage: $e->getMessage(),
+		));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -836,6 +971,15 @@ class AssessmentLearnersController extends AdminController
 			try {
 				$operatorId = (int) $this->app->getIdentity()->id;
 				$result     = $model->importITestResult($tmpFile, $assessmentId, $operatorId);
+
+				//Ghi log (thành công)
+				$this->writeLog(new LogEntry(
+					action: Action::IMPORT_ITEST_RESULT,
+					objectType: ObjectType::Assessment->value,
+					isSuccess: true,
+					objectId: $assessmentId,
+					extraData: $result,
+				));
 			} finally {
 				if (file_exists($tmpFile)) {
 					@unlink($tmpFile);

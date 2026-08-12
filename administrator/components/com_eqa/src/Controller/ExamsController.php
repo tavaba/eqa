@@ -7,9 +7,12 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
+use Kma\Library\Kma\DataObject\LogEntry;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ExamsController extends AdminController {
@@ -100,10 +103,18 @@ class ExamsController extends AdminController {
 		//Check token
 		$this->checkToken();
 
+		$action = Action::CONCLUDE_DISCIPLINE;
+
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
+			$this->writeLog(new LogEntry(
+				action: $action,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 			return;
 		}
 
@@ -112,6 +123,12 @@ class ExamsController extends AdminController {
 		if(empty($examIds))
 		{
 			$this->setMessage('Không xác định được môn thi','error');
+			$this->writeLog(new LogEntry(
+				action: $action,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				errorMessage: 'Không xác định được môn thi',
+			));
 			return;
 		}
 
@@ -124,10 +141,27 @@ class ExamsController extends AdminController {
 		{
 			foreach ($examIds as $examId)
 				$model->conclude($examId, $disciplineAlreadyApplied);
+
+			$this->writeLog(new LogEntry(
+				action: $action,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				extraData: [
+					'exam_ids'                    => array_values($examIds),
+					'discipline_already_applied'  => $disciplineAlreadyApplied,
+				],
+			));
 		}
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: $action,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+				extraData: ['exam_ids' => array_values($examIds)],
+			));
 			return;
 		}
 	}

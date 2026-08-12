@@ -2,8 +2,11 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Model\ExamroomModel;
 use Kma\Library\Kma\Controller\FormController;
+use Kma\Library\Kma\DataObject\LogEntry;
 
 defined('_JEXEC') or die();
 
@@ -21,6 +24,13 @@ class ExamroomController extends  FormController {
 
         if(!$this->app->getIdentity()->authorise('core.edit', $this->option)){
             $this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
+            $this->writeLog(new LogEntry(
+                action: Action::REMOVE_EXAMINEE,
+                objectType: ObjectType::Examroom->value,
+                isSuccess: false,
+                objectId: $examroomId,
+                errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+            ));
             $redirect = Route::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$examroomId, false);
             $this->redirect($redirect);
             return;
@@ -40,6 +50,14 @@ class ExamroomController extends  FormController {
 
             // Remove the items.
             $model->removeExaminees($examroomId, $learnerIds);
+
+            $this->writeLog(new LogEntry(
+                action: Action::REMOVE_EXAMINEE,
+                objectType: ObjectType::Examroom->value,
+                isSuccess: true,
+                objectId: $examroomId,
+                extraData: ['learner_ids' => array_values($learnerIds)],
+            ));
         }
 
         $redirect = Route::_('index.php?option=com_eqa&view=examroom&layout=examinees&examroom_id='.$examroomId, false);
@@ -96,6 +114,14 @@ class ExamroomController extends  FormController {
 			 */
             $model = $this->getModel();
             $model->addExaminees($examroomId, $examId, $learnerCodes);
+
+            $this->writeLog(new LogEntry(
+                action: Action::ADD_EXAMINEE,
+                objectType: ObjectType::Examroom->value,
+                isSuccess: true,
+                objectId: $examroomId,
+                extraData: ['exam_id' => $examId, 'learner_codes' => $learnerCodes],
+            ));
 
             //Add xong thì redirect về trang xem danh sách lớp học phần
             $this->setRedirect(
@@ -226,6 +252,13 @@ class ExamroomController extends  FormController {
 		// Kiểm tra quyền
 		if (!$this->app->getIdentity()->authorise('core.edit', $this->option)) {
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::APPLY_ANOMALY,
+				objectType: ObjectType::Examroom->value,
+				isSuccess: false,
+				objectId: $this->input->post->getInt('examroom_id') ?: null,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examrooms', false));
 			return;
 		}
@@ -237,6 +270,13 @@ class ExamroomController extends  FormController {
 
 		if (empty($examroomId) || empty($data)) {
 			$this->setMessage(Text::_('COM_EQA_MSG_INVALID_DATA'), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::APPLY_ANOMALY,
+				objectType: ObjectType::Examroom->value,
+				isSuccess: false,
+				objectId: $examroomId ?: null,
+				errorMessage: Text::_('COM_EQA_MSG_INVALID_DATA'),
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examrooms', false));
 			return;
 		}

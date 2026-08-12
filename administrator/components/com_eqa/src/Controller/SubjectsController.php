@@ -4,9 +4,12 @@ defined('_JEXEC') or die();
 
 use Exception;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Model\SubjectsModel;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
@@ -118,9 +121,25 @@ class SubjectsController extends AdminController{
 			$time = DatetimeHelper::getCurrentUtcTime();
 			$model = $this->getModel('Subjects');
 			$model->import($data, $updateExisting, $username, $time);
+
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_SUBJECTS,
+				objectType: ObjectType::Subject->value,
+				isSuccess: true,
+				extraData: [
+					'row_count'       => count($data),
+					'update_existing' => $updateExisting,
+				],
+			));
 		}
 		catch(Exception $e){
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_SUBJECTS,
+				objectType: ObjectType::Subject->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+			));
 		}
 	}
 }

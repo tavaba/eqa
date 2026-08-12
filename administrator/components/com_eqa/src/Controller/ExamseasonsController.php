@@ -6,8 +6,11 @@ require_once JPATH_ROOT.'/vendor/autoload.php';
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamseasonsModel;
+use Kma\Library\Kma\DataObject\LogEntry;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ExamseasonsController extends AdminController
@@ -25,6 +28,12 @@ class ExamseasonsController extends AdminController
 		if (!$this->app->getIdentity()->authorise('core.edit.state', $this->option))
 		{
 			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+			$this->writeLog(new LogEntry(
+				action: Action::COMPLETE_EXAMSEASON,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 
 			return;
 		}
@@ -38,6 +47,12 @@ class ExamseasonsController extends AdminController
 		if (empty($cid))
 		{
 			$this->app->enqueueMessage(Text::_('COM_EQA_NO_ITEM_SELECTED'));
+			$this->writeLog(new LogEntry(
+				action: Action::COMPLETE_EXAMSEASON,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_NO_ITEM_SELECTED'),
+			));
 
 			return;
 		}
@@ -45,6 +60,12 @@ class ExamseasonsController extends AdminController
 		// Get the model.
 		$model = $this->getModel();
 		$model->setCompleteStatus($cid, true);
+		$this->writeLog(new LogEntry(
+			action: Action::COMPLETE_EXAMSEASON,
+			objectType: ObjectType::Examseason->value,
+			isSuccess: true,
+			extraData: ['examseason_ids' => array_values($cid)],
+		));
 	}
 	public function undoComplete()
 	{
@@ -59,6 +80,12 @@ class ExamseasonsController extends AdminController
 		if (!$this->app->getIdentity()->authorise('core.edit.state', $this->option))
 		{
 			$this->app->enqueueMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'));
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_COMPLETE_EXAMSEASON,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 
 			return;
 		}
@@ -72,6 +99,12 @@ class ExamseasonsController extends AdminController
 		if (empty($cid))
 		{
 			$this->app->enqueueMessage(Text::_('COM_EQA_NO_ITEM_SELECTED'));
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_COMPLETE_EXAMSEASON,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_NO_ITEM_SELECTED'),
+			));
 
 			return;
 		}
@@ -79,6 +112,12 @@ class ExamseasonsController extends AdminController
 		// Get the model.
 		$model = $this->getModel();
 		$model->setCompleteStatus($cid, false);
+		$this->writeLog(new LogEntry(
+			action: Action::UNDO_COMPLETE_EXAMSEASON,
+			objectType: ObjectType::Examseason->value,
+			isSuccess: true,
+			extraData: ['examseason_ids' => array_values($cid)],
+		));
 	}
 
 	public function exportMarkStatistic()

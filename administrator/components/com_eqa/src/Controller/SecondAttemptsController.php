@@ -9,10 +9,13 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use Kma\Component\Eqa\Administrator\Model\ExamseasonsModel;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Library\Kma\BankStatement\BankStatementImportResultHelper;
 use Kma\Library\Kma\Controller\AdminController;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
@@ -44,7 +47,20 @@ class SecondAttemptsController extends AdminController
             );
             $this->setMessage($msg, 'success');
 
+            $this->writeLog(new LogEntry(
+                action: Action::REFRESH_SECOND_ATTEMPT,
+                objectType: ObjectType::SecondAttempt->value,
+                isSuccess: true,
+                extraData: $result,
+            ));
+
         } catch (Exception $e) {
+            $this->writeLog(new LogEntry(
+                action: Action::REFRESH_SECOND_ATTEMPT,
+                objectType: ObjectType::SecondAttempt->value,
+                isSuccess: false,
+                errorMessage: $e->getMessage(),
+            ));
             $this->setMessage($e->getMessage(), 'error');
         }
 
@@ -83,7 +99,20 @@ class SecondAttemptsController extends AdminController
 					'success'
 				);
 			}
+
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_SECOND_ATTEMPT,
+				objectType: ObjectType::SecondAttempt->value,
+				isSuccess: true,
+				extraData: ['added' => $added],
+			));
 		} catch (Exception $e) {
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_SECOND_ATTEMPT,
+				objectType: ObjectType::SecondAttempt->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 
@@ -180,12 +209,25 @@ class SecondAttemptsController extends AdminController
 				}
 			}
 
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_STATEMENT,
+				objectType: ObjectType::SecondAttempt->value,
+				isSuccess: true,
+				extraData: ['bank' => $napasCode, 'result' => (array) $result],
+			));
+
 			$this->setMessage(
 				BankStatementImportResultHelper::buildMessage($result, 'đã nộp phí thi lại'),
 				BankStatementImportResultHelper::getMessageType($result)
 			);
 
 		} catch (Exception $e) {
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_STATEMENT,
+				objectType: ObjectType::SecondAttempt->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}
@@ -278,7 +320,22 @@ class SecondAttemptsController extends AdminController
 			);
 			$this->setMessage($msg, 'success');
 
+			$this->writeLog(new LogEntry(
+				action: Action::SET_PAYMENT_STATUS,
+				objectType: ObjectType::SecondAttempt->value,
+				isSuccess: true,
+				objectId: $id,
+				extraData: ['payment_completed' => $paymentCompleted, 'description' => $description],
+			));
+
 		} catch (Exception $e) {
+			$this->writeLog(new LogEntry(
+				action: Action::SET_PAYMENT_STATUS,
+				objectType: ObjectType::SecondAttempt->value,
+				isSuccess: false,
+				objectId: isset($id) ? $id : null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 

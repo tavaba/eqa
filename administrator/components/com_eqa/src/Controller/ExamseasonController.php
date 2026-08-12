@@ -7,10 +7,13 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
 use Kma\Library\Kma\Controller\FormController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -114,6 +117,14 @@ class ExamseasonController extends FormController
 			$model = $this->getModel();
 			$model->addExams($examseasonId, $subjectIds);
 
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_EXAM,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: true,
+				objectId: $examseasonId,
+				extraData: ['subject_ids' => array_values($subjectIds)],
+			));
+
 			//Redirect to list view
 			$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 			$this->setRedirect($url);
@@ -121,6 +132,13 @@ class ExamseasonController extends FormController
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_EXAM,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				objectId: $examseasonId ?? null,
+				errorMessage: $e->getMessage(),
+			));
 			if(empty($examseasonId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
@@ -222,6 +240,14 @@ class ExamseasonController extends FormController
 				$this->app->enqueueMessage($msg,$type);
 			}
 
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_EXAM,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: true,
+				objectId: $examseasonId,
+				extraData: ['class_ids' => array_values($classIds)],
+			));
+
 			//Redirect to list view
 			$url = Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false);
 			$this->setRedirect($url);
@@ -229,6 +255,13 @@ class ExamseasonController extends FormController
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_EXAM,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				objectId: $examseasonId ?? null,
+				errorMessage: $e->getMessage(),
+			));
 			if(empty($examseasonId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
@@ -364,11 +397,28 @@ class ExamseasonController extends FormController
 				count($groupedExaminees),
 				count($retakingExaminees));
 			$this->app->enqueueMessage($msg);
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_RETAKE_EXAM,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: true,
+				objectId: $examseasonId,
+				extraData: [
+					'exam_count'     => count($groupedExaminees),
+					'examinee_count' => count($retakingExaminees),
+				],
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false));
 		}
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_RETAKE_EXAM,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				objectId: $examseasonId ?? null,
+				errorMessage: $e->getMessage(),
+			));
 			if(empty($examseasonId))
 				$url = Route::_('index.php?option=com_eqa',false);
 			else
@@ -383,10 +433,18 @@ class ExamseasonController extends FormController
 		//Redirect in any case
 		$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
 
+		$action = $status ? Action::ENABLE_PPAA_REQ : Action::DISABLE_PPAA_REQ;
+
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
+			$this->writeLog(new LogEntry(
+				action: $action,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 			return;
 		}
 
@@ -394,6 +452,12 @@ class ExamseasonController extends FormController
 		$cid = $this->input->post->get('cid',[],'int');
 		if(empty($cid)){
 			$this->setMessage(Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'),'error');
+			$this->writeLog(new LogEntry(
+				action: $action,
+				objectType: ObjectType::Examseason->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_NO_ITEM_SPECIFIED'),
+			));
 			return;
 		}
 		$examseasonId = $cid[0];
@@ -403,6 +467,13 @@ class ExamseasonController extends FormController
 			$model->enablePpaaReq($examseasonId);
 		else
 			$model->disablePpaaReq($examseasonId);
+
+		$this->writeLog(new LogEntry(
+			action: $action,
+			objectType: ObjectType::Examseason->value,
+			isSuccess: true,
+			objectId: $examseasonId,
+		));
 	}
 	public function enablePpaaReq()
 	{

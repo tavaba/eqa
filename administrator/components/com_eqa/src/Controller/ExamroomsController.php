@@ -7,10 +7,13 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
@@ -118,10 +121,18 @@ class ExamroomsController extends AdminController {
 		}
 		catch(Exception $e){
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_EXAMROOM_DATA,
+				objectType: ObjectType::Examroom->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+			));
 			return;
 		}
 
 		$examIds = [];
+		$eqaLogSuccessSheets = [];
+		$eqaLogFailedSheets  = [];
 		$sheetNumber = $spreadsheet->getSheetCount();
 		for($sh=0; $sh<$sheetNumber; $sh++){
 			$sheet = $spreadsheet->getSheet($sh);
@@ -145,6 +156,7 @@ class ExamroomsController extends AdminController {
 			{
 				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy thông tin phòng thi', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'reason' => 'Khong tim thay thong tin phong thi'];
 				continue; //Nhảy sang sheet kế tiếp
 			}
 
@@ -153,6 +165,7 @@ class ExamroomsController extends AdminController {
 			if (empty($examroomExamIds)){
 				$msg = sprintf('Sheet <b>%s</b>: không xác định được môn thi', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'examroom_id' => $examroomId, 'reason' => 'Khong xac dinh duoc mon thi'];
 				continue; //Nhảy sang sheet kế tiếp
 			}
 			$canEdit=true;
@@ -167,6 +180,7 @@ class ExamroomsController extends AdminController {
 			if(!$canEdit){
 				$msg = sprintf('Sheet <b>%s</b>: môn thi đã hoàn tất, không thể nhập dữ liệu', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'examroom_id' => $examroomId, 'reason' => 'Mon thi da hoan tat'];
 				continue; //Nhảy sang sheet kế tiếp
 			}
 			$examIds = array_merge($examIds, $examroomExamIds);
@@ -183,6 +197,7 @@ class ExamroomsController extends AdminController {
 			{
 				$msg = sprintf('Sheet <b>%s</b>: không tìm thấy thông tin thí sinh', $sheet->getTitle());
 				$app->enqueueMessage($msg, 'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'examroom_id' => $examroomId, 'reason' => 'Khong tim thay thong tin thi sinh'];
 				continue;
 			}
 
@@ -210,6 +225,14 @@ class ExamroomsController extends AdminController {
 					{
 						$msg = sprintf("Dòng 'Ghi chú' không hợp lệ: sheet %s, dòng %d", $sheet->getTitle(), $row);
 						$this->setMessage($msg, 'error');
+						$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'examroom_id' => $examroomId, 'reason' => $msg];
+						$this->writeLog(new LogEntry(
+							action: Action::IMPORT_EXAMROOM_DATA,
+							objectType: ObjectType::Examroom->value,
+							isSuccess: false,
+							errorMessage: $msg,
+							extraData: ['success_sheets' => $eqaLogSuccessSheets, 'failed_sheets' => $eqaLogFailedSheets],
+						));
 						return;
 					}
 					$examinee->anomaly = $anomaly->value;
@@ -227,9 +250,18 @@ class ExamroomsController extends AdminController {
 			try
 			{
 				$examModel->import($examroomId, $examroomName, $examinees, $importAnomaly);
+				$eqaLogSuccessSheets[] = ['sheet' => $sheet->getTitle(), 'examroom_id' => $examroomId, 'examinee_count' => count($examinees)];
 			}
 			catch(Exception $e){
 				$this->setMessage($e->getMessage(), 'error');
+				$eqaLogFailedSheets[] = ['sheet' => $sheet->getTitle(), 'examroom_id' => $examroomId, 'reason' => $e->getMessage()];
+				$this->writeLog(new LogEntry(
+					action: Action::IMPORT_EXAMROOM_DATA,
+					objectType: ObjectType::Examroom->value,
+					isSuccess: false,
+					errorMessage: $e->getMessage(),
+					extraData: ['success_sheets' => $eqaLogSuccessSheets, 'failed_sheets' => $eqaLogFailedSheets],
+				));
 				return;
 			}
 		}//Hết tất cả các sheet
@@ -269,6 +301,17 @@ class ExamroomsController extends AdminController {
 				}
 			}
 		}
+
+		$this->writeLog(new LogEntry(
+			action: Action::IMPORT_EXAMROOM_DATA,
+			objectType: ObjectType::Examroom->value,
+			isSuccess: empty($eqaLogFailedSheets),
+			errorMessage: empty($eqaLogFailedSheets) ? null : sprintf('%d/%d sheet xu ly that bai', count($eqaLogFailedSheets), count($eqaLogFailedSheets) + count($eqaLogSuccessSheets)),
+			extraData: [
+				'success_sheets' => $eqaLogSuccessSheets,
+				'failed_sheets'  => $eqaLogFailedSheets,
+			],
+		));
 	}
 
 }

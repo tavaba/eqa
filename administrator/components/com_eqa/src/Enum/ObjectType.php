@@ -29,6 +29,7 @@ enum ObjectType : int
 	case Cohort = 1203;
 	case Learner = 1301;
 	case CreditClass = 1302;        //Using of 'Class' is prohibited
+	case Conduct = 1303;
 
 	//Exam
 	case Examseason = 2000;
@@ -41,6 +42,7 @@ enum ObjectType : int
 	case Regrading = 2501;
 	case GradeCorrection = 2502;
 	case SecondAttempt = 2504;
+	case Mmproduction = 2505;
 
 	//Assessment
 	case Assessment = 3000;

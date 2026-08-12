@@ -9,8 +9,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 
 defined('_JEXEC') or die();
 
-use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
-use Kma\Component\Eqa\Administrator\Constant\Action;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Library\Kma\Model\LogsModel as BaseLogsModel;
 

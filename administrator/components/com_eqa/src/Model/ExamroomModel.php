@@ -5,8 +5,11 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\NumberHelper;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
@@ -609,8 +612,25 @@ class ExamroomModel extends AdminModel {
 				]);
 			$db->setQuery($query);
 			if(!$db->execute())
+			{
+				$this->writeLog(new LogEntry(
+					action: Action::APPLY_ANOMALY,
+					objectType: ObjectType::Examroom->value,
+					isSuccess: false,
+					objectId: $examroomId,
+					errorMessage: $this->getError() ?: 'Lỗi truy vấn CSDL khi ghi nhận bất thường',
+					newValue: $data,
+				));
 				return false;
+			}
 		}
+		$this->writeLog(new LogEntry(
+			action: Action::APPLY_ANOMALY,
+			objectType: ObjectType::Examroom->value,
+			isSuccess: true,
+			objectId: $examroomId,
+			newValue: $data,
+		));
 		return true;
 	}
 
@@ -681,10 +701,25 @@ class ExamroomModel extends AdminModel {
 			$db->setQuery($query);
 
 			if (!$db->execute()) {
+				$this->writeLog(new LogEntry(
+					action: Action::APPLY_ANOMALY,
+					objectType: ObjectType::Examroom->value,
+					isSuccess: false,
+					objectId: $examroomId,
+					errorMessage: $this->getError() ?: 'Lỗi truy vấn CSDL khi ghi nhận bất thường (sát hạch)',
+					newValue: $data,
+				));
 				return false;
 			}
 		}
 
+		$this->writeLog(new LogEntry(
+			action: Action::APPLY_ANOMALY,
+			objectType: ObjectType::Examroom->value,
+			isSuccess: true,
+			objectId: $examroomId,
+			newValue: $data,
+		));
 		return true;
 	}
 }

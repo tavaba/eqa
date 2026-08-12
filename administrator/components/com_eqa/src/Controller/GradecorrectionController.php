@@ -3,10 +3,13 @@ namespace Kma\Component\Eqa\Administrator\Controller;
 require_once JPATH_ROOT.'/vendor/autoload.php';
 use Exception;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Model\GradecorrectionModel;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
+use Kma\Library\Kma\DataObject\LogEntry;
 use PhpOffice\PhpWord\PhpWord;
 
 defined('_JEXEC') or die();
@@ -14,6 +17,7 @@ defined('_JEXEC') or die();
 class GradecorrectionController extends  FormController {
 	public function accept()
 	{
+		$itemId = null;
 		try
 		{
 			//1. Check token
@@ -39,12 +43,27 @@ class GradecorrectionController extends  FormController {
 			$model = $this->getModel('gradecorrection');
 			$model->accept($itemId, $currentUserId, $currentTime);
 
+			//4b. Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::ACCEPT_PPAA,
+				objectType: ObjectType::GradeCorrection->value,
+				isSuccess: true,
+				objectId: (int) $itemId,
+			));
+
 			//5. Redirect back
 			//   (The success message should be sent by the model)
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::ACCEPT_PPAA,
+				objectType: ObjectType::GradeCorrection->value,
+				isSuccess: false,
+				objectId: $itemId !== null ? (int) $itemId : null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 			$this->setMessage($e->getMessage(), 'error');
 		}
@@ -59,6 +78,7 @@ class GradecorrectionController extends  FormController {
 		 *        là trong post data sẽ có 'description'
 		 */
 
+		$itemId = null;
 		try
 		{
 			//1. Check token
@@ -91,10 +111,27 @@ class GradecorrectionController extends  FormController {
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');
 			$model->reject($itemId, $description, $currentUserId, $currentTime);
+
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::REJECT_PPAA,
+				objectType: ObjectType::GradeCorrection->value,
+				isSuccess: true,
+				objectId: (int) $itemId,
+				newValue: ['description' => $description],
+			));
+
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 		}
 		catch(Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::REJECT_PPAA,
+				objectType: ObjectType::GradeCorrection->value,
+				isSuccess: false,
+				objectId: $itemId !== null && $itemId !== '' ? (int) $itemId : null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 		}
@@ -154,6 +191,7 @@ class GradecorrectionController extends  FormController {
 		 * Pha 2: Thực hiện việc đính chính và lưu lại thông tin vào CSDL. Cách nhận biết pha 2
 		 *        là trong post data sẽ có 'description'
 		 */
+		$itemId = null;
 		try
 		{
 			//1. Check token
@@ -176,10 +214,20 @@ class GradecorrectionController extends  FormController {
 			//Phase 2. Correct the grade correction request
 			//Get jform data
 			$formData = $post->get('jform', [], 'array');
+			$itemId = $formData['id'] ?? null;
 			$currentUserId = $this->app->getIdentity()->id;
 			$currentTime = date('Y-m-d H:i:s');
 			$model = $this->getModel('gradecorrection');
 			$model->correct($formData, $currentUserId, $currentTime);
+
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::CORRECT_GRADE,
+				objectType: ObjectType::GradeCorrection->value,
+				isSuccess: true,
+				objectId: $itemId !== null ? (int) $itemId : null,
+				newValue: $formData,
+			));
 
 			//Redirect back
 			$this->setMessage('Đã lưu kết quả xử lý cho yêu cầu đính chính', 'success');
@@ -188,6 +236,13 @@ class GradecorrectionController extends  FormController {
 		}
 		catch(Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::CORRECT_GRADE,
+				objectType: ObjectType::GradeCorrection->value,
+				isSuccess: false,
+				objectId: $itemId !== null ? (int) $itemId : null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=gradecorrections', false));
 			return;

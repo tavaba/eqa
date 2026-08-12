@@ -9,6 +9,8 @@ use Exception;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\DataObject\PpaaEntryInfo;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\PpaaStatus;
 use Kma\Component\Eqa\Administrator\Enum\PpaaType;
 use Kma\Component\Eqa\Administrator\Extension\EqaComponent;
@@ -22,6 +24,7 @@ use Kma\Component\Eqa\Administrator\Model\RegradingModel;
 use Kma\Library\Kma\BankStatement\BankStatementHelper;
 use Kma\Library\Kma\BankStatement\BankStatementImportResultHelper;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Model\RegradingsModel;
 use Kma\Library\Kma\Helper\DatetimeHelper;
@@ -46,6 +49,8 @@ class RegradingsController extends AdminController
 	 */
 	public function add()
 	{
+		$examId = null;
+		$learnerIds = null;
 		try
 		{
 			//1. Check token
@@ -120,6 +125,12 @@ class RegradingsController extends AdminController
 			 * 4. Load model for saving
 			 * @var RegradingModel $regradingModel
 			 */
+			//    Lưu ý: mỗi lần gọi $regradingModel->save($data) bên dưới đã TỰ ĐỘNG
+			//    được ghi log riêng (Action::CREATE, ObjectType::Regrading) bởi cơ chế
+			//    auto-log của AdminModel::save() (đã triển khai ở đợt 1) — không cần
+			//    ghi log thành công thêm ở đây để tránh trùng lặp. Log ở catch bên dưới
+			//    chỉ nhằm bắt các trường hợp thất bại KHÔNG đi qua save() (permission,
+			//    dữ liệu không hợp lệ, canRequestPpaa, hoặc updateExamineePpaa()).
 			$regradingModel = $this->getModel('Regrading');
 			foreach ($learnerIds as $learnerId)
 			{
@@ -148,6 +159,14 @@ class RegradingsController extends AdminController
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::ADD_REGRADING,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: false,
+				objectId: $examId ?: null,
+				errorMessage: $e->getMessage(),
+				extraData: $learnerIds ? ['learner_ids' => $learnerIds] : null,
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 			return;
@@ -155,6 +174,7 @@ class RegradingsController extends AdminController
 	}
 	public function accept()
 	{
+		$cid = null;
 		try
 		{
 			//1. Check token
@@ -180,17 +200,33 @@ class RegradingsController extends AdminController
 			foreach ($cid  as $itemId)
 				$model->accept($itemId, $currentUser, $currentTime);
 
+			//4b. Ghi log (thành công — 1 bản ghi cho cả batch)
+			$this->writeLog(new LogEntry(
+				action: Action::ACCEPT_PPAA,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: true,
+				extraData: ['regrading_ids' => array_values($cid)],
+			));
+
 			//5. Redirect
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::ACCEPT_PPAA,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+				extraData: $cid ? ['regrading_ids' => array_values($cid)] : null,
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
 	}
 	public function reject()
 	{
+		$cid = null;
 		try
 		{
 			//1. Check token
@@ -216,11 +252,26 @@ class RegradingsController extends AdminController
 			foreach ($cid  as $itemId)
 				$model->reject($itemId, $currentUser, $currentTime);
 
+			//4b. Ghi log (thành công — 1 bản ghi cho cả batch)
+			$this->writeLog(new LogEntry(
+				action: Action::REJECT_PPAA,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: true,
+				extraData: ['regrading_ids' => array_values($cid)],
+			));
+
 			//5. Redirect
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
 		catch (Exception $e)
 		{
+			$this->writeLog(new LogEntry(
+				action: Action::REJECT_PPAA,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+				extraData: $cid ? ['regrading_ids' => array_values($cid)] : null,
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 		}
@@ -229,6 +280,11 @@ class RegradingsController extends AdminController
 	/**
 	 * Phân công chấm phúc khảo. Đối với chấm phúc khảo sẽ không thực hiện dồn túi mà sẽ phân công
 	 * theo môn vì thường thì mỗi môn chỉ có tối đa vài chục bài.
+	 *
+	 * Lưu ý: method này chỉ kiểm tra điều kiện rồi CHUYỂN HƯỚNG sang form phân
+	 * công (view regradingEmployees) — bản thân nó KHÔNG làm thay đổi dữ liệu,
+	 * nên không thuộc phạm vi ghi log. Việc lưu dữ liệu thực sự nằm ở
+	 * saveRegradingExaminers()/applyRegradingExaminers() bên dưới.
 	 *
 	 * @since version 1.1.10
 	 */
@@ -269,6 +325,7 @@ class RegradingsController extends AdminController
 
 	public function saveRegradingExaminers(bool $continueAssigning=false)
 	{
+		$examseasonId = null;
 		try
 		{
 			//Bước 1. Kiểm tra token
@@ -291,6 +348,14 @@ class RegradingsController extends AdminController
 			$model = $this->getModel('regradings');
 			$model->saveExaminers($examseasonId,$data);
 
+			//Bước 4b. Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::ASSIGN_REGRADING_EXAMINERS,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: true,
+				objectId: $examseasonId,
+			));
+
 			//Bước 5. Redirect đến trang tiếp theo nếu có
 			$this->setMessage('Dữ liệu đã được lưu thành công','success');
 			if($continueAssigning) {
@@ -301,6 +366,13 @@ class RegradingsController extends AdminController
 			}
 		}
 		catch (Exception $e) {
+			$this->writeLog(new LogEntry(
+				action: Action::ASSIGN_REGRADING_EXAMINERS,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: false,
+				objectId: $examseasonId ?: null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(),'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradings', false));
 			return;
@@ -561,6 +633,9 @@ class RegradingsController extends AdminController
 		//1. Check token
 		$this->checkToken();
 
+		$currentExamId = null;
+		$currentSheetTitle = null;
+		$currentFileName = null;
 		try
 		{
 			//2. Check permission
@@ -581,6 +656,7 @@ class RegradingsController extends AdminController
 			{
 				//5.1. Load spreadsheet
 				$fileName = $file['name'];
+				$currentFileName = $fileName;
 				$filePath = $file['tmp_name'];
 				$spreadsheet = IOHelper::loadSpreadsheet($filePath);
 
@@ -588,6 +664,7 @@ class RegradingsController extends AdminController
 				foreach ($spreadsheet->getAllSheets() as $worksheet) {
 					//Step 1. Read all data from sheet into a multi-dimensional array
 					$sheetTitle = $worksheet->getTitle();
+					$currentSheetTitle = $sheetTitle;
 					$sheetData = $worksheet->toArray(null,false,false,false,true);
 					$lastRowIndex = count($sheetData) - 1; //Last row index
 
@@ -613,6 +690,7 @@ class RegradingsController extends AdminController
 							htmlspecialchars($sheetTitle), htmlspecialchars($fileName));
 						throw new Exception($msg);
 					}
+					$currentExamId = $examId;
 
 					//Step 3. Find the heading row of the mark table
 					$headingRowIndex = null;
@@ -686,10 +764,28 @@ class RegradingsController extends AdminController
 						htmlspecialchars($fileName),
 						count($regradingData));
 					$this->app->enqueueMessage($msg,'success');
+
+					//Ghi log (thành công — 1 bản ghi cho mỗi sheet/môn thi đã xử lý)
+					$this->writeLog(new LogEntry(
+						action: Action::UPLOAD_REGRADING_RESULT,
+						objectType: ObjectType::Exam->value,
+						isSuccess: true,
+						objectId: $examId,
+						objectTitle: $examName,
+						extraData: ['file' => $fileName, 'sheet' => $sheetTitle, 'record_count' => count($regradingData)],
+					));
 				}
 			}
 		}
 		catch (Exception $e) {
+			$this->writeLog(new LogEntry(
+				action: Action::UPLOAD_REGRADING_RESULT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $currentExamId,
+				errorMessage: $e->getMessage(),
+				extraData: ['file' => $currentFileName, 'sheet' => $currentSheetTitle],
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingresult&layout=uploadpaper', false));
 			return;
@@ -700,6 +796,7 @@ class RegradingsController extends AdminController
 	}
 	public function uploadHybridRegradingResult():void
 	{
+		$examId = null;
 		try
 		{
 			//1. Check token
@@ -762,6 +859,15 @@ class RegradingsController extends AdminController
 			$regradingsModel = $this->getModel('regradings');
 			$count = $regradingsModel->saveHybridRegradingResult($examId, $examResults);
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::UPLOAD_REGRADING_RESULT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+				extraData: ['file' => $file['name'] ?? null, 'sheet' => $sheetName, 'record_count' => $count],
+			));
+
 			/**
 			 * 6. Show message
 			 * @var ExamModel $examModel
@@ -772,6 +878,13 @@ class RegradingsController extends AdminController
 			$this->app->enqueueMessage($msg,'success');
 		}
 		catch (Exception $e) {
+			$this->writeLog(new LogEntry(
+				action: Action::UPLOAD_REGRADING_RESULT,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId ?: null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=regradingresult&layout=uploaditest', false));
 			return;
@@ -857,12 +970,28 @@ class RegradingsController extends AdminController
 				}
 			}
 
+			//Ghi log (thành công)
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_STATEMENT,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: true,
+				objectId: $examseasonId ?: null,
+				extraData: ['bank' => $napasCode, 'file' => $uploadedFile['name'] ?? null, 'result' => (array) $result],
+			));
+
 			$this->setMessage(
 				BankStatementImportResultHelper::buildMessage($result, 'đã nộp phí và được chấp nhận phúc khảo'),
 				BankStatementImportResultHelper::getMessageType($result)
 			);
 
 		} catch (Exception $e) {
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_STATEMENT,
+				objectType: ObjectType::Regrading->value,
+				isSuccess: false,
+				objectId: $examseasonId ?: null,
+				errorMessage: $e->getMessage(),
+			));
 			$this->setMessage($e->getMessage(), 'error');
 		}
 	}

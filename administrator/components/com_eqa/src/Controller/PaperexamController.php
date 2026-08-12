@@ -2,10 +2,13 @@
 namespace Kma\Component\Eqa\Administrator\Controller;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\PaperexamModel;
 use Kma\Library\Kma\Controller\FormController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Helper\IOHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -26,6 +29,12 @@ class PaperexamController extends  FormController {
 		//Check permission
 		if(!$this->app->getIdentity()->authorise('eqa.mask', $this->option)){
 			$this->setMessage('Bạn không có quyền thực hiện chức năng này', 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::MASK_PAPER,
+				objectType: ObjectType::Paper->value,
+				isSuccess: false,
+				errorMessage: 'Bạn không có quyền thực hiện chức năng này',
+			));
 			return;
 		}
 
@@ -38,12 +47,32 @@ class PaperexamController extends  FormController {
 		if(empty($examId) || $maskStart<=0 || $maskInterval<=0 || $packageDefaultSize<=0 || $packageMinSize<=0 || $packageMinSize>$packageDefaultSize)
 		{
 			$this->setMessage('Dữ liệu không hợp lệ', 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::MASK_PAPER,
+				objectType: ObjectType::Paper->value,
+				isSuccess: false,
+				objectId: $examId ?? null,
+				errorMessage: 'Dữ liệu không hợp lệ',
+			));
 			return;
 		}
 
 		//Process
 		$model = $this->getModel();
 		$model->mask($examId, $maskStart, $maskInterval, $packageDefaultSize, $packageMinSize);
+
+		$this->writeLog(new LogEntry(
+			action: Action::MASK_PAPER,
+			objectType: ObjectType::Paper->value,
+			isSuccess: true,
+			objectId: $examId,
+			extraData: [
+				'mask_start'           => $maskStart,
+				'mask_interval'        => $maskInterval,
+				'package_default_size' => $packageDefaultSize,
+				'package_min_size'     => $packageMinSize,
+			],
+		));
 	}
 
 	/**
@@ -141,6 +170,12 @@ class PaperexamController extends  FormController {
 		if(!$this->app->getIdentity()->authorise('core.edit', $this->option))
 		{
 			$this->setMessage(Text::_('COM_EQA_MSG_UNAUTHORISED'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::SAVE_EXAMINERS,
+				objectType: ObjectType::Paper->value,
+				isSuccess: false,
+				errorMessage: Text::_('COM_EQA_MSG_UNAUTHORISED'),
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa',false));
 			return;
 		}
@@ -152,6 +187,12 @@ class PaperexamController extends  FormController {
 		$examId = $this->app->input->getInt('exam_id');
 		if(empty($examId)){
 			$this->setMessage('Không có thông tin môn thi','error');
+			$this->writeLog(new LogEntry(
+				action: Action::SAVE_EXAMINERS,
+				objectType: ObjectType::Paper->value,
+				isSuccess: false,
+				errorMessage: 'Không có thông tin môn thi',
+			));
 			return;
 		}
 
@@ -166,6 +207,13 @@ class PaperexamController extends  FormController {
 		 */
 		$examModel = $this->getModel('exam');
 		$examModel->setExamStatus($examId,ExamStatus::ExaminerAssigned);
+
+		$this->writeLog(new LogEntry(
+			action: Action::SAVE_EXAMINERS,
+			objectType: ObjectType::Paper->value,
+			isSuccess: (bool) $ok,
+			objectId: $examId,
+		));
 	}
 	public function exportMarkingSheet()
 	{

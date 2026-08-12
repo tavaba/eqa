@@ -12,9 +12,12 @@ use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\ExamType;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
+use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
 use Kma\Component\Eqa\Administrator\Helper\RoomHelper;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
@@ -542,11 +545,26 @@ class ExamModel extends AdminModel{
 		if(!$db->execute())
 		{
 			$app->enqueueMessage('Hoãn thi KHÔNG thành công', 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: $examId,
+				errorMessage: $this->getError() ?: 'Lỗi truy vấn CSDL khi hoãn thi',
+				extraData: ['requested_learner_ids' => $examineeIds, 'excluded_learner_ids' => $excludedLearnerIds],
+			));
 			return false;
 		}
 		else{
 			$msg = sprintf('Hoãn thi thành công cho %d thí sinh', sizeof($delayedExamineeIds));
 			$app->enqueueMessage($msg, 'success');
+			$this->writeLog(new LogEntry(
+				action: Action::DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: $examId,
+				extraData: ['delayed_learner_ids' => array_values($delayedExamineeIds), 'excluded_learner_ids' => $excludedLearnerIds],
+			));
 			return true;
 		}
 	}
@@ -576,6 +594,14 @@ class ExamModel extends AdminModel{
 		{
 			$msg = "Hủy hoãn thi không thành công. Chỉ có thể hủy hoãn thi đối với các thí sinh đã hoãn thi trước đó";
 			$app->enqueueMessage($msg, 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: (int) $examId,
+				errorMessage: $msg,
+				extraData: ['requested_learner_ids' => $examineeIds],
+			));
 			return false;
 		}
 
@@ -596,6 +622,14 @@ class ExamModel extends AdminModel{
 		if(!$db->execute()){
 			$msg = "Lỗi truy vấn CSDL khi hủy hoãn thi";
 			$app->enqueueMessage($msg,'error');
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: false,
+				objectId: (int) $examId,
+				errorMessage: $msg,
+				extraData: ['learner_ids' => $learnerIds],
+			));
 			return false;
 		}
 		else{
@@ -606,6 +640,13 @@ class ExamModel extends AdminModel{
 				implode(', ', $learnerCodes)
 			);
 			$app->enqueueMessage($msg, 'success');
+			$this->writeLog(new LogEntry(
+				action: Action::UNDO_DELAY,
+				objectType: ObjectType::Exam->value,
+				isSuccess: true,
+				objectId: (int) $examId,
+				extraData: ['learner_ids' => $learnerIds, 'learner_codes' => $learnerCodes],
+			));
 
 			$countFailed = sizeof($examineeIds) - $countSuccess;
 			if($countFailed>0)

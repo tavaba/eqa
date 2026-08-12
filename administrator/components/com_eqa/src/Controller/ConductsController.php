@@ -8,8 +8,11 @@ use Exception;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 use Kma\Library\Kma\Controller\AdminController;
+use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Eqa\Administrator\Helper\ExamHelper;
@@ -275,12 +278,30 @@ class ConductsController extends AdminController {
 
 			//Set message and redirect back to list view
 			$this->setMessage('Nhập thành công');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_CONDUCTS,
+				objectType: ObjectType::Conduct->value,
+				isSuccess: true,
+				extraData: [
+					'academicyear_code' => $academicyearCode,
+					'term'              => $term,
+					'import_mark'       => $importMark,
+					'import_credits'    => $importCredits,
+				],
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=conducts', false));
 			return;
 		}
 		catch(Exception $e)
 		{
 			$this->setMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::IMPORT_CONDUCTS,
+				objectType: ObjectType::Conduct->value,
+				isSuccess: false,
+				errorMessage: $e->getMessage(),
+				extraData: ['academicyear_code' => $academicyearCode ?? null, 'term' => $term ?? null],
+			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=conducts', false));
 			return;
 		}

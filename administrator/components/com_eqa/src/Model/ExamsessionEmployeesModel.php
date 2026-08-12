@@ -6,11 +6,26 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Component\Eqa\Administrator\Enum\Action;
+use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Library\Kma\DataObject\LogEntry;
 
 class ExamsessionEmployeesModel extends ListModel{
     use CampusScopedByExamseason;
+
+	/**
+	 * Object bị tác động về bản chất là 'ca thi' (examsession) — việc phân
+	 * công cán bộ coi/chấm thi được lưu trực tiếp vào #__eqa_examrooms nhưng
+	 * luôn gắn với 1 ca thi cụ thể.
+	 *
+	 * @since 1.0.4
+	 */
+	protected function getLogObjectType(): int
+	{
+		return ObjectType::Examsession->value;
+	}
 
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
@@ -136,6 +151,14 @@ class ExamsessionEmployeesModel extends ListModel{
 		if(DatabaseHelper::isCompletedExamsession($examsessionId))
 		{
 			$app->enqueueMessage(Text::_('COM_EQA_MSG_EXAMSESSION_COMPLETED'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::ASSIGN_EXAMSESSION_STAFF,
+				objectType: $this->getLogObjectType(),
+				isSuccess: false,
+				objectId: (int) $examsessionId,
+				errorMessage: 'Ca thi đã hoàn thành, không thể sửa phân công cán bộ.',
+				newValue: $data,
+			));
 			return false;
 		}
 
@@ -143,6 +166,14 @@ class ExamsessionEmployeesModel extends ListModel{
 		if(!$this->isValidData($data))
 		{
 			$app->enqueueMessage(Text::_('COM_EQA_MSG_INVALID_DATA'),'error');
+			$this->writeLog(new LogEntry(
+				action: Action::ASSIGN_EXAMSESSION_STAFF,
+				objectType: $this->getLogObjectType(),
+				isSuccess: false,
+				objectId: (int) $examsessionId,
+				errorMessage: 'Dữ liệu phân công cán bộ coi/chấm thi không hợp lệ.',
+				newValue: $data,
+			));
 			return false;
 		}
 
@@ -174,10 +205,25 @@ class ExamsessionEmployeesModel extends ListModel{
 		{
 			$db->transactionRollback();
 			$app->enqueueMessage($e->getMessage(), 'error');
+			$this->writeLog(new LogEntry(
+				action: Action::ASSIGN_EXAMSESSION_STAFF,
+				objectType: $this->getLogObjectType(),
+				isSuccess: false,
+				objectId: (int) $examsessionId,
+				errorMessage: $e->getMessage(),
+				newValue: $data,
+			));
 			return false;
 		}
 		$db->transactionCommit();
 		$app->enqueueMessage(Text::_('COM_EQA_MSG_TASK_SUCCESS'),'success');
+		$this->writeLog(new LogEntry(
+			action: Action::ASSIGN_EXAMSESSION_STAFF,
+			objectType: $this->getLogObjectType(),
+			isSuccess: true,
+			objectId: (int) $examsessionId,
+			newValue: $data,
+		));
 		return true;
 	}
 }

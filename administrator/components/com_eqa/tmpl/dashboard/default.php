@@ -52,6 +52,11 @@ JHtml::_('bootstrap.framework');
                         <i class="fas fa-user-graduate me-1"></i> Đánh giá rèn luyện
                     </button>
                 </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="tab9-tab" data-bs-toggle="tab" data-bs-target="#tab9" type="button" role="tab">
+                        <i class="fas fa-cogs me-1"></i> Hệ thống
+                    </button>
+                </li>
             </ul>
 
             <!-- Tab contents -->
@@ -259,6 +264,17 @@ JHtml::_('bootstrap.framework');
                         <div class="col-md-6 d-grid">
                             <a href="<?php echo Route::_('index.php?option=com_eqa&view=conducts'); ?>" class="btn btn-outline-primary">
                                 <i class="fas fa-user-check me-1"></i> Kết quả rèn luyện
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Hệ thống ===== -->
+                <div class="tab-pane fade" id="tab9" role="tabpanel">
+                    <div class="row g-3">
+                        <div class="col-md-6 d-grid">
+                            <a href="<?php echo Route::_('index.php?option=com_eqa&view=logs'); ?>" class="btn btn-outline-primary">
+                                <i class="fas fa-clipboard-list me-1"></i> Nhật ký hệ thống
                             </a>
                         </div>
                     </div>
