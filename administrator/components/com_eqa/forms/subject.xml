@@ -50,6 +50,19 @@
                 type="text"
                 label="COM_EQA_FORM_SUBJECT_CREDITS_LABEL"
         />
+        <field
+                name="start_year"
+                type="number"
+                label="Năm đưa vào sử dụng"
+                description="Năm mà môn học bắt đầu được đưa vào sử dụng.
+                Đây là trường thông tin tham khảo dành cho quản trị viên,
+                không ảnh hưởng đến việc tổ chức thi hay tính điểm.
+                Để trống nếu không xác định."
+                min="1900"
+                max="2200"
+                step="1"
+                filter="integer"
+        />
         <field  name="is_pass_fail"
                 type="radio"
                 required="true"

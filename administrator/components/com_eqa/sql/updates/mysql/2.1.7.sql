@@ -3,6 +3,7 @@
 -- Date     : 04/08/2026
 --
 -- Tên gọi "phân biệt" cho môn học và môn thi
+-- Năm đưa vào sử dụng của môn học
 --
 -- Bối cảnh: nhiều môn học có cùng tên chính thức nhưng khác mã và khác nội dung
 -- (ví dụ "Đồ án 1" ở các chương trình đào tạo khác nhau). Trên giao diện quản trị
@@ -32,6 +33,10 @@ ALTER TABLE `#__eqa_subjects`
     ADD COLUMN `display_name` VARCHAR(255) NULL
         COMMENT 'Tên phân biệt, chỉ dùng cho giao diện quản trị; NULL = dùng name'
         AFTER `name`;
+ALTER TABLE `#__eqa_subjects`
+    ADD COLUMN `start_year` INT UNSIGNED NULL
+        COMMENT 'Năm đưa vào sử dụng môn học; NULL = không xác định'
+        AFTER `credits`;
 
 -- -----------------------------------------------------------------------------
 -- 2. Môn thi

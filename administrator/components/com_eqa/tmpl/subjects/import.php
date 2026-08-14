@@ -46,6 +46,15 @@ $sampleUrl = JUri::root().$samplePath;
                                         <li>JSON string: Trường hợp có nhiều ngân hàng (hiện chưa hỗ trợ)</li>
                                     </ul>
                                 </li>
+                                <li>Cột H: Năm đưa vào sử dụng môn học
+                                    <ul>
+                                        <li>Để trống: Không xác định</li>
+                                        <li>Năm gồm 4 chữ số, ví dụ: 2021</li>
+                                    </ul>
+                                    Đây là thông tin tham khảo cho quản trị viên, không ảnh hưởng đến
+                                    việc tổ chức thi hay tính điểm. File cũ chỉ có 7 cột (A-G) vẫn
+                                    nhập được bình thường.
+                                </li>
                             </ul>
                         </li>
                     </ol>

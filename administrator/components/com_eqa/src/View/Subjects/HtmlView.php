@@ -34,6 +34,11 @@ class HtmlView extends ItemsHtmlView
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('display_name', 'Tên phân biệt', false, false);
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('credits','Số TC',true,false,'text-center');
+	    // Cột "Năm SD": năm môn học được đưa vào sử dụng. Thông tin tham khảo cho
+	    // quản trị viên; để trống khi không xác định (NULL). (2.1.8)
+	    $field = new ListLayoutItemFieldOption('start_year', 'Năm SD', true, false, 'text-center');
+	    $field->titleDesc = 'Năm đưa vào sử dụng';
+	    $option->customFieldset1[] = $field;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);
         $field = new ListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
         $field->cellCssClasses = 'text-center';

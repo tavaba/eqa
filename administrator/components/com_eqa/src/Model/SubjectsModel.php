@@ -11,7 +11,7 @@ use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 class SubjectsModel extends ListModel{
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('department_code','code','credits','finaltesttype','testbankyear','published', 'ordering');
+        $config['filter_fields']=array('department_code','code','credits','start_year','finaltesttype','testbankyear','published', 'ordering');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'code', $direction = 'desc'): void
@@ -28,8 +28,8 @@ class SubjectsModel extends ListModel{
          * Các màn hình khác chỉ hiển thị tên phân biệt.
          */
         $columns = $db->quoteName(
-            array('a.id','b.code','b.name','a.code', 'a.name','a.display_name','a.degree', 'a.credits', 'a.finaltesttype', 'a.testbankyear', 'a.allowed_rooms', 'a.published', 'a.ordering'),
-            array('id','department_code','department_name','code','name','display_name','degree','credits', 'finaltesttype','testbankyear', 'allowed_rooms', 'published',  'ordering')
+            array('a.id','b.code','b.name','a.code', 'a.name','a.display_name','a.degree', 'a.credits', 'a.start_year', 'a.finaltesttype', 'a.testbankyear', 'a.allowed_rooms', 'a.published', 'a.ordering'),
+            array('id','department_code','department_name','code','name','display_name','degree','credits', 'start_year', 'finaltesttype','testbankyear', 'allowed_rooms', 'published',  'ordering')
         );
         $query->from('#__eqa_subjects AS a')
             ->leftJoin('#__eqa_units AS b','a.unit_id = b.id')
@@ -133,6 +133,10 @@ class SubjectsModel extends ListModel{
 				$credits = $subject['credit_hours'];
 				$finaltesttype = $subject['final_test_type'];
 				$testbankyear = $subject['test_bank_year']?:'NULL';
+				// Năm đưa vào sử dụng: 'NULL' khi ô Excel để trống. (2.1.7)
+				$startYear = isset($subject['start_year']) && $subject['start_year'] !== null
+					? (int) $subject['start_year']
+					: 'NULL';
 				$finaltestweight=0.7;
 
 				//3.1. Check if there is a an unit with the given code in database
@@ -158,6 +162,7 @@ class SubjectsModel extends ListModel{
 							'name='.$db->quote($subjectName),
 							'degree='.$degree,
 							'credits='.$credits,
+							'start_year='.$startYear,
 							'finaltesttype='.$finaltesttype,
 							'testbankyear='.$testbankyear,
 							'modified_by='.$userId,
@@ -178,6 +183,7 @@ class SubjectsModel extends ListModel{
 						$db->quote($subjectName),
 						$degree,
 						$credits,
+						$startYear,
 						$finaltesttype,
 						$finaltestweight,
 						$testbankyear,
@@ -187,7 +193,7 @@ class SubjectsModel extends ListModel{
 					$tuple = implode(',',$data);
 					$query = $db->getQuery(true)
 						->insert('#__eqa_subjects')
-						->columns(['unit_id','code','name','degree','credits','finaltesttype','finaltestweight','testbankyear','created_by','created_at'])
+						->columns(['unit_id','code','name','degree','credits','start_year','finaltesttype','finaltestweight','testbankyear','created_by','created_at'])
 						->values($tuple);
 					$db->setQuery($query);
 					if(!$db->execute())

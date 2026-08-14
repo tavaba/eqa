@@ -99,6 +99,29 @@ class SubjectsController extends AdminController{
 					throw new Exception($msg);
 				}
 
+				/*
+				 * Cột H: Năm đưa vào sử dụng môn học. (2.1.7)
+				 *
+				 * Dùng toán tử ?? để file Excel cũ (chỉ có 7 cột A-G) vẫn import
+				 * được bình thường: cột khuyết được hiểu là "không xác định".
+				 */
+				$startYear = trim($row[$colIndex++] ?? '');
+				if($startYear === '')
+					$startYear = null;
+				else if(NumberHelper::isInteger($startYear))
+				{
+					$startYear = (int)$startYear;
+					if($startYear < 1900 || $startYear > 2200)
+					{
+						$msg = sprintf('Dòng %d: Năm đưa vào sử dụng "%d" nằm ngoài khoảng hợp lệ (1900-2200)', $r+1, $startYear);
+						throw new Exception($msg);
+					}
+				}
+				else{
+					$msg = sprintf('Dòng %d: Năm đưa vào sử dụng "%s" không hợp lệ', $r+1, htmlspecialchars($startYear));
+					throw new Exception($msg);
+				}
+
 				$data[] = [
 					'row_index'=>$r+1,
 					'unit_code'=>$unitCode,
@@ -108,6 +131,7 @@ class SubjectsController extends AdminController{
 					'credit_hours'=>$creditNumber,
 					'final_test_type'=>$testType->value,
 					'test_bank_year'=>$testBankYear,
+					'start_year'=>$startYear,
 				];
 			}
 

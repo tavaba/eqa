@@ -352,6 +352,7 @@ CREATE TABLE `#__eqa_subjects` (
     `display_name`      VARCHAR(255) NULL COMMENT 'Tên phân biệt, chỉ dùng cho giao diện quản trị; NULL = dùng name',
     `degree`            INT UNSIGNED NOT NULL COMMENT 'Bậc học',
     `credits`           REAL COMMENT 'Số tín chỉ (có thể lẻ)',
+    `start_year`        INT UNSIGNED NULL COMMENT 'Năm đưa vào sử dụng môn học; NULL = không xác định',
     `unit_id`           INT UNSIGNED COMMENT 'Khóa ngoại: Đơn vị phụ trách môn học',
     `is_pass_fail`      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Môn điều kiện, không tính điểm',
     `finaltesttype`     INT UNSIGNED NOT NULL COMMENT 'Hình thức thi mặc định (định nghĩa bằng constants)',

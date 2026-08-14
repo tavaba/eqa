@@ -14,7 +14,8 @@ defined('_JEXEC') or die();
  *
  * Ngoài logic chuẩn của AdminModel, model này xử lý thêm:
  *   - Cột `allowed_rooms` (TEXT/JSON) ↔ array of int khi load/save form.
- *   - Các cột số có thể NULL: credits, finaltestduration, finaltestweight, testbankyear.
+ *   - Các cột số có thể NULL: credits, start_year, finaltestduration,
+ *     finaltestweight, testbankyear.
  *
  * @since 1.0.0
  */
@@ -124,6 +125,12 @@ class SubjectModel extends AdminModel
 
         if (empty($table->credits)) {
             $table->credits = null;
+        }
+
+        // Năm đưa vào sử dụng: form gửi lên chuỗi rỗng khi người dùng không nhập.
+        // Chuẩn hóa về NULL để giữ đúng ngữ nghĩa "không xác định". (2.1.7)
+        if (empty($table->start_year)) {
+            $table->start_year = null;
         }
 
         if (empty($table->finaltestduration)) {
