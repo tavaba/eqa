@@ -37,6 +37,23 @@ class Table extends BaseTable{
 
 	protected ?EnglishService $englishService = null;
 
+	/**
+	 * Timestamp field types and their possible column names in the database.
+	 *
+	 * Đây là NGUỒN DUY NHẤT (single source of truth) của danh sách tên cột timestamp.
+	 * Các thành phần khác (ví dụ view Logs khi tính khác biệt giữa old_value và new_value)
+	 * truy cập danh sách này qua Table::getTimestampColumnNames() thay vì khai báo lại.
+	 *
+	 * @var array<string, string[]>
+	 * @since 1.0.0
+	 */
+	public const TIMESTAMP_COLUMN_OPTIONS = [
+		'created'     => ['created', 'created_at', 'created_on'],
+		'created_by'  => ['created_by', 'creator_id'],
+		'modified'    => ['modified', 'updated', 'modified_at', 'updated_at', 'modified_on', 'updated_on'],
+		'modified_by' => ['modified_by', 'updated_by', 'modifier_id'],
+	];
+
     /**
      * Timestamp fields types and their possible column names in the database
      *
@@ -44,12 +61,35 @@ class Table extends BaseTable{
      * @since 1.0.0
      */
 	protected array $timeStampFieldTypes = ['created', 'created_by', 'modified', 'modified_by'];
-	protected array $timestampFieldOptions = [
-		'created' => ['created', 'created_at', 'created_on'],
-		'created_by' => ['created_by', 'creator_id'],
-		'modified' => ['modified', 'updated', 'modified_at', 'updated_at', 'modified_on', 'updated_on'],
-		'modified_by' => ['modified_by', 'updated_by', 'modifier_id'],
-	];
+	protected array $timestampFieldOptions = self::TIMESTAMP_COLUMN_OPTIONS;
+
+	/**
+	 * Trả về danh sách phẳng (flat) các tên cột timestamp có thể xuất hiện trong CSDL.
+	 *
+	 * Dùng khi cần loại các cột timestamp ra khỏi một xử lý nào đó mà không có sẵn
+	 * instance của Table — ví dụ view Logs loại chúng khỏi phép so sánh old/new value.
+	 *
+	 * Ví dụ:
+	 *   Table::getTimestampColumnNames()
+	 *     → ['created','created_at','created_on','created_by','creator_id','modified',...]
+	 *
+	 *   Table::getTimestampColumnNames(['modified', 'modified_by'])
+	 *     → ['modified','updated','modified_at','updated_at','modified_on','updated_on',
+	 *        'modified_by','updated_by','modifier_id']
+	 *
+	 * @param  string[]  $types  Các nhóm cần lấy ('created', 'created_by', 'modified',
+	 *                           'modified_by'). Mảng rỗng → lấy tất cả các nhóm.
+	 * @return string[]          Danh sách tên cột, đã loại trùng và đánh lại chỉ số.
+	 * @since  1.2.0
+	 */
+	public static function getTimestampColumnNames(array $types = []): array
+	{
+		$groups = $types === []
+			? self::TIMESTAMP_COLUMN_OPTIONS
+			: array_intersect_key(self::TIMESTAMP_COLUMN_OPTIONS, array_flip($types));
+
+		return array_values(array_unique(array_merge(...array_values($groups))));
+	}
 
     /**
      * Detected timestamp fields for this table
