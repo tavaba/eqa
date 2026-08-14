@@ -6,6 +6,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 /**
  * Custom form field: danh sách môn học có môn thi tương ứng trong bảng
@@ -27,11 +28,12 @@ class SecondAttemptSubjectField extends ListField
 	 * Query logic:
 	 *   1. Lấy tập hợp subject_id phân biệt từ các môn thi (exam)
 	 *      đang có mặt trong bảng secondattempts (qua last_exam_id).
-	 *   2. JOIN với bảng subjects để lấy code và name.
+	 *   2. JOIN với bảng subjects để lấy code và tên phân biệt.
 	 *   3. Sắp xếp theo code môn học.
 	 *
 	 * @return array
 	 * @since 2.0.4
+	 * @updated 2.1.7  Nhãn option dùng tên phân biệt thay cho tên chính thức.
 	 */
 	protected function getOptions(): array
 	{
@@ -41,7 +43,7 @@ class SecondAttemptSubjectField extends ListField
 			->select([
 				$db->quoteName('su.id'),
 				$db->quoteName('su.code'),
-				$db->quoteName('su.name'),
+				DatabaseHelper::displayNameExpr('su') . ' AS ' . $db->quoteName('name'),
 			])
 			->from($db->quoteName('#__eqa_subjects', 'su'))
 			->join(

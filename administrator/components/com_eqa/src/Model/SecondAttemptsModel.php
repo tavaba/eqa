@@ -83,7 +83,6 @@ class SecondAttemptsModel extends ListModel
                 'lr.lastname',
                 'lr.firstname',
                 'su.code',
-                'su.name',
                 'cl.academicyear',
                 'cl.term',
             ],
@@ -104,7 +103,6 @@ class SecondAttemptsModel extends ListModel
                 'learner_lastname',
                 'learner_firstname',
                 'subject_code',
-                'subject_name',
                 'academicyear',
                 'term',
             ]
@@ -112,6 +110,8 @@ class SecondAttemptsModel extends ListModel
 
         $query = $db->getQuery(true)
             ->select($columns)
+            //Tên môn học hiển thị cho quản trị viên là TÊN PHÂN BIỆT (2.1.7)
+            ->select(DatabaseHelper::displayNameExpr('su') . ' AS ' . $db->quoteName('subject_name'))
             ->from($db->quoteName('#__eqa_secondattempts', 'sa'))
             ->leftJoin(
                 $db->quoteName('#__eqa_learners', 'lr') .
@@ -145,7 +145,8 @@ class SecondAttemptsModel extends ListModel
                 $db->quoteName('lr.code') . ' LIKE ' . $like .
                 ' OR CONCAT(' . $db->quoteName('lr.lastname') . ', \' \', ' . $db->quoteName('lr.firstname') . ') LIKE ' . $like .
                 ' OR ' . $db->quoteName('su.code') . ' LIKE ' . $like .
-                ' OR ' . $db->quoteName('su.name') . ' LIKE ' . $like .
+                //Tìm trên cả tên chính thức lẫn tên phân biệt (2.1.7)
+                ' OR ' . DatabaseHelper::displayNameSearchExpr('su', $like) .
                 ' OR ' . $db->quoteName('sa.payment_code') . ' LIKE ' . $like .
                 ')'
             );
@@ -806,7 +807,8 @@ class SecondAttemptsModel extends ListModel
 				$db->quoteName('lr.lastname', 'learner_lastname'),
 				$db->quoteName('lr.firstname', 'learner_firstname'),
 				$db->quoteName('su.code', 'subject_code'),
-				$db->quoteName('su.name', 'subject_name'),
+				//Màn hình xác nhận nộp phí ở backend → dùng tên phân biệt (2.1.7)
+				DatabaseHelper::displayNameExpr('su') . ' AS ' . $db->quoteName('subject_name'),
 			])
 			->from($db->quoteName('#__eqa_secondattempts', 'sa'))
 			->leftJoin(
@@ -1024,6 +1026,8 @@ class SecondAttemptsModel extends ListModel
 			$db->quoteName('c.firstname')           . ' AS ' . $db->quoteName('firstname'),
 			$db->quoteName('e.id')                  . ' AS ' . $db->quoteName('subjectId'),
 			$db->quoteName('e.code')                . ' AS ' . $db->quoteName('subjectCode'),
+			//CỐ Ý dùng tên chính thức: dữ liệu này được xuất ra hồ sơ thi (IOHelper),
+			//không phải để hiển thị trên giao diện quản trị. (2.1.7)
 			$db->quoteName('e.name')                . ' AS ' . $db->quoteName('subjectName'),
 			$db->quoteName('e.finaltesttype')       . ' AS ' . $db->quoteName('testType'),
 			$db->quoteName('e.finaltestduration')   . ' AS ' . $db->quoteName('testDuration'),

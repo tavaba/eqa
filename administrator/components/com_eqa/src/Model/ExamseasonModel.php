@@ -242,6 +242,8 @@ class ExamseasonModel extends CampusAdminModel{
 					'examseason_id' => $examseasonId,
 					'code' => $subject->code,
 					'name' => $subject->name,
+					//Tên phân biệt: copy từ môn học, giữ snapshot tại thời điểm tạo môn thi (2.1.7)
+					'display_name' => $subject->display_name,
 					'testtype' => $subject->finaltesttype,
 					'duration' => $subject->finaltestduration,
 					'kmonitor' => $subject->kmonitor,
@@ -377,6 +379,8 @@ class ExamseasonModel extends CampusAdminModel{
 					'subject_id' => $subjectId,
 					'examseason_id' => $examseasonId,
 					'name' => $subject->name,
+					//Tên phân biệt: copy từ môn học, giữ snapshot tại thời điểm tạo môn thi (2.1.7)
+					'display_name' => $subject->display_name,
 					'testtype' => $subject->finaltesttype,
 					'duration' => $subject->finaltestduration,
 					'kmonitor' => $subject->kmonitor,
@@ -825,6 +829,8 @@ class ExamseasonModel extends CampusAdminModel{
 		$columns = [
 			$db->quoteName('a.id')          . ' AS ' . $db->quoteName('exam_id'),
 			$db->quoteName('b.code')        . ' AS ' . $db->quoteName('subject_code'),
+			//CỐ Ý dùng tên chính thức: kết quả của hàm này được ghi thẳng ra file
+			//"Bảng điểm tổng hợp để phân tích" qua IOHelper. (2.1.7)
 			$db->quoteName('a.name')        . ' AS ' . $db->quoteName('exam_name'),
 			$db->quoteName('b.credits')     . ' AS ' . $db->quoteName('credits'),
 			$db->quoteName('a.testtype')    . ' AS ' . $db->quoteName('testtype'),
@@ -1651,7 +1657,9 @@ class ExamseasonModel extends CampusAdminModel{
 	{
 		$db = $this->getDatabase();
 		$query = $db->getQuery(true)
-			->select('a.id, a.name, b.code')
+			->select('a.id, b.code')
+			//Danh sách môn thi hiển thị cho quản trị viên → tên phân biệt (2.1.7)
+			->select(DatabaseHelper::displayNameExpr('a') . ' AS ' . $db->quoteName('name'))
 			->from('#__eqa_exams AS a')
 			->leftJoin('#__eqa_subjects AS b', 'b.id=a.subject_id')
 			->where('examseason_id='.$examseasonId);

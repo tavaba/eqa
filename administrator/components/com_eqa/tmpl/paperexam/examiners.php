@@ -22,7 +22,7 @@ if(empty($exam)){
 }
 else
 {
-	echo 'Môn thi: <b>', htmlspecialchars($exam->name), '</b><br/>';
+	echo 'Môn thi: <b>', htmlspecialchars($exam->displayName), '</b><br/>';
 	echo 'Hình thức thi: ', TestType::from($exam->testtype)->getLabel(),'<br/>';
 }
 if(empty($packages)){

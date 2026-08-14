@@ -28,6 +28,16 @@
                 required="true"
         />
         <field
+                name="display_name"
+                type="text"
+                label="Tên phân biệt"
+                description="Chỉ điền khi tên chính thức của môn học này trùng với môn học khác
+                (ví dụ: nhiều chương trình đào tạo cùng có môn &quot;Đồ án 1&quot;).
+                Tên phân biệt chỉ hiển thị trên giao diện quản trị, KHÔNG thay thế tên chính thức
+                trên hồ sơ thi và giao diện của người học.
+                Để trống nếu không cần phân biệt."
+        />
+        <field
                 name="degree"
                 type="degree"
                 required="true"

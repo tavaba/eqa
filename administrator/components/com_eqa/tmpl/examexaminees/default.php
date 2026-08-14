@@ -40,7 +40,7 @@ $exam = $this->exam;
     </div>
 </div>
 <div>
-    Môn thi: <b><?php echo htmlentities($exam->name); ?></b>&nbsp;&nbsp;&nbsp;&nbsp; Hình thức thi: <?php echo TestType::from($exam->testtype)->getLabel();?><br/>
+    Môn thi: <b><?php echo htmlentities($exam->displayName); ?></b>&nbsp;&nbsp;&nbsp;&nbsp; Hình thức thi: <?php echo TestType::from($exam->testtype)->getLabel();?><br/>
     Kỳ thi: <?php echo $exam->examseason;?> <br/>
     (Học kỳ <?php echo $exam->term;?>. Năm học <?php echo $exam->academicyear;?>)<br/>
     Tổng số thí sinh: <?php echo $exam->countTotal;?><br/>

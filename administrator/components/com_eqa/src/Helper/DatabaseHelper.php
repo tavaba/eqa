@@ -17,6 +17,48 @@ use Kma\Library\Kma\Helper\DatetimeHelper;
 
 abstract class DatabaseHelper extends DatabaseHelperBase
 {
+	/**
+	 * Sinh biểu thức SQL trả về "tên phân biệt" của một môn học hoặc môn thi.
+	 *
+	 * Các bảng `#__eqa_subjects` và `#__eqa_exams` đều có cặp cột:
+	 *   - `name`         : tên chính thức, luôn có giá trị;
+	 *   - `display_name` : tên phân biệt, NULL khi không cần phân biệt.
+	 *
+	 * Quy ước đọc thống nhất trong toàn bộ component là COALESCE của hai cột đó.
+	 * Đóng gói vào một hàm duy nhất để nếu về sau đổi chiến lược lưu trữ thì chỉ
+	 * phải sửa ở một chỗ.
+	 *
+	 * Lưu ý: chỉ dùng cho giao diện quản trị (backend). Mọi hồ sơ/biểu mẫu thi
+	 * xuất ra và toàn bộ giao diện frontend vẫn phải dùng cột `name`.
+	 *
+	 * Ví dụ:
+	 *   $query->select(DatabaseHelper::displayNameExpr('su') . ' AS ' . $db->quoteName('subject_name'));
+	 *
+	 * @param   string  $alias  Alias (hoặc tên) của bảng trong câu truy vấn.
+	 *
+	 * @return  string  Biểu thức SQL, ví dụ: "COALESCE(su.display_name, su.name)".
+	 * @since   2.1.7
+	 */
+	static public function displayNameExpr(string $alias): string
+	{
+		return 'COALESCE(' . $alias . '.display_name, ' . $alias . '.name)';
+	}
+
+	/**
+	 * Sinh mệnh đề tìm kiếm LIKE trên cả tên chính thức lẫn tên phân biệt.
+	 *
+	 * @param   string  $alias  Alias của bảng subjects/exams trong câu truy vấn.
+	 * @param   string  $like   Chuỗi tìm kiếm ĐÃ được quote, ví dụ $db->quote('%abc%').
+	 *
+	 * @return  string  Biểu thức SQL dùng cho where().
+	 * @since   2.1.7
+	 */
+	static public function displayNameSearchExpr(string $alias, string $like): string
+	{
+		return '(' . $alias . '.name LIKE ' . $like
+			. ' OR ' . $alias . '.display_name LIKE ' . $like . ')';
+	}
+
 	static public function getLearnerAdmissionYear(int $learnerId): int|null
 	{
 		$db = self::getDatabaseDriver();
@@ -106,25 +148,42 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		return $currentAcademicyear - $admissionYear + 1;
 	}
 
-	static public function getExamNames(array $examIds)
+	/**
+	 * Lấy danh sách tên môn thi.
+	 *
+	 * @param   array  $examIds         Danh sách ID môn thi.
+	 * @param   bool   $useDisplayName  true  → trả về tên phân biệt (chỉ dùng cho
+	 *                                  giao diện quản trị);
+	 *                                  false → trả về tên chính thức (mặc định,
+	 *                                  dùng cho hồ sơ/biểu mẫu xuất ra).
+	 *
+	 * @return  string[]
+	 * @since   1.0
+	 * @updated 2.1.7  Bổ sung tham số $useDisplayName.
+	 */
+	static public function getExamNames(array $examIds, bool $useDisplayName = false)
 	{
 		if(empty($examIds))
 			return  [];
 
 		$db = self::getDatabaseDriver();
 		$examIdSet = '(' . implode(',', $examIds) . ')';
-		$db->setQuery('SELECT name FROM #__eqa_exams WHERE id IN ' . $examIdSet);
+		$nameExpr = $useDisplayName ? self::displayNameExpr('a') : 'a.name';
+		$db->setQuery('SELECT ' . $nameExpr . ' FROM #__eqa_exams AS a WHERE a.id IN ' . $examIdSet);
 		return $db->loadColumn();
 	}
 	/**
 	 * Lấy danh sách môn thi dưới dạng chuỗi "Mã - Tên".
 	 *
-	 * @param   array  $examIds  Danh sách ID môn thi.
+	 * @param   array  $examIds         Danh sách ID môn thi.
+	 * @param   bool   $useDisplayName  true  → dùng tên phân biệt (giao diện quản trị);
+	 *                                  false → dùng tên chính thức (mặc định).
 	 *
 	 * @return  string[]  Mảng chuỗi "code - name", sắp xếp theo mã môn thi.
 	 * @since   2.1.4
+	 * @updated 2.1.7  Bổ sung tham số $useDisplayName.
 	 */
-	static public function getExamCodesAndNames(array $examIds): array
+	static public function getExamCodesAndNames(array $examIds, bool $useDisplayName = false): array
 	{
 		$examIds = array_filter(array_map('intval', $examIds));
 		if (empty($examIds)) {
@@ -132,11 +191,15 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		}
 
 		$db = self::getDatabaseDriver();
+		$nameExpr = $useDisplayName
+			? self::displayNameExpr('a') . ' AS ' . $db->quoteName('name')
+			: $db->quoteName('a.name', 'name');
 		$query = $db->getQuery(true)
-			->select($db->quoteName(['code', 'name']))
-			->from($db->quoteName('#__eqa_exams'))
-			->where($db->quoteName('id') . ' IN (' . implode(',', $examIds) . ')')
-			->order($db->quoteName('code'));
+			->select($db->quoteName('a.code', 'code'))
+			->select($nameExpr)
+			->from($db->quoteName('#__eqa_exams', 'a'))
+			->where($db->quoteName('a.id') . ' IN (' . implode(',', $examIds) . ')')
+			->order($db->quoteName('a.code'));
 		$db->setQuery($query);
 		$exams = $db->loadObjectList();
 
@@ -173,6 +236,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 	 *
 	 * @return  ExamInfo|null
 	 * @since   1.0
+	 * @updated 2.1.7  Bổ sung thuộc tính displayName (tên phân biệt).
 	 */
 	static public function getExamInfo(int $examId): ExamInfo|null
 	{
@@ -187,6 +251,7 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 			$db->quoteName('d.code',            'code'),
 			$db->quoteName('d.credits',         'credits'),
 			$db->quoteName('a.name',            'name'),
+			self::displayNameExpr('a') . ' AS ' . $db->quoteName('displayName'),
 			$db->quoteName('a.testtype',        'testtype'),
 			$db->quoteName('a.usetestbank',     'usetestbank'),
 			$db->quoteName('a.duration',        'duration'),
@@ -969,17 +1034,20 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		$db = self::getDatabaseDriver();
 
 		// 1) Môn thi của ca thi KTHP/TN
+		//Hàm này chỉ phục vụ danh sách ca thi ở backend nên dùng tên phân biệt (2.1.7)
 		$query = $db->getQuery(true)
 			->select('DISTINCT ' . $db->quoteName('er.examsession_id', 'sid')
 				. ', ' . $db->quoteName('e.code', 'code')
-				. ', ' . $db->quoteName('e.name', 'name'))
+				. ', ' . self::displayNameExpr('e') . ' AS ' . $db->quoteName('name'))
 			->from($db->quoteName('#__eqa_exam_learner', 'el'))
 			->innerJoin($db->quoteName('#__eqa_examrooms', 'er')
 				. ' ON ' . $db->quoteName('er.id') . ' = ' . $db->quoteName('el.examroom_id'))
 			->innerJoin($db->quoteName('#__eqa_exams', 'e')
 				. ' ON ' . $db->quoteName('e.id') . ' = ' . $db->quoteName('el.exam_id'))
 			->where($db->quoteName('er.examsession_id') . ' IN ' . $idSet)
-			->order($db->quoteName('e.name') . ' ASC');
+			//Với SELECT DISTINCT, MySQL chỉ cho phép ORDER BY trên cột/alias có mặt
+			//trong SELECT list, nên phải sắp xếp theo alias `name`. (2.1.7)
+			->order($db->quoteName('name') . ' ASC');
 		$db->setQuery($query);
 		$rows = $db->loadObjectList();
 

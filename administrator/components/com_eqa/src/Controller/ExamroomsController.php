@@ -277,12 +277,12 @@ class ExamroomsController extends AdminController {
 			$exam = DatabaseHelper::getExamInfo($examId);
 			if ($exam->countConcluded == $exam->countTotal)
 			{
-				$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countTotal);
+				$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->displayName, $exam->countConcluded, $exam->countTotal);
 				$app->enqueueMessage($msg, 'success');
 			}
 			elseif ($exam->countConcluded > 0)
 			{
-				$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->name, $exam->countConcluded, $exam->countToTake);
+				$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có kết quả thi (bao gồm cả trường hợp cấm thi, miễn thi)', $exam->displayName, $exam->countConcluded, $exam->countToTake);
 				$app->enqueueMessage($msg );
 			}
 			if($exam->testtype==TestType::Paper->value )
@@ -290,13 +290,13 @@ class ExamroomsController extends AdminController {
 				if ($exam->countHavePaperInfo == $exam->countToTake)
 				{
 					$examModel->setExamStatus($examId, ExamStatus::PaperInfoFull);
-					$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
+					$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->displayName, $exam->countHavePaperInfo, $exam->countToTake);
 					$app->enqueueMessage($msg, 'success');
 				}
 				elseif ($exam->countHavePaperInfo > 0)
 				{
 					$examModel->setExamStatus($examId, ExamStatus::PaperInfoPartial);
-					$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->name, $exam->countHavePaperInfo, $exam->countToTake);
+					$msg = sprintf('Môn thi <b>%s</b>: %d/%d thí sinh đã có thông tin bài thi', $exam->displayName, $exam->countHavePaperInfo, $exam->countToTake);
 					$app->enqueueMessage($msg);
 				}
 			}

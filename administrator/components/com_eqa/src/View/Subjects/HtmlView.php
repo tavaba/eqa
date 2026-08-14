@@ -29,6 +29,9 @@ class HtmlView extends ItemsHtmlView
         $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('name', 'COM_EQA_GENERAL_SUBJECT_NAME');
+	    // Cột "Tên phân biệt": chỉ có giá trị với những môn học bị trùng tên chính thức.
+	    // Đây là màn hình quản lý môn học nên hiển thị cả hai tên để đối chiếu. (2.1.7)
+	    $option->customFieldset1[] = new ListLayoutItemFieldOption('display_name', 'Tên phân biệt', false, false);
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('degree','COM_EQA_GENERAL_COURSE_DEGREE',true,false,'text-center');
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('credits','Số TC',true,false,'text-center');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('finaltesttype','COM_EQA_GENERAL_SUBJECT_TESTTYPE', true, false);

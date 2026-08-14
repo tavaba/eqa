@@ -266,7 +266,10 @@ class ExamsController extends AdminController {
 
 		//Send result
 		if(count($examIds)==1){
-			$fileName = 'Điểm nhập QLĐT. '.$examInfo->name.'.xlsx';
+			//Tên file dùng tên phân biệt để hai môn trùng tên chính thức không
+			//sinh ra hai file trùng tên, ghi đè lên nhau. Nội dung bên trong file
+			//vẫn dùng tên chính thức. (2.1.7)
+			$fileName = 'Điểm nhập QLĐT. '.$examInfo->displayName.'.xlsx';
 		}else{
 			$fileName = 'Điểm thi nhập Quản lý đào tạo ('.count($examIds).' môn).xlsx';
 		}
@@ -322,7 +325,8 @@ class ExamsController extends AdminController {
 
 		//Send result
 		if(count($examIds)==1){
-			$fileName = 'Điểm lần 2 nhập QLĐT. '.$examInfo->name.'.xlsx';
+			//Tên file dùng tên phân biệt — xem chú thích ở exportForEms(). (2.1.7)
+			$fileName = 'Điểm lần 2 nhập QLĐT. '.$examInfo->displayName.'.xlsx';
 		}else{
 			$fileName = 'Điểm lần 2 nhập Quản lý đào tạo ('.count($examIds).' môn).xlsx';
 		}

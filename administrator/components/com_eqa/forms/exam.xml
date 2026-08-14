@@ -36,8 +36,17 @@
                 name="name"
                 type="text"
                 label="COM_EQA_EXAM_NAME"
-                description="Mặc định là tên môn học, nhưng có thể sửa lại nếu cần."
+                description="Mặc định là tên môn học, nhưng có thể sửa lại nếu cần.
+                Đây là tên chính thức, được in trên hồ sơ thi và hiển thị cho người học."
                 required="true"
+        />
+        <field
+                name="display_name"
+                type="text"
+                label="Tên phân biệt"
+                description="Mặc định lấy theo tên phân biệt của môn học.
+                Chỉ hiển thị trên giao diện quản trị, giúp phân biệt các môn thi trùng tên chính thức.
+                Để trống nếu không cần phân biệt."
         />
         <field
                 name="allowed_rooms"

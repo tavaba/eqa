@@ -48,6 +48,15 @@ class ExamModel extends AdminModel{
 	}
 	public function prepareTable($table)
 	{
+		// Tên phân biệt: chuỗi rỗng do form gửi lên phải được chuẩn hóa thành NULL,
+		// vì quy ước đọc là COALESCE(display_name, name). (2.1.7)
+		if (isset($table->display_name)) {
+			$table->display_name = trim((string) $table->display_name);
+		}
+		if (empty($table->display_name)) {
+			$table->display_name = null;
+		}
+
 		if(empty($table->questiondeadline))
 			$table->questiondeadline=null;
 		if(empty($table->questiondate))
@@ -142,9 +151,9 @@ class ExamModel extends AdminModel{
 			if (!$this->canDelete($examId))
 			{
 				$exam = $this->getItem($examId);
-				$msg = sprintf('Không thể xóa môn thi "%s. %s". 
+				$msg = sprintf('Không thể xóa môn thi "%s. %s".
 				Hãy đảm bảo rằng chưa có thí sinh nào được chia phòng thi hay có kết quả thi.',
-					$exam->code, $exam->name
+					$exam->code, $exam->display_name ?: $exam->name    //Tên phân biệt (2.1.7)
 				);
 				throw new Exception($msg);
 			}
@@ -308,7 +317,7 @@ class ExamModel extends AdminModel{
         if($class->subject_id != $exam->subject_id){
             $msg = sprintf('Lớp học phần <b>%s</b> không phù hợp với môn thi <b>%s</b>',
                 htmlentities($class->name),
-                htmlentities($exam->name));
+                htmlentities($exam->display_name ?: $exam->name));   //Tên phân biệt (2.1.7)
             throw new Exception($msg);
         }
 
@@ -359,7 +368,7 @@ class ExamModel extends AdminModel{
 		    $db->setQuery("SELECT COUNT(1) FROM #__eqa_exam_learner WHERE exam_id=$examId AND learner_id={$classLearner->id}");
 		    if($db->loadResult())
 		    {
-				$msg = sprintf('HVSV <b>%s</b> đã có trong danh sách môn thi <b>%s</b>', $learnerCode, $exam->name);
+				$msg = sprintf('HVSV <b>%s</b> đã có trong danh sách môn thi <b>%s</b>', $learnerCode, $exam->display_name ?: $exam->name);
 			    if($ignoreError)
 			    {
 				    $app->enqueueMessage($msg,'warning');
@@ -377,7 +386,7 @@ class ExamModel extends AdminModel{
 		    $db->setQuery($query);
 		    if (!$db->execute())
 		    {
-			    $msg = sprintf('Thêm HVSV <b>%s</b> vào môn thi <b>%s</b> thất bại', $learnerCode, $exam->name);
+			    $msg = sprintf('Thêm HVSV <b>%s</b> vào môn thi <b>%s</b> thất bại', $learnerCode, $exam->display_name ?: $exam->name);
 			    if($ignoreError)
 			    {
 				    $app->enqueueMessage($msg,'warning');
@@ -669,9 +678,11 @@ class ExamModel extends AdminModel{
 
 		//Lấy thông tin về exam hiện thời
 		$query = $db->getQuery(true)
-			->from('#__eqa_exams')
-			->select('id, name, usetestbank, status')
-			->where('id=' . $examId);
+			->from($db->quoteName('#__eqa_exams', 'a'))
+			->select('a.id, a.usetestbank, a.status')
+			//Các thông báo dưới đây hiển thị cho quản trị viên → tên phân biệt (2.1.7)
+			->select(DatabaseHelper::displayNameExpr('a') . ' AS ' . $db->quoteName('name'))
+			->where('a.id=' . $examId);
 		$db->setQuery($query);
 		$exam = $db->loadObject();
 		if(empty($exam))

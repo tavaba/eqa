@@ -70,7 +70,8 @@ class HtmlView extends ItemsHtmlView {
 	            if(!empty($item->examIds))
 	            {
 		            $examIds = explode(',', $item->examIds);
-					$examNames = DatabaseHelper::getExamNames($examIds);
+					//Danh sách phòng thi ở backend → dùng tên phân biệt (2.1.7)
+					$examNames = DatabaseHelper::getExamNames($examIds, true);
 					foreach ($examNames as &$examName){
 						$examName = htmlspecialchars($examName);
 					}

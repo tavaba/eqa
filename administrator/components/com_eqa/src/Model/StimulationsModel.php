@@ -16,14 +16,16 @@ class StimulationsModel extends ListModel {
     {
         $db = DatabaseHelper::getDatabaseDriver();
         $columns = $db->quoteName(
-            array('a.id', 'b.code',      'b.name',  'c.code',      'c.lastname', 'c.firstname', 'a.type', 'a.value', 'a.reason', 'a.used'),
-            array('id',   'subject_code','subject', 'learner_code','lastname',   'firstname',   'type',   'value',   'reason', 'used')
+            array('a.id', 'b.code',      'c.code',      'c.lastname', 'c.firstname', 'a.type', 'a.value', 'a.reason', 'a.used'),
+            array('id',   'subject_code','learner_code','lastname',   'firstname',   'type',   'value',   'reason', 'used')
         );
         $query = $db->getQuery(true)
             ->from('#__eqa_stimulations AS a')
             ->leftJoin('#__eqa_subjects AS b','a.subject_id = b.id')
 	        ->leftJoin('#__eqa_learners AS c', 'a.learner_id=c.id')
-	        ->select($columns);
+	        ->select($columns)
+	        //Cột "Môn học" trên giao diện quản trị → tên phân biệt (2.1.7)
+	        ->select(DatabaseHelper::displayNameExpr('b') . ' AS ' . $db->quoteName('subject'));
 
         //Filtering
         $search = $this->getState('filter.search');

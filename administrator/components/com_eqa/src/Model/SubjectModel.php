@@ -5,6 +5,7 @@ namespace Kma\Component\Eqa\Administrator\Model;
 use Joomla\CMS\Table\Table;
 use Kma\Component\Eqa\Administrator\Base\AdminModel;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 
 defined('_JEXEC') or die();
 
@@ -111,6 +112,16 @@ class SubjectModel extends AdminModel
     {
         parent::prepareTable($table);
 
+        // Tên phân biệt: chuỗi rỗng do form gửi lên phải được chuẩn hóa thành NULL,
+        // vì quy ước đọc là COALESCE(display_name, name) — chuỗi rỗng sẽ khiến
+        // COALESCE trả về chuỗi rỗng thay vì rơi về tên chính thức. (2.1.7)
+        if (isset($table->display_name)) {
+            $table->display_name = trim((string) $table->display_name);
+        }
+        if (empty($table->display_name)) {
+            $table->display_name = null;
+        }
+
         if (empty($table->credits)) {
             $table->credits = null;
         }
@@ -165,7 +176,8 @@ class SubjectModel extends AdminModel
 		$query = $db->getQuery(true)
 			->select([
 				$db->quoteName('s.code'),
-				$db->quoteName('s.name'),
+				//Trang thống kê là giao diện quản trị → hiển thị tên phân biệt (2.1.7)
+				DatabaseHelper::displayNameExpr('s') . ' AS ' . $db->quoteName('name'),
 				$db->quoteName('s.credits'),
 				$db->quoteName('s.degree'),
 			])

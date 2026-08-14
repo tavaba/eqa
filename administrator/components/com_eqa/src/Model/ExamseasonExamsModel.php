@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Helper\StimulationHelper;
+use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 
@@ -52,13 +53,15 @@ class ExamseasonExamsModel extends ListModel
 		    .     '))';
 
 	    $columns = $db->quoteName(
-            array('a.id','b.name',  'a.code', 'a.name','a.testtype','a.status', 'a.usetestbank', 'a.questiondeadline',  'a.description'),
-            array('id', 'examseason', 'code', 'name',  'testtype',  'status',   'usetestbank',  'questiondeadline',    'description')
+            array('a.id','b.name',  'a.code', 'a.testtype','a.status', 'a.usetestbank', 'a.questiondeadline',  'a.description'),
+            array('id', 'examseason', 'code', 'testtype',  'status',   'usetestbank',  'questiondeadline',    'description')
         );
         $query =  parent::getListQuery();
         $query->from('#__eqa_exams AS a')
             ->leftJoin('#__eqa_examseasons AS b', 'a.examseason_id=b.id')
             ->select($columns)
+            //Cột "Tên môn thi" trên giao diện quản trị → tên phân biệt (2.1.7)
+            ->select(DatabaseHelper::displayNameExpr('a') . ' AS ' . $db->quoteName('name'))
 	        ->select('('.$subExamineeCount.') AS nexaminee')
 	        ->select('('.$subEligibleCount.') AS neligible')
 	        ->select('('.$subExamroomCount.') AS nexamroom')
@@ -68,7 +71,8 @@ class ExamseasonExamsModel extends ListModel
         $search = $this->getState('filter.search');
         if(!empty($search)){
             $like = $db->quote('%'.trim($search).'%');
-            $query->where('a.name LIKE '.$like);
+            //Tìm trên cả tên chính thức lẫn tên phân biệt (2.1.7)
+            $query->where(DatabaseHelper::displayNameSearchExpr('a', $like));
         }
 		$subjectId = $this->getState('filter.subject_id');
 		if(is_numeric($subjectId))

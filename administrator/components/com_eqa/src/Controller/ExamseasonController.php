@@ -332,6 +332,8 @@ class ExamseasonController extends FormController
 				{
 					$examId = $exam->id;
 					$examName = $exam->name;
+					//Tên hiển thị trong thông báo cho quản trị viên (2.1.7)
+					$examDisplayName = $exam->display_name ?: $exam->name;
 					$examExists=true;
 				}
 				else
@@ -341,12 +343,15 @@ class ExamseasonController extends FormController
 					if (empty($subject))
 						throw new Exception(sprintf('Không tìm thấy môn học với id=%d', $subjectId));
 					$examName = $subject->name;
+					//Tên phân biệt: copy từ môn học sang môn thi (2.1.7)
+					$examDisplayName = $subject->display_name ?: $subject->name;
 					$examExists = false;
 
 					//Prepare data for creating an exam
 					$examData                  = [];
 					$examData['code']		  =  $subject->code;
 					$examData['name']          = $examName;
+					$examData['display_name']  = $subject->display_name;    //Since 2.1.7
 					$examData['subject_id']    = $subjectId;
 					$examData['examseason_id'] = $examseasonId;
 					$examData['testtype']      = $subject->finaltesttype; //Copy test type from subject
@@ -380,13 +385,13 @@ class ExamseasonController extends FormController
 				$countTotal = count($examinees);
 				if($examExists)
 					$msg = sprintf('Môn thi <b>%s</b> đã tồn tại, %d/%d đã được thêm vào',
-						htmlspecialchars($examName),
+						htmlspecialchars($examDisplayName),
 						$countAdded,
 						$countTotal
 					);
 				else
 					$msg = sprintf('Đã tạo môn thi <b>%s</b>, %d/%d đã được thêm vào',
-						htmlspecialchars($examName),
+						htmlspecialchars($examDisplayName),
 						$countAdded,
 						$countTotal
 					);

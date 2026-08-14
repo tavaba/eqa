@@ -642,14 +642,17 @@ class ExamController extends  FormController
 		// Prepare the spreadsheet
 		$spreadsheet = new Spreadsheet();
 		$sheet = $spreadsheet->getSheet(0);
-		$sheetName = preg_replace('/[\\/?*:\[\]]/', '', $exam->name);
+		//Tên sheet và tên file dùng tên phân biệt để hai môn trùng tên chính thức
+		//không sinh ra hai file trùng tên, ghi đè lên nhau. Nội dung bên trong file
+		//vẫn dùng tên chính thức. (2.1.7)
+		$sheetName = preg_replace('/[\\/?*:\[\]]/', '', $exam->displayName);
 		$sheetName = mb_substr($sheetName, 0, 20);
 		$sheetName .= ' (' . $exam->id . ')';
 		$sheet->setTitle($sheetName);
 		IOHelper::writeExamExaminees($sheet, $exam, $examinees);
 
 		//Send file to user
-		$fileName = "Danh sách thí sinh. " . $exam->name . '.xlsx';
+		$fileName = "Danh sách thí sinh. " . $exam->displayName . '.xlsx';
 		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 		exit();
 	}
@@ -746,7 +749,8 @@ class ExamController extends  FormController
 			IOHelper::writeITestSheet($sheet, $items);
 
 			// 7. Gửi file và kết thúc
-			$fileName = 'Ca thi iTest. ' . $exam->name . '.xlsx';
+			//Tên file dùng tên phân biệt (2.1.7)
+			$fileName = 'Ca thi iTest. ' . $exam->displayName . '.xlsx';
 			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
 			$this->app->close();
 
@@ -1232,7 +1236,7 @@ class ExamController extends  FormController
 
 		//Thông báo kết quả
 		$msg = sprintf("Môn thi <b>%s</b>: %d/%d đã có kết quả",
-			$exam->name,
+			$exam->displayName,
 			$exam->countConcluded,
 			$exam->countToTake + $exam->countExempted
 		);
@@ -1273,6 +1277,7 @@ class ExamController extends  FormController
 	 * {
 	 *   "code":          "TOAN1",
 	 *   "name":          "Toán cao cấp 1",
+	 *   "display_name":  "Toán cao cấp 1 (CTĐT ATTT)",  // or null when not set
 	 *   "allowed_rooms": [1, 3, 7],   // or null when subject has no restriction
 	 *   "is_pass_fail":  0,
 	 *   "testtype":      "written",
@@ -1304,6 +1309,7 @@ class ExamController extends  FormController
 					$db->quoteName([
 						'code',
 						'name',
+						'display_name', //Since 2.1.7
 						'allowed_rooms',
 						'is_pass_fail',
 						'finaltesttype',
@@ -1340,6 +1346,7 @@ class ExamController extends  FormController
 			$data = [
 				'code'          => $subject->code,
 				'name'          => $subject->name,
+				'display_name'  => $subject->display_name,   //Since 2.1.7
 				'allowed_rooms' => $allowedRooms,
 				'is_pass_fail'  => (int) $subject->is_pass_fail,
 				'testtype'      => $subject->finaltesttype,

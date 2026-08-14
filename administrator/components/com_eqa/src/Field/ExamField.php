@@ -37,9 +37,12 @@ class ExamField extends GroupedlistField
 			->order($db->quoteName('id') . ' DESC');
 
 		// Query for the exams (the options).
+		// Nhãn option dùng tên phân biệt để quản trị viên không nhầm giữa các
+		// môn thi trùng tên chính thức. (2.1.7)
 		$queryExams = $db->getQuery(true)
-			->select($db->quoteName(['id', 'name', 'examseason_id']))
-			->from($db->quoteName('#__eqa_exams'))
+			->select($db->quoteName(['a.id', 'a.examseason_id']))
+			->select(DatabaseHelper::displayNameExpr('a') . ' AS ' . $db->quoteName('name'))
+			->from($db->quoteName('#__eqa_exams', 'a'))
 			->order($db->quoteName('name') . ' ASC');
 
 		//Init the groups

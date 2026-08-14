@@ -149,9 +149,10 @@ $ajaxUrl = Route::_('index.php?option=com_eqa&task=exam.getJsonSubjectInfo', fal
             const p = json.data; // payload
 
             // --- Text / number inputs ---
-            setInputValue('jform_code',     p.code);
-            setInputValue('jform_name',     p.name);
-            setInputValue('jform_duration', p.duration);
+            setInputValue('jform_code',         p.code);
+            setInputValue('jform_name',         p.name);
+            setInputValue('jform_display_name', p.display_name); // Since 2.1.7
+            setInputValue('jform_duration',     p.duration);
             setInputValue('jform_kmonitor', p.kmonitor);
             setInputValue('jform_kassess',  p.kassess);
 

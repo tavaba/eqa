@@ -81,7 +81,8 @@ class SecondAttemptSubjectsModel extends ListModel
             ->select([
                 $db->quoteName('sa.last_exam_id', 'exam_id'),
                 $db->quoteName('su.code',         'exam_code'),
-                $db->quoteName('su.name',         'exam_name'),
+                //Tên phân biệt của môn học (2.1.7)
+                DatabaseHelper::displayNameExpr('su') . ' AS ' . $db->quoteName('exam_name'),
 
                 // Tổng số thí sinh — dùng làm cột sort
                 'COUNT(' . $db->quoteName('sa.id') . ')'
@@ -136,6 +137,8 @@ class SecondAttemptSubjectsModel extends ListModel
                 $db->quoteName('ex.id'),
                 $db->quoteName('su.code'),
                 $db->quoteName('su.name'),
+                //Bổ sung để tương thích ONLY_FULL_GROUP_BY khi SELECT có display_name (2.1.7)
+                $db->quoteName('su.display_name'),
             ]);
 
         // Ordering — sử dụng alias được khai báo trong SELECT

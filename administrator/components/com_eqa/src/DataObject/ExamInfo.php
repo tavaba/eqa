@@ -8,7 +8,22 @@ class ExamInfo extends ObjectInfo
 {
 	public int $id;
 	public int $campusId;
+
+	/**
+	 * Tên chính thức của môn thi (cột #__eqa_exams.name).
+	 * Dùng cho mọi hồ sơ/biểu mẫu thi xuất ra và giao diện frontend.
+	 */
 	public string $name;
+
+	/**
+	 * Tên phân biệt của môn thi: COALESCE(display_name, name).
+	 * Chỉ dùng cho giao diện quản trị, giúp phân biệt các môn thi trùng tên
+	 * chính thức nhưng khác mã, khác nội dung.
+	 *
+	 * @since 2.1.7
+	 */
+	public string $displayName;
+
 	public string|null $code;
 	public int|null $credits;
 	public string $academicyear;
@@ -35,7 +50,8 @@ class ExamInfo extends ObjectInfo
 			$basicInfomationOnly = (bool)$options['basic_info_only'];
 
 		$html = '';
-        $html .= 'Môn thi: <b>' .  htmlentities($this->name) . '</b>';
+		//getHtml() chỉ phục vụ giao diện quản trị nên dùng tên phân biệt (2.1.7)
+        $html .= 'Môn thi: <b>' .  htmlentities($this->displayName) . '</b>';
 		$html .= '&nbsp;&nbsp;&nbsp;&nbsp; Hình thức thi: ' . TestType::from($this->testtype)->getLabel() . '<br/>';
 		$html .= 'Kỳ thi: ' . $this->examseason .'<br/>';
 		$html .= '(Học kỳ ' . $this->term . 'Năm học ' . $this->academicyear;
