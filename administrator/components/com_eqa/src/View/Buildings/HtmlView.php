@@ -21,9 +21,4 @@ class HtmlView extends ItemsHtmlView {
         //Set the option
         $this->itemFields = $option;
     }
-
-	protected function prepareDataForLayoutDefault(): void
-	{
-		parent::prepareDataForLayoutDefault();
-	}
 }

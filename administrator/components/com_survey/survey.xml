@@ -2,11 +2,11 @@
 <extension type="component" method="upgrade">
     <name>COM_SURVEY</name>
     <author>Nguyễn Tuấn Anh</author>
-    <creationDate>2026-06-26</creationDate>
+    <creationDate>2026-08-15</creationDate>
     <copyright>Copyright (C) 2025 Academy of Cryptography Techniques. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <authorEmail>nomail@noserver.com</authorEmail>
-    <version>1.0.4</version>
+    <version>1.0.6</version>
     <description>COM_SURVEY_DESCRIPTION</description>
     <namespace path="src">Kma\Component\Survey</namespace>
 
