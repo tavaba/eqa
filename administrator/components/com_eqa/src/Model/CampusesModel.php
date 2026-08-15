@@ -8,6 +8,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseQuery;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * List model của danh mục 'cơ sở đào tạo' (campus).
@@ -20,6 +21,14 @@ use Kma\Component\Eqa\Administrator\Base\ListModel;
 class CampusesModel extends ListModel
 {
     /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
+    /**
      * @param   array                      $config
      * @param   MVCFactoryInterface|null   $factory
      *
@@ -27,7 +36,7 @@ class CampusesModel extends ListModel
      */
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields'] = ['code', 'name', 'published', 'ordering'];
+        $config['filter_fields'] = ['code', 'name', 'state', 'ordering'];
         parent::__construct($config, $factory);
     }
 
@@ -63,10 +72,8 @@ class CampusesModel extends ListModel
         }
 
         // Lọc theo trạng thái
-        $published = $this->getState('filter.published');
-        if (is_numeric($published)) {
-            $query->where($db->quoteName('a.published') . ' = ' . (int) $published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         $orderingCol = $db->escape($this->getState('list.ordering', 'ordering'));
         $orderingDir = $db->escape($this->getState('list.direction', 'asc'));

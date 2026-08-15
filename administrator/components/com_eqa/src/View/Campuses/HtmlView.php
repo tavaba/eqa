@@ -42,7 +42,7 @@ class HtmlView extends ItemsHtmlView
 
         $option->customFieldset1[] = new ListLayoutItemFieldOption('description', 'Mô tả');
 
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
         $this->itemFields = $option;
     }

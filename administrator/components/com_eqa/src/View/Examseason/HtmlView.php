@@ -92,7 +92,7 @@ class HtmlView extends ItemHtmlView {
 		$field = new ListLayoutItemFieldOption('testbankyear', 'COM_EQA_GENERAL_SUBJECT_TESTBANK', true, false);
 		$field->cellCssClasses = 'text-center';
 		$itemFields->customFieldset1[] = $field;
-		$itemFields->published = ListLayoutItemFields::defaultFieldPublished();
+		$itemFields->state = ListLayoutItemFields::defaultFieldState();
 	}
 	protected function addToolbarForLayoutAddexams(): void
 	{

@@ -4,8 +4,10 @@ namespace Kma\Component\Eqa\Administrator\Field;
 
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\Database\DatabaseInterface;
+use Joomla\Database\QueryInterface;
+use Kma\Library\Kma\Field\StateAwareListField;
 
 /**
  * Danh sách chọn 'cơ sở đào tạo' (campus).
@@ -15,7 +17,7 @@ use Joomla\CMS\HTML\HTMLHelper;
  *
  * @since 2.1.6
  */
-class CampusField extends ListField
+class CampusField extends StateAwareListField
 {
     /**
      * @var string
@@ -23,38 +25,51 @@ class CampusField extends ListField
      */
     protected $type = 'campus';
 
+    protected string $stateColumn = 'a.state';
+    protected string $keyColumn   = 'a.id';
+
     /**
-     * Danh sách cơ sở đào tạo đang được kích hoạt.
+     * Field này tự sinh toàn bộ option, không lấy từ thẻ <option> của form XML.
      *
-     * @return  array  Mảng các option của HTMLHelper
-     * @since   2.1.6
+     * @return  bool
+     * @since   2.1.7
      */
-    protected function getOptions(): array
+    protected function useXmlOptions(): bool
     {
-        $db = $this->getDatabase();
+        return false;
+    }
 
-        $query = $db->getQuery(true)
-            ->select([$db->quoteName('id'), $db->quoteName('name')])
-            ->from($db->quoteName('#__eqa_campuses'))
-            ->where($db->quoteName('published') . ' = 1')
-            ->order($db->quoteName('ordering') . ' ASC');
-
-        $rows = $db->setQuery($query)->loadAssocList('id', 'name');
-
-        $options = [];
-
-        // Ở edit form, field thường để readonly và mang một cơ sở cụ thể — khi đó
-        // KHÔNG thêm hai lựa chọn phục vụ filter ('cơ sở đang làm việc', 'tất cả
-        // cơ sở'), vì chúng chỉ có nghĩa trong bộ lọc danh sách (2.1.6).
-        if (!$this->readonly) {
-            $options[] = HTMLHelper::_('select.option', null, '- Cơ sở đang làm việc -');
-            $options[] = HTMLHelper::_('select.option', 0, '(Tất cả cơ sở)');
+    /**
+     * Hai lựa chọn phục vụ BỘ LỌC danh sách.
+     *
+     * Ở edit form, field thường để readonly và mang một cơ sở cụ thể — khi đó
+     * KHÔNG thêm hai lựa chọn này vì chúng chỉ có nghĩa trong bộ lọc (2.1.6).
+     *
+     * @return  array
+     * @since   2.1.7
+     */
+    protected function getLeadingOptions(): array
+    {
+        if ($this->readonly) {
+            return [];
         }
 
-        foreach ($rows as $id => $name) {
-            $options[] = HTMLHelper::_('select.option', $id, $name);
-        }
+        return [
+            HTMLHelper::_('select.option', null, '- Cơ sở đang làm việc -'),
+            HTMLHelper::_('select.option', 0, '(Tất cả cơ sở)'),
+        ];
+    }
 
-        return $options;
+    protected function buildQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->select([$db->quoteName('a.id'), $db->quoteName('a.name')])
+            ->from($db->quoteName('#__eqa_campuses', 'a'))
+            ->order($db->quoteName('a.ordering') . ' ASC');
+    }
+
+    protected function buildOptionText(object $row): string
+    {
+        return (string) $row->name;
     }
 }

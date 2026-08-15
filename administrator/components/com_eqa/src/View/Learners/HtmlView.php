@@ -28,7 +28,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldFirstname();
 		$option->customFieldset1[] = new ListLayoutItemFieldOption('debtor','COM_EQA_DEBT', false,false,'text-center');
 
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
 		//Actions on item
 	    $option->actions = [];

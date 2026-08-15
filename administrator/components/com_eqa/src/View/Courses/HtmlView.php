@@ -22,7 +22,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = $field;
         $option->customFieldset1[] = new ListLayoutItemFieldOption('admissionyear','COM_EQA_COURSE_ADMISSION_YEAR',true,false,'text-center');
 
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
         //Set the option
         $this->itemFields = $option;

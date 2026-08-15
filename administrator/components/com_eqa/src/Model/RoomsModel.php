@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\CampusListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * List model của 'phòng' (room).
@@ -15,9 +16,17 @@ use Kma\Component\Eqa\Administrator\Base\CampusListModel;
  */
 class RoomsModel extends CampusListModel
 {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields'] = array('code', 'type', 'capacity', 'published', 'ordering', 'building', 'campus_id');
+        $config['filter_fields'] = array('code', 'type', 'capacity', 'state', 'ordering', 'building', 'campus_id');
         parent::__construct($config, $factory);
     }
 
@@ -39,8 +48,8 @@ class RoomsModel extends CampusListModel
         $db = $this->getDatabase();
         $query = $db->getQuery(true);
         $columns = $db->quoteName(
-            array('a.id', 'a.building_id', 'a.code', 'a.type', 'a.capacity', 'a.published', 'a.ordering', 'b.code'),
-            array('id',    'building_id',   'code',   'type',   'capacity',   'published',   'ordering', 'building')
+            array('a.id', 'a.building_id', 'a.code', 'a.type', 'a.capacity', 'a.state', 'a.ordering', 'b.code'),
+            array('id',    'building_id',   'code',   'type',   'capacity',   'state',       'ordering', 'building')
         );
         $query->from('#__eqa_rooms AS a')
             ->leftJoin('#__eqa_buildings AS b', 'a.building_id = b.id')
@@ -66,10 +75,8 @@ class RoomsModel extends CampusListModel
             $query->where('a.type = ' . (int) $type);
         }
 
-        $published = $this->getState('filter.published');
-        if (is_numeric($published)) {
-            $query->where('a.published = ' . (int) $published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering', 'code'));

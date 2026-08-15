@@ -45,17 +45,16 @@
             <option value="0">Chưa hoàn thành</option>
         </field>
 
-        <!-- Lọc theo trạng thái published -->
-        <field  name="published"
-                type="list"
-                label="COM_EQA_FILTER_STATE_LABEL"
+        <!-- Lọc theo trạng thái -->
+        <field  addfieldprefix="Kma\Library\Kma\Field"
+                name="state"
+                type="state"
+                states="1,0"
+                mode="filter"
+                label="Trạng thái"
                 default=""
                 onchange="this.form.submit();"
-        >
-            <option value="">COM_EQA_FILTER_STATE_MSG</option>
-            <option value="1">COM_EQA_FILTER_STATE_OPTION_PUBLISHED</option>
-            <option value="0">COM_EQA_FILTER_STATE_OPTION_UNPUBLISHED</option>
-        </field>
+        />
 
     </fields>
 

@@ -4,11 +4,20 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 class CoursesModel extends ListModel{
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('code','admissionyear','degree','published','ordering');
+        $config['filter_fields']=array('code','admissionyear','degree','state','ordering');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'code', $direction = 'asc'): void
@@ -20,8 +29,8 @@ class CoursesModel extends ListModel{
     {
         $db = $this->getDatabase();
         $columns = $db->quoteName(
-            array('a.id','a.code','a.admissionyear', 'a.description', 'a.published', 'a.ordering', 'b.spec_id', 'b.name', 'b.degree'),
-            array('id',   'code','admissionyear',    'description', 'published',  'ordering', 'spec_id', 'program', 'degree')
+            array('a.id','a.code','a.admissionyear', 'a.description', 'a.state', 'a.ordering', 'b.spec_id', 'b.name', 'b.degree'),
+            array('id',   'code','admissionyear',    'description', 'state',      'ordering', 'spec_id', 'program', 'degree')
         );
 
         $query =  parent::getListQuery();
@@ -56,10 +65,8 @@ class CoursesModel extends ListModel{
             $query->where('a.admissionyear = '.(int)$admissionyear);
         }
 
-        $published = $this->getState('filter.published');
-        if(is_numeric($published)){
-            $query->where('a.published = '.(int)$published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
 
         //Ordering

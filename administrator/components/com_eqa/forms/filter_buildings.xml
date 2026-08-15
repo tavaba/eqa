@@ -8,17 +8,14 @@
                 hint="JSEARCH_FILTER"
                 class="js-stools-search-string"
         />
-        <field
-                name="published"
-                type="list"
-                label="COM_EQA_FILTER_STATE_LABEL"
+        <field  addfieldprefix="Kma\Library\Kma\Field"
+                name="state"
+                type="state"
+                mode="filter"
+                label="Trạng thái"
                 default=""
                 onchange="this.form.submit();"
-        >
-            <option value="">COM_EQA_FILTER_STATE_MSG</option>
-            <option value="1">COM_EQA_FILTER_STATE_OPTION_PUBLISHED</option>
-            <option value="0">COM_EQA_FILTER_STATE_OPTION_UNPUBLISHED</option>
-        </field>
+        />
     </fields>
     <fields name="list">
         <field
@@ -31,7 +28,5 @@
                 type="limitbox"
                 label="JGLOBAL_LIST_LIMIT"
                 onchange="this.form.submit();" />
-
     </fields>
-
 </form>

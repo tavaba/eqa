@@ -40,7 +40,7 @@
                 default=""
                 onchange="this.form.submit();"
         >
-            <option value="">COM_EQA_STATUS_REQUEST</option>
+            <option value="">- Hoàn thành -</option>
             <option value="0">COM_EQA_STATUS_UNCOMPLETED</option>
             <option value="1">COM_EQA_STATUS_COMPLETED</option>
         </field>

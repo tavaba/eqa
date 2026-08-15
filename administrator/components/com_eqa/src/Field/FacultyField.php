@@ -2,45 +2,53 @@
 namespace Kma\Component\Eqa\Administrator\Field;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\Database\DatabaseInterface;
+use Joomla\Database\QueryInterface;
 use Kma\Component\Eqa\Administrator\Helper\UnitHelper;
+use Kma\Library\Kma\Field\StateAwareListField;
 
 /**
- * Supports an HTML select list of education degrees
- * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+ * Danh sách chọn khoa (đơn vị đào tạo cấp 1).
+ *
  * @since  1.6
  */
-class FacultyField extends ListField
+class FacultyField extends StateAwareListField
 {
     protected $type = 'faculty';
 
+    protected string $stateColumn = 'a.state';
+    protected string $keyColumn   = 'a.id';
+
     /**
-     * Method to get a list of options for a list input.
+     * Field này cố ý KHÔNG dùng các thẻ <option> khai báo trong form XML;
+     * mục dẫn hướng được sinh cứng ở getLeadingOptions().
      *
-     * @return	array		An array of JHtml options.
-     *
-     * @since   1.0
+     * @return  bool
+     * @since   2.1.7
      */
-    protected function getOptions()
+    protected function useXmlOptions(): bool
     {
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select('id, code, name')
-            ->from('#__eqa_units')
-            ->where('parent_id=0 AND published=1')
-	        ->where($db->quoteName('type') . '=' . UnitHelper::UNIT_TYPE_EDUCATION)
-            ->order('code');
-        $db->setQuery($query);
-        $units = $db->loadObjectList();
-        //$options = parent::getOptions();
-	    $options = [];
-		$options[] = HTMLHelper::_('select.option', '', '- Khoa phụ trách -');
-        foreach($units as $unit)
-        {
-            $options[] = HTMLHelper::_('select.option', $unit->id, $unit->code . ' - '. $unit->name );
-        }
-        return $options;
+        return false;
     }
 
+    protected function getLeadingOptions(): array
+    {
+        return [HTMLHelper::_('select.option', '', '- Khoa phụ trách -')];
+    }
+
+    protected function buildQuery(DatabaseInterface $db): QueryInterface
+    {
+        return $db->getQuery(true)
+            ->select('a.id, a.code, a.name')
+            ->from($db->quoteName('#__eqa_units', 'a'))
+            ->where($db->quoteName('a.parent_id') . ' = 0')
+            ->where($db->quoteName('a.type') . ' = ' . (int) UnitHelper::UNIT_TYPE_EDUCATION)
+            ->order($db->quoteName('a.code') . ' ASC');
+    }
+
+    protected function buildOptionText(object $row): string
+    {
+        return $row->code . ' - ' . $row->name;
+    }
 }

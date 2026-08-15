@@ -4,11 +4,20 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 class LearnersModel extends ListModel {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('code','lastname','firstname','group','course','published');
+        $config['filter_fields']=array('code','lastname','firstname','group','course','state');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'course', $direction = 'desc'): void
@@ -20,14 +29,15 @@ class LearnersModel extends ListModel {
         $db = $this->getDatabase();
         $query =  $db->getQuery(true);
         $columns = $db->quoteName(
-            array('a.id','a.group_id', 'a.code', 'a.lastname', 'a.firstname', 'a.debtor', 'a.published', 'b.code', 'c.code','c.admissionyear'),
-            array('id',   'group_id',   'code',    'lastname',   'firstname', 'debtor',   'published',   'group', 'course','admissionyear')
+            array('a.id','a.group_id', 'a.code', 'a.lastname', 'a.firstname', 'a.debtor', 'a.state', 'b.code', 'c.code','c.admissionyear'),
+            array('id',   'group_id',   'code',    'lastname',   'firstname', 'debtor',   'state',       'group', 'course','admissionyear')
         );
         $query->from('#__eqa_learners AS a')
             ->leftJoin('#__eqa_groups AS b','a.group_id = b.id')
             ->leftJoin('#__eqa_courses AS c', 'b.course_id=c.id')
             ->select($columns)
-            ->where('(b.published>0 AND c.published>0)');
+            ->where('(b.state = ' . StateHelper::STATE_PUBLISHED
+                . ' AND c.state = ' . StateHelper::STATE_PUBLISHED . ')');
 
         //Filtering
         $search = $this->getState('filter.search');
@@ -56,10 +66,8 @@ class LearnersModel extends ListModel {
             $query->where('a.group_id = '.(int)$group_id);
         }
 
-        $published = $this->getState('filter.published');
-        if(is_numeric($published)){
-            $query->where('a.published = '.(int)$published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Sorting
         $orderingCol = $query->db->escape($this->getState('list.ordering','code'));

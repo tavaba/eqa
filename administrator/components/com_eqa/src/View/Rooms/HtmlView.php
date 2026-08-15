@@ -26,7 +26,7 @@ class HtmlView extends ItemsHtmlView {
         $field->cellCssClasses = 'text-center';
         $option->customFieldset1[] = $field;
 
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
         //Set the option
         $this->itemFields = $option;

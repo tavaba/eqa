@@ -7,11 +7,20 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
+use Kma\Library\Kma\Helper\StateHelper;
 
 class SubjectsModel extends ListModel{
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('department_code','code','credits','start_year','finaltesttype','testbankyear','published', 'ordering');
+        $config['filter_fields']=array('department_code','code','credits','start_year','finaltesttype','testbankyear','state', 'ordering');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'code', $direction = 'desc'): void
@@ -28,8 +37,8 @@ class SubjectsModel extends ListModel{
          * Các màn hình khác chỉ hiển thị tên phân biệt.
          */
         $columns = $db->quoteName(
-            array('a.id','b.code','b.name','a.code', 'a.name','a.display_name','a.degree', 'a.credits', 'a.start_year', 'a.finaltesttype', 'a.testbankyear', 'a.allowed_rooms', 'a.published', 'a.ordering'),
-            array('id','department_code','department_name','code','name','display_name','degree','credits', 'start_year', 'finaltesttype','testbankyear', 'allowed_rooms', 'published',  'ordering')
+            array('a.id','b.code','b.name','a.code', 'a.name','a.display_name','a.degree', 'a.credits', 'a.start_year', 'a.finaltesttype', 'a.testbankyear', 'a.allowed_rooms', 'a.state', 'a.ordering'),
+            array('id','department_code','department_name','code','name','display_name','degree','credits', 'start_year', 'finaltesttype','testbankyear', 'allowed_rooms', 'state',      'ordering')
         );
         $query->from('#__eqa_subjects AS a')
             ->leftJoin('#__eqa_units AS b','a.unit_id = b.id')
@@ -78,10 +87,8 @@ class SubjectsModel extends ListModel{
             $query->where('a.finaltesttype = '.(int)$finaltesttype);
         }
 
-        $published = $this->getState('filter.published');
-        if(is_numeric($published)){
-            $query->where('a.published = '.(int)$published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering','department_code'));

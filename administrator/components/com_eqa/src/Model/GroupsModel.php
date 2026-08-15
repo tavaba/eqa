@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * List model của 'lớp hành chính' (group).
@@ -17,11 +18,19 @@ use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
  */
 class GroupsModel extends ListModel
 {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     use CampusScopedList;
 
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields'] = array('id', 'code', 'course', 'admissionyear', 'size', 'published', 'ordering', 'campus_id', 'campus_name');
+        $config['filter_fields'] = array('id', 'code', 'course', 'admissionyear', 'size', 'state', 'ordering', 'campus_id', 'campus_name');
         parent::__construct($config, $factory);
     }
 
@@ -34,8 +43,8 @@ class GroupsModel extends ListModel
     {
         $db = $this->getDatabase();
         $columns = $db->quoteName(
-            array('a.id', 'a.code','a.size','a.homeroom_id','a.adviser_id', 'a.description', 'a.published', 'a.ordering', 'b.code','b.admissionyear', 'c.name'),
-            array('id',    'code',   'size','homeroom',      'adviser',      'description',   'published',  'ordering', 'course','admissionyear', 'campus_name')
+            array('a.id', 'a.code','a.size','a.homeroom_id','a.adviser_id', 'a.description', 'a.state', 'a.ordering', 'b.code','b.admissionyear', 'c.name'),
+            array('id',    'code',   'size','homeroom',      'adviser',      'description',   'state',      'ordering', 'course','admissionyear', 'campus_name')
         );
 
         $query =  parent::getListQuery();
@@ -43,7 +52,7 @@ class GroupsModel extends ListModel
             ->leftJoin('#__eqa_courses AS b','a.course_id = b.id')
             ->leftJoin('#__eqa_campuses AS c','a.campus_id = c.id')
             ->select($columns)
-            ->where('b.published >0');
+            ->where('b.state = ' . StateHelper::STATE_PUBLISHED);
 
         // Bộ lọc cơ sở đào tạo dạng tùy chọn (2.1.6)
         $this->applyOptionalCampusFilter($query, 'a.campus_id');
@@ -70,10 +79,8 @@ class GroupsModel extends ListModel
             $query->where('a.adviser_id = '.(int)$adviser_id);
         }
 
-        $published = $this->getState('filter.published');
-        if(is_numeric($published)){
-            $query->where('a.published = '.(int)$published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering','id'));

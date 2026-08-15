@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
+use Kma\Library\Kma\Helper\StateHelper;
 
 abstract class GeneralHelper{
     /**
@@ -82,7 +83,7 @@ abstract class GeneralHelper{
 			->from($db->quoteName('#__eqa_employees'))
 			->where('LOWER(' . $db->quoteName('email') . ') = '
 				. $db->quote(mb_strtolower(trim($user->email))))
-			->where($db->quoteName('published') . ' = 1')
+			->where($db->quoteName('state') . ' = ' . StateHelper::STATE_PUBLISHED)
 			->setLimit(1);
 		$db->setQuery($query);
 		$id = $db->loadResult();

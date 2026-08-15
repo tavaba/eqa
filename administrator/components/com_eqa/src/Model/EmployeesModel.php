@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * List model của 'người lao động' (employee).
@@ -20,11 +21,19 @@ use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
  */
 class EmployeesModel extends ListModel
 {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     use CampusScopedList;
 
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields'] = array('code','unit_code','firstname','published', 'ordering', 'campus_id', 'campus_name');
+        $config['filter_fields'] = array('code','unit_code','firstname','state', 'ordering', 'campus_id', 'campus_name');
         parent::__construct($config, $factory);
     }
 
@@ -38,8 +47,8 @@ class EmployeesModel extends ListModel
         $db = $this->getDatabase();
         $query =  $db->getQuery(true);
         $columns = $db->quoteName(
-            array('a.id','b.code','b.name','a.code', 'a.lastname', 'a.firstname', 'a.email', 'a.mobile', 'a.published', 'a.ordering', 'c.name'),
-            array('id','unit_code','unit_name','code','lastname','firstname', 'email','mobile', 'published',  'ordering', 'campus_name')
+            array('a.id','b.code','b.name','a.code', 'a.lastname', 'a.firstname', 'a.email', 'a.mobile', 'a.state', 'a.ordering', 'c.name'),
+            array('id','unit_code','unit_name','code','lastname','firstname', 'email','mobile', 'state',      'ordering', 'campus_name')
         );
         $query->from('#__eqa_employees AS a')
             ->leftJoin('#__eqa_units AS b','a.unit_id = b.id')
@@ -61,10 +70,8 @@ class EmployeesModel extends ListModel
             $query->where('a.unit_id = '.(int)$unit_id);
         }
 
-        $published = $this->getState('filter.published');
-        if(is_numeric($published)){
-            $query->where('a.published = '.(int)$published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering','unit_code'));

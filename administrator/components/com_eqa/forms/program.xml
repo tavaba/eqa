@@ -63,10 +63,13 @@
                 type="textarea"
                 label="COM_EQA_GENERAL_DESC"
         />
-        <field name="published" type="list" readonly="true"  required="true" label="JSTATUS" default="1">
-            <option value="1">JPUBLISHED</option>
-            <option value="0">JUNPUBLISHED</option>
-        </field>
+        <field  addfieldprefix="Kma\Library\Kma\Field"
+                name="state"
+                type="state"
+                required="true"
+                default="1"
+                label="Trạng thái"
+        />
 
         <field
                 name="created_by"

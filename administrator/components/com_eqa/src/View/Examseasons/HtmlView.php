@@ -57,9 +57,8 @@ class HtmlView extends ItemsHtmlView
     {
         parent::prepareDataForLayoutDefault();
 
-        //Disable 'publish' and 'unpublish' toolbar buttons
-        $this->toolbarOption->taskPublish=false;
-        $this->toolbarOption->taskUnpublish=false;
+        //Không cho phép đổi trạng thái kỳ thi từ toolbar của danh sách
+        $this->toolbarOption->clearStateTasks();
 
         //Preprocessing
         if(!empty($this->layoutData->items)) {

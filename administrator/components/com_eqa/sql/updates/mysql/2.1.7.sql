@@ -48,3 +48,93 @@ ALTER TABLE `#__eqa_exams`
     ADD COLUMN `display_name` VARCHAR(255) NULL
         COMMENT 'Tên phân biệt, copy từ môn học khi tạo môn thi; NULL = dùng name'
         AFTER `name`;
+
+-- =============================================================================
+-- 3. Thiết kế lại cơ chế quản lý trạng thái: 2 trạng thái -> 4 trạng thái
+-- =============================================================================
+--
+-- Bối cảnh: cột `published` được khai báo BOOLEAN nên chỉ biểu diễn được
+-- bật/tắt. Hệ quả là các đối tượng danh mục đã thôi sử dụng (ví dụ môn học của
+-- chương trình đào tạo cũ) không có cách nào để vừa ẩn khỏi dropdown chọn dữ
+-- liệu mới, vừa giữ được dữ liệu lịch sử.
+--
+-- Giải pháp: đổi tên cột thành `state` và đổi kiểu sang TINYINT, dùng đúng bộ
+-- mã trạng thái của Joomla core (#__content.state):
+--     1  = Đang dùng   (Published)
+--     0  = Tạm ngừng   (Unpublished)
+--     2  = Đã lưu trữ  (Archived)
+--    -2  = Thùng rác   (Trashed)
+--
+-- Phân nhóm thực thể:
+--   - Nhóm DANH MỤC (12 bảng): dùng đủ 4 trạng thái.
+--   - Nhóm VẬN HÀNH (6 bảng) : đổi tên cột cho nhất quán nhưng chỉ nhận 0/1,
+--                              vì các thực thể này đã có vòng đời nghiệp vụ
+--                              riêng theo kỳ thi.
+--
+-- KHÔNG MẤT DỮ LIỆU: MySQL lưu BOOLEAN dưới dạng TINYINT(1) có dấu, nên toàn bộ
+-- giá trị 0/1 hiện có được giữ nguyên ý nghĩa sau khi đổi kiểu.
+--
+-- Tên cột `state` được đăng ký alias 'published' trong Kma\Library\Kma\Table\Table
+-- để Joomla core (Table::publish(), AdminModel::publish()) tiếp tục hoạt động.
+--
+-- LƯU Ý VẬN HÀNH: backup CSDL trước khi update; DDL của MySQL không nằm trong
+-- transaction nên không thể rollback tự động.
+-- -----------------------------------------------------------------------------
+
+-- 3.1. Nhóm DANH MỤC — đủ 4 trạng thái
+ALTER TABLE `#__eqa_campuses`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_buildings`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_rooms`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_units`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_employees`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_specialities`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_programs`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_courses`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_groups`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_learners`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_cohorts`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+ALTER TABLE `#__eqa_subjects`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác';
+
+-- 3.2. Nhóm VẬN HÀNH — chỉ 2 trạng thái
+ALTER TABLE `#__eqa_classes`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng';
+ALTER TABLE `#__eqa_examseasons`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng';
+ALTER TABLE `#__eqa_assessments`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng';
+ALTER TABLE `#__eqa_examsessions`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng';
+ALTER TABLE `#__eqa_exams`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng';
+ALTER TABLE `#__eqa_examrooms`
+    CHANGE COLUMN `published` `state` TINYINT NOT NULL DEFAULT 1
+        COMMENT '1=Đang dùng, 0=Tạm ngừng';

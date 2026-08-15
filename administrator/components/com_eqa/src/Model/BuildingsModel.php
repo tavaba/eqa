@@ -4,6 +4,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\CampusListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * List model của 'tòa nhà' (building).
@@ -14,9 +15,17 @@ use Kma\Component\Eqa\Administrator\Base\CampusListModel;
  */
 class BuildingsModel extends CampusListModel
 {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields'] = array('code', 'published', 'ordering', 'campus_id', 'campus_name');
+        $config['filter_fields'] = array('code', 'state', 'ordering', 'campus_id', 'campus_name');
         parent::__construct($config, $factory);
     }
 
@@ -42,6 +51,9 @@ class BuildingsModel extends CampusListModel
 
         // Lọc theo cơ sở đào tạo (2.1.6)
         $this->applyCampusScope($query);
+
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         $orderingCol = $db->escape($this->getState('list.ordering', 'code'));
         $orderingDir = $db->escape($this->getState('list.direction', 'asc'));

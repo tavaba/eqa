@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * List model của 'nhóm người học' (cohort).
@@ -17,11 +18,19 @@ use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
  */
 class CohortsModel extends ListModel
 {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     use CampusScopedList;
 
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields'] = array('id','code','name','size','campus_id','campus_name');
+        $config['filter_fields'] = array('id','code','name','size','state','campus_id','campus_name');
         parent::__construct($config, $factory);
     }
 
@@ -38,8 +47,8 @@ class CohortsModel extends ListModel
             ->from('#__eqa_cohort_learner AS z')
             ->where('z.cohort_id = a.id');
         $columns = $db->quoteName(
-            array('a.id', 'a.code', 'a.name', 'a.published', 'c.name'),
-            array('id',   'code',   'name',   'published',   'campus_name')
+            array('a.id', 'a.code', 'a.name', 'a.state', 'c.name'),
+            array('id',   'code',   'name',   'state',       'campus_name')
         );
         $query =  $db->getQuery(true)
             ->from('#__eqa_cohorts AS a')
@@ -56,6 +65,9 @@ class CohortsModel extends ListModel
             $like = $db->quote('%'.trim($search).'%');
             $query->where('(a.code LIKE ' . $like . ' OR a.name LIKE ' . $like . ')');
         }
+
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering','id'));

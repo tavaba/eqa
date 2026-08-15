@@ -56,7 +56,7 @@ class HtmlView extends ItemsHtmlView
 	    $f = new ListLayoutItemFieldOption('class_count','Lớp HP', true, false,'text-center');
 		$f->urlFormatString = 'index.php?option=com_eqa&view=classes&filter[subject_id]=%d';
 	    $option->customFieldset1[] = $f;
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
 		//Actions
 	    $action = new ItemAction();

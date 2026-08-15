@@ -5,6 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
 use Kma\Component\Eqa\Administrator\Traits\CampusScopedList;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * List model của 'đơn vị' (unit).
@@ -20,9 +21,17 @@ class UnitsModel extends ListModel
 {
     use CampusScopedList;
 
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields'] = array('id', 'code', 'name', 'campus_id', 'campus_name');
+        $config['filter_fields'] = array('id', 'code', 'name', 'state', 'campus_id', 'campus_name');
         parent::__construct($config, $factory);
     }
 
@@ -41,6 +50,9 @@ class UnitsModel extends ListModel
 
         // Bộ lọc cơ sở đào tạo dạng tùy chọn (2.1.6)
         $this->applyOptionalCampusFilter($query, 'a.campus_id');
+
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         $query->order($db->quoteName('a.parent_id') . ' ASC, ' . $db->quoteName('a.name') . ' ASC');
 

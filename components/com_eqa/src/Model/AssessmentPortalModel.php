@@ -10,6 +10,7 @@ use Joomla\CMS\MVC\Model\BaseModel;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
 use Kma\Library\Kma\Helper\PaymentCodeHelper;
+use Kma\Library\Kma\Helper\StateHelper;
 /**
  * Model front-end cho trang Thi sát hạch (AssessmentPortal).
  *
@@ -95,7 +96,7 @@ class AssessmentPortalModel extends BaseModel
 			throw new Exception('Không tìm thấy thông tin người học với mã: ' . $learnerCode);
 		}
 
-		// 2. Lấy tất cả kỳ sát hạch đang published, sắp xếp start_date DESC
+		// 2. Lấy tất cả kỳ sát hạch đang được sử dụng, sắp xếp start_date DESC
 		$query = $db->getQuery(true)
 			->select([
 				$db->quoteName('a.id'),
@@ -114,7 +115,7 @@ class AssessmentPortalModel extends BaseModel
 				$db->quoteName('a.bank_account_owner'),
 			])
 			->from($db->quoteName('#__eqa_assessments', 'a'))
-			->where($db->quoteName('a.published') . ' = 1')
+			->where($db->quoteName('a.state') . ' = ' . StateHelper::STATE_PUBLISHED)
 			->order($db->quoteName('a.start_date') . ' DESC');
 		$db->setQuery($query);
 		$assessments = $db->loadObjectList();
@@ -462,7 +463,7 @@ class AssessmentPortalModel extends BaseModel
 			->select('*')
 			->from($db->quoteName('#__eqa_assessments'))
 			->where($db->quoteName('id') . ' = ' . $assessmentId)
-			->where($db->quoteName('published') . ' = 1');
+			->where($db->quoteName('state') . ' = ' . StateHelper::STATE_PUBLISHED);
 		$db->setQuery($query);
 		$obj = $db->loadObject();
 		if ($obj === null) {

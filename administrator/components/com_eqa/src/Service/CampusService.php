@@ -16,6 +16,7 @@ use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * Service quản lý 'cơ sở đào tạo' (campus).
@@ -57,7 +58,7 @@ class CampusService
     private DatabaseInterface $db;
 
     /**
-     * Cache danh mục cơ sở đào tạo: id => object{id, code, name, published}.
+     * Cache danh mục cơ sở đào tạo: id => object{id, code, name, state}.
      *
      * @var array<int, object>|null
      * @since 2.1.6
@@ -124,7 +125,7 @@ class CampusService
                 ]
             )
             ->from($this->db->quoteName('#__eqa_campuses'))
-            ->where($this->db->quoteName('published') . ' = 1')
+            ->where($this->db->quoteName('state') . ' = ' . StateHelper::STATE_PUBLISHED)
             ->order($this->db->quoteName('ordering') . ' ASC');
 
         $rows = $this->db->setQuery($query)->loadObjectList('id');
@@ -246,9 +247,9 @@ class CampusService
         $ids = array_map('intval', (array) $this->db->setQuery($query)->loadColumn());
 
         // Loại các cơ sở đã bị ngừng kích hoạt
-        $published = array_keys($this->getAllCampuses());
+        $activeCampusIds = array_keys($this->getAllCampuses());
 
-        $this->userCampusIds[$userId] = array_values(array_intersect($ids, $published));
+        $this->userCampusIds[$userId] = array_values(array_intersect($ids, $activeCampusIds));
 
         return $this->userCampusIds[$userId];
     }

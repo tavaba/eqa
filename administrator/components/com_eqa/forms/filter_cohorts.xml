@@ -8,31 +8,6 @@
                 hint="JSEARCH_FILTER"
                 class="js-stools-search-string"
         />
-        <field
-                name="campus_id"
-                type="campus"
-                label="Cơ sở đào tạo"
-                default=""
-                onchange="this.form.submit();"
-        />
-        <field
-                name="building_id"
-                type="building"
-                label="COM_EQA_FORM_ROOMS_FILTER_BUILDING_LABEL"
-                default=""
-                onchange="this.form.submit();"
-        >
-            <option value="">COM_EQA_FORM_ROOMS_FILTER_BUILDING_MSG</option>
-        </field>
-        <field
-                name="type"
-                type="roomtype"
-                label="COM_EQA_FORM_ROOMS_FILTER_TYPE_LABEL"
-                default=""
-                onchange="this.form.submit();"
-        >
-            <option value="">COM_EQA_FORM_ROOMS_FILTER_TYPE_MSG</option>
-        </field>
         <field  addfieldprefix="Kma\Library\Kma\Field"
                 name="state"
                 type="state"
@@ -48,13 +23,10 @@
                 type="hidden"
                 value=""
         />
-
         <field
                 name="limit"
                 type="limitbox"
                 label="JGLOBAL_LIST_LIMIT"
                 onchange="this.form.submit();" />
-
     </fields>
-
 </form>

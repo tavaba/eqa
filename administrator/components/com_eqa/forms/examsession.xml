@@ -42,7 +42,7 @@
                 label="Kỳ sát hạch"
                 required="false"
                 showon="session_type:2"
-                query="SELECT id, title FROM #__eqa_assessments WHERE published = 1 ORDER BY title"
+                query="SELECT id, title FROM #__eqa_assessments WHERE state = 1 ORDER BY title"
                 key_field="id"
                 value_field="title"
         >

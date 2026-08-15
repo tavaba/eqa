@@ -17,7 +17,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldName();
         $option->customFieldset1[] = ListLayoutItemFields::defaultFieldDescription();
 
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
         //Set the option
         $this->itemFields = $option;

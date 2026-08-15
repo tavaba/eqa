@@ -6,6 +6,7 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\CampusListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
  * Model danh sách kỳ sát hạch.
@@ -14,12 +15,20 @@ use Kma\Component\Eqa\Administrator\Base\CampusListModel;
  */
 class AssessmentsModel extends CampusListModel
 {
+    /**
+     * Kỳ sát hạch thuộc nhóm thực thể VẬN HÀNH nên chỉ dùng 2 trạng thái.
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_BASIC;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields'] = [
             'id', 'title', 'type', 'result_type',
             'start_date', 'end_date',
-            'allow_registration', 'completed', 'published', 'ordering',
+            'allow_registration', 'completed', 'state', 'ordering',
             'campus_id', 'campus_name',
         ];
         parent::__construct($config, $factory);
@@ -65,7 +74,7 @@ class AssessmentsModel extends CampusListModel
                 'a.id', 'a.title', 'a.type', 'a.result_type',
                 'a.start_date', 'a.end_date', 'a.fee',
                 'a.max_candidates', 'a.allow_registration',
-                'a.completed', 'a.published', 'a.ordering',
+                'a.completed', 'a.state', 'a.ordering',
             ]))
             ->select('(' . $subCandidates . ') AS ' . $db->quoteName('ncandidate'))
             ->select($db->quoteName('cam.name', 'campus_name'))
@@ -100,10 +109,8 @@ class AssessmentsModel extends CampusListModel
             $query->where($db->quoteName('a.completed') . ' = ' . (int) $completed);
         }
 
-        $published = $this->getState('filter.published');
-        if (is_numeric($published)) {
-            $query->where($db->quoteName('a.published') . ' = ' . (int) $published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         // Filter theo năm (extract từ start_date, không cần cột riêng)
         $year = $this->getState('filter.year');

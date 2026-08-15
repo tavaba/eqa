@@ -2,41 +2,32 @@
 namespace Kma\Component\Eqa\Administrator\Field;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Form\Field\ListField;
-use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\Database\DatabaseInterface;
+use Joomla\Database\QueryInterface;
+use Kma\Library\Kma\Field\StateAwareListField;
 
 /**
- * Supports an HTML select list of education degrees
- * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+ * Danh sách chọn chương trình đào tạo.
+ *
  * @since  1.6
  */
-class ProgramField extends ListField
+class ProgramField extends StateAwareListField
 {
     protected $type = 'program';
 
-    /**
-     * Method to get a list of options for a list input.
-     *
-     * @return	array		An array of JHtml options.
-     *
-     * @since   1.0
-     */
-    protected function getOptions()
+    protected string $stateColumn = 'a.state';
+    protected string $keyColumn   = 'a.id';
+
+    protected function buildQuery(DatabaseInterface $db): QueryInterface
     {
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->select('id, degree, name')
-            ->from('#__eqa_programs')
-            ->where('published = 1')
-            ->order('degree');
-        $db->setQuery($query);
-        $res = $db->loadAssocList('id','name');
-        $options = parent::getOptions();
-        foreach ($res as $id=>$name)
-        {
-            $options[] = HTMLHelper::_('select.option', $id, $name);
-        }
-        return $options;
+        return $db->getQuery(true)
+            ->select('a.id, a.degree, a.name')
+            ->from($db->quoteName('#__eqa_programs', 'a'))
+            ->order($db->quoteName('a.degree') . ' ASC');
     }
 
+    protected function buildOptionText(object $row): string
+    {
+        return (string) $row->name;
+    }
 }

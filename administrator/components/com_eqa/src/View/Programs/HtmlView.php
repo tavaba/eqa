@@ -24,7 +24,7 @@ class HtmlView extends ItemsHtmlView {
         $option->customFieldset1[] = new ListLayoutItemFieldOption('firstrelease', 'COM_EQA_PROGRAM_FIRST_RELEASE', true, false,'text-center');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('lastupdate', 'COM_EQA_PROGRAM_LAST_UPDATE', true, false,'text-center');
 
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
         //Set the option
         $this->itemFields = $option;

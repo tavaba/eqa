@@ -15,6 +15,7 @@ use Kma\Component\Eqa\Administrator\Service\CreditClassNameParser;
 use Kma\Component\Eqa\Administrator\Traits\CampusScopedByExamseason;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\StateHelper;
 
 defined('_JEXEC') or die();
 
@@ -160,8 +161,8 @@ class ClassModel extends CampusAdminModel
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		//1. Check if the class exists and is published
-		$db->setQuery("SELECT COUNT(*) FROM `#__eqa_classes` WHERE `id`=$classId AND `published`=1");
+		//1. Check if the class exists and is in use
+		$db->setQuery("SELECT COUNT(*) FROM `#__eqa_classes` WHERE `id`=$classId AND `state`=1");
 		$count = (int) $db->loadResult();
 		if($count==0)
 			throw new Exception('Lớp không tồn tại hoặc đã bị vô hiệu hóa');
@@ -347,7 +348,7 @@ class ClassModel extends CampusAdminModel
 
 	/**
 	 * Kiểm tra một lớp học phần có đủ điều kiện để nhập/ghi ĐQT hay không.
-	 * Điều kiện: lớp đang published và CHƯA tổ chức thi (chưa có thí sinh được gán số báo danh).
+	 * Điều kiện: lớp đang được sử dụng và CHƯA tổ chức thi (chưa có thí sinh được gán số báo danh).
 	 *
 	 * Tách riêng để kiểm tra SỚM (trước khi đọc dữ liệu & phát cảnh báo), tránh hiển thị
 	 * thông báo cho lớp rốt cuộc bị từ chối.
@@ -355,19 +356,19 @@ class ClassModel extends CampusAdminModel
 	 * @param   int  $classId  ID lớp học phần.
 	 *
 	 * @return  void
-	 * @throws  Exception  Nếu lớp không tồn tại/không published hoặc đã tổ chức thi.
+	 * @throws  Exception  Nếu lớp không tồn tại/không còn được sử dụng hoặc đã tổ chức thi.
 	 * @since   2.x
 	 */
 	public function assertPamImportable(int $classId): void
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		// 1. Lớp phải tồn tại và đang published
+		// 1. Lớp phải tồn tại và đang được sử dụng
 		$query = $db->getQuery(true)
 			->select('COUNT(*)')
 			->from($db->quoteName('#__eqa_classes'))
 			->where($db->quoteName('id') . ' = ' . (int) $classId)
-			->where($db->quoteName('published') . ' = 1');
+			->where($db->quoteName('state') . ' = ' . StateHelper::STATE_PUBLISHED);
 		$db->setQuery($query);
 		if ((int) $db->loadResult() === 0) {
 			throw new Exception('Lớp không tồn tại hoặc đã bị vô hiệu hóa');
@@ -390,7 +391,7 @@ class ClassModel extends CampusAdminModel
 	 *
 	 * - KHÔNG ghi đè điểm của HVSV đã có ĐQT (đếm vào $countIgnored).
 	 * - Nếu $data chứa HVSV không thuộc lớp thì gom lại và ném MỘT exception liệt kê đầy đủ.
-	 * - Yêu cầu lớp đang published và chưa tổ chức thi.
+	 * - Yêu cầu lớp đang được sử dụng và chưa tổ chức thi.
 	 *
 	 * @param   int    $classId          ID lớp học phần.
 	 * @param   array  $data             Mảng bản ghi từ readPamSheet().
@@ -405,7 +406,7 @@ class ClassModel extends CampusAdminModel
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		// 1-2. Điều kiện được phép nhập ĐQT (published + chưa tổ chức thi)
+		// 1-2. Điều kiện được phép nhập ĐQT (đang được sử dụng + chưa tổ chức thi)
 		$this->assertPamImportable($classId);
 
 		// 3. Bản đồ mã HVSV -> id trong lớp
@@ -686,13 +687,14 @@ class ClassModel extends CampusAdminModel
     {
         $db = $this->getDatabase();
 
-        //Lấy danh sách HVSV các khóa, các lớp đang published
+        //Lấy danh sách HVSV các khóa, các lớp đang được sử dụng
         $query = $db->getQuery(true)
             ->from('#__eqa_learners AS a')
             ->leftJoin('#__eqa_groups AS b', 'a.group_id = b.id')
             ->leftJoin('#__eqa_courses AS c', 'b.course_id = c.id')
             ->select('a.id AS id, a.code AS code')
-            ->where('b.published>0 AND c.published>0');
+            ->where('b.state = ' . StateHelper::STATE_PUBLISHED
+                . ' AND c.state = ' . StateHelper::STATE_PUBLISHED);
         $db->setQuery($query);
         $learnerIds = $db->loadAssocList('code','id');
 

@@ -4,12 +4,21 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Eqa\Administrator\Base\ListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 class ProgramsModel extends ListModel
 {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái (kể cả 'Đã lưu trữ' và 'Thùng rác').
+     *
+     * @var    int[]
+     * @since  2.1.7
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('degree','format','approach','published','ordering','speciality');
+        $config['filter_fields']=array('degree','format','approach','state','ordering','speciality');
         parent::__construct($config, $factory);
     }
     protected function populateState($ordering = 'speciality', $direction = 'asc'): void
@@ -21,8 +30,8 @@ class ProgramsModel extends ListModel
         $db = $this->getDatabase();
         $query = $db->getQuery(true);
         $columns = $db->quoteName(
-            array('a.id', 'a.spec_id',  'a.name', 'a.degree','a.format','a.approach', 'a.firstrelease', 'a.lastupdate', 'a.description', 'a.published', 'a.ordering', 'b.code'),
-            array('id',    'spec_id',    'name',   'degree','format','approach', 'firstrelease', 'lastupdate', 'description', 'published',   'ordering', 'speciality')
+            array('a.id', 'a.spec_id',  'a.name', 'a.degree','a.format','a.approach', 'a.firstrelease', 'a.lastupdate', 'a.description', 'a.state', 'a.ordering', 'b.code'),
+            array('id',    'spec_id',    'name',   'degree','format','approach', 'firstrelease', 'lastupdate', 'description', 'state',       'ordering', 'speciality')
         );
         $query->from('#__eqa_programs AS a')
             ->leftJoin('#__eqa_specialities AS b','a.spec_id = b.id')
@@ -55,10 +64,8 @@ class ProgramsModel extends ListModel
             $query->where('a.approach = '.(int)$approach);
         }
 
-        $published = $this->getState('filter.published');
-        if(is_numeric($published)){
-            $query->where('a.published = '.(int)$published);
-        }
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering','speciality'));

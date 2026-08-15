@@ -2,50 +2,50 @@
 namespace Kma\Component\Eqa\Administrator\Field;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Form\Field\ListField;
-use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\Database\DatabaseInterface;
+use Joomla\Database\QueryInterface;
 use Kma\Component\Eqa\Administrator\Helper\RoomHelper;
+use Kma\Library\Kma\Field\StateAwareListField;
+use Kma\Library\Kma\Helper\StateHelper;
 
 /**
- * Supports an HTML select list of exam season types
- * Reference: https://www.abdulwaheed.pk/en/blog/41-information-technology/44-joomla/335-how-to-create-custom-form-field-for-custom-component-joomla-4.html
+ * Danh sách chọn phòng.
+ *
  * @since  1.6
  */
-class RoomField extends ListField
+class RoomField extends StateAwareListField
 {
     protected $type = 'room';
 
-    /**
-     * Method to get a list of options for a list input.
-     *
-     * @return	array		An array of JHtml options.
-     *
-     * @since   1.0
-     */
-    protected function getOptions()
+    protected string $stateColumn = 'a.state';
+    protected string $keyColumn   = 'a.id';
+
+    protected function buildQuery(DatabaseInterface $db): QueryInterface
     {
-        $db = $this->getDatabase();
         $columns = $db->quoteName(
             array('a.id', 'b.code',   'a.code', 'a.maxcapacity', 'a.capacity', 'a.type'),
             array('id',   'building', 'code',   'maxcapacity',   'capacity',   'type')
         );
+
         $query = $db->getQuery(true)
             ->select($columns)
-            ->from('#__eqa_rooms AS a')
-            ->leftJoin('#__eqa_buildings AS b', 'a.building_id = b.id')
-            ->where('b.published=1 AND a.published=1')
-            ->order('building ASC')
-            ->order('code ASC');
-        $db->setQuery($query);
-        $rooms = $db->loadObjectList();
+            ->from($db->quoteName('#__eqa_rooms', 'a'))
+            ->leftJoin($db->quoteName('#__eqa_buildings', 'b') . ' ON a.building_id = b.id')
+            ->order($db->quoteName('building') . ' ASC')
+            ->order($db->quoteName('code') . ' ASC');
 
-        $options = parent::getOptions();
-        foreach ($rooms as $room)
-        {
-            $option = $room->building . '-' . $room->code . ' (' . $room->capacity . ', ' . RoomHelper::roomType($room->type) . ')';
-            $options[] = HTMLHelper::_('select.option', $room->id, $option);
-        }
-        return $options;
+        /*
+         * Trạng thái của tòa nhà đặt ở mệnh đề WHERE thường (xem GroupField để
+         * biết lý do), riêng trạng thái của phòng do lớp cơ sở tự thêm.
+         */
+        $query->where($db->quoteName('b.state') . ' = ' . StateHelper::STATE_PUBLISHED);
+
+        return $query;
     }
 
+    protected function buildOptionText(object $row): string
+    {
+        return $row->building . '-' . $row->code
+            . ' (' . $row->capacity . ', ' . RoomHelper::roomType($row->type) . ')';
+    }
 }

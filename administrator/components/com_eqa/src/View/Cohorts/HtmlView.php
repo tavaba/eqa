@@ -21,7 +21,7 @@ class HtmlView extends ItemsHtmlView
         $field->urlFormatString = 'index.php?option=com_eqa&view=cohortLearners&cohort_id=%d';
         $option->customFieldset1[] = $field;
 	    $option->customFieldset1[] = new ListLayoutItemFieldOption('campus_name', 'Cơ sở đào tạo');
-		$option->published = ListLayoutItemFields::defaultFieldPublished();
+		$option->state = ListLayoutItemFields::defaultFieldState();
 
         //Set the option
         $this->itemFields = $option;

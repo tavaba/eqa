@@ -59,7 +59,7 @@ class HtmlView extends ItemsHtmlView
 		$f->printRaw = true;
 		$fields->customFieldset1[] = $f;
 
-		$fields->published = ListLayoutItemFields::defaultFieldPublished();
+		$fields->state = ListLayoutItemFields::defaultFieldState();
 
 		$this->itemFields = $fields;
 	}

@@ -23,6 +23,7 @@ use Kma\Component\Eqa\Administrator\Model\ExamModel;
 use Kma\Component\Eqa\Administrator\Model\LearnerModel;
 use Kma\Library\Kma\Helper\NumberHelper;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use Kma\Library\Kma\Helper\StateHelper;
 
 defined('_JEXEC') or die();
 require_once JPATH_ROOT.'/vendor/autoload.php';
@@ -1321,8 +1322,19 @@ class ExamController extends  FormController
 					])
 				)
 				->from($db->quoteName('#__eqa_subjects'))
-				->where($db->quoteName('id')        . ' = ' . (int) $subjectId)
-				->where($db->quoteName('published') . ' = 1');
+				->where($db->quoteName('id') . ' = ' . (int) $subjectId)
+				/*
+				 * Chấp nhận cả môn học ĐÃ LƯU TRỮ (2.1.7).
+				 * Đây là thao tác ĐỌC dữ liệu để dựng/làm mới môn thi của một kỳ thi
+				 * đã tồn tại. Nếu vẫn ràng buộc state = 1 thì một môn học bị lưu trữ
+				 * sau khi kỳ thi được tạo sẽ khiến thao tác này ném 'Subject not found'.
+				 * Việc chặn CHỌN môn học đã lưu trữ cho dữ liệu mới do SubjectField
+				 * đảm nhiệm, không thuộc trách nhiệm của truy vấn này.
+				 */
+				->where(
+					$db->quoteName('state') . ' IN ('
+					. StateHelper::STATE_PUBLISHED . ', ' . StateHelper::STATE_ARCHIVED . ')'
+				);
 			$db->setQuery($query);
 			$subject = $db->loadObject();
 

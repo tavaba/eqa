@@ -2,38 +2,32 @@
 namespace Kma\Component\Eqa\Administrator\Field;
 defined('_JEXEC') or die();
 
-use Joomla\CMS\Form\Field\ListField;
-use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\Database\DatabaseInterface;
+use Joomla\Database\QueryInterface;
+use Kma\Library\Kma\Field\StateAwareListField;
 
-class CohortField extends ListField
+/**
+ * Danh sách chọn nhóm người học (cohort).
+ *
+ * @since  1.0
+ */
+class CohortField extends StateAwareListField
 {
     protected $type = 'cohort';
 
-    /**
-     * Method to get a list of options for a list input.
-     *
-     * @return	array		An array of JHtml options.
-     *
-     * @since   1.0
-     */
-    protected function getOptions()
+    protected string $stateColumn = 'a.state';
+    protected string $keyColumn   = 'a.id';
+
+    protected function buildQuery(DatabaseInterface $db): QueryInterface
     {
-        $db = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->from('#__eqa_cohorts')
-            ->select('id, code, name')
-            ->where('published = 1')
-            ->order('id DESC');
-        $db->setQuery($query);
-        $cohorts = $db->loadObjectList();
-        $options = parent::getOptions();
-        foreach ($cohorts as $cohort)
-        {
-			$value = $cohort->id;
-			$text = $cohort->code . ' - ' . htmlspecialchars($cohort->name);
-            $options[] = HTMLHelper::_('select.option', $value, $text);
-        }
-        return $options;
+        return $db->getQuery(true)
+            ->select('a.id, a.code, a.name')
+            ->from($db->quoteName('#__eqa_cohorts', 'a'))
+            ->order($db->quoteName('a.id') . ' DESC');
     }
 
+    protected function buildOptionText(object $row): string
+    {
+        return $row->code . ' - ' . htmlspecialchars((string) $row->name);
+    }
 }
