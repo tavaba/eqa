@@ -3,9 +3,9 @@ namespace Kma\Component\Survey\Administrator\Model;
 
 use Exception;
 use Joomla\Database\ParameterType;
-use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Component\Survey\Administrator\Base\AdminModel;
+use Kma\Library\Kma\Helper\DatabaseHelper;
 
 defined('_JEXEC') or die();
 

@@ -29,7 +29,7 @@ class SurveyController extends BaseController
             return false;
         }
 
-        //If the survey is not published, then we cannot respond to it.
+        //If the survey is not in use, then we cannot respond to it.
         if($survey->state != StateHelper::STATE_PUBLISHED)
         {
             if ($throw)

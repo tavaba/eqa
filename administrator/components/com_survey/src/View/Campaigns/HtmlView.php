@@ -86,19 +86,7 @@ class HtmlView extends ItemsHtmlView
 
     protected function addToolbarForLayoutDefault(): void
     {
-        /**
-         * @var CampaignsModel $campaignsModel
-         */
-        $campaignsModel = $this->getModel();
-        $items = $this->layoutData->items;
-
-        ToolbarHelper::title('Quản lý đợt khảo sát');
-        ToolbarHelper::appendGoHome();
-
-        if($campaignsModel->canDeleteAny($items))
-            ToolbarHelper::appendDelete('campaigns.delete');
-
-        if($campaignsModel->canCreate())
-            ToolbarHelper::addNew('campaign.add');
+        parent::addToolbarForLayoutDefault();
+	    ToolbarHelper::title('Quản lý đợt khảo sát');
     }
 }

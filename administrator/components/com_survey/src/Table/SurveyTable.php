@@ -7,10 +7,6 @@ use Kma\Library\Kma\Table\Table;
 
 defined('_JEXEC') or die();
 class SurveyTable extends Table{
-    public function __construct(DatabaseDriver $db){
-        parent::__construct($db,'','');
-        $this->setColumnAlias('published', 'state');
-    }
     protected function _getAssetParentId(?BaseTable $table = null, $id = null): int
     {
         //If it's a single survey, just call parent method.

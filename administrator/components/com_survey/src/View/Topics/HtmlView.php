@@ -27,7 +27,7 @@ class HtmlView extends ItemsHtmlView
         $option->customFieldset1[] = new ListLayoutItemFieldOption('creatorName', 'Người tạo');
         $option->customFieldset1[] = new ListLayoutItemFieldOption('modified', 'Cập nhật lần cuối');
 
-        $option->published = ListLayoutItemFields::defaultFieldPublished();
+        $option->state = ListLayoutItemFields::defaultFieldState();
 
         //Set the option
         $this->itemFields = $option;

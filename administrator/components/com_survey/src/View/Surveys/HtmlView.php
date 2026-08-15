@@ -117,30 +117,7 @@ class HtmlView extends ItemsHtmlView
     }
     protected function addToolbarForLayoutDefault(): void
     {
-        /**
-         * @var SurveysModel $model
-         */
-        $model = $this->getModel();
-        $items = $this->layoutData->items;
-
-        ToolbarHelper::title('Quản lý cuộc khảo sát');
-        ToolbarHelper::appendGoHome();
-
-        if($model->canCreate())
-            ToolbarHelper::addNew('survey.add');
-
-        if($model->canEditStateAny($items))
-        {
-            ToolbarHelper::publish('surveys.publish','JTOOLBAR_PUBLISH', true);
-            ToolbarHelper::unpublish('surveys.unpublish', 'JTOOLBAR_UNPUBLISH', true);
-            ToolbarHelper::archiveList('surveys.archive');
-        }
-
-        //Decide whether to show the trash or delete button
-        $filterStatus = $model->getState('filter.state');
-        if ($filterStatus == StateHelper::STATE_TRASHED && $model->canDeleteAny($items))
-            ToolbarHelper::appendDelete('surveys.delete');
-        elseif($model->canEditStateAny($items))
-            ToolbarHelper::trash('surveys.trash');
+		parent::addToolbarForLayoutDefault();
+	    ToolbarHelper::title('Quản lý cuộc khảo sát');
     }
 }

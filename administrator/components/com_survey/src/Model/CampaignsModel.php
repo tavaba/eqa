@@ -9,6 +9,7 @@ use Kma\Component\Survey\Administrator\Base\ListModel;
 
 class CampaignsModel extends ListModel
 {
+	protected array $supportedStates = StateHelper::STATES_FULL;
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
         $config['filter_fields']=array('id', 'surveyCount', 'startTime','endTime','creator');

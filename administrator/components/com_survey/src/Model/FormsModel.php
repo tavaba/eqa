@@ -4,12 +4,29 @@ defined('_JEXEC') or die();
 
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Kma\Component\Survey\Administrator\Base\ListModel;
+use Kma\Library\Kma\Helper\StateHelper;
 
 class FormsModel extends ListModel
 {
+    /**
+     * Thực thể DANH MỤC — dùng đủ 4 trạng thái.
+     *
+     * @var    int[]
+     * @since  1.0.5
+     */
+    protected array $supportedStates = StateHelper::STATES_FULL;
+
+    /**
+     * Bảng chính mang alias 'f' trong getListQuery().
+     *
+     * @var    string
+     * @since  1.0.5
+     */
+    protected string $stateColumn = 'f.state';
+
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('id', 'type', 'createdBy');
+        $config['filter_fields']=array('id', 'type', 'createdBy', 'state');
         parent::__construct($config, $factory);
     }
 
@@ -28,7 +45,7 @@ class FormsModel extends ListModel
             $db->quoteName('f.created_by'),
             $db->quoteName('f.modified_by'),
             $db->quoteName('f.modified'),
-            $db->quoteName('f.published'),
+            $db->quoteName('f.state'),
         ];
         $query =  $db->getQuery(true)
             ->select($columns)
@@ -39,9 +56,8 @@ class FormsModel extends ListModel
             ->group('f.id');
 
         //Filtering
-        $published = $this->getState('filter.published');
-        if(is_numeric($published))
-            $query->where($db->quoteName('f.published').'='.(int)$published);
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         $topicId = $this->getState('filter.topic_id');
         if ($topicId) {
@@ -76,7 +92,7 @@ class FormsModel extends ListModel
             $db->quoteName('f.description'),
             $db->quoteName('f.modified_by'),
             $db->quoteName('f.modified'),
-            $db->quoteName('f.published'),
+            $db->quoteName('f.state'),
         ];
         $query =  $db->getQuery(true)
             ->select($columns)
@@ -105,9 +121,8 @@ class FormsModel extends ListModel
                 AND fp2.topic_id = ' . (int)$topicId . ')');
         }
 
-        $published = $this->getState('filter.published');
-        if(is_numeric($published))
-            $query->where($db->quoteName('f.published').'='.(int)$published);
+        //Lọc theo trạng thái (mặc định: chỉ hiển thị bản ghi đang được sử dụng)
+        $this->applyStateFilter($query);
 
         //Ordering
         $orderingCol = $query->db->escape($this->getState('list.ordering', 'id'));

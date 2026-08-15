@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_units`(
 	`code`				VARCHAR(20) NOT NULL		COMMENT 'Ký hiệu',
 	`name`				VARCHAR(255) NOT NULL,
 	`note`				TEXT						COMMENT 'Ghi chú bổ sung (nếu cần)',
-	`published` 		BOOLEAN NOT NULL DEFAULT TRUE,
+	`state` 			TINYINT NOT NULL DEFAULT 1	COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác',
 	`created`			DATETIME 					COMMENT 'Ngày giờ khởi tạo',
 	`created_by`		INT 						COMMENT 'ID người tạo (liên kết đến #__users.id)',
 	`modified`			DATETIME 					COMMENT 'Ngày giờ cập nhật lần cuối',
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_units`(
 	`checked_out_time`	DATETIME 					COMMENT 'Thời điểm người đó mở bản ghi để chỉnh sửa',
     PRIMARY KEY (`id`),
 	UNIQUE (`code`),
-	INDEX idx_units_published (`published`)
+	INDEX idx_units_state (`state`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Đơn vị công tác';
 CREATE TABLE IF NOT EXISTS `#__survey_respondents`(
 	`id` INT AUTO_INCREMENT,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_respondents`(
 	`phone`				VARCHAR(50)						COMMENT 'Số điện thoại liên hệ',
 	`unit_id`			INT								COMMENT 'FK: Unit',
 	`note`				TEXT							COMMENT 'Ghi chú bổ sung (nếu cần)',
-	`published`			BOOLEAN  NOT NULL DEFAULT TRUE,
+	`state`				TINYINT NOT NULL DEFAULT 1		COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác',
 	`created`			DATETIME 						COMMENT 'Ngày giờ khởi tạo',
 	`created_by`		INT 							COMMENT 'ID người tạo (liên kết đến #__users.id)',
 	`modified`			DATETIME 						COMMENT 'Ngày giờ cập nhật lần cuối',
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_respondents`(
 		REFERENCES `#__survey_units`(`id`)
 		ON DELETE RESTRICT,
 	INDEX idx_respondents_unit (`unit_id`),
-    INDEX idx_respondents_published (`published`)
+    INDEX idx_respondents_state (`state`)
 ) ENGINE=InnoDB default charset = utf8mb4 COMMENT 'Người được khảo sát';
 
 CREATE TABLE IF NOT EXISTS `#__survey_tokens`(
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_respondentgroups`(
 	`created_by` 		INT NOT NULL				COMMENT 'ID người tạo (liên kết #__users.id)',
 	`modified` 			DATETIME 					COMMENT 'Thời điểm cập nhật gần nhất',
 	`modified_by` 		INT 						COMMENT 'ID người sửa lần cuối',
-	`published` 		BOOLEAN NOT NULL DEFAULT TRUE,
+	`state` 			TINYINT NOT NULL DEFAULT 1	COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác',
 	`checked_out` 		INT DEFAULT 0 				COMMENT 'ID người đang sửa nhóm (nếu có)',
 	`checked_out_time`	DATETIME					COMMENT	'Thời điểm nhóm được check-out',
     PRIMARY KEY (`id`)
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_forms`(
 	`title` 			VARCHAR(255) NOT NULL		COMMENT 'Tiêu đề của phiếu khảo sát',
 	`description` 		TEXT 						COMMENT 'Mô tả chi tiết về mẫu phiếu',
 	`model` 			LONGTEXT NOT NULL			COMMENT 'SurveyJS model, lưu dưới dạng JSON',
-	`published` 		BOOLEAN NOT NULL DEFAULT TRUE,
+	`state` 			TINYINT NOT NULL DEFAULT 1	COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác',
 	`created` 			DATETIME NOT NULL			COMMENT 'Thời điểm tạo phiếu khảo sát',
 	`created_by` 		INT NOT NULL 				COMMENT 'ID người tạo phiếu (liên kết đến #__users.id)',
 	`modified` 			DATETIME 					COMMENT 'Thời điểm chỉnh sửa lần cuối',
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_topics`(
 	`title` 			VARCHAR(255) NOT NULL					COMMENT 'Tiêu đề ngắn gọn',
 	`description` 		TEXT 									COMMENT 'Mô tả chi tiết',
 	`bg_color`			VARCHAR(7) NOT NULL DEFAULT '#3282F6'	COMMENT 'Màu nền để hiển thị trên View',
-	`published` 		BOOLEAN NOT NULL DEFAULT TRUE,
+	`state` 			TINYINT NOT NULL DEFAULT 1              COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác',
 	`created` 			DATETIME NOT NULL						COMMENT 'Thời điểm tạo phiếu khảo sát',
 	`created_by` 		INT NOT NULL 							COMMENT 'ID người tạo phiếu (liên kết đến #__users.id)',
 	`modified` 			DATETIME 								COMMENT 'Thời điểm chỉnh sửa lần cuối',
@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_campaigns`(
 	`auth_mode` 			TINYINT(1) NOT NULL 				COMMENT 'Chế độ kiểm soát quyền phản hồi mặc định cho các cuộc khảo sát',
 	`allow_edit_response` 	BOOLEAN NOT NULL DEFAULT FALSE		COMMENT 'Cho phép người được khảo sát xem, chỉnh sửa và gửi lại ý kiến',
 	`strictly_anonymous` 	BOOLEAN NOT NULL DEFAULT FALSE		COMMENT 'Ẩn danh hoàn toàn. Không thể xác định được nội dung phản hồi của một người cụ thể',
-	`state`					TINYINT(1) NOT NULL DEFAULT 1		COMMENT 'Published, Unpublished, Archived, Trashed',
+	`state`					TINYINT NOT NULL DEFAULT 1			COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác',
 	`asset_id` 				INT NOT NULL DEFAULT 0				COMMENT 'ID bản ghi trong bảng #__assets. Bắt buộc phải có default value',
 	`created`				DATETIME NOT NULL					COMMENT 'Thời điểm tạo khảo sát',
 	`created_by`			INT NOT NULL						COMMENT 'Người tạo khảo sát (liên kết #__users.id)',
@@ -203,7 +203,7 @@ CREATE TABLE IF NOT EXISTS `#__survey_surveys`(
 	`auth_mode` 			TINYINT(1) NOT NULL 			COMMENT 'Chế độ kiểm soát quyền phản hồi',
 	`allow_edit_response` 	BOOLEAN NOT NULL DEFAULT FALSE	COMMENT 'Cho phép người được khảo sát xem, chỉnh sửa và gửi lại ý kiến',
 	`strictly_anonymous` 	BOOLEAN NOT NULL DEFAULT FALSE	COMMENT 'Ẩn danh hoàn toàn. Không thể xác định được nội dung phản hồi của một người cụ thể',
-	`state`					TINYINT(1) NOT NULL DEFAULT 1	COMMENT 'Published, Unpublished, Archived, Trashed',
+	`state`					TINYINT NOT NULL DEFAULT 1		COMMENT '1=Đang dùng, 0=Tạm ngừng, 2=Đã lưu trữ, -2=Thùng rác',
 	`asset_id` 				INT NOT NULL DEFAULT 0			COMMENT 'ID bản ghi trong bảng #__assets. Bắt buộc phải có default value',
 	`created`				DATETIME NOT NULL				COMMENT 'Thời điểm tạo khảo sát',
 	`created_by`			INT NOT NULL					COMMENT 'Người tạo khảo sát (liên kết #__users.id)',

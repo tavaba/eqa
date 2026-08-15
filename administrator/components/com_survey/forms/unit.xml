@@ -38,16 +38,13 @@
                 label="Mô tả"
         />
 
-        <field
-                name="published"
-                type="radio"
+        <field  addfieldprefix="Kma\Library\Kma\Field"
+                name="state"
+                type="state"
+                required="true"
                 default="1"
-                label="Kích hoạt"
-                class="btn-group btn-group-yesno"
-        >
-        <option value="0">JNO</option>
-        <option value="1">JYES</option>
-        </field>
+                label="Trạng thái"
+        />
     </fieldset>
 
     <fieldset name="metadata">
