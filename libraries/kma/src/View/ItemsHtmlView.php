@@ -5,9 +5,11 @@ defined('_JEXEC') or die();
 use Exception;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\WebAsset\WebAssetManager;
 use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Helper\ToolbarHelper;
 use Kma\Library\Kma\Model\ListModel;
 use Kma\Library\Kma\Service\EnglishService;
@@ -95,6 +97,7 @@ abstract class ItemsHtmlView extends BaseHtmlView{
         if(!empty($activeFilters))
             $this->layoutData->activeFilters = $activeFilters;
     }
+
     /*
       * Các lớp con nếu ghi đè (overrite) một trong các phương thức 'addToolbar...' hoặc 'get....'
       * thì cần ghi đè toàn bộ, không gọi đến phương thức của lớp cha.
@@ -135,18 +138,170 @@ abstract class ItemsHtmlView extends BaseHtmlView{
         if($option->taskEditList && $listModel->canEditAny($items))
             ToolbarHelper::editList($prefixSingle.'.edit');
 
-        if($option->taskDeleteList && $listModel->canDeleteAny($items))
-            ToolbarHelper::deleteList(Text::_($deletionConfirmKey),$prefixPlural.'.delete');
+        /*
+         * Các nút đổi trạng thái và nút xóa.
+         * Tách thành hai nhánh vì hai nhóm thực thể có mô hình trạng thái khác nhau
+         * (xem StateHelper::STATES_FULL và STATES_BASIC).
+         */
+        $isFourStateMode = $listModel instanceof ListModel && $listModel->isFourStateMode();
 
-        if($option->taskPublish && $listModel->canEditStateAny($items))
-            ToolbarHelper::publish($prefixPlural.'.publish', 'JTOOLBAR_PUBLISH', true);
-
-        if($option->taskPublish && $listModel->canEditStateAny($items))
-            ToolbarHelper::unpublish($prefixPlural.'.unpublish', 'JTOOLBAR_UNPUBLISH', true);
+        if ($isFourStateMode) {
+            $this->addStateToolbarButtons($listModel, $items, $prefixPlural, $deletionConfirmKey);
+        } else {
+            $this->addBasicStateToolbarButtons($listModel, $items, $prefixPlural, $deletionConfirmKey);
+        }
 
         if($option->taskUpload && $listModel->canCreate())
             ToolbarHelper::custom($prefixPlural.'.upload','icon-upload','',Text::_('JTOOLBAR_UPLOAD'),false);
     }
+
+    /**
+     * Dựng các nút đổi trạng thái cho thực thể dùng ĐỦ 4 TRẠNG THÁI.
+     *
+     * Áp dụng đúng mô hình của Joomla đối với article/category:
+     *   - các nút đổi trạng thái gom vào một dropdown 'Hành động';
+     *   - chỉ hiển thị những chuyển trạng thái CÓ Ý NGHĨA với bộ lọc hiện tại
+     *     (đang lọc riêng 'Đang dùng' thì không cần nút 'Kích hoạt');
+     *   - nút xóa vĩnh viễn CHỈ xuất hiện khi bộ lọc đang ở 'Thùng rác'.
+     *
+     * Bảng quyết định:
+     *
+     *   | Bộ lọc trạng thái     | Nút trong dropdown                              | Nút xóa        |
+     *   |-----------------------|-------------------------------------------------|----------------|
+     *   | '' (mặc định)         | Kích hoạt, Tạm ngừng, Lưu trữ, Bỏ vào thùng rác | (không)        |
+     *   | 1  — Đang dùng        | Tạm ngừng, Lưu trữ, Bỏ vào thùng rác            | (không)        |
+     *   | 0  — Tạm ngừng        | Kích hoạt, Lưu trữ, Bỏ vào thùng rác            | (không)        |
+     *   | 2  — Đã lưu trữ       | Kích hoạt, Tạm ngừng, Bỏ vào thùng rác          | (không)        |
+     *   | -2 — Thùng rác        | Kích hoạt, Tạm ngừng, Lưu trữ                   | Xóa vĩnh viễn  |
+     *   | '*' — Tất cả          | Kích hoạt, Tạm ngừng, Lưu trữ, Bỏ vào thùng rác | (không)        |
+     *
+     * Hàng đầu tiên đủ cả bốn nút là có chủ ý: bộ lọc mặc định hiển thị ĐỒNG THỜI
+     * bản ghi 'Đang dùng' và 'Tạm ngừng' (xem ListModel::applyStateFilter()), nên
+     * cả hai chiều chuyển trạng thái đều có ý nghĩa. Điều này tự động đúng nhờ
+     * các phép so sánh chặt (!==) bên dưới: $filterValue lúc đó là chuỗi rỗng nên
+     * không trùng với bất kỳ mã trạng thái nào.
+     *
+     * @param   ListModel  $listModel           Model của danh sách.
+     * @param   array      $items               Các item đang hiển thị.
+     * @param   string     $prefixPlural        Tiền tố task của Items Controller.
+     * @param   string     $deletionConfirmKey  Text key của thông báo xác nhận xóa.
+     *
+     * @return  void
+     * @since   1.0.5
+     */
+    protected function addStateToolbarButtons(
+        ListModel $listModel,
+        array $items,
+        string $prefixPlural,
+        string $deletionConfirmKey
+    ): void {
+        $option      = $this->toolbarOption;
+        $filterValue = $listModel->getStateFilterValue();
+        $canEditState = $listModel->canEditStateAny($items);
+
+        $showPublish   = $option->taskPublish   && $filterValue !== StateHelper::STATE_PUBLISHED;
+        $showUnpublish = $option->taskUnpublish && $filterValue !== StateHelper::STATE_UNPUBLISHED;
+        $showArchive   = $option->taskArchive   && $filterValue !== StateHelper::STATE_ARCHIVED;
+        $showTrash     = $option->taskTrash     && $filterValue !== StateHelper::STATE_TRASHED;
+
+        if ($canEditState && ($showPublish || $showUnpublish || $showArchive || $showTrash)) {
+            $toolbar = Toolbar::getInstance();
+
+            $dropdown = $toolbar->dropdownButton('status-group', Text::_('JTOOLBAR_CHANGE_STATUS'))
+                ->toggleSplit(false)
+                ->icon('icon-ellipsis-h')
+                ->buttonClass('btn btn-action')
+                ->listCheck(true);
+
+            $childBar = $dropdown->getChildToolbar();
+
+            /*
+             * Cố ý dùng standardButton() thay cho các phương thức rút gọn
+             * publish()/unpublish()/archive()/trash() của Toolbar: dạng
+             * standardButton($icon, $text, $task) cho phép đặt nhãn tiếng Việt
+             * một cách tường minh, và đây cũng là dạng mà ToolbarHelper của thư
+             * viện đã dùng ổn định từ trước. Kết quả hiển thị tương đương, vì
+             * các phương thức rút gọn của Joomla cũng chỉ là StandardButton với
+             * icon và task đặt sẵn.
+             */
+            $buttons = [];
+
+            if ($showPublish) {
+                $buttons[] = ['publish',   'JTOOLBAR_PUBLISH',          $prefixPlural . '.publish'];
+            }
+
+            if ($showUnpublish) {
+                $buttons[] = ['unpublish', 'JTOOLBAR_UNPUBLISH',          $prefixPlural . '.unpublish'];
+            }
+
+            if ($showArchive) {
+                $buttons[] = ['archive',   'JTOOLBAR_ARCHIVE',            $prefixPlural . '.archive'];
+            }
+
+            if ($showTrash) {
+                $buttons[] = ['trash',     'JTOOLBAR_TRASH',   $prefixPlural . '.trash'];
+            }
+
+            foreach ($buttons as [$icon, $text, $task]) {
+                $childBar->standardButton($icon, $text, $task)->listCheck(true);
+            }
+        }
+
+        /*
+         * Xóa vĩnh viễn: chỉ cho phép từ màn hình thùng rác, đúng như Joomla.
+         * Việc kiểm tra quyền ở mức từng bản ghi vẫn do
+         * Kma\Library\Kma\Model\AdminModel::canDelete() đảm nhiệm khi task chạy.
+         */
+        if ($option->taskDeleteList
+            && $filterValue === StateHelper::STATE_TRASHED
+            && $listModel->canDeleteAny($items)) {
+            ToolbarHelper::appendDelete(
+                $prefixPlural . '.delete',
+                'Xóa vĩnh viễn',
+                Text::_($deletionConfirmKey)
+            );
+        }
+    }
+
+    /**
+     * Dựng các nút đổi trạng thái cho thực thể chỉ dùng 2 TRẠNG THÁI.
+     *
+     * Giữ nguyên hành vi vốn có: hai nút Publish/Unpublish rời nhau và nút xóa
+     * luôn hiển thị (nhóm này không có thùng rác nên không thể ràng buộc nút xóa
+     * theo bộ lọc).
+     *
+     * @param   ListModel  $listModel           Model của danh sách.
+     * @param   array      $items               Các item đang hiển thị.
+     * @param   string     $prefixPlural        Tiền tố task của Items Controller.
+     * @param   string     $deletionConfirmKey  Text key của thông báo xác nhận xóa.
+     *
+     * @return  void
+     * @since   1.0.5
+     */
+    protected function addBasicStateToolbarButtons(
+        ListModel $listModel,
+        array $items,
+        string $prefixPlural,
+        string $deletionConfirmKey
+    ): void {
+        $option = $this->toolbarOption;
+
+        if($option->taskDeleteList && $listModel->canDeleteAny($items))
+            ToolbarHelper::deleteList(Text::_($deletionConfirmKey), $prefixPlural.'.delete');
+
+        $canEditState = $listModel->canEditStateAny($items);
+
+        if($option->taskPublish && $canEditState)
+            ToolbarHelper::publish($prefixPlural.'.publish', 'JTOOLBAR_PUBLISH', true);
+
+        /*
+         * Trước đây dòng dưới kiểm tra nhầm $option->taskPublish, khiến cờ
+         * $option->taskUnpublish không có tác dụng. Đã sửa (1.0.5).
+         */
+        if($option->taskUnpublish && $canEditState)
+            ToolbarHelper::unpublish($prefixPlural.'.unpublish', 'JTOOLBAR_UNPUBLISH', true);
+    }
+
     protected function prepareDataForLayoutImport() : void
     {
         //Toolbar

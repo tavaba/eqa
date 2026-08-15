@@ -8,6 +8,7 @@ use Joomla\CMS\Table\Table as BaseTable;
 use Joomla\Database\DatabaseDriver;
 use Kma\Library\Kma\Helper\EnglishHelper;
 use Kma\Library\Kma\Helper\ComponentHelper;
+use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Service\EnglishService;
 
 class Table extends BaseTable{
@@ -38,6 +39,17 @@ class Table extends BaseTable{
 	protected ?EnglishService $englishService = null;
 
 	/**
+	 * Tên cột trạng thái chuẩn của thư viện.
+	 *
+	 * Toàn bộ hệ sinh thái (com_eqa, com_survey) dùng tên cột 'state', đồng bộ
+	 * với #__content của Joomla core.
+	 *
+	 * @var string
+	 * @since 1.0.5
+	 */
+	public const string STATE_COLUMN = 'state';
+
+	/**
 	 * Timestamp field types and their possible column names in the database.
 	 *
 	 * Đây là NGUỒN DUY NHẤT (single source of truth) của danh sách tên cột timestamp.
@@ -62,6 +74,25 @@ class Table extends BaseTable{
      */
 	protected array $timeStampFieldTypes = ['created', 'created_by', 'modified', 'modified_by'];
 	protected array $timestampFieldOptions = self::TIMESTAMP_COLUMN_OPTIONS;
+
+	/**
+	 * Tập trạng thái mà bảng này chấp nhận.
+	 *
+	 * Lớp con của các thực thể VẬN HÀNH (kỳ thi, ca thi, lớp học phần...) khai báo
+	 * lại thành StateHelper::STATES_BASIC để chặn giá trị 'lưu trữ'/'thùng rác'.
+	 *
+	 * @var int[]
+	 * @since 1.0.5
+	 */
+	protected array $supportedStates = StateHelper::STATES_FULL;
+
+	/**
+	 * Bảng này có cột trạng thái hay không. Được xác định trong constructor.
+	 *
+	 * @var bool
+	 * @since 1.0.5
+	 */
+	protected bool $hasStateColumn = false;
 
 	/**
 	 * Trả về danh sách phẳng (flat) các tên cột timestamp có thể xuất hiện trong CSDL.
@@ -154,7 +185,77 @@ class Table extends BaseTable{
 
         // Detect timestamp fields for this table
         $this->detectTimestampFields();
+
+        // Detect the state column and register the column alias (see detectStateColumn())
+        $this->detectStateColumn();
     }
+
+	/**
+	 * Phát hiện cột trạng thái và đăng ký column alias.
+	 *
+	 * ĐÂY LÀ MẮT XÍCH BẮT BUỘC. Joomla core tra cột trạng thái thông qua
+	 * getColumnAlias('published'):
+	 *   - Joomla\CMS\Table\Table::publish()
+	 *   - Joomla\CMS\MVC\Model\AdminModel::publish()
+	 *   - Joomla\CMS\MVC\Model\AdminModel::batch*()
+	 * Cột thực tế trong CSDL của chúng ta tên là 'state', nên nếu không khai báo
+	 * alias thì mọi thao tác publish/unpublish/archive/trash sẽ hỏng.
+	 *
+	 * @return  void
+	 * @since   1.0.5
+	 */
+	protected function detectStateColumn(): void
+	{
+		$columns = $this->getCachedTableColumns();
+
+		if (isset($columns[self::STATE_COLUMN])) {
+			$this->hasStateColumn = true;
+			$this->setColumnAlias('published', self::STATE_COLUMN);
+		}
+	}
+
+	/**
+	 * Bảng này có cột trạng thái hay không.
+	 *
+	 * @return  bool
+	 * @since   1.0.5
+	 */
+	public function hasStateColumn(): bool
+	{
+		return $this->hasStateColumn;
+	}
+
+	/**
+	 * Tập trạng thái mà bảng này chấp nhận.
+	 *
+	 * @return  int[]
+	 * @since   1.0.5
+	 */
+	public function getSupportedStates(): array
+	{
+		return $this->supportedStates;
+	}
+
+	/**
+	 * Lấy (và cache) danh sách cột của bảng hiện tại.
+	 *
+	 * @return  array
+	 * @since   1.0.5
+	 */
+	protected function getCachedTableColumns(): array
+	{
+		$tableName = $this->_tbl;
+
+		if (!isset(static::$allTableColumns[$tableName])) {
+			try {
+				static::$allTableColumns[$tableName] = $this->_db->getTableColumns($tableName, false);
+			} catch (Exception $e) {
+				static::$allTableColumns[$tableName] = [];
+			}
+		}
+
+		return static::$allTableColumns[$tableName];
+	}
 
     protected function _getAssetName(): string
 	{
@@ -211,9 +312,36 @@ class Table extends BaseTable{
     public function store($updateNulls = true)
     {
         $this->populateTimestampFields();
+        $this->normalizeState();
 
         return parent::store($updateNulls);
     }
+
+	/**
+	 * Chuẩn hóa giá trị cột trạng thái trước khi ghi xuống CSDL.
+	 *
+	 * Chặn hai tình huống:
+	 *   - giá trị rác/NULL do form hoặc mã nghiệp vụ cũ để lại;
+	 *   - giá trị 'lưu trữ'/'thùng rác' bị gán cho thực thể chỉ hỗ trợ 2 trạng thái.
+	 *
+	 * @return  void
+	 * @since   1.0.5
+	 */
+	protected function normalizeState(): void
+	{
+		if (!$this->hasStateColumn) {
+			return;
+		}
+
+		$column = self::STATE_COLUMN;
+
+		$this->$column = StateHelper::sanitize(
+			$this->$column ?? null,
+			$this->supportedStates,
+			StateHelper::STATE_PUBLISHED
+		);
+	}
+
 	public function bind($src, $ignore = [])
 	{
         // Convert src to array if it's an object
@@ -265,19 +393,7 @@ class Table extends BaseTable{
             return;
         }
 
-        $tableName = $this->_tbl;
-
-        // Check cache first
-        if (!isset(static::$allTableColumns[$tableName])) {
-            try {
-                static::$allTableColumns[$tableName] = $this->_db->getTableColumns($tableName, false);
-            } catch (Exception $e) {
-                // If we can't get columns, assume no timestamp fields
-                static::$allTableColumns[$tableName] = [];
-            }
-        }
-
-        $columns = static::$allTableColumns[$tableName];
+        $columns = $this->getCachedTableColumns();
         $this->detectedTimestampFields = [];
 
         // Check which timestamp fields exist in this table

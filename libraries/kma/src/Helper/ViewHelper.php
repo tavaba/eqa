@@ -237,13 +237,19 @@ abstract class ViewHelper
             echo '</td>';
         }
 
-        if(isset($itemFields->published)){
-            $field = $itemFields->published;
+        /*
+         * Cột trạng thái.
+         * Layout 'jgrid.published' của Joomla core đã render đúng cả 4 trạng thái
+         * (Đang dùng / Tạm ngừng / Đã lưu trữ / Thùng rác) nên không cần xử lý riêng.
+         * Xem Kma\Library\Kma\Helper\StateHelper để biết bộ mã trạng thái.
+         */
+        if(isset($itemFields->state)){
+            $field = $itemFields->state;
             if(empty($field->cellCssClasses))
                 $field->cellCssClasses = 'text-center';
             echo '<td class="' . $field->cellCssClasses . '">';
             $taskprefix = $layoutData->taskPrefixItems.'.';
-            echo HTMLHelper::_('jgrid.published',$item->published, $itemIndex, $taskprefix);
+            echo HTMLHelper::_('jgrid.published', (int) ($item->state ?? 0), $itemIndex, $taskprefix);
             echo '</td>';
         }
 
@@ -308,12 +314,12 @@ abstract class ViewHelper
                     }
                 }
 
-                //Next standard fields: 'status', 'ordering', 'action'
+                //Next standard fields: 'state', 'ordering', 'action'
                 if(isset($itemFields->default))
                     self::printItemsTableFieldHead($itemFields->default, $layoutData->listOrderingField, $layoutData->listOrderingDirection);
 
-                if(isset($itemFields->published))
-                    self::printItemsTableFieldHead($itemFields->published, $layoutData->listOrderingField, $layoutData->listOrderingDirection);
+                if(isset($itemFields->state))
+                    self::printItemsTableFieldHead($itemFields->state, $layoutData->listOrderingField, $layoutData->listOrderingDirection);
 
                 if(isset($itemFields->order))
                     self::printItemsTableFieldHead($itemFields->order, $layoutData->listOrderingField, $layoutData->listOrderingDirection);

@@ -14,6 +14,7 @@ use Kma\Library\Kma\Constant\Action;
 use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\DatetimeHelper;
+use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Service\LogService;
 use Kma\Library\Kma\Table\Table;
 use RuntimeException;
@@ -535,11 +536,17 @@ abstract class AdminModel extends BaseAdminModel
 		$result = parent::publish($pks, $value);
 
 		if ($this->loggingEnabled && $this->logService) {
+			/*
+			 * Nhánh 'default' là bắt buộc: nếu Joomla core gọi publish() với một giá
+			 * trị nằm ngoài bộ mã trạng thái (ví dụ qua batch hoặc plugin), match()
+			 * không có default sẽ ném UnhandledMatchError và làm hỏng cả tác vụ.
+			 */
 			$action = match((int) $value) {
-				1       => Action::PUBLISH,
-				0       => Action::UNPUBLISH,
-				2       => Action::ARCHIVE,
-				-2      => Action::TRASH,
+				StateHelper::STATE_PUBLISHED   => Action::PUBLISH,
+				StateHelper::STATE_UNPUBLISHED => Action::UNPUBLISH,
+				StateHelper::STATE_ARCHIVED    => Action::ARCHIVE,
+				StateHelper::STATE_TRASHED     => Action::TRASH,
+				default                        => Action::EDIT,
 			};
 			foreach ((array) $pks as $id)
 			{

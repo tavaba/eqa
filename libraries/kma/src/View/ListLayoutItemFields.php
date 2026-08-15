@@ -25,7 +25,7 @@ class ListLayoutItemFields
     //The next standard fields
     public ListLayoutItemFieldOption $default;
     public ListLayoutItemFieldOption $completed;
-    public ListLayoutItemFieldOption $published;
+    public ListLayoutItemFieldOption $state;
     public ListLayoutItemFieldOption $order;
 
     //The second custom fields (of type 'ListViewFieldOptioon') that are listed in an array
@@ -57,8 +57,17 @@ class ListLayoutItemFields
         $field->cellCssClasses = 'text-center';
         return $field;
     }
-    public static function defaultFieldPublished(): ListLayoutItemFieldOption{
-        $field                 = new ListLayoutItemFieldOption('published', 'JSTATUS',true,false);
+    /**
+     * Cột trạng thái chuẩn của danh sách.
+     *
+     * Đổi tên từ defaultFieldPublished() (1.0.5) cùng với việc đổi tên cột CSDL
+     * 'published' thành 'state' trên toàn bộ hệ sinh thái.
+     *
+     * @return  ListLayoutItemFieldOption
+     * @since   1.0.5
+     */
+    public static function defaultFieldState(): ListLayoutItemFieldOption{
+        $field                 = new ListLayoutItemFieldOption('state', 'JSTATUS',true,false);
         $field->cellCssClasses = 'text-center';
         return $field;
     }

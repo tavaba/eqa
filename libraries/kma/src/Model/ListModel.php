@@ -8,9 +8,11 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\MVC\Model\ListModel as BaseListModel;
 use Joomla\CMS\User\User;
+use Joomla\Database\QueryInterface;
 use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Library\Kma\Helper\ComponentHelper;
 use Kma\Library\Kma\Helper\EnglishHelper;
+use Kma\Library\Kma\Helper\StateHelper;
 use Kma\Library\Kma\Service\EnglishService;
 use Kma\Library\Kma\Service\LogService;
 use Kma\Library\Kma\Service\MailService;
@@ -64,6 +66,35 @@ abstract class ListModel extends BaseListModel
      * @since 1.0.0
      */
     protected ?string $ownerIdField=null;
+
+	/**
+	 * Tên cột trạng thái (kèm alias của bảng chính) dùng trong getListQuery().
+	 *
+	 * Lớp con ghi đè khi bảng chính mang alias khác 'a', hoặc khi cần lọc theo
+	 * trạng thái của một bảng được JOIN vào.
+	 *
+	 * @var    string
+	 * @since  1.0.5
+	 */
+	protected string $stateColumn = 'a.state';
+
+	/**
+	 * Tập trạng thái mà thực thể này hỗ trợ.
+	 *
+	 * Mặc định CÓ CHỦ Ý là bộ rút gọn 2 trạng thái. Lý do: phần lớn List Model
+	 * trong component không quản lý danh mục (danh sách thí sinh, bài thi, lượt
+	 * phúc tra...) và nhiều bảng thậm chí không có cột trạng thái. Để mặc định
+	 * là 4 trạng thái sẽ khiến toolbar của các màn hình đó mọc thêm nút 'Lưu
+	 * trữ'/'Thùng rác' vô nghĩa.
+	 *
+	 * Model của các thực thể DANH MỤC khai báo lại:
+	 *
+	 *     protected array $supportedStates = StateHelper::STATES_FULL;
+	 *
+	 * @var    int[]
+	 * @since  1.0.5
+	 */
+	protected array $supportedStates = StateHelper::STATES_BASIC;
 
 	/**
 	 * Danh sách các state nằm NGOÀI namespace 'filter.' cần được đưa vào store id.
@@ -170,6 +201,136 @@ abstract class ListModel extends BaseListModel
 			$direction = 'ASC';
         parent::populateState($ordering, $direction);
     }
+
+	// =========================================================================
+	// Bộ lọc trạng thái
+	// =========================================================================
+
+	/**
+	 * Tập trạng thái mà thực thể này hỗ trợ.
+	 *
+	 * @return  int[]
+	 * @since   1.0.5
+	 */
+	public function getSupportedStates(): array
+	{
+		return $this->supportedStates;
+	}
+
+	/**
+	 * Thực thể này có dùng đủ 4 trạng thái hay không.
+	 *
+	 * View dựa vào đây để quyết định dựng toolbar kiểu Joomla (có dropdown
+	 * 'Hành động', có thùng rác) hay kiểu rút gọn (chỉ Publish/Unpublish).
+	 *
+	 * @return  bool
+	 * @since   1.0.5
+	 */
+	public function isFourStateMode(): bool
+	{
+		return count($this->supportedStates) > 2;
+	}
+
+	/**
+	 * Giá trị hiện tại của bộ lọc trạng thái, đã chuẩn hóa.
+	 *
+	 * Trả về đúng một trong ba dạng:
+	 *   - StateHelper::FILTER_DEFAULT ('')  — người dùng CHƯA chọn gì;
+	 *   - StateHelper::FILTER_ALL ('*')     — người dùng chọn 'Tất cả trạng thái';
+	 *   - một mã trạng thái hợp lệ (int)    — người dùng chọn một trạng thái cụ thể.
+	 *
+	 * Lưu ý: cố ý KHÔNG quy trường hợp 'chưa chọn' về STATE_PUBLISHED. Hai tình
+	 * huống đó cho ra hai câu truy vấn khác nhau (xem applyStateFilter()) và cũng
+	 * cho ra hai bộ nút toolbar khác nhau (xem ItemsHtmlView::addStateToolbarButtons()).
+	 *
+	 * @return  int|string
+	 * @since   1.0.5
+	 */
+	public function getStateFilterValue(): int|string
+	{
+		$value = $this->getState('filter.state');
+
+		if ($value === StateHelper::FILTER_ALL) {
+			return StateHelper::FILTER_ALL;
+		}
+
+		if ($value === null || $value === '') {
+			return StateHelper::FILTER_DEFAULT;
+		}
+
+		return StateHelper::sanitize($value, $this->supportedStates, StateHelper::STATE_PUBLISHED);
+	}
+
+	/**
+	 * Bộ lọc trạng thái hiện đang ở chế độ 'Thùng rác' hay không.
+	 *
+	 * @return  bool
+	 * @since   1.0.5
+	 */
+	public function isStateFilterTrashed(): bool
+	{
+		return $this->getStateFilterValue() === StateHelper::STATE_TRASHED;
+	}
+
+	/**
+	 * Áp điều kiện lọc theo trạng thái vào truy vấn danh sách.
+	 *
+	 * Thay thế cho khối mã lặp lại ở mọi List Model trước đây:
+	 *
+	 *     $published = $this->getState('filter.published');
+	 *     if (is_numeric($published)) {
+	 *         $query->where('a.published = ' . (int) $published);
+	 *     }
+	 *
+	 * Khối mã cũ có khiếm khuyết nghiêm trọng: khi bộ lọc để trống thì KHÔNG áp
+	 * điều kiện nào, nên danh sách sẽ lộ cả bản ghi đã lưu trữ và đã bỏ vào thùng
+	 * rác. Quy tắc mới:
+	 *
+	 *   | filter.state            | Điều kiện SQL        |
+	 *   |-------------------------|----------------------|
+	 *   | '' hoặc null (mặc định) | state IN (1, 0)      |
+	 *   | '*'                     | (không áp điều kiện) |
+	 *   | mã trạng thái hợp lệ    | state = <mã>         |
+	 *   | giá trị không hợp lệ    | state = 1            |
+	 *
+	 * Hàng đầu tiên bám sát hành vi của Joomla với article/category: mặc định ẩn
+	 * 'Đã lưu trữ' và 'Thùng rác', nhưng VẪN hiện bản ghi 'Tạm ngừng' để quản trị
+	 * viên không tưởng nhầm là mất dữ liệu ngay sau khi tạm ngừng một bản ghi.
+	 *
+	 * Với thực thể chỉ hỗ trợ 2 trạng thái, phép giao trong
+	 * StateHelper::getDefaultVisibleStates() cho ra đúng {1, 0} — tức là toàn bộ
+	 * bản ghi, giữ nguyên hành vi vốn có của các màn hình đó.
+	 *
+	 * @param   QueryInterface  $query   Truy vấn cần bổ sung điều kiện.
+	 * @param   string|null     $column  Tên cột trạng thái. Null = dùng $this->stateColumn.
+	 *
+	 * @return  void
+	 * @since   1.0.5
+	 */
+	protected function applyStateFilter(QueryInterface $query, ?string $column = null): void
+	{
+		$column = $column ?: $this->stateColumn;
+		$value  = $this->getStateFilterValue();
+
+		// Người dùng chọn 'Tất cả trạng thái' — không áp điều kiện nào
+		if ($value === StateHelper::FILTER_ALL) {
+			return;
+		}
+
+		// Người dùng chưa chọn gì — áp tập trạng thái hiển thị mặc định
+		if ($value === StateHelper::FILTER_DEFAULT) {
+			$states = StateHelper::getDefaultVisibleStates($this->supportedStates);
+
+			$query->where(
+				$column . ' IN (' . implode(', ', array_map('intval', $states)) . ')'
+			);
+
+			return;
+		}
+
+		// Người dùng chọn một trạng thái cụ thể
+		$query->where($column . ' = ' . (int) $value);
+	}
 
 	/**
 	 * Sinh store id phản ánh ĐẦY ĐỦ mọi tham số truy vấn.
