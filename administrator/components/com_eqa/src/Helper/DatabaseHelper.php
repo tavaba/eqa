@@ -797,8 +797,8 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 	{
 		$db      = self::getDatabaseDriver();
 		$columns = $db->quoteName(
-			['a.id', 'a.name', 'a.academicyear', 'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'],
-			['id',   'name',   'academicyear',   'term',   'completed',   'ppaa_req_enabled',   'ppaa_req_deadline']
+			['a.id', 'a.campus_id', 'a.name', 'a.academicyear', 'a.term', 'a.completed', 'a.ppaa_req_enabled', 'a.ppaa_req_deadline'],
+			['id',   'campus_id',   'name',   'academicyear',   'term',   'completed',   'ppaa_req_enabled',   'ppaa_req_deadline']
 		);
 
 		$query = $db->getQuery(true)
@@ -831,6 +831,10 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 
 		$examseason                   = new ExamseasonInfo();
 		$examseason->id               = $obj->id;
+		//ExamseasonInfo::$campusId là typed property không nullable; các hàm ghi
+		//tài liệu (IOHelper) dùng nó để lấy cấu hình của cơ sở đào tạo, nên
+		//BẮT BUỘC phải gán ở đây. (2.1.8)
+		$examseason->campusId         = (int) $obj->campus_id;
 		$examseason->name             = $obj->name;
 		$examseason->academicyear     = DatetimeHelper::decodeAcademicYear((int) $obj->academicyear);
 		$examseason->term             = $obj->term;

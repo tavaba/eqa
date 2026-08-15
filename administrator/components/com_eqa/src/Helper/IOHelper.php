@@ -3397,7 +3397,25 @@ abstract class IOHelper extends BaseIOHelper
 		$table->addCell(3500)->addText('NGƯỜI LẬP PHIẾU', 'Bold','Center');
 	}
 
-	static public function writeExamseasonLearnerMarks(PhpWord $phpWord, int $examseasonId, array $learnerMarks): void
+	/**
+	 * Ghi "Bảng điểm tổng hợp" của một kỳ thi vào $phpWord.
+	 *
+	 * @param   PhpWord  $phpWord          Instance PhpWord đã khởi tạo.
+	 * @param   int      $examseasonId     Mã kỳ thi.
+	 * @param   array    $learnerMarks     Kết quả của ExamseasonModel::getLearnerMarks().
+	 * @param   array    $selectedExamIds  Danh sách mã môn thi được chọn. Để trống
+	 *                                     thì ghi bảng điểm của toàn bộ kỳ thi;
+	 *                                     nếu có thì tài liệu chỉ gồm các môn thi
+	 *                                     này và trang bìa có thêm dòng ghi chú. (2.1.8)
+	 *
+	 * @return  void
+	 */
+	static public function writeExamseasonLearnerMarks(
+		PhpWord $phpWord,
+		int     $examseasonId,
+		array   $learnerMarks,
+		array   $selectedExamIds = []
+	): void
 	{
 		//1. Get information about exams of the given examseason
 		$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
@@ -3412,6 +3430,15 @@ abstract class IOHelper extends BaseIOHelper
 			->leftJoin('#__eqa_subjects AS b', 'b.id = a.subject_id')
 			->where('a.examseason_id=' . $examseasonId)
 			->order('a.name ASC');
+
+		/**
+		 * Giới hạn theo các môn thi được chọn (nếu có). Điều kiện 'examseason_id'
+		 * vẫn được giữ nguyên nên các mã môn thi không thuộc kỳ thi sẽ bị loại bỏ. (2.1.8)
+		 */
+		$selectedExamIds = array_values(array_unique(array_filter(array_map('intval', $selectedExamIds))));
+		if(!empty($selectedExamIds))
+			$query->where('a.id IN (' . implode(',', $selectedExamIds) . ')');
+
 		$db->setQuery($query);
 		$exams = $db->loadAssocList('id');
 
@@ -3478,6 +3505,16 @@ abstract class IOHelper extends BaseIOHelper
 		$section->addText($text, [
 				'size'=>14,
 			],'Center');
+
+		//Ghi chú khi tài liệu chỉ gồm một số môn thi được chọn (2.1.8)
+		if(!empty($selectedExamIds))
+		{
+			$text = sprintf('(Bảng điểm của %d môn thi được chọn)', count($exams));
+			$section->addText($text, [
+					'italic'=>true,
+					'size'=>13,
+				],'Center');
+		}
 
 
 		//TODO: Đưa các chức danh dưới đây vào cấu hình Campus

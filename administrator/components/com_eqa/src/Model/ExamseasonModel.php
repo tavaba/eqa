@@ -747,26 +747,37 @@ class ExamseasonModel extends CampusAdminModel{
 	 * - module_grade: Điểm chữ
 	 * - description: Mô tả về lý do bị cấm thi hoặc nợ phí (null nếu không có)
 	 *
-	 * @param int $examseasonId Mã kỳ thi
+	 * @param int   $examseasonId    Mã kỳ thi
+	 * @param array $selectedExamIds Danh sách mã môn thi cần lấy. Để trống thì
+	 *                               lấy tất cả môn thi của kỳ thi. (2.1.8)
 	 *
 	 * @return array|null Kết quả được sắp xếp theo thứ tự tăng dần của 'learner_id'.
 	 *
 	 * @since version
 	 */
-	public function getLearnerMarks(int $examseasonId)
+	public function getLearnerMarks(int $examseasonId, array $selectedExamIds = [])
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
-		//1. Lấy thông tin về tất cả các môn thi (exam) của kỳ thi này
+		//1. Lấy thông tin về các môn thi (exam) của kỳ thi này
 		$query = $db->getQuery(true)
 			->select('id')
 			->from('#__eqa_exams')
 			->where('examseason_id='.$examseasonId);
+
+		/**
+		 * Giới hạn theo các môn thi được chọn (nếu có). Điều kiện 'examseason_id'
+		 * vẫn được giữ nguyên nên các mã môn thi không thuộc kỳ thi sẽ bị loại bỏ. (2.1.8)
+		 */
+		$selectedExamIds = array_values(array_unique(array_filter(array_map('intval', $selectedExamIds))));
+		if(!empty($selectedExamIds))
+			$query->where('id IN (' . implode(',', $selectedExamIds) . ')');
+
 		$db->setQuery($query);
-		$examIds = $db->loadColumn();
+		$examIds = array_map('intval', $db->loadColumn());
 		if(empty($examIds)) return null;
 
-		//2. Lấy thông tin về các thí sinh của kỳ thi
+		//2. Lấy thông tin về các thí sinh của các môn thi nói trên
 		$examIdSet = '(' . implode(',',$examIds).')'; //Chuyển sang chuỗi để sử dụng trong câu lệnh SQL
 		$columns = [
 			$db->quoteName('a.exam_id') .         ' AS ' . $db->quoteName('exam_id'),
@@ -815,13 +826,15 @@ class ExamseasonModel extends CampusAdminModel{
 	 * Mỗi phần tử gồm: exam_id, subject_code, exam_name, credits, testtype
 	 * (mã số, chưa chuyển nhãn), usetestbank, examinee_count.
 	 *
-	 * @param   int  $examseasonId  Mã kỳ thi.
+	 * @param   int    $examseasonId     Mã kỳ thi.
+	 * @param   array  $selectedExamIds  Danh sách mã môn thi cần lấy. Để trống
+	 *                                   thì lấy tất cả môn thi của kỳ thi. (2.1.8)
 	 *
 	 * @return  array  Mảng associative, sắp xếp theo tên môn thi.
 	 *
 	 * @since   2.1.6
 	 */
-	public function getExamsForAnalysis(int $examseasonId): array
+	public function getExamsForAnalysis(int $examseasonId, array $selectedExamIds = []): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -842,6 +855,15 @@ class ExamseasonModel extends CampusAdminModel{
 			->leftJoin($db->quoteName('#__eqa_subjects', 'b') . ' ON b.id = a.subject_id')
 			->where($db->quoteName('a.examseason_id') . ' = ' . (int) $examseasonId)
 			->order($db->quoteName('a.name') . ' ASC');
+
+		/**
+		 * Giới hạn theo các môn thi được chọn (nếu có). Điều kiện 'examseason_id'
+		 * vẫn được giữ nguyên nên các mã môn thi không thuộc kỳ thi sẽ bị loại bỏ. (2.1.8)
+		 */
+		$selectedExamIds = array_values(array_unique(array_filter(array_map('intval', $selectedExamIds))));
+		if(!empty($selectedExamIds))
+			$query->where($db->quoteName('a.id') . ' IN (' . implode(',', $selectedExamIds) . ')');
+
 		$db->setQuery($query);
 		$exams = $db->loadAssocList();
 		if (empty($exams))
@@ -871,7 +893,9 @@ class ExamseasonModel extends CampusAdminModel{
 	 * cùng bút danh ở mọi môn thi, nhờ đó vẫn phân tích được kết quả theo từng
 	 * người học mà không cần biết người đó là ai.
 	 *
-	 * @param   int  $examseasonId  Mã kỳ thi.
+	 * @param   int    $examseasonId     Mã kỳ thi.
+	 * @param   array  $selectedExamIds  Danh sách mã môn thi cần xét. Để trống
+	 *                                   thì xét tất cả môn thi của kỳ thi. (2.1.8)
 	 *
 	 * @return  array  Mảng liên kết [learnerId => pseudonym].
 	 *
@@ -879,7 +903,7 @@ class ExamseasonModel extends CampusAdminModel{
 	 *
 	 * @since   2.1.6
 	 */
-	public function buildPseudonymMapForExamseason(int $examseasonId): array
+	public function buildPseudonymMapForExamseason(int $examseasonId, array $selectedExamIds = []): array
 	{
 		$db = DatabaseHelper::getDatabaseDriver();
 
@@ -887,6 +911,14 @@ class ExamseasonModel extends CampusAdminModel{
 			->select($db->quoteName('id'))
 			->from($db->quoteName('#__eqa_exams'))
 			->where($db->quoteName('examseason_id') . ' = ' . (int) $examseasonId);
+
+		/**
+		 * Giới hạn theo các môn thi được chọn (nếu có). Điều kiện 'examseason_id'
+		 * vẫn được giữ nguyên nên các mã môn thi không thuộc kỳ thi sẽ bị loại bỏ. (2.1.8)
+		 */
+		$selectedExamIds = array_values(array_unique(array_filter(array_map('intval', $selectedExamIds))));
+		if(!empty($selectedExamIds))
+			$subQuery->where($db->quoteName('id') . ' IN (' . implode(',', $selectedExamIds) . ')');
 
 		$query = $db->getQuery(true)
 			->select('DISTINCT ' . $db->quoteName('learner_id'))

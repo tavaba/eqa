@@ -615,6 +615,10 @@ class ExamseasonController extends FormController
 	 * "Xuất bảng điểm tổng hợp" cho một kỳ thi. Nếu người dùng chọn nhiều
 	 * kỳ thi thì chỉ xuất cho một kỳ thi đầu tiên được chọn.
 	 * (chức năng ở view Examseasons)
+	 *
+	 * LƯU Ý: ở task này, 'cid' là danh sách mã KỲ THI được chọn. Task xuất
+	 * bảng điểm của một số môn thi được chọn là exportSelectedExamLearnerMarks().
+	 *
 	 * @return void
 	 */
 	public function exportLearnerMarks(): void
@@ -635,24 +639,53 @@ class ExamseasonController extends FormController
 				throw new Exception('Không có kỳ thi nào được chọn');
 			$examseasonId= $cid[0];
 
-			//4. Call model and get data
-			$model = $this->getModel();
-			$learnerMarks = $model->getLearnerMarks($examseasonId);
-			if(empty($learnerMarks))
-				throw new Exception('Không có dữ liệu để xuất');
-
-			//5. Write to Word document
-			$phpWord = new PhpWord();
-			IOHelper::writeExamseasonLearnerMarks($phpWord, $examseasonId, $learnerMarks);
-
-			//6. Send file
-			IOHelper::sendHttpDocx($phpWord,'Bảng điểm tổng hợp.docx');
-			jexit();
+			//4. Xuất bảng điểm của TẤT CẢ môn thi thuộc kỳ thi
+			$this->doExportLearnerMarks($examseasonId);
 		}
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(),'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
+		}
+	}
+
+	/**
+	 * "Xuất bảng điểm tổng hợp" cho một số môn thi được chọn của một kỳ thi.
+	 * Nội dung và định dạng tài liệu hoàn toàn giống exportLearnerMarks(),
+	 * chỉ khác ở chỗ tài liệu chỉ gồm các môn thi được chọn.
+	 * (chức năng ở view ExamseasonExams)
+	 *
+	 * LƯU Ý: ở task này, 'cid' là danh sách mã MÔN THI được chọn; kỳ thi được
+	 * xác định bởi tham số 'examseason_id' của request.
+	 *
+	 * @return  void
+	 *
+	 * @since   2.1.8
+	 */
+	public function exportSelectedExamLearnerMarks(): void
+	{
+		//Redirect mặc định trong mọi trường hợp lỗi
+		$examseasonId = $this->input->getInt('examseason_id');
+		$this->setRedirect($this->getExamseasonExamsUrl($examseasonId));
+
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+
+			//3. Get form data
+			$examIds = $this->getSelectedExamIds($examseasonId);
+
+			//4. Xuất bảng điểm của các môn thi được chọn
+			$this->doExportLearnerMarks($examseasonId, $examIds);
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
 		}
 	}
 
@@ -668,6 +701,10 @@ class ExamseasonController extends FormController
 	 *
 	 * Dữ liệu được đọc và ghi theo từng môn thi nhằm hạn chế lượng dữ liệu nằm
 	 * trong bộ nhớ tại mỗi thời điểm.
+	 *
+	 * LƯU Ý: ở task này, 'cid' là danh sách mã KỲ THI được chọn. Task xuất bộ
+	 * dữ liệu của một số môn thi được chọn là
+	 * exportSelectedExamAnonymousLearnerMarks().
 	 *
 	 * @return  void
 	 *
@@ -690,49 +727,237 @@ class ExamseasonController extends FormController
 				throw new Exception('Không có kỳ thi nào được chọn');
 			$examseasonId = (int) $cid[0];
 
-			//4. Kỳ thi lớn sinh ra hàng trăm nghìn ô dữ liệu
-			ini_set('memory_limit', '1024M');
-
-			/**
-			 * 5. Lấy danh sách môn thi và bảng bút danh
-			 * @var ExamseasonModel $model
-			 */
-			$model = $this->getModel();
-			$exams = $model->getExamsForAnalysis($examseasonId);
-			if(empty($exams))
-				throw new Exception('Không có dữ liệu để xuất');
-			$pseudonyms = $model->buildPseudonymMapForExamseason($examseasonId);
-
-			//6. Sheet "Môn thi"
-			$spreadsheet = new Spreadsheet();
-			$spreadsheet->removeSheetByIndex(0);
-			$examSheet = $spreadsheet->createSheet();
-			$examSheet->setTitle('Môn thi');
-			IOHelper::writeExamseasonAnalysisExams($examSheet, $exams);
-
-			//7. Sheet "Điểm": ghi nối theo từng môn thi
-			$markSheet = $spreadsheet->createSheet();
-			$markSheet->setTitle('Điểm');
-			$lastRow = IOHelper::writeExamseasonAnalysisMarkHeader($markSheet);
-			foreach ($exams as $exam)
-			{
-				$examId = (int) $exam['exam_id'];
-				$marks  = $model->getLearnerMarksForExam($examId, $pseudonyms);
-				$lastRow = IOHelper::writeExamseasonAnalysisMarks($markSheet, $examId, $marks, $lastRow);
-				unset($marks);
-			}
-
-			//8. Send file
-			$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
-			$fileName = 'Bảng điểm tổng hợp để phân tích (ẩn danh). ' . $examseason->name . '.xlsx';
-			IOHelper::sendHttpXlsx($spreadsheet, $fileName);
-			jexit();
+			//4. Xuất bộ dữ liệu của TẤT CẢ môn thi thuộc kỳ thi
+			$this->doExportAnonymousLearnerMarks($examseasonId);
 		}
 		catch (Exception $e)
 		{
 			$this->setMessage($e->getMessage(),'error');
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasons',false));
 		}
+	}
+
+	/**
+	 * Xuất bộ dữ liệu phân tích ẩn danh của một số môn thi được chọn của một
+	 * kỳ thi. Cấu trúc tập tin hoàn toàn giống exportAnonymousLearnerMarks(),
+	 * chỉ khác ở chỗ dữ liệu chỉ gồm các môn thi được chọn.
+	 *
+	 * Bút danh được sinh cho những người học dự thi các môn thi được chọn và
+	 * duy nhất trong phạm vi một lần xuất, nên vẫn phân tích được kết quả của
+	 * cùng một người học qua nhiều môn thi mà không lộ danh tính.
+	 *
+	 * LƯU Ý: ở task này, 'cid' là danh sách mã MÔN THI được chọn; kỳ thi được
+	 * xác định bởi tham số 'examseason_id' của request.
+	 *
+	 * @return  void
+	 *
+	 * @since   2.1.8
+	 */
+	public function exportSelectedExamAnonymousLearnerMarks(): void
+	{
+		//Redirect mặc định trong mọi trường hợp lỗi
+		$examseasonId = $this->input->getInt('examseason_id');
+		$this->setRedirect($this->getExamseasonExamsUrl($examseasonId));
+
+		try
+		{
+			//1. Check token
+			$this->checkToken();
+
+			//2. Check permission
+			if(!$this->app->getIdentity()->authorise('core.manage', $this->option))
+				throw new Exception('Bạn không có quyền thực hiện chức năng này');
+
+			//3. Get form data
+			$examIds = $this->getSelectedExamIds($examseasonId);
+
+			//4. Xuất bộ dữ liệu của các môn thi được chọn
+			$this->doExportAnonymousLearnerMarks($examseasonId, $examIds);
+		}
+		catch (Exception $e)
+		{
+			$this->setMessage($e->getMessage(),'error');
+		}
+	}
+
+	/**
+	 * Phần xử lý dùng chung của exportLearnerMarks() và
+	 * exportSelectedExamLearnerMarks(): lấy dữ liệu, tạo tài liệu Word và gửi
+	 * về trình duyệt. Method KHÔNG trả về nếu tài liệu được gửi thành công.
+	 *
+	 * @param   int    $examseasonId  Mã kỳ thi.
+	 * @param   array  $examIds       Danh sách mã môn thi được chọn. Để trống
+	 *                                thì xuất toàn bộ môn thi của kỳ thi.
+	 *
+	 * @return  void
+	 *
+	 * @throws  Exception  Khi không có dữ liệu để xuất.
+	 *
+	 * @since   2.1.8
+	 */
+	private function doExportLearnerMarks(int $examseasonId, array $examIds = []): void
+	{
+		/**
+		 * 1. Call model and get data
+		 * @var ExamseasonModel $model
+		 */
+		$model = $this->getModel();
+		$learnerMarks = $model->getLearnerMarks($examseasonId, $examIds);
+		if(empty($learnerMarks))
+			throw new Exception('Không có dữ liệu để xuất');
+
+		//2. Write to Word document
+		$phpWord = new PhpWord();
+		IOHelper::writeExamseasonLearnerMarks($phpWord, $examseasonId, $learnerMarks, $examIds);
+
+		//3. Send file (giữ nguyên quy ước tên file cũ khi xuất toàn bộ kỳ thi)
+		$fileName = empty($examIds)
+			? 'Bảng điểm tổng hợp.docx'
+			: 'Bảng điểm tổng hợp. ' . $this->buildExportScopeLabel($examseasonId, $examIds) . '.docx';
+		IOHelper::sendHttpDocx($phpWord, $fileName);
+		jexit();
+	}
+
+	/**
+	 * Phần xử lý dùng chung của exportAnonymousLearnerMarks() và
+	 * exportSelectedExamAnonymousLearnerMarks(): lấy dữ liệu, tạo tập tin Excel
+	 * và gửi về trình duyệt. Method KHÔNG trả về nếu tập tin được gửi thành công.
+	 *
+	 * @param   int    $examseasonId  Mã kỳ thi.
+	 * @param   array  $examIds       Danh sách mã môn thi được chọn. Để trống
+	 *                                thì xuất toàn bộ môn thi của kỳ thi.
+	 *
+	 * @return  void
+	 *
+	 * @throws  Exception  Khi không có dữ liệu để xuất.
+	 *
+	 * @since   2.1.8
+	 */
+	private function doExportAnonymousLearnerMarks(int $examseasonId, array $examIds = []): void
+	{
+		//1. Kỳ thi lớn sinh ra hàng trăm nghìn ô dữ liệu
+		ini_set('memory_limit', '1024M');
+
+		/**
+		 * 2. Lấy danh sách môn thi và bảng bút danh
+		 * @var ExamseasonModel $model
+		 */
+		$model = $this->getModel();
+		$exams = $model->getExamsForAnalysis($examseasonId, $examIds);
+		if(empty($exams))
+			throw new Exception('Không có dữ liệu để xuất');
+		$pseudonyms = $model->buildPseudonymMapForExamseason($examseasonId, $examIds);
+
+		//3. Sheet "Môn thi"
+		$spreadsheet = new Spreadsheet();
+		$spreadsheet->removeSheetByIndex(0);
+		$examSheet = $spreadsheet->createSheet();
+		$examSheet->setTitle('Môn thi');
+		IOHelper::writeExamseasonAnalysisExams($examSheet, $exams);
+
+		//4. Sheet "Điểm": ghi nối theo từng môn thi
+		$markSheet = $spreadsheet->createSheet();
+		$markSheet->setTitle('Điểm');
+		$lastRow = IOHelper::writeExamseasonAnalysisMarkHeader($markSheet);
+		foreach ($exams as $exam)
+		{
+			$examId = (int) $exam['exam_id'];
+			$marks  = $model->getLearnerMarksForExam($examId, $pseudonyms);
+			$lastRow = IOHelper::writeExamseasonAnalysisMarks($markSheet, $examId, $marks, $lastRow);
+			unset($marks);
+		}
+
+		//5. Send file
+		$fileName = 'Bảng điểm tổng hợp để phân tích (ẩn danh). '
+			. $this->buildExportScopeLabel($examseasonId, $examIds) . '.xlsx';
+		IOHelper::sendHttpXlsx($spreadsheet, $fileName);
+		jexit();
+	}
+
+	/**
+	 * Lấy danh sách mã môn thi được chọn từ dữ liệu POST và kiểm tra tất cả
+	 * các môn thi đó đều thuộc kỳ thi đang xét.
+	 *
+	 * @param   int  $examseasonId  Mã kỳ thi.
+	 *
+	 * @return  int[]  Mảng mã môn thi, không trùng lặp, đã đánh lại chỉ số.
+	 *
+	 * @throws  Exception  Khi không xác định được kỳ thi, không có môn thi nào
+	 *                     được chọn, hoặc có môn thi không thuộc kỳ thi.
+	 *
+	 * @since   2.1.8
+	 */
+	private function getSelectedExamIds(int $examseasonId): array
+	{
+		if(empty($examseasonId))
+			throw new Exception('Không xác định được kỳ thi');
+
+		$examIds = $this->input->post->get('cid', [], 'int');
+		$examIds = array_values(array_unique(array_filter(array_map('intval', $examIds))));
+		if(empty($examIds))
+			throw new Exception('Không có môn thi nào được chọn');
+
+		//Mọi môn thi được chọn phải thuộc kỳ thi đang xét
+		$db = DatabaseHelper::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select('COUNT(*)')
+			->from('#__eqa_exams')
+			->where('examseason_id = ' . $examseasonId)
+			->where('id IN (' . implode(',', $examIds) . ')');
+		$db->setQuery($query);
+		if((int) $db->loadResult() !== count($examIds))
+			throw new Exception('Có môn thi được chọn không thuộc kỳ thi đang xét');
+
+		return $examIds;
+	}
+
+	/**
+	 * Phần tên file mô tả phạm vi dữ liệu được xuất:
+	 * - Toàn bộ kỳ thi:   "{tên kỳ thi}"
+	 * - Một môn thi:      "{tên phân biệt của môn thi}"
+	 * - Một số môn thi:   "{tên kỳ thi} ({N} môn thi)"
+	 *
+	 * @param   int    $examseasonId  Mã kỳ thi.
+	 * @param   array  $examIds       Danh sách mã môn thi được chọn.
+	 *
+	 * @return  string
+	 *
+	 * @since   2.1.8
+	 */
+	private function buildExportScopeLabel(int $examseasonId, array $examIds): string
+	{
+		if(count($examIds) == 1)
+		{
+			//Tên phân biệt để hai môn trùng tên chính thức không sinh ra hai
+			//file trùng tên, ghi đè lên nhau. (2.1.7)
+			$exam = DatabaseHelper::getExamInfo((int) $examIds[0]);
+			return $exam->displayName;
+		}
+
+		$examseason = DatabaseHelper::getExamseasonInfo($examseasonId);
+
+		return empty($examIds)
+			? $examseason->name
+			: sprintf('%s (%d môn thi)', $examseason->name, count($examIds));
+	}
+
+	/**
+	 * URL của danh sách môn thi thuộc một kỳ thi (view ExamseasonExams); nếu
+	 * không xác định được kỳ thi thì trả về URL của danh sách kỳ thi.
+	 *
+	 * @param   int  $examseasonId  Mã kỳ thi.
+	 *
+	 * @return  string
+	 *
+	 * @since   2.1.8
+	 */
+	private function getExamseasonExamsUrl(int $examseasonId): string
+	{
+		$url = empty($examseasonId)
+			? 'index.php?option=com_eqa&view=examseasons'
+			: 'index.php?option=com_eqa&view=examseasonExams&examseason_id=' . $examseasonId;
+
+		return Route::_($url, false);
 	}
 	public function getJsonListOfExams()
 	{

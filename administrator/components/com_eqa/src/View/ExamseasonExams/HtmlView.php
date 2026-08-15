@@ -142,5 +142,7 @@ class HtmlView extends ItemsHtmlView
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm SV', 'exams.exportResultForLearners', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 1)', 'exams.exportResultForEms', true);
 	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ĐT (Lần 2)', 'exams.exportResultForEms2', true);
+	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm tổng hợp', 'examseason.exportSelectedExamLearnerMarks', true);
+	    ToolbarHelper::appendButton('core.manage', 'download','Bảng điểm ẩn danh', 'examseason.exportSelectedExamAnonymousLearnerMarks', true);
     }
 }
