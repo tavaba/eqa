@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form bộ lọc cho view Resits.
+    Các trường lọc:
+      - search    : tìm kiếm theo tên danh sách
+      - active    : chỉ danh sách đang kích hoạt / chưa kích hoạt
+      - campus_id : cơ sở đào tạo (tự ẩn với người dùng không quản trị mọi cơ sở)
+      - state     : trạng thái bản ghi
+-->
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field
+            name="search"
+            type="text"
+            label="JSEARCH_FILTER"
+            hint="Tên danh sách"
+            class="js-stools-search-string"
+        />
+
+        <field
+            name="active"
+            type="list"
+            label="Kích hoạt"
+            default=""
+            onchange="this.form.submit();"
+        >
+            <option value="">- Kích hoạt -</option>
+            <option value="1">Đang kích hoạt</option>
+            <option value="0">Không kích hoạt</option>
+        </field>
+
+        <field
+            name="campus_id"
+            type="campus"
+            label="Cơ sở đào tạo"
+            default=""
+            class="select2-basic"
+            onchange="this.form.submit();"
+        />
+
+        <field  addfieldprefix="Kma\Library\Kma\Field"
+            name="state"
+            type="state"
+            mode="filter"
+            label="Trạng thái"
+            default=""
+            onchange="this.form.submit();"
+        />
+
+    </fields>
+
+    <fields name="list">
+
+        <field
+            name="fullordering"
+            type="hidden"
+            value=""
+        />
+
+        <field
+            name="limit"
+            type="limitbox"
+            label="JGLOBAL_LIST_LIMIT"
+            onchange="this.form.submit();"
+        />
+
+    </fields>
+
+</form>

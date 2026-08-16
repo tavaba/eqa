@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Khai báo layout để có thể tạo menu item kiểu "Thi lại" ở front-end.
+
+    CỐ Ý KHÔNG khai báo tham số nào: từ 2.1.8, toàn bộ cấu hình của cổng thu phí
+    thi lại (ngân hàng, số tài khoản, chủ tài khoản, thời điểm mở/đóng thu phí,
+    mốc đối chiếu sao kê gần nhất) là thuộc tính của ĐỢT THI LẠI
+    (#__eqa_resits), không còn là tham số của menu item. Trang này tự đọc cấu
+    hình từ đợt đang kích hoạt mà người học có tên trong đó, nên người quản trị
+    chỉ cần khai báo một lần khi lập đợt, không phải sửa menu mỗi kỳ thi.
+-->
+<metadata>
+    <layout title="Thi lại">
+        <message>
+            <![CDATA[Hiển thị danh sách môn thi lại (thi lần hai) của HVSV khi đăng nhập vào website, kèm lệ phí phải nộp và mã QR thanh toán. Thông tin tài khoản thu phí và thời hạn nộp phí được lấy từ đợt thi lại đang kích hoạt của cơ sở đào tạo.]]>
+        </message>
+    </layout>
+
+    <!-- Không có tham số riêng cho menu item (xem ghi chú ở đầu file) -->
+    <fields name="params">
+        <fieldset name="basic">
+        </fieldset>
+    </fields>
+</metadata>

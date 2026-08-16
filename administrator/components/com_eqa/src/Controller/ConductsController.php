@@ -124,7 +124,7 @@ class ConductsController extends AdminController {
 				$item->academicScore = $mark;
 				$item->academicRating = RatingHelper::rateAcademicScore($item->academicScore);
 
-				$item->retakeCount = intval($row[6]);           //Cột G: Số môn học lại
+				$item->restudyCount = intval($row[6]);           //Cột G: Số môn học lại
 				$item->resitCount = intval($row[7]);            //Cột H: Số môn thi lại
 			}
 

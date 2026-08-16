@@ -28,7 +28,7 @@ class HtmlView extends ItemsHtmlView
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('firstname','Tên', true);
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('excusedAbsenceCount','Vắng LD',true,false,'text-center');
 	    $fields->customFieldset1[] = new ListLayoutItemFieldOption('unexcusedAbsenceCount','Vắng KLD',true,false,'text-center');
-	    $f = new ListLayoutItemFieldOption('retakeCount','HL',true,false,'text-center');
+	    $f = new ListLayoutItemFieldOption('restudyCount','HL',true,false,'text-center');
 		$f->titleDesc = 'Số lượt học lại';
 	    $fields->customFieldset1[] = $f;
 	    $f = new ListLayoutItemFieldOption('resitCount','TL',true,false,'text-center');
@@ -67,8 +67,8 @@ class HtmlView extends ItemsHtmlView
 					$item->unexcusedAbsenceCount='';
 	            if($item->resitCount==0)
 		            $item->resitCount='';
-	            if($item->retakeCount==0)
-		            $item->retakeCount='';
+	            if($item->restudyCount==0)
+		            $item->restudyCount='';
 	            if($item->awardCount==0)
 		            $item->awardCount='';
 	            if($item->disciplinaryCount==0)

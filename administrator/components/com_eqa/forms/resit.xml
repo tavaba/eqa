@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form tạo/sửa 'danh sách thi lần 2' (view Resit, layout edit).
+
+    Cờ 'active' (đang kích hoạt) KHÔNG có trên form: nó do hệ thống quản lý —
+    danh sách vừa tạo tự động được kích hoạt, và việc chuyển kích hoạt sang danh
+    sách khác được thực hiện bằng nút 'Kích hoạt' ở view Resits.
+-->
+<form>
+    <fieldset name="resit" label="Thông tin danh sách"
+              addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field
+                name="id"
+                type="hidden"
+        />
+
+        <field
+                name="campus_id"
+                type="campus"
+                required="true"
+                readonly="true"
+                label="Cơ sở đào tạo"
+                description="Danh sách thuộc cơ sở đào tạo đang làm việc. Muốn lập danh sách cho cơ sở khác, hãy chuyển cơ sở đang làm việc."
+        />
+
+        <field
+                name="name"
+                type="text"
+                label="Tên danh sách"
+                description="Nên đặt tên gợi nhớ tới kỳ thi sẽ sử dụng danh sách này."
+                required="true"
+                maxlength="255"
+                hint="Thi lần 2. Học kỳ 1 năm học 2026-2027. Đợt 1"
+        />
+
+        <field
+                name="description"
+                type="textarea"
+                label="COM_EQA_GENERAL_DESC"
+                rows="4"
+        />
+
+        <field
+                name="created_by"
+                type="user"
+                label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="created_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+                label="JGLOBAL_FIELD_CREATED_LABEL"
+        />
+
+        <field
+                name="modified_by"
+                type="user"
+                label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+                readonly="true"
+        />
+
+        <field
+                name="modified_at"
+                type="calendar"
+                format="%Y-%m-%d %H:%M:%S"
+                filter="user_utc"
+                readonly="true"
+                label="JGLOBAL_FIELD_MODIFIED_LABEL"
+        />
+
+    </fieldset>
+
+    <!-- ================================================================== -->
+    <!-- Fieldset 2: Cổng thu phí thi lại (hiển thị cho người học)           -->
+    <!--                                                                     -->
+    <!-- Trước 2.1.8 các tham số này nằm ở params của menu item 'Thi lại' ở  -->
+    <!-- front-end. Nay chúng thuộc về đợt thi lại, nhờ vậy mỗi đợt có tài   -->
+    <!-- khoản và thời hạn thu phí riêng, và người quản trị không phải sửa   -->
+    <!-- menu mỗi khi mở một đợt mới.                                        -->
+    <!-- ================================================================== -->
+    <fieldset name="payment" label="Cổng thu phí"
+              addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field
+                name="payment_gate_open"
+                type="list"
+                required="true"
+                default="1"
+                label="Mở cổng thu phí"
+                description="Tắt để tạm dừng việc hiển thị mã QR thanh toán cho người học."
+        >
+            <option value="1">JYES</option>
+            <option value="0">JNO</option>
+        </field>
+
+        <field
+                name="bank_napas_code"
+                type="BankNapasCode"
+                required="false"
+                default=""
+                label="Ngân hàng thu phí"
+                description="Chọn ngân hàng nhận phí thi lại (dùng để tạo mã VietQR)"
+                class="select2-basic"
+        />
+
+        <field
+                name="bank_account_number"
+                type="text"
+                required="false"
+                maxlength="50"
+                label="Số tài khoản"
+                description="Số tài khoản nhận phí thi lại. Kiểm tra cẩn thận — phần mềm không thể xác minh tính chính xác."
+        />
+
+        <field
+                name="bank_account_owner"
+                type="text"
+                required="false"
+                maxlength="255"
+                label="Chủ tài khoản"
+                description="Tên chủ tài khoản (hiển thị cho người học khi quét mã QR)"
+        />
+
+        <field
+                name="payment_open_from"
+                type="calendar"
+                showtime="true"
+                filter="user_utc"
+                format="%Y-%m-%d %H:%M:%S"
+                required="false"
+                singleheader="false"
+                translateformat="true"
+                label="Bắt đầu thu phí"
+                description="Trước thời điểm này người học chưa nộp được phí. Để trống nếu không giới hạn."
+        />
+
+        <field
+                name="payment_deadline"
+                type="calendar"
+                showtime="true"
+                filter="user_utc"
+                format="%Y-%m-%d %H:%M:%S"
+                required="false"
+                singleheader="false"
+                translateformat="true"
+                label="Hạn chót nộp phí"
+                description="Sau thời điểm này người học không nộp được phí nữa. Để trống nếu không giới hạn."
+        />
+
+        <field
+                name="last_statement_update"
+                type="calendar"
+                showtime="true"
+                filter="user_utc"
+                format="%Y-%m-%d %H:%M:%S"
+                readonly="true"
+                required="false"
+                singleheader="false"
+                translateformat="true"
+                label="Đối chiếu sao kê lần cuối"
+                description="Hệ thống tự ghi mỗi khi nhập bản sao kê ngân hàng; hiển thị cho người học để biết dữ liệu thu phí được cập nhật đến thời điểm nào."
+        />
+
+    </fieldset>
+</form>

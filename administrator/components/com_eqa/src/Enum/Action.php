@@ -54,8 +54,11 @@ class Action extends BaseAction
 	const int UPDATE_DEBT               = 1033; // Cập nhật hàng loạt trạng thái công nợ theo môn thi
 	const int ADD_DEBTOR                = 1034; // Thêm người học vào danh sách nợ
 	const int RESET_DEBT                = 1035; // Xóa trạng thái nợ
-	const int REFRESH_SECOND_ATTEMPT    = 1036; // Làm mới danh sách đăng ký thi lại lần 2
-	const int ADD_SECOND_ATTEMPT        = 1037; // Thêm bản ghi đăng ký thi lại lần 2
+	// KHÔNG dùng cho tính năng mới: chức năng "Làm mới danh sách thi lại" đã bị bỏ
+	// từ 2.1.8 (nó xóa mất cả thí sinh đã dự thi). Hằng được GIỮ LẠI để các bản ghi
+	// log cũ vẫn tra cứu được nhãn hành động.
+	const int REFRESH_RESIT    = 1036; // [Không còn dùng] Làm mới danh sách thí sinh của một đợt thi lại
+	const int ADD_RESIT        = 1037; // Bổ sung thí sinh vào một đợt thi lại
 
 	// ── Nhóm E: Sắp xếp phòng thi / ca thi ───────────────────────────────────
 	const int DISTRIBUTE_ROOMS           = 1040; // Xếp phòng thi tự động
@@ -75,7 +78,7 @@ class Action extends BaseAction
 	const int COMPLETE_EXAMSEASON        = 1060; // Kết thúc kỳ thi
 	const int UNDO_COMPLETE_EXAMSEASON   = 1061; // Mở lại kỳ thi đã kết thúc
 	const int ADD_EXAM                   = 1062; // Thêm môn thi vào kỳ thi
-	const int ADD_RETAKE_EXAM            = 1063; // Thêm môn thi thi lại (lần 2)
+	const int ADD_RESIT_EXAM            = 1063; // Thêm môn thi thi lại (lần 2)
 	const int CONCLUDE_DISCIPLINE        = 1064; // Kết luận xử lý kỷ luật
 	const int ENABLE_PPAA_REQ            = 1065; // Bật yêu cầu phúc tra
 	const int DISABLE_PPAA_REQ           = 1066; // Tắt yêu cầu phúc tra
@@ -99,4 +102,9 @@ class Action extends BaseAction
 	const int IMPORT_ITEST_RESULT     = 1086; // Nhập kết quả thi trắc nghiệm/sát hạch từ hệ thống iTest
 	const int INIT_EMPLOYEE_ACCOUNTS  = 1087; // Khởi tạo tài khoản #__users cho employee (FixerController, chỉ chạy ở dev)
 	const int IMPORT_CLASSES          = 1088; // Tạo hàng loạt lớp học phần + nhập danh sách người học từ Excel (ClassesController::import)
+
+	// ── Nhóm K: Danh sách thi lần 2 ───────────────────────────────────────────
+	// Việc tạo/sửa/xóa danh sách dùng các action CRUD chuẩn của lớp cha; ở đây
+	// chỉ định nghĩa action đặc thù nghiệp vụ.
+	const int ACTIVATE_RESIT = 1090; // Kích hoạt một đợt thi lại (mỗi cơ sở đào tạo có tối đa một đợt kích hoạt)
 }

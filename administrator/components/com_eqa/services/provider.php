@@ -60,9 +60,18 @@ return new class implements ServiceProviderInterface
 				$component->setConfigService(new ConfigService($campusService));
 
 				//Inject the EnglishService into the component
+				//Lưu ý: cơ chế suy diễn số ít/số nhiều của EnglishHelper chuyển chuỗi
+				//về chữ thường rồi mới ucfirst, nên tên nhiều từ dạng CamelCase
+				//('ResitExaminees') sẽ bị biến dạng ('Resitexaminee') và làm
+				//hỏng việc nạp Model/View trên hệ điều hành phân biệt hoa/thường.
+				//Vì vậy các tên như vậy phải được khai báo tường minh ở đây.
 				$map = [
 					'course' => 'courses',
 					'mailtemplate' => 'mailtemplates',
+					'Resit'         => 'Resits',
+					'ResitExaminee' => 'ResitExaminees',
+					'ResitSubject'  => 'ResitSubjects',
+					'ResitLearner'  => 'ResitLearners',
 				];
 				$component->setEnglishService(new EnglishService($map));
 

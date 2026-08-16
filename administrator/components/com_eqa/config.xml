@@ -37,8 +37,8 @@
 				description="COM_EQA_CONFIG_PARAMS_EXAM_DESC"
 		>
 			<field
-					name="second_attempt_limit"
-					type="secondattemptmarklimitmode"
+					name="resit_limit"
+					type="resitmarklimitmode"
 					default="1"
 					label="Giới hạn điểm thi lần 2"
 			/>
@@ -197,7 +197,7 @@
 					required="true"
 			/>
 			<field
-					name="second_attempt_fee_mode"
+					name="resit_fee_mode"
 					type="feemode"
 					default="10"
 					label="Cách tính phí thi lần 2"
@@ -205,7 +205,7 @@
 			>
 			</field>
 			<field
-					name="second_attempt_fee_rate"
+					name="resit_fee_rate"
 					type="number"
 					default="90000"
 					label="Mức phí thi lần 2 (VNĐ)"

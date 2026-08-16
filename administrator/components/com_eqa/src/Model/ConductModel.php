@@ -47,7 +47,7 @@ class ConductModel extends AdminModel
 				$setClause[] = 'academic_score = '.$item->academicScore;
 				$setClause[] = 'academic_rating = '.$item->academicRating;
 				$setClause[] = 'resit_count = ' . $item->resitCount;
-				$setClause[] = 'retake_count = ' . $item->retakeCount;
+				$setClause[] = 'retake_count = ' . $item->restudyCount;
 			}
 			if($importCredits)
 			{

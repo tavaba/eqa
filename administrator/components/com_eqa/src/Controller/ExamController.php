@@ -941,7 +941,7 @@ class ExamController extends  FormController
 			$this->setRedirect($url);
 		}
 	}
-	public function updateSecondAttemptPaymentStatus(): void
+	public function updateResitPaymentStatus(): void
 	{
 		try
 		{
@@ -962,7 +962,7 @@ class ExamController extends  FormController
 			 * @var ExamModel $model
 			 */
 			$model = $this->getModel();
-			$messages = $model->updateSecondAttemptPaymentStatus($examId);
+			$messages = $model->updateResitPaymentStatus($examId);
 
 			//Ghi log (thành công)
 			$this->writeLog(new LogEntry(

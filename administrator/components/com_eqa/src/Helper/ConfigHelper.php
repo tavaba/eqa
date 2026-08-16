@@ -5,7 +5,7 @@ defined('_JEXEC') or die();
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\Registry\Registry;
 use Kma\Component\Eqa\Administrator\Enum\FeeMode;
-use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
+use Kma\Component\Eqa\Administrator\Enum\ResitMarkLimitMode;
 use RuntimeException;
 
 abstract class ConfigHelper
@@ -35,12 +35,12 @@ abstract class ConfigHelper
 			self::init();
 		return self::$params->get('params.precision_module', 1);
 	}
-	public static function getSecondAttemptMarkLimitMode(): SecondAttemptMarkLimitMode
+	public static function getResitMarkLimitMode(): ResitMarkLimitMode
 	{
 		if(self::$uninitialized)
 			self::init();
-		$value = self::$params->get('params.second_attempt_limit', SecondAttemptMarkLimitMode::OnExamMark->value);
-		return SecondAttemptMarkLimitMode::from($value);
+		$value = self::$params->get('params.resit_limit', ResitMarkLimitMode::OnExamMark->value);
+		return ResitMarkLimitMode::from($value);
 	}
 	public static function getThresholdForPam1(): float
 	{
@@ -80,19 +80,19 @@ abstract class ConfigHelper
 		return self::$params->get('params.regrading_fee_rate', 30000);
 	}
 
-	public static function getSecondAttemptFeeMode(): FeeMode
+	public static function getResitFeeMode(): FeeMode
 	{
 		if(self::$uninitialized)
 			self::init();
-		$value = self::$params->get('params.second_attempt_fee_mode', FeeMode::PerExam->value);
+		$value = self::$params->get('params.resit_fee_mode', FeeMode::PerExam->value);
 		return FeeMode::from($value);
 	}
 
-	public static function getSecondAttemptFeeRate(): float
+	public static function getResitFeeRate(): float
 	{
 		if (self::$uninitialized)
 			self::init();
-		return self::$params->get('params.second_attempt_fee_rate', 90000);
+		return self::$params->get('params.resit_fee_rate', 90000);
 	}
 
 }

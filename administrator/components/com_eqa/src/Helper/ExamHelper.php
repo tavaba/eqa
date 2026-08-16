@@ -6,7 +6,7 @@ use Joomla\CMS\Language\Text;
 use Kma\Component\Eqa\Administrator\Enum\Anomaly;
 use Kma\Component\Eqa\Administrator\Enum\Conclusion;
 use Kma\Component\Eqa\Administrator\Enum\ExamType;
-use Kma\Component\Eqa\Administrator\Enum\SecondAttemptMarkLimitMode;
+use Kma\Component\Eqa\Administrator\Enum\ResitMarkLimitMode;
 use Kma\Component\Eqa\Administrator\Enum\SpecialMark;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
 use Kma\Component\Eqa\Administrator\Service\ConfigService;
@@ -146,8 +146,8 @@ abstract class ExamHelper
 			$finalMark = min([10, $finalMark+$addValue]);
 
 		//Giới hạn điểm thi lần 2
-		$limitMode = ConfigHelper::getSecondAttemptMarkLimitMode();
-		if($attempt>1 && $admissionYear>=2021 && $limitMode==SecondAttemptMarkLimitMode::OnExamMark)
+		$limitMode = ConfigHelper::getResitMarkLimitMode();
+		if($attempt>1 && $admissionYear>=2021 && $limitMode==ResitMarkLimitMode::OnExamMark)
 			$finalMark = min([$finalMark, 6.9]);
 
 		return $finalMark;
@@ -155,12 +155,12 @@ abstract class ExamHelper
 	static public function calculateModuleMark(int $subjectId, float $pam, float $examMark, int $attempt, int $admissionYear)
 	{
 		$precision = ConfigHelper::getModuleMarkPrecision();
-		$limit = ConfigHelper::getSecondAttemptMarkLimitMode();
+		$limit = ConfigHelper::getResitMarkLimitMode();
 		$finalTestWeight = self::loadFinalTestWeight($subjectId);
 		$pamWeight = 1.0 - $finalTestWeight;
 		$moduleMark = $pamWeight*$pam + $finalTestWeight*$examMark;
 		$moduleMark = round($moduleMark, $precision);
-		if($attempt>1 && $admissionYear>=2021 && $limit==SecondAttemptMarkLimitMode::OnModuleMark)
+		if($attempt>1 && $admissionYear>=2021 && $limit==ResitMarkLimitMode::OnModuleMark)
 			$moduleMark = min([$moduleMark, 6.9]);
 		return $moduleMark;
 	}

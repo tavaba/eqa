@@ -915,11 +915,51 @@ CREATE TABLE `#__eqa_conducts`(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Đánh giá rèn luyện';
 
 -- =============================================================================
--- Danh sách thi lần hai
+-- Đợt thi lại (thi lần hai)
+--
+-- Trước mỗi kỳ thi lần 2, quản trị viên lập một đợt riêng; dữ liệu của các đợt
+-- trước được giữ nguyên. Mỗi cơ sở đào tạo có tối đa MỘT đợt đang kích hoạt
+-- (active = 1) tại một thời điểm — ràng buộc này được bảo đảm ở tầng ứng dụng
+-- (ResitModel), giống cơ chế 'kỳ thi mặc định'.
 -- =============================================================================
-DROP TABLE IF EXISTS `#__eqa_secondattempts`;
-CREATE TABLE `#__eqa_secondattempts`(
+DROP TABLE IF EXISTS `#__eqa_resits`;
+CREATE TABLE `#__eqa_resits`(
+    `id`               INT UNSIGNED AUTO_INCREMENT,
+    `campus_id`        INT UNSIGNED NOT NULL COMMENT 'FK: cơ sở đào tạo',
+    `name`             VARCHAR(255) NOT NULL COMMENT 'Tên đợt thi lại, ví dụ: Thi lần 2. HK1 2026-2027. Đợt 1',
+    `active`           BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Đang kích hoạt; per-campus: mỗi cơ sở có tối đa một đợt kích hoạt',
+    -- Tham số cổng thu phí thi lại, hiển thị cho người học ở front-end.
+    -- Trước 2.1.8 các tham số này nằm ở params của menu item; nay thuộc về đợt.
+    `bank_napas_code`       VARCHAR(10)  NULL COMMENT 'Mã NAPAS ngân hàng thu phí thi lại (dùng với VietQR)',
+    `bank_account_number`   VARCHAR(50)  NULL COMMENT 'Số tài khoản thu phí thi lại',
+    `bank_account_owner`    VARCHAR(255) NULL COMMENT 'Tên chủ tài khoản thu phí thi lại',
+    `payment_open_from`     DATETIME NULL COMMENT 'Thời điểm bắt đầu thu phí (UTC); NULL = không giới hạn',
+    `payment_deadline`      DATETIME NULL COMMENT 'Hạn chót nộp phí (UTC); NULL = không giới hạn',
+    `payment_gate_open`     BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Cổng thu phí đang mở',
+    `last_statement_update` DATETIME NULL COMMENT 'Thời điểm đối chiếu sao kê gần nhất (UTC); hệ thống tự ghi',
+    `description`      TEXT NULL,
+    `state`            TINYINT NOT NULL DEFAULT 1 COMMENT '1=Đang dùng, 0=Tạm ngừng',
+    `ordering`         INT UNSIGNED NOT NULL DEFAULT 0,
+    `created_at`       DATETIME,
+    `created_by`       INT UNSIGNED,
+    `modified_at`      DATETIME,
+    `modified_by`      INT UNSIGNED,
+    `checked_out`      INT UNSIGNED,
+    `checked_out_time` DATETIME,
+    PRIMARY KEY (`id`),
+    INDEX `idx_eqa_resits_campus` (`campus_id`, `active`),
+    CONSTRAINT fk_eqa_resits_campus FOREIGN KEY (`campus_id`)
+        REFERENCES `#__eqa_campuses`(`id`)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Đợt thi lại (thi lần hai)';
+
+-- =============================================================================
+-- Thí sinh thi lần hai (mỗi bản ghi thuộc đúng một đợt thi lại)
+-- =============================================================================
+DROP TABLE IF EXISTS `#__eqa_resit_learner`;
+CREATE TABLE `#__eqa_resit_learner`(
     `id`                INT UNSIGNED AUTO_INCREMENT,
+    `resit_id`          INT UNSIGNED NOT NULL COMMENT 'FK: đợt thi lại',
     `class_id`          INT UNSIGNED NOT NULL,
     `learner_id`        INT UNSIGNED NOT NULL,
     `last_exam_id`      INT UNSIGNED NOT NULL,
@@ -930,10 +970,17 @@ CREATE TABLE `#__eqa_secondattempts`(
     `payment_code`      CHAR(8),
 	`description`		TEXT NULL COMMENT 'Nội dung chuyển khoản (trích từ bản sao kê ngân hàng)',
     PRIMARY KEY (`id`),
-    INDEX `idx_eqa_secondattempts_learner` (`learner_id`),
-    UNIQUE (`class_id`, `learner_id`),
-    UNIQUE (`payment_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Danh sách thi lần hai';
+    INDEX `idx_eqa_resit_learner_learner` (`learner_id`),
+    -- Cùng một cặp (lớp học phần, người học) được phép xuất hiện ở NHIỀU đợt,
+    -- nhưng không được trùng trong cùng một đợt.
+    UNIQUE KEY `uq_eqa_resit_learner_resit_class_learner` (`resit_id`, `class_id`, `learner_id`),
+    -- payment_code duy nhất TOÀN CỤC để việc đối chiếu chuyển khoản không nhầm
+    -- lẫn giữa các đợt.
+    UNIQUE (`payment_code`),
+    CONSTRAINT fk_eqa_resit_learner_resit FOREIGN KEY (`resit_id`)
+        REFERENCES `#__eqa_resits`(`id`)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Thí sinh thi lần hai';
 
 -- =============================================================================
 -- Danh sách thi sát hạch

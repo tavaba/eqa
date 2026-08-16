@@ -390,6 +390,57 @@ abstract class DatabaseHelper extends DatabaseHelperBase
 		return (int) $db->setQuery($query)->loadResult();
 	}
 
+	/**
+	 * Mã danh sách thi lần 2 ĐANG KÍCH HOẠT của một cơ sở đào tạo.
+	 *
+	 * Mỗi cơ sở đào tạo có tối đa một danh sách đang kích hoạt: đó là danh sách
+	 * mà thí sinh đăng ký thi lại vào, đồng thời là căn cứ để sinh môn thi lần 2
+	 * và rà soát việc nộp phí thi lại.
+	 *
+	 * @param   int  $campusId
+	 *
+	 * @return  int  0 nếu cơ sở đào tạo chưa có danh sách nào được kích hoạt
+	 * @since   2.1.8
+	 */
+	static public function getActiveResitId(int $campusId): int
+	{
+		if ($campusId <= 0) {
+			return 0;
+		}
+
+		$db    = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('id'))
+			->from($db->quoteName('#__eqa_resits'))
+			->where($db->quoteName('campus_id') . ' = ' . (int) $campusId)
+			->where($db->quoteName('active') . ' = 1');
+
+		return (int) $db->setQuery($query, 0, 1)->loadResult();
+	}
+
+	/**
+	 * Tên của một danh sách thi lần 2.
+	 *
+	 * @param   int  $resitId
+	 *
+	 * @return  string  Chuỗi rỗng nếu không tìm thấy
+	 * @since   2.1.8
+	 */
+	static public function getResitName(int $resitId): string
+	{
+		if ($resitId <= 0) {
+			return '';
+		}
+
+		$db    = self::getDatabaseDriver();
+		$query = $db->getQuery(true)
+			->select($db->quoteName('name'))
+			->from($db->quoteName('#__eqa_resits'))
+			->where($db->quoteName('id') . ' = ' . (int) $resitId);
+
+		return (string) $db->setQuery($query)->loadResult();
+	}
+
     static public function getExamExaminees(int $examId, bool $allowedOnly = false)
     {
         $db = self::getDatabaseDriver();

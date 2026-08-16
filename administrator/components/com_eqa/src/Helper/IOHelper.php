@@ -3123,7 +3123,7 @@ abstract class IOHelper extends BaseIOHelper
 				$conduct->excusedAbsenceCount?:null,
 				$conduct->unexcusedAbsenceCount?:null,
 				($conduct->excusedAbsenceCount + $conduct->unexcusedAbsenceCount)?:null,
-				$conduct->retakeCount ?: null,
+				$conduct->restudyCount ?: null,
 				$conduct->resitCount ?: null,
 				$conduct->awardCount ?: null,
 				$conduct->disciplinaryCount ?: null,

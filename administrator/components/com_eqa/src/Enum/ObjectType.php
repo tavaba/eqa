@@ -41,8 +41,9 @@ enum ObjectType : int
 	case Paper = 2500;
 	case Regrading = 2501;
 	case GradeCorrection = 2502;
-	case SecondAttempt = 2504;
+	case ResitExaminee = 2504;
 	case Mmproduction = 2505;
+	case Resit = 2506;
 
 	//Assessment
 	case Assessment = 3000;

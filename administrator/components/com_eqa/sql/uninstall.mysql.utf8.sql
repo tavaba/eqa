@@ -1,6 +1,8 @@
 DROP TABLE IF EXISTS `#__eqa_campus_user`;
 DROP TABLE IF EXISTS `#__eqa_assessment_learner`;
-DROP TABLE IF EXISTS `#__eqa_secondattempts`;
+DROP TABLE IF EXISTS `#__eqa_resit_learner`;
+-- Phải DROP sau `#__eqa_resit_learner` (bảng này có khóa ngoại trỏ tới đây)
+DROP TABLE IF EXISTS `#__eqa_resits`;
 DROP TABLE IF EXISTS `#__eqa_conducts`;
 DROP TABLE IF EXISTS `#__eqa_mmproductions`;
 DROP TABLE IF EXISTS `#__eqa_class_learner`;

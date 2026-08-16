@@ -2036,7 +2036,16 @@ class ExamModel extends AdminModel{
 	/**
 	 * Cập nhật lại thông tin nợp phí của thí sinh dựa trên thông tin nộp phí
 	 * dự thi lần 2. Thí sinh được ghi nợ nếu thuộc 1 trong 2 trường hợp: Bản thân đang nợ
-	 * học phí (bảng _learners) hoặc chưa đóng phí thi lần 2 (bảng _secondattempts)
+	 * học phí (bảng _learners) hoặc chưa đóng phí thi lần 2 (bảng _resitexaminees)
+	 *
+	 * TỪ 2.1.8: một cặp (lớp học phần, người học) có thể xuất hiện ở NHIỀU danh
+	 * sách thi lần 2 (mỗi kỳ thi lần 2 một danh sách). Vì vậy phép JOIN sang
+	 * #__eqa_resit_learner phải được giới hạn theo đúng một danh sách, cụ thể là
+	 * DANH SÁCH ĐANG KÍCH HOẠT của cơ sở đào tạo tổ chức môn thi này; nếu không,
+	 * mỗi thí sinh sẽ khớp nhiều dòng và kết quả trở nên bất định.
+	 * Với môn thi thuộc cơ sở chưa có danh sách kích hoạt nào (hoặc kỳ thi lần 1),
+	 * phần phí thi lần 2 không được xét tới — chỉ còn công nợ học phí chung.
+	 *
 	 * @param $examId
 	 *
 	 * @return array
@@ -2044,7 +2053,7 @@ class ExamModel extends AdminModel{
 	 * @throws Exception
 	 * @since 2.0.3
 	 */
-	public function updateSecondAttemptPaymentStatus($examId): array
+	public function updateResitPaymentStatus($examId): array
 	{
 		//1. Init
 		$db = DatabaseHelper::getDatabaseDriver();
@@ -2053,6 +2062,10 @@ class ExamModel extends AdminModel{
 		if (DatabaseHelper::isCompletedExam($examId))
 			throw new Exception('Môn thi hoặc kỳ thi đã kết thúc. Không thể cập nhật thông tin nợ phí');
 
+		//2b. Xác định danh sách thi lần 2 đang kích hoạt của cơ sở đào tạo (2.1.8)
+		$campusId = DatabaseHelper::getCampusIdOfExam((int) $examId);
+		$resitId   = DatabaseHelper::getActiveResitId($campusId);
+
 		//3. Lấy thông tin nợ phí hiện thời từ 3 nơi: môn thi, người học
 		$columns = [
 			$db->quoteName('a.learner_id',          'learnerId'),
@@ -2060,14 +2073,20 @@ class ExamModel extends AdminModel{
 			$db->quoteName('a.debtor',              'currentDebt'),
 			$db->quoteName('b.debtor',              'generalDebt'),
 			$db->quoteName('a.module_mark',         'moduleMark'),
-			$db->quoteName('c.payment_amount',      'secondAttemptPaymentAmount'),
-			$db->quoteName('c.payment_completed',   'secondAttemptPaymentCompleted'),
+			$db->quoteName('c.payment_amount',      'resitExamineePaymentAmount'),
+			$db->quoteName('c.payment_completed',   'resitExamineePaymentCompleted'),
 		];
 		$query = $db->getQuery(true)
 			->select($columns)
 			->from('#__eqa_exam_learner AS a')
 			->leftJoin('#__eqa_learners AS b', 'b.id=a.learner_id')
-			->leftJoin('#__eqa_secondattempts AS c', 'c.learner_id=a.learner_id AND c.class_id=a.class_id')
+			//Giới hạn theo danh sách thi lần 2 đang kích hoạt (2.1.8). Nếu cơ sở
+			//đào tạo chưa có danh sách kích hoạt thì điều kiện 'c.resit_id = 0'
+			//luôn sai, LEFT JOIN không khớp dòng nào và phần phí thi lần 2 bị bỏ qua.
+			->leftJoin(
+				'#__eqa_resit_learner AS c',
+				'c.learner_id=a.learner_id AND c.class_id=a.class_id AND c.resit_id=' . (int) $resitId
+			)
 			->where('a.exam_id=' . $examId);
 		$db->setQuery($query);
 		$examinees = $db->loadObjectList();
@@ -2081,7 +2100,7 @@ class ExamModel extends AdminModel{
 		{
 			foreach ($examinees as $examinee)
 			{
-				$newDebt = ($examinee->generalDebt || ($examinee->secondAttemptPaymentAmount>0 && !$examinee->secondAttemptPaymentCompleted)) ? 1 : 0;
+				$newDebt = ($examinee->generalDebt || ($examinee->resitExamineePaymentAmount>0 && !$examinee->resitExamineePaymentCompleted)) ? 1 : 0;
 				if($examinee->currentDebt == $newDebt)
 					continue;
 

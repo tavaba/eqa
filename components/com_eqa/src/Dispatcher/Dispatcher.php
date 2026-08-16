@@ -33,7 +33,7 @@ class Dispatcher extends ComponentDispatcher
 		'learnerinfo' => 'LearnerInfo',
 		'learnerregradings' => 'LearnerRegradings',
 		'learnergradecorrections' => 'LearnerGradecorrections',
-		'learnerretake' => 'LearnerRetake',
+		'learnerresit' => 'LearnerResit',
 		'employeemonitorings' => 'EmployeeMonitorings',
 		'employeeclasses' => 'EmployeeClasses',
 		'employeemarkings' => 'EmployeeMarkings',

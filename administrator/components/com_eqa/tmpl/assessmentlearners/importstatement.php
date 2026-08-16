@@ -2,7 +2,7 @@
 defined('_JEXEC') or die();
 
 /**
- * Template layout "importstatement" cho view SecondAttempts.
+ * Template layout "importstatement" cho view AssessmentLearners.
  *
  * Hiển thị form upload file Excel bản sao kê tài khoản ngân hàng MB Bank.
  * Sau khi submit, hệ thống tự đối chiếu payment_code và cập nhật trạng thái

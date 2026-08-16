@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Form bộ lọc cho view ResitExaminees.
+    Các trường lọc:
+      - search           : tìm kiếm trong mã HVSV, họ tên, mã/tên môn học
+      - academicyear     : năm học (custom field type="academicyear")
+      - term             : học kỳ (custom field type="term")
+      - has_fee          : có phí / miễn phí (dựa trên payment_amount > 0)
+      - payment_completed: đã nộp phí / chưa nộp phí
+-->
+<form>
+    <fields name="filter" addfieldprefix="Kma\Component\Eqa\Administrator\Field">
+
+        <field
+            name="search"
+            type="text"
+            label="JSEARCH_FILTER"
+            hint="Mã HVSV, Họ tên, Mã/Tên môn học"
+            class="js-stools-search-string"
+        />
+
+        <field
+            name="subject_id"
+            type="resitSubject"
+            default=""
+            class="select2-basic"
+            label="COM_EQA_FORM_CLASSES_FILTER_SUBJECT_LABEL"
+            onchange="this.form.submit();"
+        >
+            <option value="">COM_EQA_FORM_CLASSES_FILTER_SUBJECT_MSG</option>
+        </field>
+
+        <field
+            name="academicyear"
+            type="academicyear"
+            label="Năm học"
+            default=""
+            onchange="this.form.submit();"
+        >
+            <option value="">- Năm học -</option>
+        </field>
+
+        <field
+            name="term"
+            type="term"
+            label="Học kỳ"
+            default=""
+            onchange="this.form.submit();"
+        />
+
+        <field
+                name="is_debtor"
+                type="list"
+                label="Nợ phí"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Nợ phí ở lần thi trước -</option>
+            <option value="0">Không</option>
+            <option value="1">Có</option>
+        </field>
+
+        <field
+                name="anomaly"
+                type="anomaly"
+                label="Bất thường"
+                default=""
+                onchange="this.form.submit();"
+        >
+            <option value="">- Bất thường -</option>
+        </field>
+
+        <field
+            name="has_fee"
+            type="list"
+            label="Lệ phí"
+            default=""
+            onchange="this.form.submit();"
+        >
+            <option value="">- Lệ phí -</option>
+            <option value="0">Miễn phí</option>
+            <option value="1">Có phí</option>
+        </field>
+
+        <field
+            name="payment_completed"
+            type="list"
+            label="Đã nộp phí"
+            default=""
+            onchange="this.form.submit();"
+        >
+            <option value="">- Đã nộp phí -</option>
+            <option value="0">Chưa nộp phí</option>
+            <option value="1">Đã nộp phí</option>
+        </field>
+
+    </fields>
+
+    <fields name="list">
+
+        <field
+            name="fullordering"
+            type="hidden"
+            value=""
+        />
+
+        <field
+            name="limit"
+            type="limitbox"
+            label="JGLOBAL_LIST_LIMIT"
+            onchange="this.form.submit();"
+        />
+
+    </fields>
+
+</form>

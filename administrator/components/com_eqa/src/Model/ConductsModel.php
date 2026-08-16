@@ -14,7 +14,7 @@ use Kma\Component\Eqa\Administrator\Helper\TermHelper;
 class ConductsModel extends ListModel {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
-        $config['filter_fields']=array('learnerCode', 'firstname', 'excusedAbsenceCount','unexcusedAbsenceCount', 'retakeCount',
+        $config['filter_fields']=array('learnerCode', 'firstname', 'excusedAbsenceCount','unexcusedAbsenceCount', 'restudyCount',
 	        'resitCount', 'awardCount', 'disciplinaryCount', 'totalCredits',
 	        'academicScore', 'academicRating', 'conductScore', 'conductRating');
         parent::__construct($config, $factory);
@@ -38,7 +38,7 @@ class ConductsModel extends ListModel {
 			$db->quoteName('a.excused_absence_count',       'excusedAbsenceCount'),
 			$db->quoteName('a.unexcused_absence_count',     'unexcusedAbsenceCount'),
 			$db->quoteName('a.resit_count',                 'resitCount'),
-			$db->quoteName('a.retake_count',                'retakeCount'),
+			$db->quoteName('a.retake_count',                'restudyCount'),
 			$db->quoteName('a.award_count',                 'awardCount'),
 			$db->quoteName('a.disciplinary_action_count',   'disciplinaryCount'),
 			$db->quoteName('a.total_credits',               'totalCredits'),

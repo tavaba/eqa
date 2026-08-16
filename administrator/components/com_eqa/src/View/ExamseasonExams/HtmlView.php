@@ -127,7 +127,7 @@ class HtmlView extends ItemsHtmlView
 		(1)Bạn cần phải tải danh sách môn thi và thí sinh trước khi thực hiện chức năng này 
 		(2)Hãy kiểm tra lại một lần nữa, đảm bảo là đã chọn đúng Kỳ thi, nếu chọn nhầm thì xóa rất lâu.
 		Do phải rà soát toàn CSDL nên thời gian thực hiện có thể tốn vài phút.';
-	    ToolbarHelper::appendConfirmButton('core.create',$msg,'plus-circle','Thêm môn thi lại','examseason.addRetakeExams',false, 'btn btn-danger');
+	    ToolbarHelper::appendConfirmButton('core.create',$msg,'plus-circle','Thêm môn thi lại','examseason.addResitExams',false, 'btn btn-danger');
 		ToolbarHelper::appendButton(null,'download','Danh sách thi','exams.export',true);
 	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm CHƯA xử lý kỷ luật', 'exams.concludeWithDisciplineNotApplied',true);
 	    ToolbarHelper::appendButton('core.edit','loop','Tính điểm ĐÃ xử lý kỷ luật', 'exams.concludeWithDisciplineAlreadyApplied',true);

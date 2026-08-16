@@ -11,7 +11,7 @@ use Kma\Component\Eqa\Administrator\Enum\Action;
 use Kma\Component\Eqa\Administrator\Enum\ExamStatus;
 use Kma\Component\Eqa\Administrator\Enum\ObjectType;
 use Kma\Component\Eqa\Administrator\Enum\TestType;
-use Kma\Component\Eqa\Administrator\Model\SecondAttemptsModel;
+use Kma\Component\Eqa\Administrator\Model\ResitModel;
 use Kma\Library\Kma\Controller\FormController;
 use Kma\Library\Kma\DataObject\LogEntry;
 use Kma\Component\Eqa\Administrator\Helper\DatabaseHelper;
@@ -270,7 +270,7 @@ class ExamseasonController extends FormController
 			return;
 		}
 	}
-	public function addRetakeExams(): void
+	public function addResitExams(): void
 	{
 		try
 		{
@@ -293,14 +293,36 @@ class ExamseasonController extends FormController
 			if(empty($examseason) || empty($examseason->campus_id))
 				throw new Exception('Không xác định được cơ sở đào tạo của kỳ thi.');
 
+			//Chỉ kỳ thi lần 2 mới có môn thi lại (2.1.8)
+			if((int) $examseason->attempt <= 1)
+				throw new Exception(
+					'Kỳ thi này có tham số "Lượt thi" = 1 nên không thể tạo môn thi lại.'
+					. ' Hãy sửa kỳ thi và đặt "Lượt thi" = 2 trước.'
+				);
+
+			//Nguồn dữ liệu là DANH SÁCH THI LẦN 2 ĐANG KÍCH HOẠT của cơ sở đào tạo
+			//tổ chức kỳ thi (2.1.8). Mỗi cơ sở chỉ có một danh sách kích hoạt tại
+			//một thời điểm nên không cần tham số riêng cho kỳ thi.
+			$campusId = (int) $examseason->campus_id;
+			$resitId   = DatabaseHelper::getActiveResitId($campusId);
+			if(empty($resitId))
+				throw new Exception(
+					'Cơ sở đào tạo của kỳ thi này chưa có danh sách thi lần 2 nào được kích hoạt.'
+					. ' Hãy vào "Danh sách thi lần 2", tạo hoặc kích hoạt một danh sách rồi thực hiện lại.'
+				);
+			$resitName = DatabaseHelper::getResitName($resitId);
+
 			/**
 			 * Load the list of examinees/exams that will be used to generate retake exams
-			 * @var SecondAttemptsModel $secondAttemptsModel
+			 * @var ResitModel $resitModel
 			 */
-			$secondAttemptsModel = $this->getModel('SecondAttempts');
-			$retakingExaminees = $secondAttemptsModel->loadListForExport(false, (int) $examseason->campus_id);
+			$resitModel = $this->getModel('Resit');
+			$retakingExaminees = $resitModel->loadExamineesForExport($resitId, false);
 			if(empty($retakingExaminees))
-				throw new Exception('Không có thí sinh nào cần thi lại.');
+				throw new Exception(sprintf(
+					'Danh sách thi lần 2 đang kích hoạt (<b>%s</b>) không có thí sinh nào.',
+					htmlspecialchars($resitName)
+				));
 
 			//Group the list by the property 'subjectId'
 			$groupedExaminees = [];
@@ -380,7 +402,7 @@ class ExamseasonController extends FormController
 				$countAdded = $examModel->addExaminees($examId, $examinees);
 
 				//Cập nhật thông tin nợ phí thi lần 2
-				$examModel->updateSecondAttemptPaymentStatus($examId);
+				$examModel->updateResitPaymentStatus($examId);
 
 				$countTotal = count($examinees);
 				if($examExists)
@@ -398,18 +420,21 @@ class ExamseasonController extends FormController
 				$this->app->enqueueMessage($msg,'success');
 			}
 			//Redirect to the list of exams of the examseason
-			$msg = sprintf('Tổng cộng có %d môn thi, %d lượt thí sinh được xử lý',
+			$msg = sprintf('Tổng cộng có %d môn thi, %d lượt thí sinh được xử lý (nguồn: danh sách <b>%s</b>)',
 				count($groupedExaminees),
-				count($retakingExaminees));
+				count($retakingExaminees),
+				htmlspecialchars($resitName));
 			$this->app->enqueueMessage($msg);
 			$this->writeLog(new LogEntry(
-				action: Action::ADD_RETAKE_EXAM,
+				action: Action::ADD_RESIT_EXAM,
 				objectType: ObjectType::Examseason->value,
 				isSuccess: true,
 				objectId: $examseasonId,
 				extraData: [
-					'exam_count'     => count($groupedExaminees),
-					'examinee_count' => count($retakingExaminees),
+					'resit_resit_id'   => $resitId,
+					'resit_name' => $resitName,
+					'exam_count'               => count($groupedExaminees),
+					'examinee_count'           => count($retakingExaminees),
 				],
 			));
 			$this->setRedirect(Route::_('index.php?option=com_eqa&view=examseasonExams&examseason_id='.$examseasonId,false));
@@ -418,7 +443,7 @@ class ExamseasonController extends FormController
 		{
 			$this->setMessage($e->getMessage(), 'error');
 			$this->writeLog(new LogEntry(
-				action: Action::ADD_RETAKE_EXAM,
+				action: Action::ADD_RESIT_EXAM,
 				objectType: ObjectType::Examseason->value,
 				isSuccess: false,
 				objectId: $examseasonId ?? null,
