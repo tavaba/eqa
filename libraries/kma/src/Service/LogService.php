@@ -80,12 +80,24 @@ class LogService
 		$this->resolveUser($entry);
 		$this->resolveIp($entry);
 
+		/*
+		 * LƯU Ý (1.0.6): DatabaseDriver::insertObject() BỎ QUA mọi thuộc tính mang
+		 * giá trị null, tức là cột tương ứng không xuất hiện trong câu INSERT.
+		 * Cột `object_id` được khai báo NOT NULL và không có giá trị mặc định, nên
+		 * mọi LogEntry không truyền objectId (các tác vụ hàng loạt: làm mới danh
+		 * sách, nhập sao kê, và mọi nhánh ghi log lỗi trước khi xác định được đối
+		 * tượng) sẽ làm MySQL ở chế độ strict báo lỗi:
+		 *     Field 'object_id' doesn't have a default value
+		 * Việc ghi log thất bại không làm hỏng tác vụ (đã bắt ngoại lệ bên dưới)
+		 * nhưng người dùng nhận được thông báo lỗi khó hiểu và MẤT bản ghi log.
+		 * Vì vậy quy ước: objectId không xác định thì ghi 0.
+		 */
 		$row = (object) [
 			'user_id'       => $entry->userId ?: null,
 			'username'      => $entry->username ?: null,
 			'action'        => $entry->action,
 			'object_type'   => $entry->objectType,
-			'object_id'     => $entry->objectId,
+			'object_id'     => $entry->objectId ?? 0,
 			'object_title'  => $entry->objectTitle,
 			'is_success'    => (int) $entry->isSuccess,
 			'error_message' => $entry->errorMessage,
